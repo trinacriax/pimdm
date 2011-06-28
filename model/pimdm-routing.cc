@@ -348,41 +348,48 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, Ipv4Address tar
 }
 
 void
+MulticastRoutingProtocol::ForgeHelloMessageHoldTime (uint32_t interface, PIMHeader &msg){
+	PIMHeader::HelloMessage helloMessage = msg.GetHelloMessage();//TODO holdtime for the corresponding interface
+	PIMHeader::HelloMessage::HelloEntry holdtime = {PIMHeader::HelloMessage::HelloHoldTime, PIM_DM_HELLO_HOLDTIME};
+	holdtime.m_optionValue.holdTime.m_holdTime = Seconds(Hold_Time_Default);
+	msg.GetHelloMessage().m_optionList.push_back(holdtime);
+}
+
+void
+MulticastRoutingProtocol::ForgeHelloMessageLANPD (uint32_t interface, PIMHeader &msg){
+	PIMHeader::HelloMessage::HelloEntry lanpd = {PIMHeader::HelloMessage::LANPruneDelay, PIM_DM_HELLO_LANPRUNDELAY};
+	lanpd.m_optionValue.lanPruneDelay.m_T = 0;
+	lanpd.m_optionValue.lanPruneDelay.m_propagationDelay = m_IfaceNeighbors.find(interface)->second.propagationDelay;
+	lanpd.m_optionValue.lanPruneDelay.m_overrideInterval = m_IfaceNeighbors.find(interface)->second.overrideInterval;
+	msg.GetHelloMessage().m_optionList.push_back(lanpd);
+}
+
+void
+MulticastRoutingProtocol::ForgeHelloMessageGenID (uint32_t interface, PIMHeader &msg){
+	PIMHeader::HelloMessage::HelloEntry genid = {PIMHeader::HelloMessage::GenerationID, PIM_DM_HELLO_GENERATIONID};
+	genid.m_optionValue.generationID.m_generatioID = m_generationID;
+	msg.GetHelloMessage().m_optionList.push_back(genid);
+}
+
+void
+MulticastRoutingProtocol::ForgeHelloMessageStateRefresh (uint32_t interface, PIMHeader &msg){
+	PIMHeader::HelloMessage::HelloEntry staterefresh = {PIMHeader::HelloMessage::StateRefreshCapable, PIM_DM_HELLO_STATEREFRESH};
+	staterefresh.m_optionValue.stateRefreshCapable.m_version = 1;
+	staterefresh.m_optionValue.stateRefreshCapable.m_reserved = 0;
+	staterefresh.m_optionValue.stateRefreshCapable.m_interval = (uint8_t)(m_IfaceNeighbors.find(interface)->second.stateRefreshInterval).GetSeconds();
+	msg.GetHelloMessage().m_optionList.push_back(staterefresh);
+}
+
+void
 MulticastRoutingProtocol::ForgeHelloMessage (uint32_t interface, PIMHeader &msg){
 	NS_LOG_FUNCTION(this);
 	ForgeHeaderMessage(PIM_HELLO, msg);
-	PIMHeader::HelloMessage helloMessage = msg.GetHelloMessage();
-
-	PIMHeader::HelloMessage::HelloEntry helloIn1 = {PIMHeader::HelloMessage::HelloHoldTime, PIM_DM_HELLO_HOLDTIME};
-	helloIn1.m_optionValue.holdTime.m_holdTime = Seconds(Hold_Time_Default);
-	msg.GetHelloMessage().m_optionList.push_back(helloIn1);
-
-	PIMHeader::HelloMessage::HelloEntry helloIn2 = {PIMHeader::HelloMessage::LANPruneDelay, PIM_DM_HELLO_LANPRUNDELAY};
-	helloIn2.m_optionValue.lanPruneDelay.m_T = 0; //0 in PIM-DM
-	helloIn2.m_optionValue.lanPruneDelay.m_propagationDelay = m_IfaceNeighbors.find(interface)->second.propagationDelay;
-	helloIn2.m_optionValue.lanPruneDelay.m_overrideInterval = m_IfaceNeighbors.find(interface)->second.overrideInterval;
-	msg.GetHelloMessage().m_optionList.push_back(helloIn2);
-
-	PIMHeader::HelloMessage::HelloEntry helloIn3 = {PIMHeader::HelloMessage::GenerationID, PIM_DM_HELLO_GENERATIONID};
-	helloIn3.m_optionValue.generationID.m_generatioID = m_generationID;
-	msg.GetHelloMessage().m_optionList.push_back(helloIn3);
-
-	NS_LOG_DEBUG("HoldTime = "<< helloIn1.m_optionValue.holdTime.m_holdTime.GetSeconds()<<", T = "<<(uint16_t)helloIn2.m_optionValue.lanPruneDelay.m_T<<
-				", Prop.Delay = "<<helloIn2.m_optionValue.lanPruneDelay.m_propagationDelay.GetSeconds()<<", OverInter = "<< helloIn2.m_optionValue.lanPruneDelay.m_overrideInterval.GetSeconds()<<
-				", Gen.Id = "<< helloIn3.m_optionValue.generationID.m_generatioID<<", StateRefresh: \n");
-
+	ForgeHelloMessageHoldTime(interface,msg);
+	ForgeHelloMessageLANPD(interface,msg);
+	ForgeHelloMessageGenID(interface,msg);
 	if(m_IfaceNeighbors.find(interface)->second.stateRefreshCapable){
-		PIMHeader::HelloMessage::HelloEntry helloIn4 = {PIMHeader::HelloMessage::StateRefreshCapable, PIM_DM_HELLO_STATEREFRESH};
-		helloIn4.m_optionValue.stateRefreshCapable.m_version = 1;
-		helloIn4.m_optionValue.stateRefreshCapable.m_reserved = 0;
-		helloIn4.m_optionValue.stateRefreshCapable.m_interval = (uint8_t)(m_IfaceNeighbors.find(interface)->second.stateRefreshInterval).GetSeconds();
-		msg.GetHelloMessage().m_optionList.push_back(helloIn4);
-		NS_LOG_DEBUG(">> Ver = "<< (uint16_t)helloIn4.m_optionValue.stateRefreshCapable.m_version <<
-				", Reserved = "<< (uint16_t)helloIn4.m_optionValue.stateRefreshCapable.m_reserved<<
-				", Interval = "<< (uint16_t)helloIn4.m_optionValue.stateRefreshCapable.m_interval<<"\n"
-				);
+		ForgeHelloMessageStateRefresh(interface,msg);
 	}
-	NS_LOG_DEBUG("\n");
 }
 
 void
@@ -392,6 +399,7 @@ MulticastRoutingProtocol::CreateMulticastGroupEntry (PIMHeader &msg, PIMHeader::
 	m_entry.m_numberJoinedSources = 0;
 	m_entry.m_numberPrunedSources = 0;
 }
+
 void
 MulticastRoutingProtocol::AddMulticastGroupEntry (PIMHeader &msg, PIMHeader::MulticastGroupEntry &entry){
 	NS_LOG_FUNCTION(this);
@@ -1074,12 +1082,21 @@ MulticastRoutingProtocol::GetRecevingInterface(Ipv4InterfaceAddress interface){
 bool
 MulticastRoutingProtocol::IsValidSG(uint32_t interface, const Ipv4Address & source,const Ipv4Address & group){
 	SourceGroupState *sgState = FindSourceGroupState(interface,source, group);
-	return sgState->SG_PPT.IsRunning()||sgState->SG_PT.IsRunning()||
-			sgState->SG_AT.IsRunning()||
-			///     Upstream interface-specific
-			((RPF_interface(source) == interface) && (sgState->upstream->SG_GRT.IsRunning()||
-			sgState->upstream->SG_OT.IsRunning()||sgState->upstream->SG_PLT.IsRunning()||
-			sgState->upstream->SG_SAT.IsRunning()||sgState->upstream->SG_SRT.IsRunning()));
+	bool valid = false;
+	if(sgState){
+		valid = valid || sgState->SG_PPT.IsRunning();
+		valid = valid || sgState->SG_PT.IsRunning();
+		valid = valid || sgState->SG_AT.IsRunning();
+				///     Upstream interface-specific
+		if(RPF_interface(source) == interface){
+			valid = valid || sgState->upstream->SG_GRT.IsRunning();
+			valid = valid || sgState->upstream->SG_OT.IsRunning();
+			valid = valid || sgState->upstream->SG_PLT.IsRunning();
+			valid = valid || sgState->upstream->SG_SAT.IsRunning();
+			valid = valid || sgState->upstream->SG_SRT.IsRunning();
+		}
+	}
+	return valid;
 }
 
 void
