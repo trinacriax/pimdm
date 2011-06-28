@@ -265,7 +265,7 @@ MulticastRoutingProtocol::HelloTimerExpire ()
   for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++){
   	SendHello (i);
   }
-  hello_timer.Schedule (m_helloTime);
+  hello_timer.Schedule();
 }
 
 //	 PIM-DM uses Hello messages to detect other PIM routers.  Hello
@@ -353,33 +353,37 @@ MulticastRoutingProtocol::ForgeHelloMessage (uint32_t interface, PIMHeader &msg)
 	NS_LOG_FUNCTION(this);
 	ForgeHeaderMessage(PIM_HELLO, msg);
 	PIMHeader::HelloMessage helloMessage = msg.GetHelloMessage();
+
 	PIMHeader::HelloMessage::HelloEntry helloIn1 = {PIMHeader::HelloMessage::HelloHoldTime, PIM_DM_HELLO_HOLDTIME};
+	helloIn1.m_optionValue.holdTime.m_holdTime = Seconds(Hold_Time_Default);
+	msg.GetHelloMessage().m_optionList.push_back(helloIn1);
 
-	struct PIMHeader::HelloMessage::HelloEntry::HoldTime holdtime = {Time::FromDouble(Hold_Time_Default,Time::S)};
-	NS_LOG_DEBUG("HoldTime = "<< Time::FromDouble(Hold_Time_Default,Time::S));
-	helloIn1.m_optionValue.holdTime = holdtime;
-	helloMessage.m_optionList.push_back(helloIn1);
-
-	PIMHeader::HelloMessage::HelloEntry helloIn2;
-	helloIn2.m_optionType = PIMHeader::HelloMessage::LANPruneDelay;
+	PIMHeader::HelloMessage::HelloEntry helloIn2 = {PIMHeader::HelloMessage::LANPruneDelay, PIM_DM_HELLO_LANPRUNDELAY};
 	helloIn2.m_optionValue.lanPruneDelay.m_T = 0; //0 in PIM-DM
 	helloIn2.m_optionValue.lanPruneDelay.m_propagationDelay = m_IfaceNeighbors.find(interface)->second.propagationDelay;
 	helloIn2.m_optionValue.lanPruneDelay.m_overrideInterval = m_IfaceNeighbors.find(interface)->second.overrideInterval;
-	helloMessage.m_optionList.push_back(helloIn2);
+	msg.GetHelloMessage().m_optionList.push_back(helloIn2);
 
 	PIMHeader::HelloMessage::HelloEntry helloIn3 = {PIMHeader::HelloMessage::GenerationID, PIM_DM_HELLO_GENERATIONID};
-	struct PIMHeader::HelloMessage::HelloEntry::GenerationID tmp4 = {m_generationID};
-	helloIn3.m_optionValue.generationID = tmp4;
-	helloMessage.m_optionList.push_back(helloIn3);
+	helloIn3.m_optionValue.generationID.m_generatioID = m_generationID;
+	msg.GetHelloMessage().m_optionList.push_back(helloIn3);
+
+	NS_LOG_DEBUG("HoldTime = "<< helloIn1.m_optionValue.holdTime.m_holdTime.GetSeconds()<<", T = "<<(uint16_t)helloIn2.m_optionValue.lanPruneDelay.m_T<<
+				", Prop.Delay = "<<helloIn2.m_optionValue.lanPruneDelay.m_propagationDelay.GetSeconds()<<", OverInter = "<< helloIn2.m_optionValue.lanPruneDelay.m_overrideInterval.GetSeconds()<<
+				", Gen.Id = "<< helloIn3.m_optionValue.generationID.m_generatioID<<", StateRefresh: \n");
 
 	if(m_IfaceNeighbors.find(interface)->second.stateRefreshCapable){
-		PIMHeader::HelloMessage::HelloEntry helloIn4;
-		helloIn4.m_optionType = PIMHeader::HelloMessage::StateRefreshCapable;
-		helloIn4.m_optionValue.stateRefreshCapable.m_version = 1; //0 in PIM-DM
+		PIMHeader::HelloMessage::HelloEntry helloIn4 = {PIMHeader::HelloMessage::StateRefreshCapable, PIM_DM_HELLO_STATEREFRESH};
+		helloIn4.m_optionValue.stateRefreshCapable.m_version = 1;
 		helloIn4.m_optionValue.stateRefreshCapable.m_reserved = 0;
 		helloIn4.m_optionValue.stateRefreshCapable.m_interval = (uint8_t)(m_IfaceNeighbors.find(interface)->second.stateRefreshInterval).GetSeconds();
-		helloMessage.m_optionList.push_back(helloIn4);
+		msg.GetHelloMessage().m_optionList.push_back(helloIn4);
+		NS_LOG_DEBUG(">> Ver = "<< (uint16_t)helloIn4.m_optionValue.stateRefreshCapable.m_version <<
+				", Reserved = "<< (uint16_t)helloIn4.m_optionValue.stateRefreshCapable.m_reserved<<
+				", Interval = "<< (uint16_t)helloIn4.m_optionValue.stateRefreshCapable.m_interval<<"\n"
+				);
 	}
+	NS_LOG_DEBUG("\n");
 }
 
 void
