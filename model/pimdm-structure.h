@@ -42,6 +42,21 @@ namespace ns3 {
 namespace pimdm {
 
 struct AssertMetric {
+	AssertMetric():
+		metric_preference(0),
+		route_metric(0),
+		ip_address("0.0.0.0")
+	{}
+	AssertMetric(int m, int r, uint32_t ip):
+			metric_preference(m),
+			route_metric(r),
+			ip_address(ip)
+		{}
+	AssertMetric(int m, int r, Ipv4Address ip):
+				metric_preference(m),
+				route_metric(r),
+				ip_address(ip)
+			{}
      uint32_t metric_preference;
      uint32_t route_metric;
      Ipv4Address ip_address;
@@ -61,8 +76,14 @@ operator > (const AssertMetric &a, const AssertMetric &b){
 }
 
 /// (S,G) Pair. Source S and destination group G associated with an IP packet.
-struct SourceGroupPair
-{
+struct SourceGroupPair{
+	SourceGroupPair():
+		sourceIfaceAddr("0.0.0.0"),
+		groupMulticastAddr("0.0.0.0")
+	{}
+	SourceGroupPair(Ipv4Address s, Ipv4Address g):
+		sourceIfaceAddr(s),
+		groupMulticastAddr(g){}
   /// Interface address of the source.
 	Ipv4Address sourceIfaceAddr;
   /// Multicast group address.
@@ -82,6 +103,23 @@ operator << (std::ostream &os, const SourceGroupPair &a){
 }
 
 struct SourceGroupState{
+	SourceGroupState():
+		members(false),
+		lastStateRefresh(Seconds(0)),
+		SGLocalMembership(Local_NoInfo),
+		SGAssertState(Assert_NoInfo),
+		SGAssertWinner(),
+		SG_AT(Timer::CANCEL_ON_DESTROY),
+		SGPruneState(Prune_NoInfo),
+		SG_PT(Timer::CANCEL_ON_DESTROY),
+		SG_PPT(Timer::CANCEL_ON_DESTROY),
+		SGAW("0.0.0.0"),
+		SGAM(0),
+		SG_SR_TTL(0),
+		SG_DATA_TTL(0),
+//			*upstream;
+		origination(NotOriginator)
+	{}
 	/// SourceGroup pair.
 	struct SourceGroupPair SGPair;
 
@@ -139,6 +177,14 @@ operator == (const SourceGroupState &a, const SourceGroupState &b){
 }
 
 struct UpstreamState{
+	UpstreamState():
+		SGGraftPrune(GP_NoInfo),
+		SG_GRT(Timer::CANCEL_ON_DESTROY),
+		SG_OT(Timer::CANCEL_ON_DESTROY),
+		SG_PLT(Timer::CANCEL_ON_DESTROY),
+		SG_SAT(Timer::CANCEL_ON_DESTROY),
+		SG_SRT(Timer::CANCEL_ON_DESTROY)
+	{}
 	///< Upstream interface-specific:
 	/// Graft/Prune State.
 	enum GraftPruneState SGGraftPrune;
@@ -192,9 +238,26 @@ struct UpstreamState{
 typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 
 	struct NeighborState {//one for each neighbor
+		NeighborState():
+			neighborIfaceAddr("0.0.0.0"),
+			receivingIfaceAddr("0.0.0.0"),
+			neighborCreation(Seconds(0)),
+			neighborRefresh(Seconds(0)),
+			neighborTimeout(Seconds(0)),
+			neighborTimeoutB(false),
+			neigborNLT(Timer::CANCEL_ON_DESTROY),
+			neighborHoldTime(Seconds(Hold_Time_Default)),
+			neighborT(0),
+			neighborPropagationDelay(Seconds(Propagation_Delay)),
+			neighborOverrideInterval(Seconds(Override_Interval)),
+			neighborGenerationID(0),
+			neighborVersion(0),
+			neighborInterval(RefreshInterval),
+			neighborReserved(0)
+		{}
 		/// Interface address of the neighbor node.
 		Ipv4Address neighborIfaceAddr;
-		/// Interface address of the local node to the neighbor.
+		/// Interface address of the local node to the neighbor. //TODO can be removed.
 		Ipv4Address receivingIfaceAddr;
 		/// Creation time of the current neighbor.
 		Time neighborCreation;
