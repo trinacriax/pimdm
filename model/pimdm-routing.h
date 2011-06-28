@@ -61,6 +61,12 @@
 //	 the Override_Interval (OI(I)) MUST be set to 2.5 seconds, and the
 //	 Propagation_Delay (PD(I)) MUST be set to 0.5 seconds.
 #define Propagation_Delay 0.5
+//  The number of seconds a receiving PIM-DM router MUST keep a Prune
+//     state alive, unless removed by a Join or Graft message.  If the
+//     Hold Time is '0xffff', the receiver MUST NOT remove the Prune state
+//     unless a corresponding Join or Graft message is received.  The Hold
+//     Time is ignored in Join messages.
+#define PruneHoldTime 0xffff
 /// Threshold(I) returns the minimum TTL that a packet must have before it can be transmitted on interface I. TODO what is it?
 #define Threshold(uint32_t) 2 //TODO check what is it
 #define ALL_PIM_ROUTERS "224.0.0.13"
@@ -176,7 +182,7 @@ public:
 	std::vector<RoutingMulticastTable> GetRoutingTableEntries() const;
 
 	void register_member(Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		SourceGroupPair sgp = {source,group};
+		SourceGroupPair sgp(source,group);
 		SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 		if(sgState==NULL){
 			InsertSourceGroupState(interface,*sgState);
@@ -265,6 +271,11 @@ private:
 
 	void ForgeHeaderMessage(enum PIMType type, PIMHeader &msg);
 	void ForgeHelloMessage(uint32_t interface, PIMHeader &msg);
+	void ForgeHelloMessageHoldTime (uint32_t interface, PIMHeader &msg);
+	void ForgeHelloMessageLANPD (uint32_t interface, PIMHeader &msg);
+	void ForgeHelloMessageGenID (uint32_t interface, PIMHeader &msg);
+	void ForgeHelloMessageStateRefresh (uint32_t interface, PIMHeader &msg);
+
 	void ForgePruneMessage(uint32_t interface, PIMHeader &msg);
 	void ForgeAssertMessage (uint32_t interface, PIMHeader &msg);
 
@@ -386,7 +397,7 @@ private:
 		return NULL;
 	}
 	SourceGroupState* FindSourceGroupState(uint32_t interface, const Ipv4Address source, const Ipv4Address group) {
-		SourceGroupPair sgp = {source, group };
+		SourceGroupPair sgp(source,group);
 		return FindSourceGroupState(RPF_interface(source),sgp);
 	}
 
@@ -612,7 +623,7 @@ private:
 	 */
 	bool local_receiver_include(Ipv4Address source, Ipv4Address group, uint32_t interface) {
 		if(source!=NULL){
-			SourceGroupPair sgp = {source,group};
+			SourceGroupPair sgp(source,group);
 			return (FindSourceGroupState(interface,sgp)==NULL?false:true);
 		}else{
 		SourceGroupList *sgl = FindSourceGroupList(interface);
@@ -687,7 +698,7 @@ private:
 	 */
 	std::set<uint32_t> prunes(Ipv4Address source, Ipv4Address group) {
 		std::set<uint32_t> prune;
-		SourceGroupPair sgp = {source, group};
+		SourceGroupPair sgp(source,group);
 		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
 			SourceGroupState *sgState = FindSourceGroupState(i, sgp);
 			if (i!=RPF_interface(source) && sgState && sgState->SGPruneState == Prune_Pruned) {
@@ -759,7 +770,7 @@ private:
 	}
 	//TODO and AssertWinnerMetric(S,G,I) defaults to Infinity when in the NoInfo state.
 	struct AssertMetric AssertWinnerMetric(Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		struct AssertMetric assertMetric = { 0, 0, source };
+		struct AssertMetric assertMetric(0, 0,source.Get());
 		return assertMetric;
 	}
 
@@ -772,7 +783,10 @@ private:
 		return assertMetric;
 	}
 	struct AssertMetric infinite_assert_metric(){
-		struct AssertMetric assertMetric = {0xFFFFFFFF,0xFFFFFFFF,Ipv4Address("255.255.255.255")};
+		struct AssertMetric assertMetric;
+		assertMetric.metric_preference= 0xFFFFFFFF;
+		assertMetric.route_metric = 0xFFFFFFFF;
+		assertMetric.ip_address = Ipv4Address("255.255.255.255");
 		return assertMetric;
 	}
 
