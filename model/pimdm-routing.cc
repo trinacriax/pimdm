@@ -132,17 +132,17 @@ MulticastRoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
   NS_ASSERT (m_ipv4 == 0);
   NS_LOG_DEBUG ("Created MulticastRoutingProtocol");
   Ipv4Address loopback ("127.0.0.1");
-  for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++)
-	{
-	  // Use primary address, if multiple
-	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
-	  if (addr != loopback){
-  		InsertNeighborhoodStatus(i);
-//  		NeighborStatus *in = FindNeighborStatus(i);
-
-  	}
-  }
   m_ipv4 = ipv4;
+  for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++)
+ 	{
+ 	  // Use primary address, if multiple
+ 	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
+ 	  if (addr != loopback){
+   		InsertNeighborhoodStatus(i);
+ //  		NeighborStatus *in = FindNeighborStatus(i);
+
+   	}
+   }
 }
 
 Ipv4Address
