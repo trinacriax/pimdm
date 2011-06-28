@@ -114,16 +114,16 @@ bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
 
 void
 MulticastRoutingProtocol::NotifyInterfaceUp (uint32_t i)
-{NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Up: "<<i<<"\n");}
+{NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Up: "<<i);}
 void
 MulticastRoutingProtocol::NotifyInterfaceDown (uint32_t i)
-{NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Down "<<i<<"\n");}
+{NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Down "<<i);}
 void
 MulticastRoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAddress address)
-{NS_LOG_FUNCTION(this); NS_LOG_DEBUG("+ Address("<<interface<<") ="<< address<<"\n");}
+{NS_LOG_FUNCTION(this); NS_LOG_DEBUG("+ Address("<<interface<<") = "<< address);}
 void
 MulticastRoutingProtocol::NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress address)
-{NS_LOG_FUNCTION(this);NS_LOG_DEBUG("- Address("<<interface<<") ="<< address<<"\n");}
+{NS_LOG_FUNCTION(this);NS_LOG_DEBUG("- Address("<<interface<<") = "<< address);}
 
 void
 MulticastRoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
@@ -133,16 +133,13 @@ MulticastRoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
   NS_LOG_DEBUG ("Created MulticastRoutingProtocol");
   Ipv4Address loopback ("127.0.0.1");
   m_ipv4 = ipv4;
-  for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++)
- 	{
+  for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++){
  	  // Use primary address, if multiple
  	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
  	  if (addr != loopback){
    		InsertNeighborhoodStatus(i);
- //  		NeighborStatus *in = FindNeighborStatus(i);
-
-   	}
-   }
+ 	  }
+  }
 }
 
 Ipv4Address
@@ -210,7 +207,7 @@ void MulticastRoutingProtocol::DoStart (){
 	              m_mainAddress = addr;
 	              SetMainInterface(i);
 	              m_generationID = UniformVariable().GetInteger(1,INT_MAX);///force value > 0
-	              NS_LOG_DEBUG("Address("<<i<< ") = "<<addr<< ", Generation Id = "<< m_generationID<<"\n");
+	              NS_LOG_DEBUG("Address("<<i<< ") = "<<addr<< ", Generation Id = "<< m_generationID);
 	              break;
 	            }
 	        }
@@ -218,21 +215,22 @@ void MulticastRoutingProtocol::DoStart (){
 	      NS_ASSERT (m_mainAddress != Ipv4Address ());
 	    }
 
-	  NS_LOG_DEBUG ("Starting PIM_DM on node " << m_mainAddress);
-
 	  Ipv4Address loopback ("127.0.0.1");
 
-//	  bool canRunOlsr = false;
 	  for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++)
 	    {
 	      Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	      if (addr == loopback)
 	        continue;
-
+	      Timer *helloTimer = &m_IfaceNeighbors.find(i)->second.hello_timer;
 	      Time rndHello = Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay));
-	      NS_LOG_DEBUG("Start sending hello at "<< rndHello.GetSeconds());
+	      NS_LOG_DEBUG("Start sending hello at "<< rndHello.GetSeconds()<<", Timer: "<<helloTimer->GetState());
 	      Simulator::Schedule (rndHello, &MulticastRoutingProtocol::HelloTimerExpire, this);
-	      hello_timer.SetDelay(m_helloTime);
+	      helloTimer->SetDelay(m_helloTime);
+	      helloTimer->SetFunction(&MulticastRoutingProtocol::HelloTimerExpire,this);
+
+		  NS_LOG_DEBUG ("Starting PIM_DM on " << m_mainAddress<< ": Interface = "<<i<<", Address (i) = "<<addr);
+
 	      // Create a socket to listen only on this interface
 	      Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (),
 	                                                 UdpSocketFactory::GetTypeId());
@@ -247,8 +245,6 @@ void MulticastRoutingProtocol::DoStart (){
 	      m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
 
 	    }
-
-	  hello_timer.SetFunction(&MulticastRoutingProtocol::HelloTimerExpire, this);
 //	  if(canRunOlsr)
 //	   {
 	  /*
@@ -260,12 +256,15 @@ void MulticastRoutingProtocol::DoStart (){
 }
 
 void
-MulticastRoutingProtocol::HelloTimerExpire ()
-{
-  for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++){
-  	SendHello (i);
-  }
-  hello_timer.Schedule();
+MulticastRoutingProtocol::HelloTimerExpire (){
+	Ipv4Address loopback ("127.0.0.1");
+	for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++){
+	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
+	  if (addr == loopback)
+		  continue;
+	  m_IfaceNeighbors.find(i)->second.hello_timer.Schedule();
+	  SendHello (i);
+	}
 }
 
 //	 PIM-DM uses Hello messages to detect other PIM routers.  Hello
@@ -431,7 +430,7 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 	//	timer associated with that (S,G) entry is active.  When no timer associated with an (S,G) entry is active,
 	//	all information concerning that (S,G) route may be discarded.
 	if(!IsValidSG(GetRecevingInterface(receiverIfaceAddr), senderIfaceAddr,receiverIfaceAddr)){
-		NS_LOG_DEBUG ("PIM-DM No running timer: discarded\n");
+		NS_LOG_DEBUG ("PIM-DM No running timer: discarded");
 		return;
 	}
 	Ptr<Packet> packet = receivedPacket;
@@ -756,13 +755,12 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 }
 
 void
-MulticastRoutingProtocol::SendHello (uint32_t interface)
-{///< Sec. 4.3.1.
+MulticastRoutingProtocol::SendHello (uint32_t interface){///< Sec. 4.3.1.
 	NS_LOG_FUNCTION(this);
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
 	ForgeHelloMessage(interface, msg);
-	SendBroadPacket(packet,msg);
+	SendBroadPacketInterface(packet,msg,interface);//TODO broadcast packet on a specific interface
 }
 
 void
@@ -1784,7 +1782,7 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 			std::set<uint32_t> pruneList = olist(iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress);
 			for(std::set<uint32_t>::const_iterator iterList = pruneList.begin(); iterList != pruneList.end(); iterList++){
 				uint32_t out_interface = *iterList;
-				SourceGroupPair sgp = {iterPrune->m_sourceAddress,iter->m_multicastGroupAddr.m_groupAddress};
+				SourceGroupPair sgp (iterPrune->m_sourceAddress,iter->m_multicastGroupAddr.m_groupAddress);
 				SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 				sgState->upstream->SG_OT.Cancel();
 				sgState->upstream->SG_OT.SetDelay(Time(Seconds(Graft_Retry_Period)));

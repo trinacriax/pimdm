@@ -115,7 +115,7 @@ private:
 	std::map<uint32_t, SourceGroupList> m_IfaceSourceGroup; ///< List of (S,G) pair state (RFC 3973, section 4.1.2).
 
 	Time m_helloTime; ///< Hello Time
-	Timer hello_timer; ///< Hello Timer (HT) (RFC 3973, section 4.1.1).
+//	Timer hello_timer;
 
 	uint32_t m_generationID;
 	//}
@@ -501,9 +501,9 @@ private:
 			m_IfaceNeighbors.erase(iter);
 	}
 
-	void SetHelloTimerDelay(Time delay) {
-		hello_timer.SetDelay(delay);
-	}
+//	void SetHelloTimerDelay(Time delay) {
+//		hello_timer.SetDelay(delay);
+//	}
 
 	void SetStateRefreshCapable(uint32_t interface, bool state) {
 		NeighborhoodStatus *in = FindNeighborhoodStatus(interface);

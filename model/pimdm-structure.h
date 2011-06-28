@@ -248,8 +248,18 @@ operator << (std::ostream &os, const NeighborState &a){
 typedef std::list<NeighborState> NeighborList;	///< Neighbor List.
 
 struct NeighborhoodStatus{
+	NeighborhoodStatus():
+		stateRefreshCapable(false),
+		LANDelayEnabled(false),
+		hello_timer(Timer::CANCEL_ON_DESTROY),
+		propagationDelay(Seconds(Propagation_Delay)),
+		overrideInterval(Seconds(Override_Interval)),
+		stateRefreshInterval(Seconds(RefreshInterval)),
+		pruneHoldtime(Seconds(PruneHoldTime))
+		{}
 	bool stateRefreshCapable; ///< State refresh capability.
 	bool LANDelayEnabled; ///< LAN Delay Enabled.
+	Timer hello_timer;///< Hello Timer (HT) (RFC 3973, section 4.1.1).
 	Time propagationDelay; ///< Propagation delay.
 	Time overrideInterval; ///< Override Interval field is a time interval in units of milliseconds.
 	Time stateRefreshInterval;///< Router's configured state refresh
