@@ -228,24 +228,11 @@ void MulticastRoutingProtocol::DoStart (){
 	      Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	      if (addr == loopback)
 	        continue;
-//
-//	      if (addr != m_mainAddress)
-//	        {
-//	          // Create never expiring interface association tuple entries for our
-//	          // own network interfaces, so that GetMainAddress () works to
-//	          // translate the node's own interface addresses into the main address.
-//	          IfaceAssocTuple tuple;
-//	          tuple.ifaceAddr = addr;
-//	          tuple.mainAddr = m_mainAddress;
-//	          AddIfaceAssocTuple (tuple);
-//	          NS_ASSERT (GetMainAddress (addr) == m_mainAddress);
-//	        }
-//
-//	      if(m_interfaceExclusions.find (i) != m_interfaceExclusions.end ())
-//	        continue;
-			NS_LOG_DEBUG("Hello @ "<< (Time::FromDouble(UniformVariable().GetValue(0,Triggered_Hello_Delay),Time::S)));
-			Simulator::Schedule (Time(Time::FromDouble(UniformVariable().GetValue(0,Triggered_Hello_Delay),Time::S)),
-					&MulticastRoutingProtocol::HelloTimerExpire, this);
+
+	      Time rndHello = Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay));
+	      NS_LOG_DEBUG("Start sending hello at "<< rndHello.GetSeconds());
+	      Simulator::Schedule (rndHello, &MulticastRoutingProtocol::HelloTimerExpire, this);
+	      hello_timer.SetDelay(m_helloTime);
 	      // Create a socket to listen only on this interface
 	      Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (),
 	                                                 UdpSocketFactory::GetTypeId());
@@ -259,7 +246,6 @@ void MulticastRoutingProtocol::DoStart (){
 	      socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
 	      m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
 
-//	      canRunOlsr = true;
 	    }
 
 	  hello_timer.SetFunction(&MulticastRoutingProtocol::HelloTimerExpire, this);
