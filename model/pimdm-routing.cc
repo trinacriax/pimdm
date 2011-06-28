@@ -59,13 +59,13 @@ MulticastRoutingProtocol::~MulticastRoutingProtocol()
 TypeId
 MulticastRoutingProtocol::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::MulticastRoutingProtocol")
+  static TypeId tid = TypeId ("ns3::pimdm::MulticastRoutingProtocol")
     .SetParent<Ipv4RoutingProtocol> ()
     .AddConstructor<MulticastRoutingProtocol> ()
-//    .AddAttribute ("HelloInterval", "HELLO messages interval.",
-//                   TimeValue (Seconds (2)),
-//                   MakeTimeAccessor (&MulticastRoutingProtocol::m_helloTime),
-//                   MakeTimeChecker ())
+    .AddAttribute ("HelloInterval", "HELLO messages interval.",
+                   TimeValue (Seconds (Hello_Period)),
+                   MakeTimeAccessor (&MulticastRoutingProtocol::m_helloTime),
+                   MakeTimeChecker ())
 //    .AddAttribute ("StateRefreshCapability", "State refresh capability.",
 //					  BooleanValue (true),
 //					  MakeBooleanAccessor(&MulticastRoutingProtocol::SetStateRefreshCapable),
