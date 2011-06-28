@@ -23,6 +23,8 @@
  */
 
 /// \brief	This file implements the PIM-DM node state.
+#define NS_LOG_APPEND_CONTEXT                                   \
+  if (GetObject<Node> ()) { std::clog << "[node " << GetObject<Node> ()->GetId () << "] "; }
 
 #include "pimdm-routing.h"
 #include "ns3/socket-factory.h"
@@ -112,16 +114,16 @@ bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
 
 void
 MulticastRoutingProtocol::NotifyInterfaceUp (uint32_t i)
-{NS_LOG_FUNCTION(this);}
+{NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Up: "<<i<<"\n");}
 void
 MulticastRoutingProtocol::NotifyInterfaceDown (uint32_t i)
-{NS_LOG_FUNCTION(this);}
+{NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Down "<<i<<"\n");}
 void
 MulticastRoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAddress address)
-{NS_LOG_FUNCTION(this);}
+{NS_LOG_FUNCTION(this); NS_LOG_DEBUG("+ Address("<<interface<<") ="<< address<<"\n");}
 void
 MulticastRoutingProtocol::NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress address)
-{NS_LOG_FUNCTION(this);}
+{NS_LOG_FUNCTION(this);NS_LOG_DEBUG("- Address("<<interface<<") ="<< address<<"\n");}
 
 void
 MulticastRoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
@@ -208,8 +210,7 @@ void MulticastRoutingProtocol::DoStart (){
 	              m_mainAddress = addr;
 	              SetMainInterface(i);
 	              m_generationID = UniformVariable().GetInteger(1,INT_MAX);///force value > 0
-	              NS_LOG_DEBUG("Interface = "<<i<< ", Address = "<<addr<<
-	            		  ", G.Id = "<< m_generationID);
+	              NS_LOG_DEBUG("Address("<<i<< ") = "<<addr<< ", Generation Id = "<< m_generationID<<"\n");
 	              break;
 	            }
 	        }
@@ -771,7 +772,6 @@ MulticastRoutingProtocol::SendHello (uint32_t interface)
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
 	ForgeHelloMessage(interface, msg);
-	NS_LOG_DEBUG(", Generation ID = "<< m_generationID);
 	SendBroadPacket(packet,msg);
 }
 
@@ -782,7 +782,7 @@ MulticastRoutingProtocol::SendNeighHello (uint32_t interface, Ipv4Address destin
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
 	ForgeHelloMessage(interface, msg);
-	NS_LOG_DEBUG(", Generation ID = "<< m_generationID);
+	NS_LOG_DEBUG("Send Hello to "<< destination);
 	SendPacket(packet,msg,destination);
 }
 
@@ -1004,8 +1004,10 @@ MulticastRoutingProtocol::SendBroadPacket (Ptr<Packet> packet, const PIMHeader &
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
       m_socketAddresses.begin (); i != m_socketAddresses.end (); i++) {
       Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
+      NS_LOG_DEBUG ("PIMDM node broadcast to " << bcast << " address");
       i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
     }
+  NS_LOG_DEBUG ("PIMDM node broadcast ends.");
 }
 
 void
