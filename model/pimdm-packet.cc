@@ -418,7 +418,7 @@ PIMHeader::HelloMessage::Serialize (Buffer::Iterator start) const
 			NS_ASSERT (false);
 		}
   	}
-  std::cout << "*** HELLO MESSAGE ***\n";
+  std::cout << "*** HELLO MESSAGE SE ***\n";
   Print(std::cout);
   std::cout << "\n";
 }
