@@ -1002,8 +1002,7 @@ MulticastRoutingProtocol::NeighborRestart (uint32_t interface){
 void
 MulticastRoutingProtocol::SendBroadPacket (Ptr<Packet> packet, const PIMHeader &message)
 {
-  NS_LOG_DEBUG ("PIMDM node " << m_mainAddress << " sending a PIMDM packet");
-
+  NS_LOG_FUNCTION(this);
   packet->AddHeader(message);
     // Trace it
 //  m_txPacketTrace (packet, message);
@@ -1020,8 +1019,6 @@ MulticastRoutingProtocol::SendBroadPacket (Ptr<Packet> packet, const PIMHeader &
 
 void
 MulticastRoutingProtocol::SendPacket (Ptr<Packet> packet, const PIMHeader &message, Ipv4Address destination){
-  NS_LOG_DEBUG ("PIMDM node " << m_mainAddress << " sending a PIMDM packet");
-
   packet->AddHeader(message);
 
   // Trace it
@@ -1032,13 +1029,13 @@ MulticastRoutingProtocol::SendPacket (Ptr<Packet> packet, const PIMHeader &messa
       m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
     {
 //      Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
+      NS_LOG_DEBUG ("PIMDM node sends packet to " << destination << ":"<<PIM_PORT_NUMBER);
       i->first->SendTo (packet, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
     }
 }
 
 void
 MulticastRoutingProtocol::SendBroadPacketInterface (Ptr<Packet> packet, const PIMHeader &message, uint32_t interface){
-  NS_LOG_DEBUG ("PIMDM node " << GetLocalAddress(interface) << " sending a PIMDM packet");
   packet->AddHeader(message);
   // Trace it
   //  m_txPacketTrace (packet, message);
@@ -1049,6 +1046,7 @@ MulticastRoutingProtocol::SendBroadPacketInterface (Ptr<Packet> packet, const PI
     {
 	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
+		  NS_LOG_DEBUG ("PIMDM node broadcast to " << bcast << " address on interface "<< interface);
 		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
 	  }
       }
