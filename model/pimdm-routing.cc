@@ -119,8 +119,15 @@ void
 MulticastRoutingProtocol::NotifyInterfaceDown (uint32_t i)
 {NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Down "<<i);}
 void
-MulticastRoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAddress address)
-{NS_LOG_FUNCTION(this); NS_LOG_DEBUG("+ Address("<<interface<<") = "<< address);}
+MulticastRoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAddress address){
+	NS_LOG_FUNCTION(this);
+	NS_LOG_DEBUG("+ Address("<<interface<<") = "<< address);
+	Ipv4Address loopback ("127.0.0.1");
+	Ipv4Address addr = m_ipv4->GetAddress (interface, 0).GetLocal ();
+		if (addr != loopback){
+			InsertNeighborhoodStatus(interface);
+		}
+}
 void
 MulticastRoutingProtocol::NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress address)
 {NS_LOG_FUNCTION(this);NS_LOG_DEBUG("- Address("<<interface<<") = "<< address);}
@@ -133,13 +140,6 @@ MulticastRoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
   NS_LOG_DEBUG ("Created MulticastRoutingProtocol");
   Ipv4Address loopback ("127.0.0.1");
   m_ipv4 = ipv4;
-  for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++){
- 	  // Use primary address, if multiple
- 	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
- 	  if (addr != loopback){
-   		InsertNeighborhoodStatus(i);
- 	  }
-  }
 }
 
 Ipv4Address
