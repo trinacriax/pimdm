@@ -539,35 +539,42 @@ private:
 	///
 	/// \brief The most important macros are those defining the outgoing
 	///   interface list (or "olist") for the relevant state.
-	///   immediate_olist(S,G) = pim_nbrs (-) prunes(S,G) (+)
-	///                          (pim_include(*,G) (-) pim_exclude(S,G) ) (+)
-	///                           pim_include(S,G) (-) lost_assert(S,G) (-)
-	///                           boundary(G)
+	///   immediate_olist(S,G) = pim_nbrs (-) prunes(S,G) (+) ( pim_include(*,G) (-) pim_exclude(S,G) ) (+)
+	///                           pim_include(S,G) (-) lost_assert(S,G) (-) boundary(G)
 	/// \param source Source IPv4 address
 	/// \param group Multicast group IPv4 address
 	///
 	std::set<uint32_t> immediate_olist(Ipv4Address source, Ipv4Address group) {
 
 		std::vector<uint32_t> resA;
-		std::set<uint32_t> pim_nbrz = pim_nbrs();
-		std::set<uint32_t> prunez = prunes(source, group);
+		std::set<uint32_t> pim_nbrz = pim_nbrs();/// The set pim_nbrs is the set of all interfaces on which the router has at least one active PIM neighbor.
+		std::set<uint32_t> prunez = prunes(source, group); /// prunes(S,G) = {all interfaces I such that DownstreamPState(S,G,I) is in Pruned state}
+		/// pim_nbrs *(-)* prunes(S,G)
 		set_difference(pim_nbrz.begin(), pim_nbrz.end(), prunez.begin(),prunez.end(), resA.begin());
 
 		std::vector<uint32_t> resB;
-		std::set<uint32_t> inc = pim_include(NULL, group);
-		std::set<uint32_t> exc = pim_exclude(source, group);
+		std::set<uint32_t> inc = pim_include(NULL, group); /// pim_include(*,G) = {all interfaces I such that: local_receiver_include(*,G,I)}
+		std::set<uint32_t> exc = pim_exclude(source, group); /// pim_exclude(S,G) = {all interfaces I such that: local_receiver_exclude(S,G,I)}
+		/// pim_include(*,G) *(-)* pim_exclude(S,G)
 		set_difference(inc.begin(), inc.end(), exc.begin(), exc.end(),resB.begin());
 
 		std::vector<uint32_t> result;
+		/// pim_nbrs (-) prunes(S,G) *(+)* (pim_include(*,G) (-) pim_exclude(S,G) )
 		set_union(resA.begin(), resA.end(), resB.begin(), resB.end(),result.begin());
 
-		std::vector<uint32_t> resC;
-		std::set<uint32_t> incC = pim_include(source, group);
+		std::set<uint32_t> incC = pim_include(source, group); /// pim_include(S,G) = {all interfaces I such that: local_receiver_include(S,G,I)}
+		/// pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) *(+)* pim_include(S,G)
 		set_union(result.begin(), result.end(), incC.begin(), incC.end(),resA.begin());
+
 		std::set<uint32_t> lostC = lost_assert(source, group);
+		/// pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) (+) pim_include(S,G) *(-)* lost_assert(S,G)
 		set_difference(resA.begin(), resA.end(), lostC.begin(), lostC.end(),resB.begin());
+
 		std::set<uint32_t> boundC = boundary(group);
-		set_union(resB.begin(), resB.end(), boundC.begin(), boundC.end(),resC.begin());
+		std::vector<uint32_t> resC;
+		/// pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) (+) pim_include(S,G) (-) lost_assert(S,G) *(-)* boundary(G)
+		set_difference(resB.begin(), resB.end(), boundC.begin(), boundC.end(),resC.begin());
+
 		std::set<uint32_t> olist(resC.begin(), resC.end());
 
 		return olist;
@@ -622,19 +629,22 @@ private:
 	 * members on interface I that seek to receive traffic sent specifically by S to G.
 	 */
 	bool local_receiver_include(Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		if(source!=NULL){
+		if(group==NULL){//no group - no way to identify members
+			return false;
+		}
+		else if(source!=NULL & group!=NULL){
 			SourceGroupPair sgp(source,group);
-			return (FindSourceGroupState(interface,sgp)==NULL?false:true);
+			return (FindSourceGroupState(interface,sgp)==NULL?false:FindSourceGroupState(interface,sgp)->members);
 		}else{
-		SourceGroupList *sgl = FindSourceGroupList(interface);
-		bool members = false;
-		if (!sgl)
-			return members;
-		for (SourceGroupList::iterator iter = sgl->begin(); iter != sgl->end() && !members; iter++) {
-			members |= (iter->SGPair.groupMulticastAddr == group && iter->members);
+			SourceGroupList *sgl = FindSourceGroupList(interface);
+			if (!sgl)
+				return false;
+			bool members = false;
+			for (SourceGroupList::iterator iter = sgl->begin(); iter != sgl->end() && !members; iter++) {
+				members |= (iter->SGPair.groupMulticastAddr == group && iter->members);
 			}
-		return members;
-		//TODO need some local membership indicator: workaround a flag in the SG-state.
+			return members;
+			//TODO need some local membership indicator: workaround a flag in the SG-state.
 		}
 	}
 
@@ -654,9 +664,9 @@ private:
 		return include;
 	}
 
-	bool seek_traffic_from(Ipv4Address source) {
-		// TODO specify
-		return true;
+	bool seek_traffic_from(Ipv4Address source, Ipv4Address group,uint32_t interface) {
+		SourceGroupPair sgp(source,group);
+		return (FindSourceGroupState(interface,sgp)==NULL?true:!(FindSourceGroupState(interface,sgp)->members));
 	}
 
 	// Local members for a (source,group) pair.
@@ -664,7 +674,7 @@ private:
 	// but none of the local members seek to receive traffic from S.
 	bool local_receiver_exclude(Ipv4Address source, Ipv4Address group, uint32_t interface) {
 		return local_receiver_include(NULL, group, interface)
-				&& seek_traffic_from(source); // TODO
+				&& seek_traffic_from(source,group,interface); // TODO
 	}
 
 	/// The interfaces to which traffic might not be forwarded because of hosts that are not local members on those interfaces.
@@ -701,7 +711,8 @@ private:
 		SourceGroupPair sgp(source,group);
 		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
 			SourceGroupState *sgState = FindSourceGroupState(i, sgp);
-			if (i!=RPF_interface(source) && sgState && sgState->SGPruneState == Prune_Pruned) {
+			if(!sgState) continue;
+			if (i!=RPF_interface(source) && sgState->SGPruneState == Prune_Pruned) {
 				prune.insert(i);
 			}
 		}
@@ -760,7 +771,7 @@ private:
 		if (I_Am_Assert_loser(source, group, RPF_interface(source))) {
 			return AssertWinner(source, group, RPF_interface(source));
 		} else {
-			return m_mrib.find(source)->second.nextAddr; // TODO MRIB.next_hop(S);
+			return m_mrib.find(source)->second.nextAddr;
 		}
 	}
 
@@ -804,7 +815,10 @@ private:
 
 	//TODO AssertWinner(S,G,I) defaults to NULL,
 	Ipv4Address AssertWinner(Ipv4Address source, Ipv4Address group,uint32_t interface) {
-		return Ipv4Address("0.0.0.0");
+		SourceGroupState *sgState = FindSourceGroupState(interface, source, group);
+		if(!sgState)
+			return NULL;
+		return sgState->SGAW;
 	}
 
 	//StateRefreshRateLimit(S,G) is TRUE if the time elapsed since the last received StateRefresh(S,G)
