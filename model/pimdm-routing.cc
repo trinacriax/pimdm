@@ -222,12 +222,11 @@ void MulticastRoutingProtocol::DoStart (){
 	        continue;
 	      Timer *helloTimer = &m_IfaceNeighbors.find(i)->second.hello_timer;
 	      Time rndHello = Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay));
-	      NS_LOG_DEBUG("Start sending hello at "<< rndHello.GetSeconds()<<", Timer: "<<helloTimer->GetState());
 	      Simulator::Schedule (rndHello, &MulticastRoutingProtocol::HelloTimerExpire, this);
 	      helloTimer->SetDelay(m_helloTime);
 	      helloTimer->SetFunction(&MulticastRoutingProtocol::HelloTimerExpire,this);
-
-		  NS_LOG_DEBUG ("Starting PIM_DM on " << m_mainAddress<< ": Interface = "<<i<<", Address (i) = "<<addr);
+	      helloTimer->Schedule();
+		  NS_LOG_DEBUG ("Starting PIM_DM on Interface = "<<i<<", Address ("<<i<<") = "<<addr<<", Hello "<< rndHello.GetSeconds());
 
 	      // Create a socket to listen only on this interface
 	      Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (),
@@ -260,7 +259,9 @@ MulticastRoutingProtocol::HelloTimerExpire (){
 	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	  if (addr == loopback)
 		  continue;
-	  m_IfaceNeighbors.find(i)->second.hello_timer.Schedule();
+	  NS_LOG_DEBUG("Interface "<< i<< " [ E "<<m_IfaceNeighbors.find(i)->second.hello_timer.IsExpired() <<
+			  ", R " << m_IfaceNeighbors.find(i)->second.hello_timer.IsRunning()<<", S:" << m_IfaceNeighbors.find(i)->second.hello_timer.IsSuspended()<<"].");
+//	  m_IfaceNeighbors.find(i)->second.hello_timer.Schedule();
 	  SendHello (i);
 	}
 }
