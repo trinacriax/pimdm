@@ -63,6 +63,12 @@
 #define Propagation_Delay 0.5
 /// Threshold(I) returns the minimum TTL that a packet must have before it can be transmitted on interface I. TODO what is it?
 #define Threshold(uint32_t) 2 //TODO check what is it
+//  The number of seconds a receiving PIM-DM router MUST keep a Prune
+//     state alive, unless removed by a Join or Graft message.  If the
+//     Hold Time is '0xffff', the receiver MUST NOT remove the Prune state
+//     unless a corresponding Join or Graft message is received.  The Hold
+//     Time is ignored in Join messages.
+#define PruneHoldTime 0xffff
 #define ALL_PIM_ROUTERS "224.0.0.13"
 #define PIM_PORT_NUMBER 703 //IANA Unassigned
 
