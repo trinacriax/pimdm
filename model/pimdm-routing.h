@@ -462,13 +462,7 @@ private:
 	void InsertNeighborhoodStatus(const uint32_t interface) {
 		if (!FindNeighborhoodStatus(interface)) {
 			NeighborhoodStatus is;
-			m_IfaceNeighbors.insert(
-					std::pair<uint32_t, NeighborhoodStatus>(interface, is));
-			NeighborhoodStatus *neigh = FindNeighborhoodStatus(interface);
-			neigh->LANDelayEnabled = true;
-			neigh->stateRefreshCapable = true;
-			neigh->propagationDelay = Time(Seconds(Propagation_Delay));
-			neigh->overrideInterval = Time(Seconds(Override_Interval));
+			m_IfaceNeighbors.insert(std::pair<uint32_t, NeighborhoodStatus>(interface, is));
 		}
 	}
 
