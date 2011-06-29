@@ -144,7 +144,7 @@ Ipv4Address
 MulticastRoutingProtocol::GetLocalAddress (uint32_t interface)
 {
   NS_LOG_DEBUG ("Get Local Address "<<interface);
-  if(m_ipv4->GetNInterfaces ()<interface){
+  if(interface<m_ipv4->GetNInterfaces ()){
   	return  m_ipv4->GetAddress (interface, 0).GetLocal ();
   }else{
 	Ipv4Address loopback ("127.0.0.1");
