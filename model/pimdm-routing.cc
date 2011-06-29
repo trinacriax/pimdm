@@ -1782,7 +1782,7 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 			std::set<uint32_t> pruneList = olist(iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress);
 			for(std::set<uint32_t>::const_iterator iterList = pruneList.begin(); iterList != pruneList.end(); iterList++){
 				uint32_t out_interface = *iterList;
-				SourceGroupPair sgp (iterPrune->m_sourceAddress,iter->m_multicastGroupAddr.m_groupAddress);
+				SourceGroupPair sgp = {iterPrune->m_sourceAddress,iter->m_multicastGroupAddr.m_groupAddress};
 				SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 				sgState->upstream->SG_OT.Cancel();
 				sgState->upstream->SG_OT.SetDelay(Time(Seconds(Graft_Retry_Period)));
