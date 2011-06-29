@@ -28,6 +28,7 @@
 
 #include "pimdm-routing.h"
 #include "ns3/socket-factory.h"
+#include "ns3/socket.h"
 #include "ns3/udp-socket-factory.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
@@ -430,8 +431,18 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 	Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4 ();
 	Ipv4Address receiverIfaceAddr = m_socketAddresses[socket].GetLocal ();
 	NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
+    Ptr<Ipv4Route> route = 0;
+    Ipv4Header hdr;
+    hdr.SetDestination(senderIfaceAddr);
+    Ptr<NetDevice> oif (0);
+    Socket::SocketErrno err = Socket::ERROR_NOTERROR;
+
+	route = m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif,err);
+
+	NS_LOG_DEBUG ("Destination "<< senderIfaceAddr<<"(SRC: "<< route->GetSource()<<
+			",GW: "<<route->GetGateway()<<",Dev: "<< route->GetOutputDevice()->GetIfIndex()<<")");
 	NS_LOG_DEBUG ("PIM-DM node " << m_mainAddress << " received a PIM-DM packet from "
-			   << senderIfaceAddr << " to " << receiverIfaceAddr);
+			   << senderIfaceAddr << " to " << receiverIfaceAddr<<" next "<< m_mrib.find(senderIfaceAddr)->second.nextAddr);
 	NS_ASSERT (inetSourceAddr.GetPort () == PIM_PORT_NUMBER);
 	//Within PIM-DM, route and state information associated with an (S,G) entry MUST be maintained as long as any
 	//	timer associated with that (S,G) entry is active.  When no timer associated with an (S,G) entry is active,
