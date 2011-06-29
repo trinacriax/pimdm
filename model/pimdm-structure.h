@@ -116,59 +116,45 @@ struct SourceGroupState{
 		SGAW("0.0.0.0"),
 		SGAM(0),
 		SG_SR_TTL(0),
-		SG_DATA_TTL(0),
-//			*upstream;
-		origination(NotOriginator)
+		SG_DATA_TTL(0)
 	{}
 	/// SourceGroup pair.
 	struct SourceGroupPair SGPair;
-
-	/// local members on interface I that seek to receive all traffic sent to G.
-	bool members;
-
-	/// Time of the last received StateRefresh(S,G)
-	Time lastStateRefresh;
-
 	/// Local membership.
-	enum LocalMembership SGLocalMembership;
-
+	enum LocalMembership SGLocalMembership;///<4.1.2. State: One of {"NoInfo", "Include"}
 	/// Assert Winner State.
-	enum AssertWinnerState SGAssertState;
-
+	enum AssertWinnerState SGAssertState;///4.1.2. State: One of {"NoInfo" (NI), "I lost Assert" (L), "I won Assert" (W)}
 	/// Assert Winner on (S,G,I)
 	struct AssertMetric SGAssertWinner;
-
 	/// Assert Timer.
 	Timer SG_AT;
-
 	/// Prune State.
-	enum PruneState SGPruneState;
-
+	enum PruneState SGPruneState;///<4.1.2. State: One of {"NoInfo" (NI), "Pruned" (P), "PrunePending" (PP)}
 	/// Prune Timer (PT(S,G,I)). This timer is set when the PrunePending Timer (PT(S,G,I))
     /// expires.  Expiry of the Prune Timer (PT(S,G,I)) causes the
     /// interface to transition to the NoInfo (NI) state, thereby
     /// allowing data from S addressed to group G to be forwarded on the interface.
-	Timer SG_PT;
-
+	Timer SG_PT;/// Prune Timer (PT)
 	/// PrunePending Timer (PPT(S,G,I))
 	/// This timer is set when a valid Prune(S,G) is received. Expiry of
 	/// the PrunePending Timer (PPT(S,G,I)) causes the interface to
 	/// transition to the Pruned state.
-	Timer SG_PPT;
+	Timer SG_PPT;/// Prune Pending Timer (PPT)
+	/// Pointer to upstream data
+	struct UpstreamState *upstream;
 
+	/// local members on interface I that seek to receive all traffic sent to G.
+	bool members;
+	/// Time of the last received StateRefresh(S,G)
+	Time lastStateRefresh;
 	/// Assert winner's IP Address.
 	Ipv4Address SGAW;
-
 	/// Assert winner's Assert Metric.
 	uint32_t SGAM;
-
 	/// TTL of the packet for use in State Refresh messages.
 	uint8_t SG_SR_TTL;
 	uint8_t SG_DATA_TTL;
-	/// Pointer to upstream data
-	struct UpstreamState *upstream;
-	/// Pointer to Origination(S,G) machine
-	enum Origination origination;
+
 };
 
 static inline bool
@@ -183,27 +169,25 @@ struct UpstreamState{
 		SG_OT(Timer::CANCEL_ON_DESTROY),
 		SG_PLT(Timer::CANCEL_ON_DESTROY),
 		SG_SAT(Timer::CANCEL_ON_DESTROY),
-		SG_SRT(Timer::CANCEL_ON_DESTROY)
+		SG_SRT(Timer::CANCEL_ON_DESTROY),
+		origination(NotOriginator)
 	{}
 	///< Upstream interface-specific:
 	/// Graft/Prune State.
-	enum GraftPruneState SGGraftPrune;
+	enum GraftPruneState SGGraftPrune;///< 4.1.2. State: One of {"NoInfo" (NI), "Pruned" (P), "Forwarding" (F),"AckPending" (AP) }
 
 	/// GraftRetry Timer (GRT). This timer is set when a Graft is sent upstream.  If a corresponding GraftAck
 	///  is not received before the timer expires, then another Graft is sent, and the GraftRetry Timer is reset.
 	///  The timer is stopped when a Graft Ack message is received.  This timer is normally set to Graft_Retry_Period (see 4.8).
 	Timer SG_GRT;
-
 	/// Upstream Override Timer (OT). This timer is set when a Prune(S,G) is received on the upstream
 	/// interface where olist(S,G) != NULL.  When the timer expires, a Join(S,G) message
 	/// is sent on the upstream interface.  This timer is normally set to t_override (see 4.8).
 	Timer SG_OT;
-
 	/// Prune Limit Timer (PLT). This timer is used to rate-limit Prunes on a LAN.  It is only
 	/// used when the Upstream(S,G) state machine is in the Pruned state. A Prune cannot be sent if this timer is running.  This timer is
 	/// normally set to t_limit (see 4.8).
 	Timer SG_PLT;
-
 	//Originator State: Source Active Timer (SAT).
 	//	This timer is first set when the Origination(S,G) state machine
 	//	transitions to the O state and is reset on the receipt of every
@@ -211,13 +195,14 @@ struct UpstreamState{
 	//	Origination(S,G) state machine transitions to the NO state.
 	//	This timer is normally set to SourceLifetime (see 4.8).
 	Timer SG_SAT;
-
 	/// Originator State: State Refresh Timer (SRT).
 	//    This timer controls when State Refresh messages are generated.
 	//	  The timer is initially set when that Origination(S,G) state machine transitions to the O state.
 	//	  It is cancelled when the Origination(S,G) state machine transitions to the NO state.
 	//	  This timer is normally set to StateRefreshInterval (see 4.8).
 	Timer SG_SRT;
+	/// Pointer to Origination(S,G) machine
+	enum Origination origination;///<4.1.2.
 };
 
 //static inline std::ostream&

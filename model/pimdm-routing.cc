@@ -583,14 +583,15 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 			}
 		}
 	}
-	switch (sgState->origination) {
+	if(sgState->upstream){
+	switch (sgState->upstream->origination) {
 		case NotOriginator:{
 			//Data Packet received from directly connected Source S addressed to group G.
 			//	The router MUST transition to an Originator (O) state, set SAT(S,G) to SourceLifetime,
 			//	and set SRT(S,G) to StateRefreshInterval.
 			//	The router SHOULD record the TTL of the packet for use in State Refresh messages.
 			if(m_mrib.find(sender)->second.nextAddr == sender){
-				sgState->origination = Originator;
+				sgState->upstream->origination = Originator;
 				sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
 				sgState->upstream->SG_SAT.Schedule();
 				sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
@@ -620,9 +621,10 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("RecvStateRefresh: Origination state not valid"<<sgState->origination);
+			NS_LOG_ERROR("RecvStateRefresh: Origination state not valid"<<sgState->upstream->origination);
 			break;
 		}
+	}
 	}
 //	   Upon receipt of a data packet from S addressed to G on interface iif:
 //
@@ -1053,6 +1055,7 @@ MulticastRoutingProtocol::SendBroadPacketInterface (Ptr<Packet> packet, uint32_t
 //      Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
 //	if(i->second.GetLocal() //TODO send towards a specific interface
       Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
+      NS_LOG_DEBUG ("PIMDM node broadcast to " << bcast << " address on interface "<< interface);
       i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
       }
 }
@@ -1283,7 +1286,8 @@ void
 MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp){
 	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
-	switch (sgState->origination) {
+	if(sgState->upstream->origination){
+	switch (sgState->upstream->origination) {
 		case NotOriginator:{
 			//nothing
 			break;
@@ -1348,9 +1352,10 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp){
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("SRTTimerExpire: Origination state not valid"<<sgState->origination);
+			NS_LOG_ERROR("SRTTimerExpire: Origination state not valid"<<sgState->upstream->origination);
 			break;
 		}
+	}
 	}
 }
 
@@ -1396,7 +1401,8 @@ void
 MulticastRoutingProtocol::SATTimerExpire (SourceGroupPair &sgp){
 	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
-	switch (sgState->origination) {
+	if(sgState->upstream){
+	switch (sgState->upstream->origination) {
 		case NotOriginator:{
 
 			break;
@@ -1405,13 +1411,14 @@ MulticastRoutingProtocol::SATTimerExpire (SourceGroupPair &sgp){
 		//SAT(S,G) Expires.
 		//	The router MUST cancel the SRT(S,G) timer and transition to the NotOriginator (NO) state.
 			sgState->upstream->SG_SRT.Cancel();
-			sgState->origination = NotOriginator;
+			sgState->upstream->origination = NotOriginator;
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("SATTimerExpire: Origination state not valid"<<sgState->origination);
+			NS_LOG_ERROR("SATTimerExpire: Origination state not valid"<<sgState->upstream->origination);
 			break;
 		}
+	}
 	}
 }
 
@@ -1540,9 +1547,10 @@ MulticastRoutingProtocol::SourceDirectlyConnected(SourceGroupPair &sgp){
 			NS_LOG_ERROR("SourceDirectlyConnected: state not valid"<<sgState->upstream->SGGraftPrune);
 		}
 	}
-	switch (sgState->origination) {
+	if(sgState->upstream){
+	switch (sgState->upstream->origination) {
 		case NotOriginator:{
-			sgState->origination = Originator;
+			sgState->upstream->origination = Originator;
 			sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
 			sgState->upstream->SG_SRT.Schedule();
 			sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
@@ -1554,9 +1562,10 @@ MulticastRoutingProtocol::SourceDirectlyConnected(SourceGroupPair &sgp){
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("SourceDirectlyConnected: Origination state not valid"<<sgState->origination);
+			NS_LOG_ERROR("SourceDirectlyConnected: Origination state not valid"<<sgState->upstream->origination);
 			break;
 		}
+	}
 	}
 }
 
@@ -1564,22 +1573,23 @@ void
 MulticastRoutingProtocol::SourceNoDirectlyConnected(SourceGroupPair &sgp){
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(sgp.sourceIfaceAddr),sgp);
-	switch (sgState->origination) {
+	if(sgState->upstream){
+	switch (sgState->upstream->origination) {
 		case NotOriginator:{
 			//nothing
 			break;
 		}
 		case Originator:{
-			sgState->origination = NotOriginator;
+			sgState->upstream->origination = NotOriginator;
 			sgState->upstream->SG_SRT.Cancel();
 			sgState->upstream->SG_SAT.Cancel();
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("SourceNoDirectlyConnected: Origination state not valid"<<sgState->origination);
+			NS_LOG_ERROR("SourceNoDirectlyConnected: Origination state not valid"<<sgState->upstream->origination);
 			break;
 		}
-	}
+	}}
 }
 
 void
