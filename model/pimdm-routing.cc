@@ -1076,12 +1076,21 @@ MulticastRoutingProtocol::GetRecevingInterface(Ipv4InterfaceAddress interface){
 bool
 MulticastRoutingProtocol::IsValidSG(uint32_t interface, const Ipv4Address & source,const Ipv4Address & group){
 	SourceGroupState *sgState = FindSourceGroupState(interface,source, group);
-	return sgState->SG_PPT.IsRunning()||sgState->SG_PT.IsRunning()||
-			sgState->SG_AT.IsRunning()||
-			///     Upstream interface-specific
-			((RPF_interface(source) == interface) && (sgState->upstream->SG_GRT.IsRunning()||
-			sgState->upstream->SG_OT.IsRunning()||sgState->upstream->SG_PLT.IsRunning()||
-			sgState->upstream->SG_SAT.IsRunning()||sgState->upstream->SG_SRT.IsRunning()));
+	bool valid = false;
+		if(sgState){
+			valid = valid || sgState->SG_PPT.IsRunning();
+			valid = valid || sgState->SG_PT.IsRunning();
+			valid = valid || sgState->SG_AT.IsRunning();
+					///     Upstream interface-specific
+			if(RPF_interface(source) == interface){
+				valid = valid || sgState->upstream->SG_GRT.IsRunning();
+				valid = valid || sgState->upstream->SG_OT.IsRunning();
+				valid = valid || sgState->upstream->SG_PLT.IsRunning();
+				valid = valid || sgState->upstream->SG_SAT.IsRunning();
+				valid = valid || sgState->upstream->SG_SRT.IsRunning();
+			}
+		}
+		return valid;
 }
 
 void
