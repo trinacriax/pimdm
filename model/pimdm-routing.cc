@@ -47,8 +47,6 @@
 namespace ns3{
 namespace pimdm{
 
-NS_LOG_COMPONENT_DEFINE ("PIMDMMulticastRouting");
-
 NS_OBJECT_ENSURE_REGISTERED (MulticastRoutingProtocol);
 
 MulticastRoutingProtocol::MulticastRoutingProtocol() :

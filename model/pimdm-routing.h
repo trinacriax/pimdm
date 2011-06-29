@@ -93,6 +93,7 @@
 #include "ns3/ipv4.h"
 #include "ns3/ipv4-routing-protocol.h"
 #include "ns3/ipv4-static-routing.h"
+#include "ns3/log.h"
 
 #include <vector>
 #include <map>
@@ -100,6 +101,8 @@
 
 namespace ns3 {
 namespace pimdm {
+
+NS_LOG_COMPONENT_DEFINE ("PIMDMMulticastRouting");
 
 struct RoutingMulticastTable {
 	Ipv4Address source; ///< source destination
@@ -592,6 +595,7 @@ private:
 	void olistCheck(SourceGroupPair &sgp, std::set<uint32_t> list);
 	void olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> list);
 	void olistFull(SourceGroupPair &sgp, std::set<uint32_t> list);
+
 	/// \brief The outgoing interfaces except the RPF_interface.
 	///
 	/// \param source Source IPv4 address
@@ -630,6 +634,7 @@ private:
 	 */
 	bool local_receiver_include(Ipv4Address source, Ipv4Address group, uint32_t interface) {
 		if(group==NULL){//no group - no way to identify members
+			NS_LOG_ERROR("Error: Source: "<< source<<", Group is NULL "<< group);
 			return false;
 		}
 		else if(source!=NULL & group!=NULL){
