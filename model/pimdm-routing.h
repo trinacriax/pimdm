@@ -456,7 +456,7 @@ private:
 	NeighborhoodStatus* FindNeighborhoodStatus(uint32_t interface) {
 		std::map<uint32_t, NeighborhoodStatus>::iterator iter =
 				m_IfaceNeighbors.find(interface);
-		return (iter != m_IfaceNeighbors.end() ? NULL : &iter->second);
+		return (iter == m_IfaceNeighbors.end() ? NULL : &iter->second);
 	}
 
 	void InsertNeighborhoodStatus(const uint32_t interface) {
