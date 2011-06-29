@@ -1047,10 +1047,10 @@ MulticastRoutingProtocol::SendBroadPacketInterface (Ptr<Packet> packet, const PI
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
       m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
     {
-//      Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-//	if(i->second.GetLocal() //TODO send towards a specific interface
-      Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-      i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
+	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
+		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
+		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
+	  }
       }
 }
 
