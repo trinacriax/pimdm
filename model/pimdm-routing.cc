@@ -636,46 +636,57 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 		}
 	}
 	}
-//	   Upon receipt of a data packet from S addressed to G on interface iif:
-//
-//	   if (iif == RPF_interface(S) AND UpstreamPState(S,G) != Pruned) {
-//	       oiflist = olist(S,G)
-//	   } else {
-//	       oiflist = NULL
-//	   }
-//	   forward packet on all interfaces in oiflist
-//
-//	   This pseudocode employs the following "macro" definition:
-//
-//	   UpstreamPState(S,G) is the state of the Upstream(S,G) state machine
-//	   in Section 4.4.1.
-
+	//	   Section 4.2. Data Packet Forwarding Rules.
+	//	   Upon receipt of a data packet from S addressed to G on interface iif:
+	//
+	//	   if (iif == RPF_interface(S) AND UpstreamPState(S,G) != Pruned) {
+	//	       oiflist = olist(S,G)
+	//	   } else {
+	//	       oiflist = NULL
+	//	   }
+	//	   forward packet on all interfaces in oiflist
+	//
+	//	   This pseudocode employs the following "macro" definition:
+	//
+	//	   UpstreamPState(S,G) is the state of the Upstream(S,G) state machine in Section 4.4.1.
 	std::set<uint32_t> oiflist;
 	///   First, an RPF check MUST be performed to determine whether the packet should be accepted based on TIB state
 	///      and the interface on which that the packet arrived.
 	///   Packets that fail the RPF check MUST NOT be forwarded, and the router will conduct an assert process for the (S,G) pair specified in the packet.
 	///   Packets for which a route to the source cannot be found MUST be discarded.
 
-	if(interface == RPF_interface(sender) && sgState->SGPruneState!=Prune_Pruned ){
-		/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
-		/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
-		oiflist = olist(sender,receiver);
-		//TODO CHECK
-		if(oiflist.size()){
-			for(std::set<uint32_t>::iterator out = oiflist.begin(); out!=oiflist.end(); out++){
-				  for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i = m_socketAddresses.begin (); i != m_socketAddresses.end (); i++){
-					  //Ipv4InterfaceAddress
-					  if(GetRecevingInterface(i->second)==*out){
-						  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-						  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
-					  }
-					}
-			}
-		}
-	else {
-		//TODO If the list is empty, then the router will conduct a prune process for the (S,G) pair specified in the packet.
-		SendPrune(interface,sgp);
+	if(RPF_interface(sender)<0){///   Packets for which a route to the source cannot be found MUST be discarded.
+		return;
 	}
+	if(interface == RPF_interface(sender)){
+		if(sgState->SGPruneState!=Prune_Pruned ){
+			/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
+			/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
+			oiflist = olist(sender,receiver);
+			//TODO CHECK
+			oiflist.erase(interface);
+		}
+	}
+	else{
+		///   Packets that fail the RPF check MUST NOT be forwarded, and the router will conduct an assert process for the (S,G) pair specified in the packet.
+		PIMHeader assert;
+		ForgeAssertMessage(interface,assert);
+		assert.GetAssertMessage().m_sourceAddr.m_unicastAddress = sender;
+		assert.GetAssertMessage().m_multicastGroupAddr.m_groupAddress = receiver;
+		assert.GetAssertMessage().m_metricPreference = m_mrib.find(sender)->second.metricPreference;
+		assert.GetAssertMessage().m_metric = m_mrib.find(sender)->second.route_metric;
+		Ptr<Packet> packetAssert = Create<Packet> ();
+		SendBroadPacketInterface(packetAssert,assert,interface);
+	}
+	if(oiflist.size()){
+		// Forward packet on all interfaces in oiflist
+		for(std::set<uint32_t>::iterator out = oiflist.begin(); out!=oiflist.end(); out++){
+			SendBroadPacketInterface(packet,*out);
+		}
+	}
+	else {
+		//  If the list is empty, then the router will conduct a prune process for the (S,G) pair specified in the packet.
+		SendPrune(interface,sgp);
 	}
 }
 
@@ -686,6 +697,7 @@ MulticastRoutingProtocol::SendStateRefresh (uint32_t interface, PIMHeader &refre
 	SendBroadPacket(packet,refresh);
 }
 
+//TODO
 void
 MulticastRoutingProtocol::SendPrune (uint32_t interface, SourceGroupPair &sgp){
 	NS_LOG_FUNCTION(this);
