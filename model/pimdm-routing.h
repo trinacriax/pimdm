@@ -129,8 +129,9 @@ private:
 	///TIB - Tree Information Base
 	std::map<uint32_t, SourceGroupList> m_IfaceSourceGroup; ///< List of (S,G) pair state (RFC 3973, section 4.1.2).
 
+	///pim ENABLED INTERFACES
+	std::map<uint32_t, bool> m_IfacePimEnabled;
 	Time m_helloTime; ///< Hello Time
-//	Timer hello_timer;
 
 	uint32_t m_generationID;
 	//}
@@ -260,7 +261,13 @@ private:
 	}
 
 	uint32_t OverrideInterval(uint32_t interface){
-			return FindNeighborhoodStatus(interface)->overrideInterval.GetSeconds();
+			NeighborhoodStatus *ns = FindNeighborhoodStatus(interface);
+			bool LPDO = true;
+			for(std::list<NeighborState>::iterator iter = ns->neighbors.begin(); iter!=ns->neighbors.end() && LPDO; iter++){
+				LPDO = LPDO && (iter->neighborOverrideInterval.GetSeconds()>0);
+				ns->overrideInterval = Max(ns->overrideInterval ,iter->neighborOverrideInterval);
+			}
+			return (LPDO?ns->overrideInterval.GetSeconds():Override_Interval);
 	}
 
 	PIMHeader::EncodedUnicast ForgeEncodedUnicast (Ipv4Address unicast){
