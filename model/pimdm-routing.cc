@@ -2402,7 +2402,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					sgState->SGAssertWinner.metric_preference = refresh.m_metricPreference;
 					sgState->SGAssertWinner.route_metric = refresh.m_metric;
 					sgState->SGAssertWinner.ip_address = refresh.m_originatorAddr.m_unicastAddress;
-					sgState->SG_AT.SetDelay(Seconds(3*RefreshInterval));
+					sgState->SG_AT.SetDelay(Seconds(3*refresh.m_interval));
 					sgState->SG_AT.Cancel();
 					sgState->SG_AT.Schedule();
 					if(CouldAssert(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,interface)){
