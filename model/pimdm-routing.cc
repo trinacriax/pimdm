@@ -44,9 +44,11 @@
 #include "limits.h"
 #include "ns3/trace-source-accessor.h"
 #include "ns3/ipv4-header.h"
+#include "ns3/log.h"
 
 namespace ns3{
 namespace pimdm{
+NS_LOG_COMPONENT_DEFINE ("PIMDMMulticastRouting");
 
 NS_OBJECT_ENSURE_REGISTERED (MulticastRoutingProtocol);
 
