@@ -313,7 +313,7 @@ MulticastRoutingProtocol::ForgePruneMessage (uint32_t interface, PIMHeader &msg)
 	jpMessage.m_joinPruneMessage.m_upstreamNeighborAddr = ForgeEncodedUnicast(Ipv4Address("0.0.0.0"));
 	jpMessage.m_joinPruneMessage.m_reserved = 0;
 	jpMessage.m_joinPruneMessage.m_numGroups = 0;
-	jpMessage.m_joinPruneMessage.m_holdTime = Time(Seconds(Hold_Time_Default));
+	jpMessage.m_joinPruneMessage.m_holdTime = Time(Hold_Time_Default);
 }
 
 void
@@ -512,13 +512,13 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 				if(olist(sender,receiver).size() == 0 && m_mrib.find(sender)->second.nextAddr != sender){
 					sgState->upstream->SGGraftPrune = GP_Pruned;
 					SendPrune(interface, sgp); //TODO check
-					sgState->upstream->SG_PLT.SetDelay(Time(Seconds(t_limit)));
+					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 					}
 					break;
 				}
 			case GP_Pruned:{
 				if(!sgState->upstream->SG_PLT.IsRunning() && m_mrib.find(sender)->second.nextAddr != sender){
-					sgState->upstream->SG_PLT.SetDelay(Time(Seconds(t_limit)));
+					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 					sgState->upstream->SG_PLT.Schedule();
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
 					sgState->upstream->SG_PLT.SetArguments(sgp);
@@ -825,7 +825,7 @@ MulticastRoutingProtocol::SendGraft (uint32_t interface, SourceGroupPair pair){
 	sgState->upstream->SG_GRT.Cancel();//remove old events
 	sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::SendGraft, this);//re-schedule transmission
 	sgState->upstream->SG_GRT.SetArguments(interface, pair);
-	sgState->upstream->SG_GRT.SetDelay(Time(Seconds(Graft_Retry_Period)));//set the timer
+	sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));//set the timer
 
 }
 
@@ -843,7 +843,7 @@ MulticastRoutingProtocol::SendGraftUnicast (uint32_t interface, Ipv4Address targ
 	sgState->upstream->SG_GRT.Cancel();//remove old events
 	sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::SendGraft, this);//re-schedule transmission
 	sgState->upstream->SG_GRT.SetArguments(interface, pair);
-	sgState->upstream->SG_GRT.SetDelay(Time(Seconds(Graft_Retry_Period)));//set the timer
+	sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));//set the timer
 
 }
 
@@ -1817,7 +1817,7 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 				SourceGroupPair sgp (iterJoin->m_sourceAddress,iter->m_multicastGroupAddr.m_groupAddress);
 				SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 				sgState->upstream->SG_OT.Cancel();
-				sgState->upstream->SG_OT.SetDelay(Time(Seconds(Graft_Retry_Period)));
+				sgState->upstream->SG_OT.SetDelay(Seconds(Graft_Retry_Period));
 				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire,this);
 				sgState->upstream->SG_OT.SetArguments(sgp);
 				// Upstream state machine
@@ -1836,7 +1836,7 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 				SourceGroupPair sgp (iterPrune->m_sourceAddress,iter->m_multicastGroupAddr.m_groupAddress);
 				SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 				sgState->upstream->SG_OT.Cancel();
-				sgState->upstream->SG_OT.SetDelay(Time(Seconds(Graft_Retry_Period)));
+				sgState->upstream->SG_OT.SetDelay(Seconds(Graft_Retry_Period));
 				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire,this);
 				sgState->upstream->SG_OT.SetArguments(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress,sgp);
 				// Upstream state machine
@@ -2348,7 +2348,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			//   The router must override the upstream router's Prune state after a short random interval.
 			//   If OT(S,G) is not running and the Prune Indicator bit equals one, the router MUST set OT(S,G) to t_override seconds.
 				if(!sgState->upstream->SG_OT.IsRunning() && refresh.m_P){
-					sgState->upstream->SG_OT.SetDelay(Time(Seconds(t_override(interface))));
+					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 					sgState->upstream->SG_OT.Schedule();
 				}
 				if(refresh.m_P == 0){
@@ -2631,7 +2631,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 		ns = FindNeighborState(interface,tmp);
 		// If a Hello message is received from a new neighbor, the receiving router SHOULD send its own Hello message
 		//    after a random delay between 0 and Triggered_Hello_Delay.
-		Time delay = Time(Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay)));
+		Time delay = Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay));
 		Simulator::Schedule (delay, &MulticastRoutingProtocol::SendNeighHello, this, interface, sender);
 	}
 	while(entry < hello.m_optionList.size()){
@@ -2664,11 +2664,11 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 					InsertNeighborState(interface,tmp);
 					// When a new or rebooting neighbor is detected, a responding Hello is sent
 					//   within rand(0,Triggered_Hello_Delay).
-					Time delay = Time(Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay)));
+					Time delay = Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay));
 					//TODO  A Hello message SHOULD be sent [...] before any other messages are sent
 					Simulator::Schedule (delay, &MulticastRoutingProtocol::SendNeighHello, this,interface,sender);
 					// These State Refresh messages SHOULD be sent out immediately after the Hello message.
-					delay = Time(Seconds(delay.GetSeconds()+0.1));
+					delay = Seconds(delay.GetSeconds()+0.1);
 					SourceGroupList sgList = m_IfaceSourceGroup.find(interface)->second;
 					for(std::list<SourceGroupState>::iterator sgElement = sgList.begin(); sgElement!=sgList.end(); sgElement++){
 						//TODO for which it is the Assert Winner indicating Prune and Assert status to the downstream router
