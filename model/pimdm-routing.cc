@@ -228,7 +228,7 @@ void MulticastRoutingProtocol::DoStart (){
 	      Simulator::Schedule (rndHello, &MulticastRoutingProtocol::HelloTimerExpire, this);
 	      helloTimer->SetDelay(m_helloTime);
 	      helloTimer->SetFunction(&MulticastRoutingProtocol::HelloTimerExpire,this);
-	      helloTimer->Schedule();
+
 		  NS_LOG_DEBUG ("Starting PIM_DM on Interface = "<<i<<", Address ("<<i<<") = "<<addr<<", Hello "<< rndHello.GetSeconds());
 
 	      // Create a socket to listen only on this interface
@@ -264,7 +264,9 @@ MulticastRoutingProtocol::HelloTimerExpire (){
 		  continue;
 	  NS_LOG_DEBUG("Interface "<< i<< " [ E "<<m_IfaceNeighbors.find(i)->second.hello_timer.IsExpired() <<
 			  ", R " << m_IfaceNeighbors.find(i)->second.hello_timer.IsRunning()<<", S:" << m_IfaceNeighbors.find(i)->second.hello_timer.IsSuspended()<<"].");
-//	  m_IfaceNeighbors.find(i)->second.hello_timer.Schedule();
+	  if(!m_IfaceNeighbors.find(i)->second.hello_timer.IsRunning()){
+		  m_IfaceNeighbors.find(i)->second.hello_timer.Schedule();
+	  }
 	  SendHello (i);
 	}
 }
