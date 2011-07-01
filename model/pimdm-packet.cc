@@ -233,9 +233,9 @@ void
 PIMHeader::EncodedGroup::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
-  std::cout << "Serialize EncodedGroup\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "Serialize EncodedGroup\n";
+//  Print(std::cout);
+//  std::cout << "\n";
   i.WriteU8(this->m_addressFamily);
   i.WriteU8(this->m_encodingType);
   uint8_t BRZ =  this->m_B<<7 | (this->m_reserved<<1 & 0x7e) | this->m_Z;
@@ -248,9 +248,9 @@ uint32_t
 PIMHeader::EncodedGroup::Deserialize (Buffer::Iterator start, uint32_t messageSize)
 {
   Buffer::Iterator i = start;
-  std::cout << "Deserialize EncodedGroup \n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "Deserialize EncodedGroup \n";
+//  Print(std::cout);
+//  std::cout << "\n";
   uint16_t size = 0;
   NS_ASSERT (messageSize == PIM_DM_ENC_GRP);
   this->m_addressFamily = i.ReadU8();
@@ -287,9 +287,9 @@ void
 PIMHeader::EncodedSource::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
-  std::cout << "Serialize EncodedSouce\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "Serialize EncodedSouce\n";
+//  Print(std::cout);
+//  std::cout << "\n";
   i.WriteU8(this->m_addressFamily);
   i.WriteU8(this->m_encodingType);
   uint8_t RSWR =  this->m_reserved<<3 | (this->m_S<<2 & 0x04) | (this->m_W << 1 & 0x02) | (this->m_R & 0x01);
@@ -302,9 +302,9 @@ uint32_t
 PIMHeader::EncodedSource::Deserialize (Buffer::Iterator start, uint32_t messageSize)
 {
   Buffer::Iterator i = start;
-  std::cout << "Deserialize EncodedSource\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "Deserialize EncodedSource\n";
+//  Print(std::cout);
+//  std::cout << "\n";
   uint16_t size = 0;
   NS_ASSERT (messageSize == PIM_DM_ENC_GRP);
   this->m_addressFamily = i.ReadU8();
@@ -365,8 +365,8 @@ for (std::vector<HelloEntry>::const_iterator iter = this->m_optionList.begin ();
 	        }
 	        case StateRefreshCapable:{
 				NS_ASSERT (he.m_optionLength % 4 == 0);
-				os<<" V = "<<he.m_optionValue.stateRefreshCapable.m_version <<
-						", Interval = "<< he.m_optionValue.stateRefreshCapable.m_interval
+				os<<" V = "<<(uint16_t)he.m_optionValue.stateRefreshCapable.m_version <<
+						", Interval = "<< (uint16_t)he.m_optionValue.stateRefreshCapable.m_interval
 						<< ", Reserved = " 	<< he.m_optionValue.stateRefreshCapable.m_reserved<<"\n";
 				break;
 	        }
@@ -418,9 +418,9 @@ PIMHeader::HelloMessage::Serialize (Buffer::Iterator start) const
 			NS_ASSERT (false);
 		}
   	}
-  std::cout << "*** HELLO MESSAGE SE ***\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "*** HELLO MESSAGE SE ***\n";
+//  Print(std::cout);
+//  std::cout << "\n";
 }
 
 uint32_t
@@ -472,9 +472,9 @@ PIMHeader::HelloMessage::Deserialize (Buffer::Iterator start, uint32_t messageSi
 		  }
       this->m_optionList.push_back(he);
     }
-  std::cout << "*** HELLO MESSAGE DE ***\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "*** HELLO MESSAGE DE ***\n";
+//  Print(std::cout);
+//  std::cout << "\n";
   return messageSize;
 }
 
@@ -503,9 +503,9 @@ PIMHeader::JoinPruneGraftMessage::Serialize (Buffer::Iterator start) const
   i.WriteU8(this->m_reserved);
   i.WriteU8(this->m_numGroups);
   i.WriteHtonU16(this->m_holdTime.GetSeconds());
-  std::cout << "Join SE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "Join SE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
 }
 
 uint32_t
@@ -519,9 +519,9 @@ PIMHeader::JoinPruneGraftMessage::Deserialize (Buffer::Iterator start, uint32_t 
   this->m_numGroups = i.ReadU8();
   this->m_holdTime = Time(Seconds(i.ReadNtohU16()));
   size +=4;
-  std::cout << "Join DE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "Join DE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
   return size;
 }
 
@@ -569,9 +569,9 @@ PIMHeader::MulticastGroupEntry::Serialize (Buffer::Iterator start) const
 	  	  iter->Serialize(i);
 	  	  i.Next(iter->GetSerializedSize());
   }
-  std::cout << "MGE SE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "MGE SE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
 }
 
 uint32_t
@@ -597,9 +597,9 @@ PIMHeader::MulticastGroupEntry::Deserialize (Buffer::Iterator start, uint32_t me
   	  i.Next(prune.GetSerializedSize());
   	  this->m_prunedSourceAddrs.push_back(prune);
   }
-  std::cout << "MGE DE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "MGE DE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
   return size;
 }
 
@@ -635,9 +635,9 @@ PIMHeader::JoinPruneMessage::Serialize (Buffer::Iterator start) const
 	  iter->Serialize(i);
 	  i.Next(iter->GetSerializedSize());
   }
-  std::cout << "JP SE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "JP SE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
 }
 
 uint32_t
@@ -653,9 +653,9 @@ PIMHeader::JoinPruneMessage::Deserialize (Buffer::Iterator start, uint32_t messa
 	  i.Next(this->m_multicastGroups[j].GetSerializedSize());
 	  size+=len;
   }
-  std::cout << "JP DE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "JP DE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
   return size;
 }
 
@@ -692,9 +692,9 @@ PIMHeader::GraftMessage::Serialize (Buffer::Iterator start) const
 	  iter->Serialize(i);
 	  i.Next(iter->GetSerializedSize());
   }
-  std::cout << "Graft SE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "Graft SE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
 }
 
 uint32_t
@@ -710,9 +710,9 @@ PIMHeader::GraftMessage::Deserialize (Buffer::Iterator start, uint32_t messageSi
 	  i.Next(this->m_multicastGroups[j].GetSerializedSize());
 	  size+=len;
   }
-  std::cout << "Graft DE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "Graft DE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
   return size;
 }
 
@@ -749,9 +749,9 @@ PIMHeader::GraftAckMessage::Serialize (Buffer::Iterator start) const
 	  iter->Serialize(i);
 	  i.Next(iter->GetSerializedSize());
   }
-  std::cout << "GraftAck SE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "GraftAck SE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
 }
 
 uint32_t
@@ -767,9 +767,9 @@ PIMHeader::GraftAckMessage::Deserialize (Buffer::Iterator start, uint32_t messag
 	  i.Next(this->m_multicastGroups[j].GetSerializedSize());
 	  size+=len;
   }
-  std::cout << "GraftAck DE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "GraftAck DE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
   return size;
 }
 
@@ -801,9 +801,9 @@ PIMHeader::AssertMessage::Serialize (Buffer::Iterator start) const
   i.Next(this->m_sourceAddr.GetSerializedSize());
   i.WriteHtonU32(this->m_R<<31 | (this->m_metricPreference & 0x7FFFFFFF));
   i.WriteHtonU32(this->m_metric);
-  std::cout << "Assert SE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "Assert SE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
 }
 
 uint32_t
@@ -821,9 +821,9 @@ PIMHeader::AssertMessage::Deserialize (Buffer::Iterator start, uint32_t messageS
   size +=4;
   this->m_metric = i.ReadNtohU32();
   size +=4;
-  std::cout << "Assert DE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "Assert DE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
   return size;
 }
 
@@ -864,9 +864,9 @@ PIMHeader::StateRefreshMessage::Serialize (Buffer::Iterator start) const
   i.WriteU8(this->m_ttl);
   i.WriteU8(this->m_P<<7 | (this->m_N & 0x01)<<6 |(this->m_O & 0x01)<<5| (this->m_reserved & 0x1f));
   i.WriteU8(this->m_interval);
-  std::cout << "StateRefresh SE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "StateRefresh SE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
 }
 
 uint32_t
@@ -895,9 +895,9 @@ PIMHeader::StateRefreshMessage::Deserialize (Buffer::Iterator start, uint32_t me
   this->m_reserved = (PNOR & 0x1f);
   this->m_interval = i.ReadU8();
   size+=4;
-  std::cout << "StateRefresh DE\n";
-  Print(std::cout);
-  std::cout << "\n";
+//  std::cout << "StateRefresh DE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
   return size;
 }
 
