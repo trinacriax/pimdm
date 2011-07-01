@@ -1038,10 +1038,9 @@ MulticastRoutingProtocol::SendBroadPacket (Ptr<Packet> packet, const PIMHeader &
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
       m_socketAddresses.begin (); i != m_socketAddresses.end (); i++) {
       Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-      NS_LOG_DEBUG ("PIMDM node broadcast to " << bcast << " address");
+      NS_LOG_DEBUG ("Broadcast: " << bcast << ":"<<PIM_PORT_NUMBER);
       i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
     }
-  NS_LOG_DEBUG ("PIMDM node broadcast ends.");
 }
 
 void
