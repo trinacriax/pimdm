@@ -462,13 +462,13 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 	//Within PIM-DM, route and state information associated with an (S,G) entry MUST be maintained as long as any
 	//	timer associated with that (S,G) entry is active.  When no timer associated with an (S,G) entry is active,
 	//	all information concerning that (S,G) route may be discarded.
-	if(!IsValidSG(GetRecevingInterface(receiverIfaceAddr), senderIfaceAddr,receiverIfaceAddr)){
-		NS_LOG_DEBUG ("PIM-DM No running timer: discarded");
-		return;
-	}
 	Ptr<Packet> packet = receivedPacket;
 	PIMHeader pimdmPacket;
 	packet->RemoveHeader(pimdmPacket);
+	if(pimdmPacket.GetType()!=PIM_HELLO && !IsValidSG(GetRecevingInterface(receiverIfaceAddr), senderIfaceAddr,receiverIfaceAddr)){
+			NS_LOG_DEBUG ("PIM-DM No running timer: discarded");
+			return;
+	}
 	switch (pimdmPacket.GetType()){
 	case PIM_HELLO:{
 		RecvHello(pimdmPacket.GetHelloMessage(),senderIfaceAddr,receiverIfaceAddr);
