@@ -127,7 +127,7 @@ private:
 	std::map<uint32_t, SourceGroupList> m_IfaceSourceGroup; ///< List of (S,G) pair state (RFC 3973, section 4.1.2).
 
 	///pim ENABLED INTERFACES
-	std::map<uint32_t, bool> m_IfacePimEnabled;
+	std::map<uint32_t, bool> m_IfacePimEnabled; //TODO, right now all interfaces are pim enabled.
 	Time m_helloTime; ///< Hello Time
 
 	uint32_t m_generationID;
