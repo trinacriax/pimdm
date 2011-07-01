@@ -2767,6 +2767,18 @@ MulticastRoutingProtocol::UsesNonPimDmOutgoingInterface (const Ipv4RoutingTableE
 	return (ci != m_interfaceExclusions.end ());
 }
 
+void MulticastRoutingProtocol::InsertNeighborState(uint32_t interface, const NeighborState &ns) {
+		if (!FindNeighborState(interface, ns)) {
+			FindNeighborhoodStatus(interface)->neighbors.push_back(ns);
+			NeighborState *neighbor = FindNeighborState(interface, ns);
+			neighbor->neigborNLT.Cancel();
+			neighbor->neigborNLT.SetFunction(&MulticastRoutingProtocol::NLTTimerExpire,this);
+			neighbor->neighborCreation = Simulator::Now();
+			//TODO Neighbor timeout disabled
+			//neighbor->neighborTimeout = Simulator::Now() + Seconds(Hello_Period+Propagation_Delay);
+			//neighbor->neighborTimeoutB = true;
+		}
+	}
 }
 }// namespace ns3
 

@@ -500,13 +500,7 @@ private:
 		return NULL;
 	}
 
-	void InsertNeighborState(uint32_t interface, const NeighborState &ns) {
-		if (!FindNeighborState(interface, ns)) {
-			FindNeighborhoodStatus(interface)->neighbors.push_back(ns);
-			NeighborState *neighbor = FindNeighborState(interface, ns);
-			neighbor->neigborNLT.Cancel();
-		}
-	}
+	void InsertNeighborState(uint32_t interface, const NeighborState &ns);
 
 	void EraseNeighborState(uint32_t interface, const NeighborState &ns) {
 		FindNeighborhoodStatus(interface)->neighbors.remove(ns);
