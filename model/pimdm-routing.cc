@@ -125,9 +125,17 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAdd
 	NS_LOG_DEBUG("+ Address("<<interface<<") = "<< address);
 	Ipv4Address loopback ("127.0.0.1");
 	Ipv4Address addr = m_ipv4->GetAddress (interface, 0).GetLocal ();
-		if (addr != loopback){
-			InsertNeighborhoodStatus(interface);
-		}
+	if (addr != loopback){
+		InsertNeighborhoodStatus(interface);
+		m_IfacePimEnabled.insert(std::pair<uint32_t, bool>(interface, true));
+		NeighborhoodStatus *ns = FindNeighborhoodStatus(interface);
+		ns->propagationDelay = Seconds(UniformVariable().GetValue(Propagation_Delay*.3,Propagation_Delay));
+		ns->overrideInterval = Seconds(UniformVariable().GetValue(Override_Interval*.3,Override_Interval));
+		ns->stateRefreshInterval = Seconds(UniformVariable().GetValue(RefreshInterval*.3,RefreshInterval));
+		ns->pruneHoldtime = Seconds(UniformVariable().GetValue(PruneHoldTime*.3,PruneHoldTime));
+		ns->LANDelayEnabled = true;
+		ns->stateRefreshCapable = true;
+	}
 }
 void
 MulticastRoutingProtocol::NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress address)
