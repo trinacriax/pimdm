@@ -2631,11 +2631,9 @@ SRMP.m_P = 0;
 
 void
 MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address sender, Ipv4Address receiver){
-	NS_LOG_FUNCTION(this);
+	NS_LOG_DEBUG("Sender "<< sender<< " Receiver "<< receiver);
 	uint16_t entry = 0;
-	NeighborState tmp;
-	tmp.neighborIfaceAddr = sender;
-	tmp.receivingIfaceAddr = receiver;
+	NeighborState tmp(sender,receiver);
 	uint32_t interface = GetRecevingInterface(receiver);
 	NeighborState *ns = FindNeighborState(interface,tmp);
 	if(!ns){// Hello message received from a new neighbor
@@ -2645,15 +2643,19 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 		//    after a random delay between 0 and Triggered_Hello_Delay.
 		Time delay = Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay));
 		Simulator::Schedule (delay, &MulticastRoutingProtocol::SendNeighHello, this, interface, sender);
+		NS_LOG_DEBUG(sender<< " first Hello, reply at "<<(Simulator::Now()+delay).GetSeconds());
 	}
 	while(entry < hello.m_optionList.size()){
-		switch (hello.m_optionList[entry++].m_optionType){
+		switch (hello.m_optionList[entry].m_optionType){
 			case PIMHeader::HelloMessage::HelloHoldTime:{///< Sec. 4.3.2.
 				uint16_t value = hello.m_optionList[entry].m_optionValue.holdTime.m_holdTime.GetSeconds();
 				if(ns->neigborNLT.IsRunning()){
 					ns->neigborNLT.Cancel();
 				}
 				switch (value){///< Sec. 4.3.3.
+				Time value = hello.m_optionList[entry].m_optionValue.holdTime.m_holdTime;
+				// NLT is running, we should reset it to the new holdtime
+				switch ((uint16_t)value.GetSeconds()){///< Sec. 4.3.3.
 					case 0xffff://Never timeout
 						ns->neighborTimeoutB=false;
 						break;
@@ -2667,9 +2669,11 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 				break;
 				}
 			case PIMHeader::HelloMessage::GenerationID:{// Section 4.3.4.
+				/// First time node receives neighbor's generation ID
 				if(!ns->neighborGenerationID)//its value is always greater than zero
 					ns->neighborGenerationID = hello.m_optionList[entry].m_optionValue.generationID.m_generatioID;
-				else {///< Sec. 4.3.4.
+				/// Generation ID changed
+				else if(ns->neighborGenerationID != hello.m_optionList[entry].m_optionValue.generationID.m_generatioID){///< Sec. 4.3.4.
 					// Generation ID changed The Generation ID is regenerated whenever PIM
 					//   forwarding is started or restarted on the interface.
 					EraseNeighborState(interface,*ns);
@@ -2707,18 +2711,21 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 				//If all routers on a LAN support the LAN Prune Delay option, then the PIM routers on that LAN will use the values received to adjust their
 				//	J/P_Override_Interval on that interface and the interface is LAN Delay Enabled.
 				if(nStatus->LANDelayEnabled){
-				//  Briefly, to avoid synchronization of Prune Override (Join) messages when multiple downstream routers share a multi-access link,
+				//  TODO Briefly, to avoid synchronization of Prune Override (Join) messages when multiple downstream routers share a multi-access link,
 				//	sending of these messages is delayed by a small random amount of time.  The period of randomization is configurable and has a default value of 3 seconds.
-
 					ns->neighborT = hello.m_optionList[entry].m_optionValue.lanPruneDelay.m_T;
-					// When all routers on a link use the LAN Prune Delay Option, all routers on the
-					//   LAN MUST set Propagation Delay to the largest LAN Delay on the LAN.
-					ns->neighborPropagationDelay = Time(hello.m_optionList[entry].m_optionValue.lanPruneDelay.m_propagationDelay);
-					nStatus->propagationDelay = Max(ns->neighborPropagationDelay,nStatus->propagationDelay);
-					// When all routers on a LAN use the LAN Prune Delay Option, all routers on the
-					//   LAN MUST set their Override_Interval to the largest Override value on the LAN.
-					ns->neighborOverrideInterval = Time(hello.m_optionList[entry].m_optionValue.lanPruneDelay.m_overrideInterval);
-					nStatus->overrideInterval = Max(ns->neighborOverrideInterval,nStatus->overrideInterval);
+					if(ns->neighborPropagationDelay != Time(hello.m_optionList[entry].m_optionValue.lanPruneDelay.m_propagationDelay)){
+						// When all routers on a link use the LAN Prune Delay Option, all routers on the
+						//   LAN MUST set Propagation Delay to the largest LAN Delay on the LAN.
+						ns->neighborPropagationDelay = Time(hello.m_optionList[entry].m_optionValue.lanPruneDelay.m_propagationDelay);
+						nStatus->propagationDelay = Max(ns->neighborPropagationDelay,nStatus->propagationDelay);
+					}
+					if(ns->neighborOverrideInterval != Time(hello.m_optionList[entry].m_optionValue.lanPruneDelay.m_overrideInterval)){
+						// When all routers on a LAN use the LAN Prune Delay Option, all routers on the
+						//   LAN MUST set their Override_Interval to the largest Override value on the LAN.
+						ns->neighborOverrideInterval = Time(hello.m_optionList[entry].m_optionValue.lanPruneDelay.m_overrideInterval);
+						nStatus->overrideInterval = Max(ns->neighborOverrideInterval,nStatus->overrideInterval);
+					}
 					// TODO check such values!
 				}
 				break;
@@ -2726,15 +2733,17 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 			case PIMHeader::HelloMessage::StateRefreshCapable:{
 				ns->neighborVersion = hello.m_optionList[entry].m_optionValue.stateRefreshCapable.m_version;
 				ns->neighborInterval = hello.m_optionList[entry].m_optionValue.stateRefreshCapable.m_interval;
-				ns->neighborReserved= hello.m_optionList[entry].m_optionValue.stateRefreshCapable.m_reserved;
+				ns->neighborReserved = hello.m_optionList[entry].m_optionValue.stateRefreshCapable.m_reserved;
 				break;
 			}
 			default:{
 				NS_LOG_DEBUG ("PIM Hello message type " << (int)hello.m_optionList[entry-1].m_optionType <<
                         " not implemented");
 				NS_ASSERT(false);
+				break;
 				}
 		};
+		entry++;
  	}
 	NeighborTimeout(interface);//TODO just one interface or all?
 }
@@ -2744,16 +2753,18 @@ struct IsExpired
 {
   bool operator() (const NeighborState & ns) const
   {
-    return (ns.neighborTimeoutB && ns.neighborTimeout > Simulator::Now());
+    return (ns.neighborTimeoutB && ns.neighborTimeout < Simulator::Now());
   }
 };
 
 void
 MulticastRoutingProtocol::NeighborTimeout(uint32_t interface){
-	NS_LOG_FUNCTION(this);
+//	NS_LOG_FUNCTION(this);
 	NeighborhoodStatus *nl = FindNeighborhoodStatus(interface);
+	uint32_t size = nl->neighbors.size();
 	IsExpired pred;
 	nl->neighbors.erase (std::remove_if (nl->neighbors.begin (), nl->neighbors.end (), pred), nl->neighbors.end ());
+	NS_LOG_DEBUG("Clean neighbors list on interface "<< interface<<": "<< size << " -> "<< nl->neighbors.size());
 }
 
 void
