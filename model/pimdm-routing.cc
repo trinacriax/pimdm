@@ -1147,31 +1147,34 @@ MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp){
 }
 
 void
-MulticastRoutingProtocol::NLTTimerExpire (SourceGroupPair &sgp){
-	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
-	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
-	switch (sgState->SGAssertState){
-		case  Assert_NoInfo:{
-			break;
+MulticastRoutingProtocol::NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr){
+	uint32_t interface = GetRecevingInterface(neighborIfaceAddr); // retrieve the interface
+	SourceGroupList *sgList= FindSourceGroupState(interface); // get all the S,G pair
+	for (SourceGroupList::iterator iter = sgList->begin(); iter != sgList->end() ; iter++){
+		if(iter->SGAW == neighborIfaceAddr){// Find the assert winner
+			switch (sgState->SGAssertState){
+				case  Assert_NoInfo:{
+					break;
+					}
+				case Assert_Winner:{
+					break;
+					}
+				case Assert_Loser:{
+					//Current Assert Winner's NeighborLiveness Timer Expires
+					//	The current Assert winner's NeighborLiveness Timer (NLT(N,I)) has
+					//	expired.  The Assert state machine MUST transition to the NoInfo
+					//	(NI) state, delete the Assert Winner's address and metric, and
+					//	TODO: evaluate any possible transitions to its Upstream(S,G) state machine.
+					sgState->SGAssertState = Assert_NoInfo;
+					sgState->SGAssertWinner.metric_preference = 0xffffffff;
+					sgState->SGAssertWinner.route_metric = 0xffffffff;
+					sgState->SGAssertWinner.ip_address = Ipv4Address("255.255.255.255");
+					break;
+				}
+				default:{
+					NS_LOG_ERROR("NLTTimerExpire: Assert State not valid"<<sgState->SGAssertState);
+				}
 			}
-		case Assert_Winner:{
-
-				break;
-			}
-		case Assert_Loser:{
-			//Current Assert Winner's NeighborLiveness Timer Expires
-			//	The current Assert winner's NeighborLiveness Timer (NLT(N,I)) has
-			//	expired.  The Assert state machine MUST transition to the NoInfo
-			//	(NI) state, delete the Assert Winner's address and metric, and
-			//	TODO: evaluate any possible transitions to its Upstream(S,G) state machine.
-			sgState->SGAssertState = Assert_NoInfo;
-			sgState->SGAssertWinner.metric_preference = 0xffffffff;
-			sgState->SGAssertWinner.route_metric = 0xffffffff;
-			sgState->SGAssertWinner.ip_address = Ipv4Address("255.255.255.255");
-			break;
-		}
-		default:{
-			NS_LOG_ERROR("NLTTimerExpire: Assert State not valid"<<sgState->SGAssertState);
 		}
 	}
 }
@@ -2648,11 +2651,6 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 	while(entry < hello.m_optionList.size()){
 		switch (hello.m_optionList[entry].m_optionType){
 			case PIMHeader::HelloMessage::HelloHoldTime:{///< Sec. 4.3.2.
-				uint16_t value = hello.m_optionList[entry].m_optionValue.holdTime.m_holdTime.GetSeconds();
-				if(ns->neigborNLT.IsRunning()){
-					ns->neigborNLT.Cancel();
-				}
-				switch (value){///< Sec. 4.3.3.
 				Time value = hello.m_optionList[entry].m_optionValue.holdTime.m_holdTime;
 				// NLT is running, we should reset it to the new holdtime
 				switch ((uint16_t)value.GetSeconds()){///< Sec. 4.3.3.
@@ -2663,8 +2661,14 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 						EraseNeighborState(interface,tmp);
 						break;
 					default:
+						if(ns->neigborNLT.IsRunning()){
+							ns->neigborNLT.Cancel();
+						}
 						ns->neigborNLT.SetDelay(hello.m_optionList[entry].m_optionValue.holdTime.m_holdTime);
-						ns->neigborNLT.Schedule();
+						if(!ns->neigborNLT.IsRunning()){
+							ns->neigborNLT.Schedule();
+							ns->neigborNLT.SetArguments(sender,receiver);
+						}
 					}
 				break;
 				}
