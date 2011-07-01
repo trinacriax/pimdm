@@ -356,7 +356,7 @@ private:
 	uint32_t GetRecevingInterface(Ipv4Address addr);
 	uint32_t GetRecevingInterface(Ipv4InterfaceAddress interface);
 
-	void HelloTimerExpire();
+	void HelloTimerExpire(uint32_t i);
 	void OTTimerExpire(SourceGroupPair &sg);
 	void GRTTimerExpire(SourceGroupPair &sgp);
 	void PLTTimerExpire(SourceGroupPair &sgp);

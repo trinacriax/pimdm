@@ -225,9 +225,10 @@ void MulticastRoutingProtocol::DoStart (){
 	        continue;
 	      Timer *helloTimer = &m_IfaceNeighbors.find(i)->second.hello_timer;
 	      Time rndHello = Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay));
-	      Simulator::Schedule (rndHello, &MulticastRoutingProtocol::HelloTimerExpire, this);
+	      Simulator::Schedule (rndHello, &MulticastRoutingProtocol::HelloTimerExpire, this, i);
 	      helloTimer->SetDelay(m_helloTime);
 	      helloTimer->SetFunction(&MulticastRoutingProtocol::HelloTimerExpire,this);
+	      helloTimer->SetArguments(i);
 
 		  NS_LOG_DEBUG ("Starting PIM_DM on Interface = "<<i<<", Address ("<<i<<") = "<<addr<<", Hello "<< rndHello.GetSeconds());
 
@@ -256,19 +257,20 @@ void MulticastRoutingProtocol::DoStart (){
 }
 
 void
-MulticastRoutingProtocol::HelloTimerExpire (){
+MulticastRoutingProtocol::HelloTimerExpire (uint32_t i){
 	Ipv4Address loopback ("127.0.0.1");
-	for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++){
+//	for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++){
 	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	  if (addr == loopback)
-		  continue;
+		  return;
 	  NS_LOG_DEBUG("Interface "<< i<< " [ E "<<m_IfaceNeighbors.find(i)->second.hello_timer.IsExpired() <<
 			  ", R " << m_IfaceNeighbors.find(i)->second.hello_timer.IsRunning()<<", S:" << m_IfaceNeighbors.find(i)->second.hello_timer.IsSuspended()<<"].");
 	  if(!m_IfaceNeighbors.find(i)->second.hello_timer.IsRunning()){
 		  m_IfaceNeighbors.find(i)->second.hello_timer.Schedule();
+		  m_IfaceNeighbors.find(i)->second.hello_timer.SetArguments(i);
 	  }
 	  SendHello (i);
-	}
+//	}
 }
 
 //	 PIM-DM uses Hello messages to detect other PIM routers.  Hello
@@ -1062,7 +1064,7 @@ MulticastRoutingProtocol::SendBroadPacketInterface (Ptr<Packet> packet, const PI
     {
 	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-		  NS_LOG_DEBUG ("PIMDM node broadcast to " << bcast << " address on interface "<< interface);
+		  NS_LOG_DEBUG ("Broadcast: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface);
 		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
 	  }
       }
