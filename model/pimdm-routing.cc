@@ -154,7 +154,7 @@ MulticastRoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
 Ipv4Address
 MulticastRoutingProtocol::GetLocalAddress (uint32_t interface)
 {
-  NS_LOG_DEBUG ("Get Local Address "<<interface);
+//  NS_LOG_DEBUG ("Get Local Address "<<interface);
   if(interface<m_ipv4->GetNInterfaces ()){
   	return  m_ipv4->GetAddress (interface, 0).GetLocal ();
   }else{
@@ -438,6 +438,7 @@ MulticastRoutingProtocol::AddMulticastGroupSourcePrune (PIMHeader::MulticastGrou
 
 void
 MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
+	NS_LOG_FUNCTION(this);
 	Ptr<Packet> receivedPacket;
 	Address sourceAddress;
 	receivedPacket = socket->RecvFrom (sourceAddress);
@@ -453,10 +454,10 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 
 	route = m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif,err);
 
-	NS_LOG_DEBUG ("Destination "<< senderIfaceAddr<<"(SRC: "<< route->GetSource()<<
-			",GW: "<<route->GetGateway()<<",Dev: "<< route->GetOutputDevice()->GetIfIndex()<<")");
-	NS_LOG_DEBUG ("PIM-DM node " << m_mainAddress << " received a PIM-DM packet from "
-			   << senderIfaceAddr << " to " << receiverIfaceAddr<<" next "<< m_mrib.find(senderIfaceAddr)->second.nextAddr);
+	NS_LOG_DEBUG ("Sender "<< senderIfaceAddr<<", Destination "<< receiverIfaceAddr);
+	if(route)
+	NS_LOG_DEBUG (" (SRC: "<< route->GetSource()<< ", GW: "<<route->GetGateway()
+			<<",DevID: "<< route->GetOutputDevice()->GetIfIndex()<<")");
 	NS_ASSERT (inetSourceAddr.GetPort () == PIM_PORT_NUMBER);
 	//Within PIM-DM, route and state information associated with an (S,G) entry MUST be maintained as long as any
 	//	timer associated with that (S,G) entry is active.  When no timer associated with an (S,G) entry is active,
@@ -1086,12 +1087,12 @@ MulticastRoutingProtocol::SendBroadPacketInterface (Ptr<Packet> packet, uint32_t
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
       m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
     {
-//      Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-//	if(i->second.GetLocal() //TODO send towards a specific interface
-      Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-      NS_LOG_DEBUG ("PIMDM node broadcast to " << bcast << " address on interface "<< interface);
-      i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
-      }
+	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
+		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
+		  NS_LOG_DEBUG ("Destination: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface);
+		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
+	  }
+  }
 }
 
 
@@ -2687,8 +2688,8 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 								Simulator::Schedule (delay, &MulticastRoutingProtocol::SendStateRefreshPair, this,interface,sender, sgElement->SGPair);
 								break;
 							}
-					// If the neighbor is the upstream neighbor for an (S,G) entry, the router MAY cancel its
-					//     Prune Limit Timer to permit sending a prune and reestablishing a Pruned state in the upstream router.
+							// If the neighbor is the upstream neighbor for an (S,G) entry, the router MAY cancel its
+							//     Prune Limit Timer to permit sending a prune and reestablishing a Pruned state in the upstream router.
 							else if (IsUpstream(i,sgElement->SGPair) && sgElement->SGPruneState == Prune_Pruned){
 								sgElement->SG_PT.Cancel();
 								sgElement->SG_PT.SetDelay(Seconds(2*RefreshInterval));//TODO I am not sure of that: I have to understand the prune better
@@ -2798,3 +2799,5 @@ void MulticastRoutingProtocol::InsertNeighborState(uint32_t interface, const Nei
 //		the State Refresh's Interval times two.  The router SHOULD then propagate the State Refresh as described in Section 4.5.1.
 //* The LAN Delay inserted by a router in the LAN Prune Delay option expresses the expected message propagation delay on the link and
 //		SHOULD be configurable by the system administrator.
+//* When a packet is send, we should guarantee the packet will not send on an PIM-DM excluded interface
+
