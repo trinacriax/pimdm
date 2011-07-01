@@ -1051,12 +1051,14 @@ MulticastRoutingProtocol::SendPacket (Ptr<Packet> packet, const PIMHeader &messa
 //  m_txPacketTrace (packet, message);
 
   // Send it
+
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
       m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
     {
-//      Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-      NS_LOG_DEBUG ("PIMDM node sends packet to " << destination << ":"<<PIM_PORT_NUMBER);
-      i->first->SendTo (packet, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
+	  if(i->second.GetLocal() == GetLocalAddress(GetRecevingInterface(destination))){
+		  NS_LOG_DEBUG ("Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<GetRecevingInterface(destination));
+		  i->first->SendTo (packet, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
+		}
     }
 }
 
