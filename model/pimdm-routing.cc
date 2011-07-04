@@ -2718,6 +2718,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 				else if(ns->neighborGenerationID != hello.m_optionList[entry].m_optionValue.generationID.m_generatioID){///< Sec. 4.3.4.
 					// Generation ID changed The Generation ID is regenerated whenever PIM
 					//   forwarding is started or restarted on the interface.
+					// TODO: NeighborRestart
 					EraseNeighborState(interface,*ns);
 					InsertNeighborState(interface,tmp);
 					// When a new or rebooting neighbor is detected, a responding Hello is sent
