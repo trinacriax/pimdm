@@ -77,10 +77,10 @@ MulticastRoutingProtocol::GetTypeId (void)
 //					  BooleanValue (true),
 //					  MakeBooleanAccessor(&MulticastRoutingProtocol::SetLANDelayEnabled),
 //					  MakeBooleanChecker())
-//	.AddAttribute ("PropagationDelay", "Propagation delay.",
-//					 TimeValue (Seconds (1)),
-//					 MakeTimeAccessor (&MulticastRoutingProtocol::m_propagationDelay),
-//					 MakeTimeChecker ())
+	.AddAttribute ("HelloHoldTime", "HoldTime used in hello messages",
+			 	 	UintegerValue (Hold_Time_Default),
+			        MakeUintegerAccessor (&MulticastRoutingProtocol::SetHelloHoldTime),
+			        MakeUintegerChecker<uint16_t> ())
 //	.AddAttribute ("OverrideInterval", "Override interval",
 //					 TimeValue (Seconds (1)),
 //					 MakeTimeAccessor (&MulticastRoutingProtocol::m_overrideInterval),
@@ -365,7 +365,7 @@ void
 MulticastRoutingProtocol::ForgeHelloMessageHoldTime (uint32_t interface, PIMHeader &msg){
 	PIMHeader::HelloMessage helloMessage = msg.GetHelloMessage();//TODO holdtime for the corresponding interface
 	PIMHeader::HelloMessage::HelloEntry holdtime = {PIMHeader::HelloMessage::HelloHoldTime, PIM_DM_HELLO_HOLDTIME};
-	holdtime.m_optionValue.holdTime.m_holdTime = Seconds(Hold_Time_Default);
+	holdtime.m_optionValue.holdTime.m_holdTime = Seconds(m_helloHoldTime);
 	msg.GetHelloMessage().m_optionList.push_back(holdtime);
 }
 

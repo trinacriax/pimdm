@@ -129,7 +129,7 @@ private:
 	///pim ENABLED INTERFACES
 	std::map<uint32_t, bool> m_IfacePimEnabled; //TODO, right now all interfaces are pim enabled.
 	Time m_helloTime; ///< Hello Time
-
+	uint16_t m_helloHoldTime; ///< Default hello hold time
 	uint32_t m_generationID;
 	//}
 	std::set<uint32_t> m_interfaceExclusions;
@@ -232,6 +232,14 @@ private:
 	virtual void PrintRoutingTable(Ptr<OutputStreamWrapper> stream) const;
 
 	void DoDispose();
+
+	void SetHelloHoldTime(uint16_t holdt){
+		m_helloHoldTime = holdt;
+	}
+
+	uint16_t GetHelloHoldTime(){
+		return m_helloHoldTime;
+	}
 
 	void SetGenerationID(uint32_t gid) {
 		m_generationID = gid;
