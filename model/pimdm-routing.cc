@@ -2340,10 +2340,9 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 void
 MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refresh, Ipv4Address sender, Ipv4Address receiver){
 	NS_LOG_FUNCTION(this);
-	NeighborState tmp;
-	tmp.neighborIfaceAddr = sender;
-	tmp.receivingIfaceAddr = receiver;
+	NeighborState tmp (sender, receiver);
 	uint32_t interface = GetRecevingInterface(receiver);
+	NeighborState *ns = FindNeighborState(interface,tmp);
 	SourceGroupPair sgp (refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 	uint32_t rpf_prime_interface = RPF_interface(RPF_prime(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress));
@@ -2352,8 +2351,11 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			case GP_Forwarding:{ //OK
 				// The Upstream(S,G) state machine remains in a Forwarding state. If the received State Refresh has the Prune Indicator bit set to
 				//	   one, this router must override the upstream router's Prune state after a short random interval.
+				Simulator::Schedule (Seconds(UniformVariable().GetValue(0,t_shorter)), &MulticastRoutingProtocol::SetPruneState, this, interface, sgp, Prune_Pruned);
+//				Simulator::Schedule (delay, &MulticastRoutingProtocol::SendNeighHello, this, interface, sender);
 				//     If OT(S,G) is not running and the Prune Indicator bit equals one, the router MUST set OT(S,G) to t_override seconds.
 				if(refresh.m_P == 1 && !sgState->upstream->SG_OT.IsRunning()){
+					sgState->upstream->SG_OT.Cancel();
 					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 					sgState->upstream->SG_OT.Schedule();
 				}

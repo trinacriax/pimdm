@@ -873,6 +873,10 @@ private:
 		return FindNeighborhoodStatus(interface)->stateRefreshCapable;
 	}
 
+	void SetPruneState(uint32_t interface, SourceGroupPair sgp, PruneState state){
+		SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
+		sgState->SGPruneState = state;
+	}
 };
 
 }
