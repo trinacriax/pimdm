@@ -215,6 +215,9 @@ void MulticastRoutingProtocol::DoStart (){
 	            {
 	              m_mainAddress = addr;
 	              SetMainInterface(i);
+//	              If a Hello message is received from an active neighbor with a
+//	                different Generation ID (GenID), the neighbor has restarted and may
+//	                not contain the correct (S,G) state.
 	              m_generationID = UniformVariable().GetInteger(1,INT_MAX);///force value > 0
 	              NS_LOG_DEBUG("Address("<<i<< ") = "<<addr<< ", Generation Id = "<< m_generationID);
 	              break;
@@ -2816,4 +2819,5 @@ void MulticastRoutingProtocol::InsertNeighborState(uint32_t interface, const Nei
 //* The LAN Delay inserted by a router in the LAN Prune Delay option expresses the expected message propagation delay on the link and
 //		SHOULD be configurable by the system administrator.
 //* When a packet is send, we should guarantee the packet will not send on an PIM-DM excluded interface
-
+//* When a PIM router takes an interface down or changes IP address, a Hello message with a zero Hold Time SHOULD be sent immediately (with the old IP address if the IP address is
+//		changed) to cause any PIM neighbors to remove the old information immediately.
