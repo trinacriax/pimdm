@@ -282,6 +282,10 @@ private:
 
 	bool UsesNonPimDmOutgoingInterface(const Ipv4RoutingTableEntry &route);
 
+	uint32_t GetReceivingInterface(Ipv4Address addr){
+		return m_ipv4->GetInterfaceForAddress(addr);
+	}
+
 	///< Randomized delay to prevent response implosion when sending a join message  to override someone else's prune
 	/// t_override is a random value between 0 and the interface's Override_Interval (OI(I)).
 	/// If all routers on a LAN are using the LAN Prune Delay option, the Override_Interval (OI(I)) MUST be set to the
@@ -389,8 +393,7 @@ private:
 	 * Interface toward the source of the datagram.  Also known as the RPF Interface.
 	 */
 	bool IsUpstream(uint32_t interface, SourceGroupPair sgpair);
-	uint32_t GetRecevingInterface(Ipv4Address addr);
-	uint32_t GetRecevingInterface(Ipv4InterfaceAddress interface);
+	uint32_t GetReceiveingInterface(Ipv4Address addr);
 
 	void SendPacket (Ptr<Packet> packet, const PIMMessageList &containedMessages);
 
@@ -825,17 +828,6 @@ private:
 
 	Ipv4Address RPF_prime(Ipv4Address source) {
 		return m_mrib.find(source)->second.nextAddr;
-	}
-
-	uint32_t GetInterfaceDestination(Ipv4Address destination){
-		Ptr<Ipv4Route> route = 0;
-		Ptr<Packet> receivedPacket;
-		Ipv4Header hdr;
-		hdr.SetDestination(destination);
-		Ptr<NetDevice> oif (0);
-		Socket::SocketErrno err = Socket::ERROR_NOTERROR;
-		route = m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif,err);
-		GetRecevingInterface(route->GetGateway());
 	}
 
 	bool I_Am_Assert_loser(Ipv4Address source, Ipv4Address group, uint32_t interface) {
