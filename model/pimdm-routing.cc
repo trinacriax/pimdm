@@ -1149,9 +1149,9 @@ MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp){
 void
 MulticastRoutingProtocol::NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr){
 	uint32_t interface = GetRecevingInterface(neighborIfaceAddr); // retrieve the interface
-	SourceGroupList *sgList= FindSourceGroupState(interface); // get all the S,G pair
-	for (SourceGroupList::iterator iter = sgList->begin(); iter != sgList->end() ; iter++){
-		if(iter->SGAW == neighborIfaceAddr){// Find the assert winner
+	SourceGroupList *sgList= FindSourceGroupList(interface); // get all the S,G pair
+	for (SourceGroupList::iterator sgState = sgList->begin(); sgState != sgList->end() ; sgState++){
+		if(sgState->SGAW == neighborIfaceAddr){// Find the assert winner
 			switch (sgState->SGAssertState){
 				case  Assert_NoInfo:{
 					break;
@@ -2665,10 +2665,10 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 							ns->neigborNLT.Cancel();
 						}
 						ns->neigborNLT.SetDelay(hello.m_optionList[entry].m_optionValue.holdTime.m_holdTime);
-						if(!ns->neigborNLT.IsRunning()){
-							ns->neigborNLT.Schedule();
-							ns->neigborNLT.SetArguments(sender,receiver);
-						}
+//						if(!ns->neigborNLT.IsRunning()){
+						ns->neigborNLT.Schedule();
+						ns->neigborNLT.SetArguments(sender,receiver);
+//						}
 					}
 				break;
 				}

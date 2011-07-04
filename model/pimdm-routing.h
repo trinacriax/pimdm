@@ -371,7 +371,8 @@ private:
 	void ATTimerExpire (SourceGroupPair &sgp);
 	void PPTTimerExpire(SourceGroupPair &sgp);
 	void PTTimerExpire(SourceGroupPair &sgp);
-	void NLTTimerExpire (SourceGroupPair &sgp);
+//	void NLTTimerExpire (SourceGroupPair &sgp);
+	void NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr);
 	void SRTTimerExpire (SourceGroupPair &sgp);
 	void SATTimerExpire (SourceGroupPair &sgp);
 
