@@ -816,6 +816,25 @@ private:
 		}
 	}
 
+	Ipv4Address RPF_prime(SourceGroupPair sgp) {
+		return RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
+	}
+
+	Ipv4Address RPF_prime(Ipv4Address source) {
+		return m_mrib.find(source)->second.nextAddr;
+	}
+
+	uint32_t GetInterfaceDestination(Ipv4Address destination){
+		Ptr<Ipv4Route> route = 0;
+		Ptr<Packet> receivedPacket;
+		Ipv4Header hdr;
+		hdr.SetDestination(destination);
+		Ptr<NetDevice> oif (0);
+		Socket::SocketErrno err = Socket::ERROR_NOTERROR;
+		route = m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif,err);
+		GetRecevingInterface(route->GetGateway());
+	}
+
 	bool I_Am_Assert_loser(Ipv4Address source, Ipv4Address group, uint32_t interface) {
 		SourceGroupState *sgState = FindSourceGroupState(RPF_interface(source),source,group);
 		return sgState->SGAssertState == Assert_Loser;
