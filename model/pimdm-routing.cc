@@ -2051,7 +2051,7 @@ MulticastRoutingProtocol::RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp, cons
 				//	If the OT(S,G) is running, then it means that the router had scheduled a Join to override a previously received Prune.
 				//	Another router has responded more quickly with a Join, so the local router SHOULD cancel its OT(S,G), if it is running.
 				//	The Upstream(S,G) state machine remains in the Forwarding (F) state.
-					if(sgState->upstream->SG_OT.IsRunning()){
+					if(sender == RPF_prime(source.m_sourceAddress, group.m_groupAddress) && sgState->upstream->SG_OT.IsRunning()){
 						sgState->upstream->SG_OT.Cancel();
 					}
 					break;
@@ -2340,8 +2340,8 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 	NeighborState *ns = FindNeighborState(interface,tmp);
 	SourceGroupPair sgp (refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
-	uint32_t rpf_prime_interface = RPF_interface(RPF_prime(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress));
-	if(rpf_prime_interface == interface){
+	uint32_t rpf_prime_interface = RPF_interface(RPF_prime(refresh.m_sourceAddr.m_unicastAddress));
+	if(rpf_prime_interface == interface && sgState->upstream){
 		switch (sgState->upstream->SGGraftPrune) {
 			case GP_Forwarding:{ //OK
 				// The Upstream(S,G) state machine remains in a Forwarding state. If the received State Refresh has the Prune Indicator bit set to
@@ -2365,7 +2365,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 						sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 						sgState->upstream->SG_PLT.Schedule();
 					}
-				if(refresh.m_P){
+				else if(refresh.m_P){
 					sgState->upstream->SG_PLT.Cancel();
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 					sgState->upstream->SG_PLT.Schedule();
@@ -2376,9 +2376,12 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			//The Upstream(S,G) state machine remains in an AckPending state.
 			//   The router must override the upstream router's Prune state after a short random interval.
 			//   If OT(S,G) is not running and the Prune Indicator bit equals one, the router MUST set OT(S,G) to t_override seconds.
-				if(!sgState->upstream->SG_OT.IsRunning() && refresh.m_P){
-					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
-					sgState->upstream->SG_OT.Schedule();
+				if(refresh.m_P){//TODO CHECK the Schedule 4.4.1.3.
+					Simulator::Schedule (Seconds(UniformVariable().GetValue(0,t_shorter)), &MulticastRoutingProtocol::SetPruneState, this, interface, sgp, Prune_Pruned);
+					if(!sgState->upstream->SG_OT.IsRunning()){
+						sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
+						sgState->upstream->SG_OT.Schedule();
+					}
 				}
 				if(refresh.m_P == 0){
 					sgState->upstream->SG_GRT.Cancel();
