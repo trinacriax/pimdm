@@ -44,6 +44,7 @@
 #define t_limit 210
 /// Timer Name: Upstream Override Timer (OT(S,G)).
 #define t_short t_override
+#define t_shorter 2
 /// Timer Name: Source Active Timer (SAT(S,G)).
 ///   Period of time after receiving a multicast message a directly
 ///   attached router will continue to send State Refresh messages.
@@ -51,6 +52,7 @@
 /// Timer Name: State Refresh Timer (SRT(S,G)).
 ///   Interval between successive state refresh messages.
 #define RefreshInterval 60
+#define StateRefreshInterval RefreshInterval
 /// If all routers on a LAN are using the LAN Prune Delay option, the Override_Interval (OI(I)) MUST be set to the
 ///   largest value on the LAN.  Otherwise, the Override_Interval (OI(I)) MUST be set to 2.5 seconds.
 #define Override_Interval 2.5
@@ -75,6 +77,15 @@
 //     unless a corresponding Join or Graft message is received.  The Hold
 //     Time is ignored in Join messages.
 #define PruneHoldTime 0xffff
+//If all routers on a LAN support the LAN Prune Delay option, then the
+//   PIM routers on that LAN will use the values received to adjust their
+//   J/P_Override_Interval on that interface and the interface is LAN
+//   Delay Enabled.  Briefly, to avoid synchronization of Prune Override
+//   (Join) messages when multiple downstream routers share a multi-access
+//   link, sending of these messages is delayed by a small random amount
+//   of time.  The period of randomization is configurable and has a
+//   default value of 3 seconds.
+#define JoinDelay 3 //Prune override
 #define ALL_PIM_ROUTERS "224.0.0.13"
 #define PIM_PORT_NUMBER 703 //IANA Unassigned
 
