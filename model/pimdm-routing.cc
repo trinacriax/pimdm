@@ -232,7 +232,7 @@ void MulticastRoutingProtocol::DoStart (){
 
 	      NS_ASSERT (m_mainAddress != Ipv4Address ());
 	    }
-
+	  m_startTime = Simulator::Now();
 	  Ipv4Address loopback ("127.0.0.1");
 
 	  for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++)

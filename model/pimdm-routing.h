@@ -142,6 +142,7 @@ private:
 	Time m_helloTime; ///< Hello Time
 	uint16_t m_helloHoldTime; ///< Default hello hold time
 	uint32_t m_generationID;
+	Time m_startTime;
 	bool m_stopTx;
 	//}
 	std::set<uint32_t> m_interfaceExclusions;
