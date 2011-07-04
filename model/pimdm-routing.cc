@@ -1194,14 +1194,13 @@ void
 MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp){
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(sgp.sourceIfaceAddr),sgp);
-//	if(sgp.sourceIfaceAddr!=m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr){//not directly connected //TODO Is the condition just for F-state or even for the others?
 		switch (sgState->upstream->SGGraftPrune){
 			case GP_Forwarding:{
 				//The OverrideTimer (OT(S,G)) expires.  The router MUST send a Join(S,G) to RPF'(S) to override a previously detected prune.
 				//	The Upstream(S,G) state machine remains in the Forwarding (F) state.
 				if(sgp.sourceIfaceAddr!=m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr){
-					Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
-					SendJoin(RPF_interface(target),target, sgp); //broadcast
+					Ipv4Address nextHop = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
+					SendJoin(RPF_interface(nextHop), sgp, nextHop); //broadcast
 				}
 				break;
 			}
@@ -1211,16 +1210,16 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp){
 			case GP_AckPending:{
 				//The OverrideTimer (OT(S,G)) expires.  The router MUST send a Join(S,G) to RPF'(S).
 				//	The Upstream(S,G) state machine remains in the AckPending (AP) state.
-				Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
-				SendJoin(RPF_interface(target), target, sgp); //broadcast
+				Ipv4Address nextHop = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
+				SendJoin(RPF_interface(nextHop), sgp, nextHop); //broadcast
 				break;
 			}
 			default:{
 				NS_LOG_ERROR("OT_Timer: state not valid"<<sgState->upstream->SGGraftPrune);
 			}
-//		}
 	}
-	sgState->upstream->SG_OT.Schedule();
+//	sgState->upstream->SG_OT.Schedule();
+	sgState->upstream->SG_OT.Cancel();
 }
 
 
@@ -1473,7 +1472,7 @@ MulticastRoutingProtocol::SATTimerExpire (SourceGroupPair &sgp){
 }
 
 void
-MulticastRoutingProtocol::SendJoin (uint32_t interface, Ipv4Address target, SourceGroupPair &sgpair){
+MulticastRoutingProtocol::SendJoin (uint32_t interface, SourceGroupPair &sgpair, Ipv4Address nexthop){
 	NS_LOG_FUNCTION(this);
 	//TODO
 }
@@ -1847,7 +1846,7 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire,this);
 				sgState->upstream->SG_OT.SetArguments(sgp);
 				// Upstream state machine
-				RecvJoin(jp, *iterJoin,iter->m_multicastGroupAddr, out_interface);
+				RecvJoin(jp, sender, receiver, out_interface, *iterJoin, iter->m_multicastGroupAddr);
 			}
 		}
 		//PRUNE
@@ -2036,18 +2035,18 @@ MulticastRoutingProtocol::RecvPrune (PIMHeader::JoinPruneMessage &jp, const PIMH
 
 
 void // TOCHECK
-MulticastRoutingProtocol::RecvJoin(PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface){
+MulticastRoutingProtocol::RecvJoin(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group){
 	NS_LOG_FUNCTION(this);
 	if(RPF_interface(source.m_sourceAddress)==interface){
-		RecvJoinUpstream(jp, source, group, interface);
+		RecvJoinUpstream(jp, source, group, interface,sender);
 	}
 	else {
-		RecvJoinDownstream(jp, source, group, interface);
+		RecvJoinDownstream(jp, source, group, interface,sender);
 	}
 }
 
 void // TOCHECK
-MulticastRoutingProtocol::RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface){
+MulticastRoutingProtocol::RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface, Ipv4Address &sender){
 	SourceGroupState *sgState = FindSourceGroupState(interface,source.m_sourceAddress, group.m_groupAddress);
 			switch (sgState->upstream->SGGraftPrune) {
 				case GP_Forwarding:{
@@ -2083,7 +2082,7 @@ MulticastRoutingProtocol::RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp, cons
 }
 
 void // TOCHECK
-MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface){
+MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface,Ipv4Address &sender){
 		SourceGroupState *sgState = FindSourceGroupState(interface,source.m_sourceAddress, group.m_groupAddress);
 		Ipv4Address current = GetLocalAddress(interface);
 		switch (sgState->SGPruneState) {

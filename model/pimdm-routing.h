@@ -343,9 +343,9 @@ private:
 
 	void RecvJP(PIMHeader::JoinPruneMessage &jp, Ipv4Address sender,Ipv4Address receiver);
 
-	void RecvJoin(PIMHeader::JoinPruneMessage &jp,const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group, uint32_t &interface);
-	void RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface);
-	void RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp,const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group, uint32_t &interface);
+	void RecvJoin(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
+	void RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface,Ipv4Address &sender);
+	void RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface,Ipv4Address &sender);
 
 	void RecvPrune(PIMHeader::JoinPruneMessage &jp,const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group, uint32_t &interface);
 	void RecvPruneUpstream (PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface);
@@ -364,7 +364,6 @@ private:
 	void RecvGraftAck(PIMHeader::GraftAckMessage &graftAck, Ipv4Address sender,Ipv4Address receiver);
 
 	void SendPrune(uint32_t interface, SourceGroupPair &sgpair);
-	void SendJoin(uint32_t interface, Ipv4Address target,SourceGroupPair &sgpair);
 
 	void RecvData(Ptr<Packet> packet, Ipv4Address sender, Ipv4Address receiver);
 	void SendBroadPacket(Ptr<Packet> packet, const PIMHeader &message);
