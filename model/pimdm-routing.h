@@ -364,6 +364,9 @@ private:
 	void RecvGraftAck(PIMHeader::GraftAckMessage &graftAck, Ipv4Address sender,Ipv4Address receiver);
 
 	void SendPrune(uint32_t interface, SourceGroupPair &sgpair);
+	void SendPruneUnicast(uint32_t interface, SourceGroupPair &sgpair, Ipv4Address destination);
+
+	void SendJoin(uint32_t interface, SourceGroupPair &sgpair, Ipv4Address nexthop);
 
 	void RecvData(Ptr<Packet> packet, Ipv4Address sender, Ipv4Address receiver);
 	void SendBroadPacket(Ptr<Packet> packet, const PIMHeader &message);

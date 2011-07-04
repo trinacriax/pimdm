@@ -532,7 +532,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 			case GP_Forwarding:{
 				if(olist(sender,receiver).size() == 0 && m_mrib.find(sender)->second.nextAddr != sender){
 					sgState->upstream->SGGraftPrune = GP_Pruned;
-					SendPrune(interface, sgp); //TODO check
+					SendPrune(GetRecevingInterface(RPF_prime(sgp)), sgp);
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 					}
 					break;
@@ -543,6 +543,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 					sgState->upstream->SG_PLT.Schedule();
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
 					sgState->upstream->SG_PLT.SetArguments(sgp);
+					SendPrune(GetRecevingInterface(RPF_prime(sgp.sourceIfaceAddr)), sgp);
 					}
 					break;
 				}
@@ -2361,7 +2362,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			//	   PLT(S,G) is not running, a Prune(S,G) MUST be sent to RPF'(S), and the PLT(S,G) MUST be set to t_limit.
 			//	   If the State Refresh has its Prune Indicator bit set to one, the router MUST reset PLT(S,G) to t_limit.
 				if(refresh.m_P==0 && !sgState->upstream->SG_PLT.IsRunning()){
-						SendPrune(interface,sgp);
+						SendPruneUnicast(interface, sgp, RPF_prime(refresh.m_sourceAddr.m_unicastAddress));
 						sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 						sgState->upstream->SG_PLT.Schedule();
 					}
