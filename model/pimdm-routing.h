@@ -327,7 +327,7 @@ private:
 	void ForgeHelloMessageGenID (uint32_t interface, PIMHeader &msg);
 	void ForgeHelloMessageStateRefresh (uint32_t interface, PIMHeader &msg);
 
-	void ForgePruneMessage(uint32_t interface, PIMHeader &msg);
+	void ForgePruneMessage(PIMHeader &msg);
 	void ForgeAssertMessage (uint32_t interface, PIMHeader &msg);
 
 	void AddMulticastGroupEntry(PIMHeader &msg,PIMHeader::MulticastGroupEntry &entry);
