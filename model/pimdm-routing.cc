@@ -2396,6 +2396,25 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					break;
 			}
 	}
+	//TODO: Upon startup, a router MAY use any State Refresh messages received  within Hello_Period of its first Hello message on an interface to establish state information.
+	for(uint32_t i = 0; i < m_ipv4->GetNInterfaces();i++){
+		SourceGroupState *sgStateB = FindSourceGroupState(i,sgp);
+		//	The State Refresh source will be the RPF'(S), and Prune status for all interfaces will be set according to the Prune Indicator bit in the State Refresh message.
+		if (i == rpf_prime_interface){
+			//	If the Prune Indicator is set, the router SHOULD set the PruneLimitTimer to Prune_Holdtime ...
+			if (refresh.m_P){
+				sgStateB->upstream->SG_PLT.SetDelay(Seconds(PruneHoldTime));
+			}
+			continue;
+		}
+		//	.... and set the PruneTimer on all downstream interfaces to
+		//	the State Refresh's Interval times two.  The router SHOULD then propagate the State Refresh as described in Section 4.5.1.
+		sgStateB->SGPruneState = (refresh.m_P ? Prune_Pruned: Prune_NoInfo);
+		if(refresh.m_P){
+			sgStateB->upstream->SG_PLT.SetDelay(Seconds(PruneHoldTime));
+			sgStateB->SG_PT.SetDelay(Seconds(2 * StateRefreshInterval));
+		}
+	}
 	switch (sgState->SGAssertState){
 		case  Assert_NoInfo:{
 			//Receive Inferior (Assert OR State Refresh) AND CouldAssert(S,G,I)==TRUE.
