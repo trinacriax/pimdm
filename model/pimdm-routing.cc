@@ -28,7 +28,6 @@
 
 #include "pimdm-routing.h"
 #include "ns3/socket-factory.h"
-#include "ns3/socket.h"
 #include "ns3/udp-socket-factory.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
@@ -989,10 +988,9 @@ void
 MulticastRoutingProtocol::RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ipv4Address sender, Ipv4Address receiver){
 	NS_LOG_FUNCTION(this);
 	uint32_t interface = GetRecevingInterface(receiver);
-	Ipv4Address local = GetLocalAddress(interface);
 	//The transition event "RcvGraftAck(S,G)" implies receiving a Graft Ack message targeted to this router's address on the incoming interface
 	//	for the (S,G) entry.  If the destination address is not correct, the state transitions in this state machine must not occur.
-	if(local != graftAck.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress)return;
+	if(GetLocalAddress(interface) != graftAck.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress)return;
 	for(std::vector<struct PIMHeader::MulticastGroupEntry>::iterator groups = graftAck.m_multicastGroups.begin();
 			groups != graftAck.m_multicastGroups.end(); groups++){
 		graftAck.Print(std::cout);
@@ -1826,6 +1824,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 void
 MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address sender, Ipv4Address receiver){
 	NS_LOG_FUNCTION(this);
+	NS_LOG_DEBUG("Node  "<<receiver <<" receives JP from "<<sender);
 	uint32_t interface = GetRecevingInterface(receiver);
 	uint16_t groups = jp.m_joinPruneMessage.m_numGroups;
 	Time HoldTime = jp.m_joinPruneMessage.m_holdTime;
