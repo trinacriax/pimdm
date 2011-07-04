@@ -85,12 +85,13 @@ MulticastRoutingProtocol::GetTypeId (void)
 //					 TimeValue (Seconds (1)),
 //					 MakeTimeAccessor (&MulticastRoutingProtocol::m_overrideInterval),
 //					 MakeTimeChecker ())
-    .AddTraceSource ("Rx", "Receive PIM-DM packet.",
-                     MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxPacketTrace))
-    .AddTraceSource ("Tx", "Send PIM-DM packet.",
-                     MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txPacketTrace))
+	.AddTraceSource ("Rx", "Receive PIM packet.",
+					 MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxPacketTrace))
+	.AddTraceSource ("Tx", "Send PIM packet.",
+					 MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txPacketTrace))
     .AddTraceSource ("RoutingTableChanged", "The PIM-DM routing table has changed.",
 		     MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_routingTableChanged))
+
     ;
   return tid;
 }
@@ -474,6 +475,7 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 	}
 	switch (pimdmPacket.GetType()){
 	case PIM_HELLO:{
+		m_rxPacketTrace (pimdmPacket);
 		RecvHello(pimdmPacket.GetHelloMessage(),senderIfaceAddr,receiverIfaceAddr);
 		break;
 		}
@@ -1049,9 +1051,8 @@ MulticastRoutingProtocol::SendBroadPacket (Ptr<Packet> packet, const PIMHeader &
 void
 MulticastRoutingProtocol::SendPacket (Ptr<Packet> packet, const PIMHeader &message, Ipv4Address destination){
   packet->AddHeader(message);
-
   // Trace it
-//  m_txPacketTrace (packet, message);
+  m_txPacketTrace (message);
 
   // Send it
 
@@ -2821,3 +2822,5 @@ void MulticastRoutingProtocol::InsertNeighborState(uint32_t interface, const Nei
 //* When a packet is send, we should guarantee the packet will not send on an PIM-DM excluded interface
 //* When a PIM router takes an interface down or changes IP address, a Hello message with a zero Hold Time SHOULD be sent immediately (with the old IP address if the IP address is
 //		changed) to cause any PIM neighbors to remove the old information immediately.
+//* A Hello message SHOULD be sent after a random delay between 0 and Triggered_Hello_Delay (see 4.8) before any other messages are sent. -> TO CHECK
+//* Check whether it works or not: Seconds(delay.GetMicroSeconds()+1)

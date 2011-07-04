@@ -31,6 +31,7 @@
 
 #include <iostream>
 #include <vector>
+#include <stdint.h>
 #include "stdio.h"
 #include "stdlib.h"
 #include "pimdm-common.h"
@@ -810,6 +811,28 @@ public:
   }
 
 };
+
+static inline std::ostream& operator<< (std::ostream& os, const PIMHeader & packet)
+{
+  packet.Print (os);
+  return os;
+}
+
+typedef std::vector<PIMHeader> PIMMessageList;
+
+static inline std::ostream& operator<< (std::ostream& os, const PIMMessageList & messages)
+{
+  os << "[";
+  for (std::vector<PIMHeader>::const_iterator messageIter = messages.begin ();
+       messageIter != messages.end (); messageIter++)
+    {
+      messageIter->Print (os);
+      if (messageIter+1 != messages.end ())
+        os << ", ";
+    }
+  os << "]";
+  return os;
+}
 }//end namespace mbn
 }//end namespace ns3
 

@@ -161,8 +161,9 @@ private:
 	pimdm::PIMHeader m_queuedMessages;
 	Timer m_queuedMessagesTimer; // timer for throttling outgoing messages
 
-	TracedCallback<const PIMHeader &> m_rxPacketTrace;
-	TracedCallback<const PIMHeader &> m_txPacketTrace;
+	TracedCallback <const PIMHeader &> m_rxPacketTrace;
+	TracedCallback <const PIMHeader &> m_txPacketTrace;
+
 	TracedCallback<uint32_t> m_routingTableChanged;
 
 protected:
@@ -363,6 +364,8 @@ private:
 	bool IsUpstream(uint32_t interface, SourceGroupPair sgpair);
 	uint32_t GetRecevingInterface(Ipv4Address addr);
 	uint32_t GetRecevingInterface(Ipv4InterfaceAddress interface);
+
+	void SendPacket (Ptr<Packet> packet, const PIMMessageList &containedMessages);
 
 	void HelloTimerExpire(uint32_t i);
 	void OTTimerExpire(SourceGroupPair &sg);
