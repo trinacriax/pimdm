@@ -1865,13 +1865,27 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire,this);
 				sgState->upstream->SG_OT.SetArguments(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress,sgp);
 				// Upstream state machine
-				RecvPrune(jp, *iterPrune,iter->m_multicastGroupAddr, out_interface);
+				RecvPrune(jp, sender, receiver, out_interface, *iterPrune, iter->m_multicastGroupAddr);
 			}
 		}
 	}
 }
 
-
+void //TOCHECK
+MulticastRoutingProtocol::RecvPrune (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group){
+	NS_LOG_FUNCTION(this);
+	NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
+	nstatus->pruneHoldtime = Time(jp.m_joinPruneMessage.m_holdTime);
+	// The node is not directly connected to S.
+//	if(m_mrib.find(source.m_sourceAddress)->second.nextAddr != source.m_sourceAddress){ // TODO: is the condition just for Forwarding or even for the others?
+	if(RPF_interface(source.m_sourceAddress)==interface){
+		RecvPruneUpstream(jp, sender, receiver, interface, source, group);
+	}
+	else {
+		RecvPruneDownstream(jp, sender, receiver, interface, source, group);
+	}
+//	}
+}
 
 //4.4.  PIM-DM Prune, Join, and Graft Messages
 //	This section describes the generation and processing of PIM-DM Join, Prune, and Graft messages.
@@ -1880,7 +1894,7 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 //	a Join in response to B's Prune to override the Prune.  This is the only situation in PIM-DM in which a Join message is used.
 //	Finally, a Graft message is used to re-join a previously pruned branch to the delivery tree.
 void //TODO: CHECK
-MulticastRoutingProtocol::RecvPruneUpstream (PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface){
+MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group){
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(interface,source.m_sourceAddress, group.m_groupAddress);
 	// The node is not directly connected to S.
@@ -1929,7 +1943,7 @@ MulticastRoutingProtocol::RecvPruneUpstream (PIMHeader::JoinPruneMessage &jp, co
 }
 
 void //TOCHECK
-MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface){
+MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group){
 	SourceGroupState *sgState = FindSourceGroupState(interface,source.m_sourceAddress, group.m_groupAddress);
 	Ipv4Address current = GetLocalAddress(interface);
 	switch (sgState->SGPruneState) {
@@ -2015,24 +2029,6 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 		}
 	}
 }
-
-
-void //TOCHECK
-MulticastRoutingProtocol::RecvPrune (PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface){
-	NS_LOG_FUNCTION(this);
-	NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
-	nstatus->pruneHoldtime = Time(jp.m_joinPruneMessage.m_holdTime);
-	// The node is not directly connected to S.
-//	if(m_mrib.find(source.m_sourceAddress)->second.nextAddr != source.m_sourceAddress){ // TODO: is the condition just for Forwarding or even for the others?
-	if(RPF_interface(source.m_sourceAddress)==interface){
-		RecvPruneUpstream(jp,source,group,interface);
-	}
-	else {
-		RecvPruneDownstream(jp,source,group,interface);
-	}
-//	}
-}
-
 
 void // TOCHECK
 MulticastRoutingProtocol::RecvJoin(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group){

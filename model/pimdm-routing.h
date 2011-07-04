@@ -347,9 +347,9 @@ private:
 	void RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface,Ipv4Address &sender);
 	void RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface,Ipv4Address &sender);
 
-	void RecvPrune(PIMHeader::JoinPruneMessage &jp,const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group, uint32_t &interface);
-	void RecvPruneUpstream (PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface);
-	void RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface);
+	void RecvPrune(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
+	void RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
+	void RecvPruneDownstream(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
 
 	void RecvAssert(PIMHeader::AssertMessage &assert, Ipv4Address sender,Ipv4Address receiver);
 
