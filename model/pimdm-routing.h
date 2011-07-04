@@ -142,6 +142,7 @@ private:
 	Time m_helloTime; ///< Hello Time
 	uint16_t m_helloHoldTime; ///< Default hello hold time
 	uint32_t m_generationID;
+	bool m_stopTx;
 	//}
 	std::set<uint32_t> m_interfaceExclusions;
 
@@ -258,6 +259,18 @@ private:
 	}
 	uint32_t GetGenerationID() {
 		return m_generationID;
+	}
+
+	void SetStopTx() {
+		m_stopTx = true;
+	}
+
+	void UnsetStopTx() {
+		m_stopTx = false;
+	}
+
+	bool GetStopTx(){
+		return m_stopTx;
 	}
 
 	///\name Fields for each interface
