@@ -119,7 +119,10 @@ MulticastRoutingProtocol::NotifyInterfaceUp (uint32_t i)
 {NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Up: "<<i);}
 void
 MulticastRoutingProtocol::NotifyInterfaceDown (uint32_t i)
-{NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Down "<<i);}
+{NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Down "<<i);
+//TODO When a PIM router takes an interface down or changes IP address, a Hello message with a zero Hold Time SHOULD be
+//sent immediately (with the old IP address if the IP address is changed) to cause any PIM neighbors to remove the old information immediately.
+}
 void
 MulticastRoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAddress address){
 	NS_LOG_FUNCTION(this);
@@ -137,6 +140,8 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAdd
 		ns->LANDelayEnabled = true;
 		ns->stateRefreshCapable = true;
 	}
+	//TODO When a PIM router takes an interface down or changes IP address, a Hello message with a zero Hold Time SHOULD be
+	//sent immediately (with the old IP address if the IP address is changed) to cause any PIM neighbors to remove the old information immediately.
 }
 void
 MulticastRoutingProtocol::NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress address)
@@ -1867,7 +1872,13 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 
 
 
-void //TOCHECK
+//4.4.  PIM-DM Prune, Join, and Graft Messages
+//	This section describes the generation and processing of PIM-DM Join, Prune, and Graft messages.
+//	Prune messages are sent toward the upstream neighbor for S to indicate that traffic from S addressed to group G is not desired.
+//	In the case of downstream routers A and B, where A wishes to continue receiving data and B does not, A will send
+//	a Join in response to B's Prune to override the Prune.  This is the only situation in PIM-DM in which a Join message is used.
+//	Finally, a Graft message is used to re-join a previously pruned branch to the delivery tree.
+void //TODO: CHECK
 MulticastRoutingProtocol::RecvPruneUpstream (PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface){
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(interface,source.m_sourceAddress, group.m_groupAddress);
