@@ -2164,7 +2164,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					//	router MUST set the Assert Timer (AT(S,G,I)) to three times the
 					//	received State Refresh Interval.
 					sgState->AssertState = Assert_Loser;
-					UpdateAssertWinner(assert.m_metricPreference, assert.m_metric, sender);
+					UpdateAssertWinner(sgState, assert.m_metricPreference, assert.m_metric, sender);
 					if(sgState->SG_AT.IsRunning())
 						sgState->SG_AT.Cancel();
 					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
