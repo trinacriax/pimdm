@@ -119,6 +119,22 @@ struct SourceGroupState{
 		SG_SR_TTL(0),
 		SG_DATA_TTL(0)
 	{}
+	SourceGroupState(SourceGroupPair sgp):
+		SGPair(sgp),
+		members(false),
+		lastStateRefresh(Seconds(0)),
+		LocalMembership(Local_NoInfo),
+		AssertState(Assert_NoInfo),
+		SGAssertWinner(),
+		SG_AT(Timer::CANCEL_ON_DESTROY),
+		PruneState(Prune_NoInfo),
+		SG_PT(Timer::CANCEL_ON_DESTROY),
+		SG_PPT(Timer::CANCEL_ON_DESTROY),
+		SGAW("0.0.0.0"),
+		SGAM(0),
+		SG_SR_TTL(0),
+		SG_DATA_TTL(0)
+	{}
 	/// SourceGroup pair.
 	struct SourceGroupPair SGPair;
 	/// Local membership.
