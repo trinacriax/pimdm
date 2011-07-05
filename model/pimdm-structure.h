@@ -68,12 +68,16 @@ operator == (const AssertMetric &a, const AssertMetric &b){
 	return (a.metric_preference == b.metric_preference) &&
 			(a.route_metric == b.route_metric);
 }
+
+//When assert_metrics are compared, the metric_preference and route_metric field are compared in order,
+//	where the first lower value wins.  If all fields are equal, the IP address of the router that
+//  sourced the Assert message is used as a tie-breaker, with the highest IP address winning.
 static inline bool
 operator > (const AssertMetric &a, const AssertMetric &b){
 	return (a.metric_preference < b.metric_preference) ||
 			((a.metric_preference == b.metric_preference) && (a.route_metric < b.route_metric))||
 			((a.metric_preference == b.metric_preference) && (a.route_metric == b.route_metric) &&
-					a.ip_address<b.ip_address);
+					!(a.ip_address < b.ip_address));
 }
 
 /// (S,G) Pair. Source S and destination group G associated with an IP packet.
