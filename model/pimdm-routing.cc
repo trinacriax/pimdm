@@ -557,7 +557,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 		}
 	}
 	else{
-		switch (sgState->SGAssertState){
+		switch (sgState->AssertState){
 			case  Assert_NoInfo:{
 			//An (S,G) data packet arrives on downstream interface I.
 			//   An (S,G) data packet arrived on a downstream interface.  It is
@@ -568,7 +568,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 			//   the Assert_Timer (AT(S,G,I) to Assert_Time, thereby initiating
 			//   the Assert negotiation for (S,G).
 				if(!IsDownstream(interface,sgp)) break;
-				sgState->SGAssertState = Assert_Winner;
+				sgState->AssertState = Assert_Winner;
 				PIMHeader assert;
 				ForgeAssertMessage(interface,assert);
 				assert.GetAssertMessage().m_sourceAddr.m_unicastAddress = sender;
@@ -615,7 +615,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 				break;
 			}
 			default:{
-				NS_LOG_ERROR("RecvData: Assert State not valid"<<sgState->SGAssertState);
+				NS_LOG_ERROR("RecvData: Assert State not valid"<<sgState->AssertState);
 			}
 		}
 	}
@@ -788,7 +788,7 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 			NS_LOG_ERROR("SendStateRefreshPair : Prune state not valid"<<sgState->PruneState);
 			break;
 	}
-		switch (sgState->SGAssertState){
+		switch (sgState->AssertState){
 			case  Assert_NoInfo:{
 				break;
 				}
@@ -807,7 +807,7 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 				break;
 			}
 			default:{
-				NS_LOG_ERROR("RecvData: Assert State not valid"<<sgState->SGAssertState);
+				NS_LOG_ERROR("RecvData: Assert State not valid"<<sgState->AssertState);
 			}
 		}
 }
@@ -930,7 +930,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 			break;
 		}
 	}
-	switch (sgState->SGAssertState){
+	switch (sgState->AssertState){
 		case  Assert_NoInfo:{
 			//nothing
 			break;
@@ -964,7 +964,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("RecvAssert: Assert State not valid"<<sgState->SGAssertState);
+			NS_LOG_ERROR("RecvAssert: Assert State not valid"<<sgState->AssertState);
 		}
 	}
 }
@@ -1141,7 +1141,7 @@ MulticastRoutingProtocol::NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Add
 	SourceGroupList *sgList= FindSourceGroupList(interface); // get all the S,G pair
 	for (SourceGroupList::iterator sgState = sgList->begin(); sgState != sgList->end() ; sgState++){
 		if(sgState->SGAW == neighborIfaceAddr){// Find the assert winner
-			switch (sgState->SGAssertState){
+			switch (sgState->AssertState){
 				case  Assert_NoInfo:{
 					break;
 					}
@@ -1154,14 +1154,14 @@ MulticastRoutingProtocol::NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Add
 					//	expired.  The Assert state machine MUST transition to the NoInfo
 					//	(NI) state, delete the Assert Winner's address and metric, and
 					//	TODO: evaluate any possible transitions to its Upstream(S,G) state machine.
-					sgState->SGAssertState = Assert_NoInfo;
+					sgState->AssertState = Assert_NoInfo;
 					sgState->SGAssertWinner.metric_preference = 0xffffffff;
 					sgState->SGAssertWinner.route_metric = 0xffffffff;
 					sgState->SGAssertWinner.ip_address = Ipv4Address("255.255.255.255");
 					break;
 				}
 				default:{
-					NS_LOG_ERROR("NLTTimerExpire: Assert State not valid"<<sgState->SGAssertState);
+					NS_LOG_ERROR("NLTTimerExpire: Assert State not valid"<<sgState->AssertState);
 				}
 			}
 		}
@@ -1364,7 +1364,7 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp){
 					Ipv4Address current = GetLocalAddress(i);
 					msg.GetStateRefreshMessage().m_originatorAddr.m_unicastAddress = current;
 					SendStateRefresh(i,msg);
-//					switch (sgState->SGAssertState){
+//					switch (sgState->AssertState){
 //			case  Assert_NoInfo:{
 //				break;
 //				}
@@ -1377,7 +1377,7 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp){
 //				break;
 //			}
 //			default:{
-//				NS_LOG_ERROR("RecvData: Assert State not valid"<<sgState->SGAssertState);
+//				NS_LOG_ERROR("RecvData: Assert State not valid"<<sgState->AssertState);
 //			}
 //		}
 				}
@@ -1396,7 +1396,7 @@ void
 MulticastRoutingProtocol::ATTimerExpire (SourceGroupPair &sgp){
 	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
-	switch (sgState->SGAssertState){
+	switch (sgState->AssertState){
 		case  Assert_NoInfo:{
 			break;
 			}
@@ -1404,7 +1404,7 @@ MulticastRoutingProtocol::ATTimerExpire (SourceGroupPair &sgp){
 			//AT(S,G,I) Expires
 			//	The (S,G) Assert Timer (AT(S,G,I)) expires.  The Assert state
 			//	machine MUST transition to the NoInfo (NI) state.
-			sgState->SGAssertState = Assert_NoInfo;
+			sgState->AssertState = Assert_NoInfo;
 			break;
 			}
 		case Assert_Loser:{
@@ -1412,7 +1412,7 @@ MulticastRoutingProtocol::ATTimerExpire (SourceGroupPair &sgp){
 			//	The (S,G) Assert Timer (AT(S,G,I)) expires.  The Assert state
 			//	machine MUST transition to NoInfo (NI) state.  The router MUST
 			//	delete the Assert Winner's address and metric.
-			sgState->SGAssertState = Assert_NoInfo;
+			sgState->AssertState = Assert_NoInfo;
 			sgState->SGAssertWinner.metric_preference = 0xffffffff;
 			sgState->SGAssertWinner.route_metric = 0xffffffff;
 			sgState->SGAssertWinner.ip_address = Ipv4Address("255.255.255.255");
@@ -1425,7 +1425,7 @@ MulticastRoutingProtocol::ATTimerExpire (SourceGroupPair &sgp){
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("ATTimerExpire: Assert State not valid"<<sgState->SGAssertState);
+			NS_LOG_ERROR("ATTimerExpire: Assert State not valid"<<sgState->AssertState);
 		}
 	}
 }
@@ -1665,7 +1665,7 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterfac
 			NS_LOG_ERROR("PPTTimerExpire: Prune state not valid"<<sgState->PruneState);
 			break;
 	}
-	switch (sgState->SGAssertState){
+	switch (sgState->AssertState){
 		case  Assert_NoInfo:{
 			break;
 			}
@@ -1674,7 +1674,7 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterfac
 			//	This router's RPF interface changed, making CouldAssert(S,G,I) false.
 			//	This router can no longer perform the actions of the Assert winner,
 			//	so the Assert state machine MUST transition to NoInfo (NI) state,
-			sgState->SGAssertState = Assert_NoInfo;
+			sgState->AssertState = Assert_NoInfo;
 			//	send an AssertCancel(S,G) to interface I,
 			PIMHeader assertR;
 			ForgeAssertMessage(oldInterface,assertR);
@@ -1713,7 +1713,7 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterfac
 				//	RPF interface for S.  The Assert state machine MUST transition to
 				//	NoInfo (NI) state, cancel AT(S,G,I), and delete information
 				//	concerning the Assert Winner on I.
-				sgState->SGAssertState = Assert_NoInfo;
+				sgState->AssertState = Assert_NoInfo;
 				sgState->SG_AT.Cancel();
 				sgState->SGAssertWinner.metric_preference = 0xffffffff;
 				sgState->SGAssertWinner.route_metric = 0xffffffff;
@@ -1725,7 +1725,7 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterfac
 				//	RPF interface for S, and now it is not.  The Assert state machine
 				//	MUST transition to NoInfo (NI) state, cancel AT(S,G,I), and
 				//	delete information concerning the Assert Winner on I.
-				sgState->SGAssertState = Assert_NoInfo;
+				sgState->AssertState = Assert_NoInfo;
 				sgState->SG_AT.Cancel();
 				sgState->SGAssertWinner.metric_preference = 0xffffffff;
 				sgState->SGAssertWinner.route_metric = 0xffffffff;
@@ -1735,7 +1735,7 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterfac
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("RPF_Changes: Assert State not valid"<<sgState->SGAssertState);
+			NS_LOG_ERROR("RPF_Changes: Assert State not valid"<<sgState->AssertState);
 		}
 	}
 }
@@ -1988,7 +1988,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,I
 			NS_LOG_ERROR("RecvPruneDownstream: Prune state not valid"<<sgState->PruneState);
 			break;
 	}
-	switch (sgState->SGAssertState){
+	switch (sgState->AssertState){
 		case  Assert_NoInfo:{
 			//nothing
 			break;
@@ -2021,7 +2021,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,I
 			break;
 			}
 		default:{
-			NS_LOG_ERROR("RecvAssert: Assert State not valid"<<sgState->SGAssertState);
+			NS_LOG_ERROR("RecvAssert: Assert State not valid"<<sgState->AssertState);
 		}
 	}
 }
@@ -2109,7 +2109,7 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp,Ipv
 				break;
 			}
 		}
-		switch (sgState->SGAssertState){
+		switch (sgState->AssertState){
 			case  Assert_NoInfo:{
 				//nothing
 				break;
@@ -2142,7 +2142,7 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp,Ipv
 				break;
 			}
 			default:{
-				NS_LOG_ERROR("RecvAssert: Assert State not valid"<<sgState->SGAssertState);
+				NS_LOG_ERROR("RecvAssert: Assert State not valid"<<sgState->AssertState);
 			}
 		}
 	}
@@ -2153,7 +2153,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 	NS_LOG_FUNCTION(this);
 	uint32_t interface = GetReceivingInterface(sender);
 	SourceGroupState *sgState = FindSourceGroupState(interface,assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress);
-	switch (sgState->SGAssertState){
+	switch (sgState->AssertState){
 			case  Assert_NoInfo:{
 			//Receive Inferior (Assert OR State Refresh) AND CouldAssert(S,G,I)==TRUE.
 			//   An Assert or State Refresh is received for (S,G) that is inferior
@@ -2164,7 +2164,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				struct AssertMetric received (assert.m_metricPreference,assert.m_metric, receiver);
 				if( my_assert_metric(assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress,RPF_interface(sender)) > received
 						&& CouldAssert(assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress,RPF_interface(sender))){
-					sgState->SGAssertState = Assert_Winner;
+					sgState->AssertState = Assert_Winner;
 					PIMHeader assertR;
 					ForgeAssertMessage(interface,assertR);
 					assertR.GetAssertMessage().m_sourceAddr.m_unicastAddress = assert.m_sourceAddr.m_unicastAddress;
@@ -2189,7 +2189,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					//	Assert_Time.  If the metric was received in a State Refresh, the
 					//	router MUST set the Assert Timer (AT(S,G,I)) to three times the
 					//	received State Refresh Interval.
-					sgState->SGAssertState = Assert_Loser;
+					sgState->AssertState = Assert_Loser;
 					sgState->SGAssertWinner.metric_preference = assert.m_metricPreference;
 					sgState->SGAssertWinner.route_metric = assert.m_metric;
 					sgState->SGAssertWinner.ip_address = receiver;
@@ -2245,7 +2245,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					//	Timer (AT(S,G,I)) to Assert_Time.  If the metric was received in
 					//	a State Refresh, the router MUST set the Assert Timer (AT(S,G,I))
 					//	to three times the State Refresh Interval.
-					sgState->SGAssertState = Assert_Loser;
+					sgState->AssertState = Assert_Loser;
 					sgState->SGAssertWinner.metric_preference = assert.m_metricPreference;
 					sgState->SGAssertWinner.route_metric = assert.m_metric;
 					sgState->SGAssertWinner.ip_address = receiver;
@@ -2281,7 +2281,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 			//   when data packets from S have started flowing again.
 				struct AssertMetric received (assert.m_metricPreference,assert.m_metric, receiver);
 				if(my_assert_metric(assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress,RPF_interface(sender)) > received){
-					sgState->SGAssertState = Assert_NoInfo;
+					sgState->AssertState = Assert_NoInfo;
 					sgState->SG_AT.Cancel();
 					sgState->SGAssertWinner.metric_preference = 0XFFFFFFFF;
 					sgState->SGAssertWinner.route_metric = 0XFFFFFFFF;
@@ -2300,7 +2300,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					//	store the address and metric of the new Assert Winner, and if
 					//	CouldAssert(S,G,I) == TRUE, the router MUST multicast a
 					//	Prune(S,G) to the new Assert winner.
-					sgState->SGAssertState = Assert_Loser;
+					sgState->AssertState = Assert_Loser;
 					sgState->SGAssertWinner.metric_preference = assert.m_metricPreference;
 					sgState->SGAssertWinner.route_metric = assert.m_metric;
 					sgState->SGAssertWinner.ip_address = receiver;
@@ -2323,7 +2323,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				break;
 			}
 			default:{
-				NS_LOG_ERROR("RecvAssert: Assert State not valid"<<sgState->SGAssertState);
+				NS_LOG_ERROR("RecvAssert: Assert State not valid"<<sgState->AssertState);
 			}
 		}
 }
@@ -2409,7 +2409,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			sgStateB->SG_PT.SetDelay(Seconds(2 * StateRefreshInterval));
 		}
 	}
-	switch (sgState->SGAssertState){
+	switch (sgState->AssertState){
 		case  Assert_NoInfo:{
 			//Receive Inferior (Assert OR State Refresh) AND CouldAssert(S,G,I)==TRUE.
 			//   An Assert or State Refresh is received for (S,G) that is inferior
@@ -2420,7 +2420,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				struct AssertMetric received (refresh.m_metricPreference,refresh.m_metric, refresh.m_originatorAddr.m_unicastAddress);
 				if(my_assert_metric(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,interface) > received
 						&& CouldAssert(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,interface)){
-					sgState->SGAssertState = Assert_Winner;
+					sgState->AssertState = Assert_Winner;
 					PIMHeader assertR;
 					ForgeAssertMessage(interface,assertR);
 					assertR.GetAssertMessage().m_sourceAddr.m_unicastAddress = refresh.m_sourceAddr.m_unicastAddress;
@@ -2445,7 +2445,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					//	Assert_Time.  If the metric was received in a State Refresh, the
 					//	router MUST set the Assert Timer (AT(S,G,I)) to three times the
 					//	received State Refresh Interval.
-					sgState->SGAssertState = Assert_Loser;
+					sgState->AssertState = Assert_Loser;
 					sgState->SGAssertWinner.metric_preference = refresh.m_metricPreference;
 					sgState->SGAssertWinner.route_metric = refresh.m_metric;
 					sgState->SGAssertWinner.ip_address = refresh.m_originatorAddr.m_unicastAddress;
@@ -2501,7 +2501,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				//	Timer (AT(S,G,I)) to Assert_Time.  If the metric was received in
 				//	a State Refresh, the router MUST set the Assert Timer (AT(S,G,I))
 				//	to three times the State Refresh Interval.
-				sgState->SGAssertState= Assert_Loser;
+				sgState->AssertState= Assert_Loser;
 				sgState->SGAssertWinner.metric_preference = refresh.m_metricPreference;
 				sgState->SGAssertWinner.route_metric = refresh.m_metric;
 				sgState->SGAssertWinner.ip_address = refresh.m_originatorAddr.m_unicastAddress;
@@ -2537,7 +2537,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			//   when data packets from S have started flowing again.
 			struct AssertMetric received (refresh.m_metricPreference,refresh.m_metric, refresh.m_originatorAddr.m_unicastAddress);
 			if(my_assert_metric(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,interface) > received){
-				sgState->SGAssertState = Assert_NoInfo;
+				sgState->AssertState = Assert_NoInfo;
 				sgState->SG_AT.Cancel();
 				sgState->SGAssertWinner.metric_preference = 0XFFFFFFFF;
 				sgState->SGAssertWinner.route_metric = 0XFFFFFFFF;
@@ -2579,7 +2579,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("RecvStateRefresh: Assert State not valid"<<sgState->SGAssertState);
+			NS_LOG_ERROR("RecvStateRefresh: Assert State not valid"<<sgState->AssertState);
 		}
 	}
 }
@@ -2649,7 +2649,7 @@ SRMP.m_P = 0;
      SRMP.m_metricPreference = m_mrib.find(SRMP.m_sourceAddr.m_unicastAddress)->second.metricPreference;
 //     set mask of SRM' to mask of route used to reach S;
 	SourceGroupState *sgState = FindSourceGroupState(*i_nbrs,refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress);
-     if (sgState->SGAssertState == Assert_NoInfo) {
+     if (sgState->AssertState == Assert_NoInfo) {
        //set Assert Override of SRM' to 1;
        SRMP.m_O = 1;
      } else {
@@ -2728,7 +2728,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 //						for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++){
 							// if the neighbor is downstream, the router MAY replay the last State Refresh message for any (S,G)
 							//   pairs for which it is the Assert Winner indicating Prune and Assert status to the downstream router.
-							if(IsDownstream(interface,sgElement->SGPair) && sgElement->SGAssertState == Assert_Winner){
+							if(IsDownstream(interface,sgElement->SGPair) && sgElement->AssertState == Assert_Winner){
 								//   These State Refresh messages SHOULD be sent out immediately after the Hello message.
 								Simulator::Schedule (Seconds(delay.GetMicroSeconds()+1), &MulticastRoutingProtocol::SendStateRefreshPair, this, interface, sender, sgElement->SGPair);
 								break;

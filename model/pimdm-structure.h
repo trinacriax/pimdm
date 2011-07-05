@@ -108,7 +108,7 @@ struct SourceGroupState{
 		members(false),
 		lastStateRefresh(Seconds(0)),
 		SGLocalMembership(Local_NoInfo),
-		SGAssertState(Assert_NoInfo),
+		AssertState(Assert_NoInfo),
 		SGAssertWinner(),
 		SG_AT(Timer::CANCEL_ON_DESTROY),
 		PruneState(Prune_NoInfo),
@@ -124,7 +124,7 @@ struct SourceGroupState{
 	/// Local membership.
 	enum LocalMembership SGLocalMembership;///<4.1.2. State: One of {"NoInfo", "Include"}
 	/// Assert Winner State.
-	enum AssertWinnerState SGAssertState;///4.1.2. State: One of {"NoInfo" (NI), "I lost Assert" (L), "I won Assert" (W)}
+	enum AssertWinnerState AssertState;///4.1.2. State: One of {"NoInfo" (NI), "I lost Assert" (L), "I won Assert" (W)}
 	/// Assert Winner on (S,G,I)
 	struct AssertMetric SGAssertWinner;
 	/// Assert Timer.
@@ -211,7 +211,7 @@ struct UpstreamState{
 //	os << "SourceGroupState (SourceGroupPair = ("<< a.SGPair.sourceIfaceAddr <<
 //			","<<a.SGPair.groupMulticastAddr<< "), LocalMembership = " << a.SGLocalMembership <<
 //			", PruneState = " << a.PruneState << ", PPT = " << a.SGPPT.GetDelay().GetSeconds() <<
-//			", PT = "<< a.SGPT << ", Assert Winner = " << a.SGAssertState <<
+//			", PT = "<< a.SGPT << ", Assert Winner = " << a.AssertState <<
 //			", Assert Timer = "<< a.SGAT << ", Assert winner IP = "<< a.SGAW <<
 //			", Assert winner Metric = "<<a.SGAM<<", Graft/Prune State = " <<
 //			", GraftPruneState = "<<a.SGGraftPrune<< ", GRT = "<< a.SGGRT.GetDelay().GetSeconds() <<

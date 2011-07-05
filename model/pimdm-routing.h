@@ -484,7 +484,7 @@ private:
 			SourceGroupState *sgs = FindSourceGroupState(interface, ns);
 			sgs->SGLocalMembership = Local_NoInfo;
 			sgs->PruneState = Prune_NoInfo;
-			sgs->SGAssertState = Assert_NoInfo;
+			sgs->AssertState = Assert_NoInfo;
 			if(RPF_interface(ns.SGPair.sourceIfaceAddr) == interface){
 				UpstreamState us;
 				sgs->upstream=&us;
@@ -849,7 +849,7 @@ private:
 
 	bool I_Am_Assert_loser(Ipv4Address source, Ipv4Address group, uint32_t interface) {
 		SourceGroupState *sgState = FindSourceGroupState(RPF_interface(source),source,group);
-		return sgState->SGAssertState == Assert_Loser;
+		return sgState->AssertState == Assert_Loser;
 	}
 	//TODO and AssertWinnerMetric(S,G,I) defaults to Infinity when in the NoInfo state.
 	struct AssertMetric AssertWinnerMetric(Ipv4Address source, Ipv4Address group, uint32_t interface) {
