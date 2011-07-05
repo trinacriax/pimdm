@@ -2369,7 +2369,6 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 		//	the State Refresh's Interval times two.  The router SHOULD then propagate the State Refresh as described in Section 4.5.1.
 		sgStateB->PruneState = (refresh.m_P ? Prune_Pruned: Prune_NoInfo);
 		if(refresh.m_P){
-			sgStateB->upstream->SG_PLT.SetDelay(Seconds(PruneHoldTime));
 			sgStateB->SG_PT.SetDelay(Seconds(2 * StateRefreshInterval));
 		}
 	}
