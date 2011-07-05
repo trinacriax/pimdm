@@ -1912,7 +1912,7 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4
 		//	The Upstream(S,G) state machine stays in the Pruned (P) state.
 		//	The router MAY reset its PLT(S,G) to the value in the Holdtime field of the received message
 		//	if it is greater than the current value of the PLT(S,G).
-			if(jp.m_joinPruneMessage.m_holdTime>sgState->upstream->SG_PLT.GetDelay()){
+			if(RPF_prime(source.m_sourceAddress) == receiver && jp.m_joinPruneMessage.m_holdTime>sgState->upstream->SG_PLT.GetDelay()){
 				sgState->upstream->SG_PLT.Cancel();
 				sgState->upstream->SG_PLT.SetDelay(jp.m_joinPruneMessage.m_holdTime);
 				sgState->upstream->SG_PLT.Schedule();
