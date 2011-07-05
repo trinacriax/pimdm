@@ -369,10 +369,11 @@ MulticastRoutingProtocol::ForgeAssertCancelMessage (uint32_t interface, PIMHeade
 	assertMessage.m_metric = 0xffffffff;
 }
 
+void
 MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair &sgp, PIMHeader &msg){
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
- 	ForgeHeaderMessage(PIM_STATE_REF, msg);
+	ForgeHeaderMessage(PIM_STATE_REF, msg);
 	PIMHeader::StateRefreshMessage refresh = msg.GetStateRefreshMessage();
 	refresh.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);//TODO check whether params are correct or not.
 	refresh.m_sourceAddr = ForgeEncodedUnicast(sgp.sourceIfaceAddr);
@@ -388,7 +389,7 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair
 	refresh.m_O = (!sgState->SG_AT.IsRunning() && (IsUpstream(m_mrib.find(sgp.sourceIfaceAddr)->second.interface,sgp))?1:0);
 	refresh.m_reserved = 0;
 	refresh.m_interval = RefreshInterval;
- }
+}
 
 void
 MulticastRoutingProtocol::ForgeHelloMessageHoldTime (uint32_t interface, PIMHeader &msg){
