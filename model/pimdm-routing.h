@@ -358,7 +358,7 @@ private:
 	void RecvAssert(PIMHeader::AssertMessage &assert, Ipv4Address sender,Ipv4Address receiver);
 
 	void SendGraft(uint32_t interface, SourceGroupPair pair);
-	void SendGraftUnicast(uint32_t interface, Ipv4Address target,SourceGroupPair pair);
+	void SendGraftUnicast(Ipv4Address destination,SourceGroupPair pair);
 
 	void RecvGraft(PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver);
 	void RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ipv4Address sender,const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group);

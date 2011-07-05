@@ -991,7 +991,7 @@ MulticastRoutingProtocol::RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ip
 	uint32_t interface = GetReceivingInterface(receiver);
 	//The transition event "RcvGraftAck(S,G)" implies receiving a Graft Ack message targeted to this router's address on the incoming interface
 	//	for the (S,G) entry.  If the destination address is not correct, the state transitions in this state machine must not occur.
-	if(GetLocalAddress(interface) != graftAck.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress)return;
+	if(GetLocalAddress(interface) != graftAck.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress) return;
 	for(std::vector<struct PIMHeader::MulticastGroupEntry>::iterator groups = graftAck.m_multicastGroups.begin();
 			groups != graftAck.m_multicastGroups.end(); groups++){
 		graftAck.Print(std::cout);
@@ -1219,10 +1219,16 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp){
 		//	Another Graft message for (S,G) SHOULD be unicast to RPF'(S) and the GraftRetry Timer (GRT(S,G)) reset to Graft_Retry_Period.
 		//	It is RECOMMENDED that the router retry a configured number of times before ceasing retries.
 			Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
-			SendGraftUnicast(RPF_interface(target),target,sgp);
-			sgState->upstream->SG_GRT.Cancel();
-			sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
-			sgState->upstream->SG_GRT.Schedule();
+			NeighborState dest(target,GetLocalAddress(GetReceivingInterface(target)));
+			NeighborState *ns = FindNeighborState(GetReceivingInterface(target),dest);
+			if(ns->neighborGraftRetry[0]<ns->neighborGraftRetry[1]){//increase counter retries
+				SendGraftUnicast(target,sgp);
+				sgState->upstream->SG_GRT.Cancel();
+				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
+				sgState->upstream->SG_GRT.Schedule();
+			}else{
+				ns->neighborGraftRetry[0] = 0;//reset counter retries
+			}
 			break;
 		}
 		default:{
@@ -1544,8 +1550,10 @@ MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp, std::set<uint32_t> lis
 				sgState->upstream->SG_PLT.Cancel();
 				sgState->upstream->SGGraftPrune = GP_AckPending;
 				Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
-				SendGraftUnicast(RPF_interface(target),target, sgp);
+				SendGraftUnicast(target, sgp);
+				sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
+				sgState->upstream->SG_GRT.Schedule();
 			}
 			break;
 		}
@@ -1743,7 +1751,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 		//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 		//	The Upstream(S,G) state machine MUST transition to the Pruned (P) state.
 			if(outlist.size()==0){
-				sgState->upstream->SGGraftPrune =GP_Pruned;
+				sgState->upstream->SGGraftPrune = GP_Pruned;
 			}
 		//RPF'(S) Changes AND olist(S,G) is non-NULL AND S NOT directly connected
 		//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
@@ -1751,8 +1759,8 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 		//	unicast a Graft to the new RPF'(S), and set the GraftRetry Timer (GRT(S,G)) to Graft_Retry_Period.
 			if(outlist.size()>0 && sgp.sourceIfaceAddr != m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr){
 				sgState->upstream->SGGraftPrune = GP_AckPending;
-				Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
-				SendGraftUnicast(RPF_interface(target),target,sgp);
+				Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
+				SendGraftUnicast(destination,sgp);
 				sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
 				sgState->upstream->SG_GRT.Schedule();
@@ -1773,8 +1781,8 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 			//	send a Graft unicast to the new RPF'(S), and set the GraftRetry Timer (GRT(S,G)) to Graft_Retry_Period.
 				sgState->upstream->SG_PLT.Cancel();
 				sgState->upstream->SGGraftPrune = GP_AckPending;
-				Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
-				SendGraftUnicast(RPF_interface(target),target,sgp);//TODO check
+				Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
+				SendGraftUnicast(destination,sgp);//TODO check
 				sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
 				sgState->upstream->SG_GRT.Schedule();
@@ -1796,7 +1804,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 				//	The Upstream(S,G) state machine stays in the AckPending (AP) state.
 				//	A Graft MUST be unicast to the new RPF'(S) and the GraftRetry Timer (GRT(S,G)) reset to Graft_Retry_Period.
 				Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
-				SendGraftUnicast(RPF_interface(target), target, sgp);//TODO check
+				SendGraftUnicast(target, sgp);//TODO check
 				sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
 				sgState->upstream->SG_GRT.Schedule();
