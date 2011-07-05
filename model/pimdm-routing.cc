@@ -2420,13 +2420,12 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 						PIMHeader::MulticastGroupEntry mge;
 						AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(refresh.m_sourceAddr.m_unicastAddress));
 						PIMHeader msg;
-						Ipv4Address target = refresh.m_originatorAddr.m_unicastAddress;
 						ForgePruneMessage(msg);
 						CreateMulticastGroupEntry(msg,mge,ForgeEncodedGroup(refresh.m_multicastGroupAddr.m_groupAddress));
-						msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = target;//TODO check
+						msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = refresh.m_originatorAddr.m_unicastAddress;
 						msg.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 						Ptr<Packet> packet = Create<Packet> ();
-						SendPacket(packet,msg,target);
+						SendPacket(packet,msg,refresh.m_originatorAddr.m_unicastAddress);
 					}
 				}
 				break;
@@ -2438,7 +2437,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			//	is in error.  The router MUST send an Assert(S,G) to interface I
 			//	and reset the Assert Timer (AT(S,G,I)) to Assert_Time.
 			struct AssertMetric received (refresh.m_metricPreference,refresh.m_metric, refresh.m_originatorAddr.m_unicastAddress);
-			if(my_assert_metric(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,interface) > received){
+			if(received < my_assert_metric(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,interface)){
 				PIMHeader assertR;
 				ForgeAssertMessage(interface, assertR, sgp);
 //				assertR.GetAssertMessage().m_metricPreference = sgState->AssertWinner.metric_preference;
@@ -2473,13 +2472,12 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				PIMHeader::MulticastGroupEntry mge;
 				AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(refresh.m_sourceAddr.m_unicastAddress));
 				PIMHeader prune;
-				Ipv4Address target = refresh.m_originatorAddr.m_unicastAddress;
 				ForgePruneMessage(prune);
 				CreateMulticastGroupEntry(prune,mge,ForgeEncodedGroup(refresh.m_multicastGroupAddr.m_groupAddress));
-				prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = target;//TODO check
+				prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = refresh.m_originatorAddr.m_unicastAddress;//TODO check
 				prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 				Ptr<Packet> packet = Create<Packet> ();
-				SendPacket(packet,prune,target);
+				SendPacket(packet,prune,refresh.m_originatorAddr.m_unicastAddress);
 			}
 			break;
 			}
@@ -2494,7 +2492,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			//   machine.  Usually this router will eventually re-assert and win
 			//   when data packets from S have started flowing again.
 			struct AssertMetric received (refresh.m_metricPreference,refresh.m_metric, refresh.m_originatorAddr.m_unicastAddress);
-			if(my_assert_metric(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,interface) > received){
+			if(received < my_assert_metric(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,interface)){
 				sgState->AssertState = Assert_NoInfo;
 				if(sgState->SG_AT.IsRunning())
 					sgState->SG_AT.Cancel();
@@ -2522,13 +2520,12 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					PIMHeader::MulticastGroupEntry mge;
 					AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(refresh.m_sourceAddr.m_unicastAddress));
 					PIMHeader prune;
-					Ipv4Address target = refresh.m_originatorAddr.m_unicastAddress;
 					ForgePruneMessage(prune);
 					CreateMulticastGroupEntry(prune,mge,ForgeEncodedGroup(refresh.m_multicastGroupAddr.m_groupAddress));
-					prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = target;//TODO check
+					prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = refresh.m_originatorAddr.m_unicastAddress;//TODO check
 					prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 					Ptr<Packet> packet = Create<Packet> ();
-					SendPacket(packet,prune,target);
+					SendPacket(packet,prune,refresh.m_originatorAddr.m_unicastAddress);
 				}
 			}
 			break;
