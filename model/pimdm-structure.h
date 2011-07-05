@@ -80,6 +80,11 @@ operator > (const AssertMetric &a, const AssertMetric &b){
 					!(a.ip_address < b.ip_address));
 }
 
+static inline bool
+operator < (const AssertMetric &a, const AssertMetric &b){
+	return b > a;
+}
+
 /// (S,G) Pair. Source S and destination group G associated with an IP packet.
 struct SourceGroupPair{
 	SourceGroupPair():
