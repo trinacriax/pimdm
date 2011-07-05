@@ -113,7 +113,7 @@ struct SourceGroupState{
 		lastStateRefresh(Seconds(0)),
 		LocalMembership(Local_NoInfo),
 		AssertState(Assert_NoInfo),
-		SGAssertWinner(),
+		AssertWinner(),
 		SG_AT(Timer::CANCEL_ON_DESTROY),
 		PruneState(Prune_NoInfo),
 		SG_PT(Timer::CANCEL_ON_DESTROY),
@@ -129,7 +129,7 @@ struct SourceGroupState{
 		lastStateRefresh(Seconds(0)),
 		LocalMembership(Local_NoInfo),
 		AssertState(Assert_NoInfo),
-		SGAssertWinner(),
+		AssertWinner(),
 		SG_AT(Timer::CANCEL_ON_DESTROY),
 		PruneState(Prune_NoInfo),
 		SG_PT(Timer::CANCEL_ON_DESTROY),
@@ -146,7 +146,7 @@ struct SourceGroupState{
 	/// Assert Winner State.
 	enum AssertWinnerState AssertState;///4.1.2. State: One of {"NoInfo" (NI), "I lost Assert" (L), "I won Assert" (W)}
 	/// Assert Winner on (S,G,I)
-	struct AssertMetric SGAssertWinner;
+	struct AssertMetric AssertWinner;
 	/// Assert Timer.
 	Timer SG_AT;
 	/// Prune State.

@@ -807,9 +807,8 @@ private:
 		if (RPF_interface(source) == interface) {
 			return false;
 		} else {
-			return (AssertWinner(source, group, interface) != GetLocalAddress(interface)
-					&& (AssertWinnerMetric(source, group, interface)
-							> spt_assert_metric(source, interface)));
+			return (AssertWinner(source, group, interface)!=NULL && AssertWinner(source, group, interface)  != GetLocalAddress(interface)
+					&& (AssertWinnerMetric(source, group, interface) > spt_assert_metric(source, interface)));
 		}
 	}
 
@@ -855,8 +854,8 @@ private:
 	}
 	//TODO and AssertWinnerMetric(S,G,I) defaults to Infinity when in the NoInfo state.
 	struct AssertMetric AssertWinnerMetric(Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		struct AssertMetric assertMetric(0, 0,source.Get());
-		return assertMetric;
+		SourceGroupState *sgState = FindSourceGroupState(RPF_interface(source),source,group);
+		return (sgState && sgState->AssertState == Assert_NoInfo) ? infinite_assert_metric() : sgState->AssertWinner;
 	}
 
 	bool CouldAssert (Ipv4Address source, Ipv4Address group, uint32_t interface) {
