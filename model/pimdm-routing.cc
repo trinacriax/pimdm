@@ -2766,7 +2766,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 			case PIMHeader::HelloMessage::StateRefreshCapable:{
 				ns->neighborVersion = hello.m_optionList[entry].m_optionValue.stateRefreshCapable.m_version;
 				ns->neighborInterval = hello.m_optionList[entry].m_optionValue.stateRefreshCapable.m_interval;
-				ns->neighborReserved = hello.m_optionList[entry].m_optionValue.stateRefreshCapable.m_reserved;
+//				ns->neighborReserved = hello.m_optionList[entry].m_optionValue.stateRefreshCapable.m_reserved;
 				break;
 			}
 			default:{
