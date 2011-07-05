@@ -337,13 +337,14 @@ MulticastRoutingProtocol::ForgePruneMessage (PIMHeader &msg){
 void
 MulticastRoutingProtocol::ForgeAssertMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp){
 	NS_LOG_FUNCTION(this);
+	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 	ForgeHeaderMessage(PIM_JP, msg);
 	PIMHeader::AssertMessage assertMessage = msg.GetAssertMessage();
 	assertMessage.m_sourceAddr =  ForgeEncodedUnicast(sgp.sourceIfaceAddr);
 	assertMessage.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);
 	assertMessage.m_R = 0;
-	assertMessage.m_metricPreference = m_mrib.find(sgp.sourceIfaceAddr)->second.metricPreference;
-	assertMessage.m_metric = m_mrib.find(sgp.sourceIfaceAddr)->second.route_metric;
+	assertMessage.m_metricPreference = (sgState==NULL) ? m_mrib.find(sgp.sourceIfaceAddr)->second.metricPreference:sgState->AssertWinner.metric_preference;
+	assertMessage.m_metric = (sgState==NULL) ? m_mrib.find(sgp.sourceIfaceAddr)->second.route_metric: sgState->AssertWinner.route_metric;
 }
 
 void
