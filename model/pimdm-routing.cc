@@ -685,7 +685,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 		return;
 	}
 	if(interface == RPF_interface(sender)){
-		if(sgState->SGPruneState!=Prune_Pruned ){
+		if(sgState->PruneState!=Prune_Pruned ){
 			/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
 			/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
 			oiflist = olist(sender,receiver);
@@ -759,14 +759,14 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 	refresh.m_metric = m_mrib.find(sgp.sourceIfaceAddr)->second.route_metric;
 	refresh.m_maskLength = IPV4_ADDRESS_SIZE;
 	refresh.m_ttl = 7; // TODO ??
-	refresh.m_P = (sgState->SGPruneState==Prune_Pruned?1:0);
+	refresh.m_P = (sgState->PruneState==Prune_Pruned?1:0);
 	refresh.m_N = 0;
 	refresh.m_O = (!sgState->SG_AT.IsRunning() && (IsUpstream(m_mrib.find(sgp.sourceIfaceAddr)->second.interface,sgp))?1:0);
 	refresh.m_reserved = 0;
 	refresh.m_interval = RefreshInterval;
 
 	SendPacket(packet,msg,target);
-	switch (sgState->SGPruneState) {
+	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
 			// nothing
 			break;
@@ -785,7 +785,7 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 			break;
 		}
 		default:
-			NS_LOG_ERROR("SendStateRefreshPair : Prune state not valid"<<sgState->SGPruneState);
+			NS_LOG_ERROR("SendStateRefreshPair : Prune state not valid"<<sgState->PruneState);
 			break;
 	}
 		switch (sgState->SGAssertState){
@@ -891,7 +891,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 	Ipv4Address current = GetLocalAddress(interface);
 	SourceGroupPair sgp (source.m_sourceAddress, group.m_groupAddress);
 	SourceGroupState *sgState = FindSourceGroupState(interface,source.m_sourceAddress,group.m_groupAddress);
-	switch (sgState->SGPruneState) {
+	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
 		//A Graft(S,G) is received on the interface I with the upstream neighbor field set to the router's
 		//	address on I.  The Prune(S,G) Downstream state machine on interface I stays in the NoInfo (NI)
@@ -906,7 +906,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 		//	interface I MUST transition to the NoInfo (NI) state and MUST unicast a Graft Ack
 		//	message to the Graft originator.  The PrunePending Timer (PPT(S,G,I)) MUST be cancelled.
 			if(graft.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
-				sgState->SGPruneState = Prune_NoInfo;
+				sgState->PruneState = Prune_NoInfo;
 				SendGraftAckUnicast(interface,sgp,sender);
 				sgState->SG_PPT.Cancel();
 			}
@@ -919,14 +919,14 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 		//	TODO: The router MUST evaluate any possible transitions in the Upstream(S,G) state machine.
 		case Prune_Pruned:{
 			if(graft.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
-				sgState->SGPruneState = Prune_NoInfo;
+				sgState->PruneState = Prune_NoInfo;
 				SendGraftAckUnicast(interface,sgp,sender);
 				sgState->SG_PPT.Cancel();
 			}
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("RecvGraftDownstream: Prune state not valid"<<sgState->SGPruneState);
+			NS_LOG_ERROR("RecvGraftDownstream: Prune state not valid"<<sgState->PruneState);
 			break;
 		}
 	}
@@ -1242,7 +1242,7 @@ void
 MulticastRoutingProtocol::PPTTimerExpire(SourceGroupPair &sgp){
 	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
-	switch (sgState->SGPruneState) {
+	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
 			// nothing
 			break;
@@ -1251,7 +1251,7 @@ MulticastRoutingProtocol::PPTTimerExpire(SourceGroupPair &sgp){
 		//PPT(S,G,I) Expires: The PrunePending Timer (PPT(S,G,I)) expires, indicating that no
 		//	neighbors have overridden the previous Prune(S,G) message.  The Prune(S,G) Downstream
 		//	state machine on interface I MUST transition to the Pruned (P) state.
-			sgState->SGPruneState = Prune_Pruned;
+			sgState->PruneState = Prune_Pruned;
 		//	The Prune Timer (PT(S,G,I)) is started and MUST be initialized to the received
 		//	Prune_Hold_Time minus J/P_Override_Interval.
 			NeighborhoodStatus *nstatus = FindNeighborhoodStatus(RPF_interface(sgp.sourceIfaceAddr));
@@ -1281,7 +1281,7 @@ MulticastRoutingProtocol::PPTTimerExpire(SourceGroupPair &sgp){
 			break;
 		}
 		default:
-			NS_LOG_ERROR("PPTTimerExpire: Prune state not valid"<<sgState->SGPruneState);
+			NS_LOG_ERROR("PPTTimerExpire: Prune state not valid"<<sgState->PruneState);
 			break;
 	}
 }
@@ -1292,7 +1292,7 @@ void
 MulticastRoutingProtocol::PTTimerExpire(SourceGroupPair &sgp){
 	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
-	switch (sgState->SGPruneState) {
+	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
 			// nothing
 			break;
@@ -1306,11 +1306,11 @@ MulticastRoutingProtocol::PTTimerExpire(SourceGroupPair &sgp){
 		//	time to flood data from S addressed to group G onto interface I.
 		//	The Prune(S,G) Downstream state machine on interface I MUST transition to the NoInfo (NI) state.
 		//	TODO: The router MUST evaluate any possible transitions in the Upstream(S,G) state machine.
-			sgState->SGPruneState = Prune_NoInfo;
+			sgState->PruneState = Prune_NoInfo;
 			break;
 		}
 		default:
-			NS_LOG_ERROR("PTTimerExpire: Prune state not valid"<<sgState->SGPruneState);
+			NS_LOG_ERROR("PTTimerExpire: Prune state not valid"<<sgState->PruneState);
 			break;
 	}
 }
@@ -1354,7 +1354,7 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp){
 			refresh.m_metric = m_mrib.find(sgp.sourceIfaceAddr)->second.route_metric;
 			refresh.m_maskLength = IPV4_ADDRESS_SIZE;
 			refresh.m_ttl = (sgState->SG_DATA_TTL>0 ? sgState->SG_DATA_TTL : sgState->SG_SR_TTL); // TODO ??
-			refresh.m_P = (sgState->SGPruneState==Prune_Pruned?1:0);
+			refresh.m_P = (sgState->PruneState==Prune_Pruned?1:0);
 			refresh.m_N = 0;
 			refresh.m_O = (!sgState->SG_AT.IsRunning() && (IsUpstream(m_mrib.find(sgp.sourceIfaceAddr)->second.interface,sgp))?1:0);
 			refresh.m_reserved = 0;
@@ -1640,7 +1640,7 @@ void
 MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterface, uint32_t newInterface){
 	ChangeSourceGroupState(oldInterface,newInterface,*FindSourceGroupState(oldInterface,sgp));
 	SourceGroupState *sgState = FindSourceGroupState(newInterface,sgp);
-	switch (sgState->SGPruneState) {
+	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
 			// nothing
 			break;
@@ -1649,7 +1649,7 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterfac
 		//RPF_Interface(S) becomes interface I. The upstream interface for S has changed.
 		//	The Prune(S,G) Downstream state machine on interface I MUST transition to the
 		//	NoInfo (NI) state.  The PrunePending Timer (PPT(S,G,I)) MUST be cancelled.
-			sgState->SGPruneState = Prune_NoInfo;
+			sgState->PruneState = Prune_NoInfo;
 			sgState->SG_PPT.Cancel();
 			break;
 		}
@@ -1657,12 +1657,12 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterfac
 		//RPF_Interface(S) becomes interface I. The upstream interface for S has changed.
 		//	The Prune(S,G) Downstream state machine on interface I MUST transition to the NoInfo (NI) state.
 		//	The PruneTimer (PT(S,G,I)) MUST be cancelled.
-			sgState->SGPruneState = Prune_NoInfo;
+			sgState->PruneState = Prune_NoInfo;
 			sgState->SG_PPT.Cancel();
 			break;
 		}
 		default:
-			NS_LOG_ERROR("PPTTimerExpire: Prune state not valid"<<sgState->SGPruneState);
+			NS_LOG_ERROR("PPTTimerExpire: Prune state not valid"<<sgState->PruneState);
 			break;
 	}
 	switch (sgState->SGAssertState){
@@ -1942,7 +1942,7 @@ void //TOCHECK
 MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group){
 	SourceGroupState *sgState = FindSourceGroupState(interface,source.m_sourceAddress, group.m_groupAddress);
 	Ipv4Address current = GetLocalAddress(interface);
-	switch (sgState->SGPruneState) {
+	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
 			//Receive Prune(S,G): A Prune(S,G) is received on interface I with the upstream neighbor field
 			//  set to the router's address on I.  The Prune(S,G) Downstream state machine on interface I
@@ -1953,7 +1953,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,I
 			if(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
 				NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
 				Time JP_Override_Interval= nstatus->overrideInterval+nstatus->propagationDelay;
-				sgState->SGPruneState = Prune_PrunePending;
+				sgState->PruneState = Prune_PrunePending;
 				if(nstatus->neighbors.size() == 1){
 					sgState->SG_PPT.SetDelay(Seconds(0));
 				}
@@ -1985,7 +1985,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,I
 			break;
 		}
 		default:
-			NS_LOG_ERROR("RecvPruneDownstream: Prune state not valid"<<sgState->SGPruneState);
+			NS_LOG_ERROR("RecvPruneDownstream: Prune state not valid"<<sgState->PruneState);
 			break;
 	}
 	switch (sgState->SGAssertState){
@@ -2077,7 +2077,7 @@ void // TOCHECK
 MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group){
 		SourceGroupState *sgState = FindSourceGroupState(interface,source.m_sourceAddress, group.m_groupAddress);
 		Ipv4Address current = GetLocalAddress(interface);
-		switch (sgState->SGPruneState) {
+		switch (sgState->PruneState) {
 			case Prune_NoInfo:{
 				break;
 			}
@@ -2087,7 +2087,7 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp,Ipv
 				//	on interface I MUST transition to the NoInfo (NI) state.
 				//	The PrunePending Timer (PPT(S,G,I)) MUST be cancelled.
 				if(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
-					sgState->SGPruneState = Prune_NoInfo;
+					sgState->PruneState = Prune_NoInfo;
 					sgState->SG_PPT.Cancel();
 				}
 				break;
@@ -2099,13 +2099,13 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp,Ipv
 			//	The Prune Timer (PT(S,G,I)) MUST be cancelled.
 			//	TODO: The router MUST evaluate any possible transitions in the Upstream(S,G) state machine.
 				if(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
-					sgState->SGPruneState = Prune_NoInfo;
+					sgState->PruneState = Prune_NoInfo;
 					sgState->SG_PPT.Cancel();
 				}
 				break;
 			}
 			default:{
-				NS_LOG_ERROR("RecvPruneDownstream: Prune state not valid"<<sgState->SGPruneState);
+				NS_LOG_ERROR("RecvPruneDownstream: Prune state not valid"<<sgState->PruneState);
 				break;
 			}
 		}
@@ -2403,7 +2403,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 		}
 		//	.... and set the PruneTimer on all downstream interfaces to
 		//	the State Refresh's Interval times two.  The router SHOULD then propagate the State Refresh as described in Section 4.5.1.
-		sgStateB->SGPruneState = (refresh.m_P ? Prune_Pruned: Prune_NoInfo);
+		sgStateB->PruneState = (refresh.m_P ? Prune_Pruned: Prune_NoInfo);
 		if(refresh.m_P){
 			sgStateB->upstream->SG_PLT.SetDelay(Seconds(PruneHoldTime));
 			sgStateB->SG_PT.SetDelay(Seconds(2 * StateRefreshInterval));
@@ -2735,7 +2735,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 							}
 							// If the neighbor is the upstream neighbor for an (S,G) entry, the router MAY cancel its
 							//     Prune Limit Timer to permit sending a prune and reestablishing a Pruned state in the upstream router.
-							else if (IsUpstream(interface,sgElement->SGPair) && sgElement->SGPruneState == Prune_Pruned){
+							else if (IsUpstream(interface,sgElement->SGPair) && sgElement->PruneState == Prune_Pruned){
 								sgElement->SG_PT.Cancel();
 								sgElement->SG_PT.SetDelay(Seconds(2*RefreshInterval));//TODO I am not sure of that: I have to understand the prune better
 								Simulator::Schedule (Seconds(0), &MulticastRoutingProtocol::SendPruneBroadcast, this, interface, sgElement->SGPair);

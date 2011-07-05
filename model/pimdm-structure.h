@@ -111,7 +111,7 @@ struct SourceGroupState{
 		SGAssertState(Assert_NoInfo),
 		SGAssertWinner(),
 		SG_AT(Timer::CANCEL_ON_DESTROY),
-		SGPruneState(Prune_NoInfo),
+		PruneState(Prune_NoInfo),
 		SG_PT(Timer::CANCEL_ON_DESTROY),
 		SG_PPT(Timer::CANCEL_ON_DESTROY),
 		SGAW("0.0.0.0"),
@@ -130,7 +130,7 @@ struct SourceGroupState{
 	/// Assert Timer.
 	Timer SG_AT;
 	/// Prune State.
-	enum PruneState SGPruneState;///<4.1.2. State: One of {"NoInfo" (NI), "Pruned" (P), "PrunePending" (PP)}
+	enum PruneState PruneState;///<4.1.2. State: One of {"NoInfo" (NI), "Pruned" (P), "PrunePending" (PP)}
 	/// Prune Timer (PT(S,G,I)). This timer is set when the PrunePending Timer (PT(S,G,I))
     /// expires.  Expiry of the Prune Timer (PT(S,G,I)) causes the
     /// interface to transition to the NoInfo (NI) state, thereby
@@ -210,7 +210,7 @@ struct UpstreamState{
 //operator << (std::ostream &os, const SourceGroupState &a){
 //	os << "SourceGroupState (SourceGroupPair = ("<< a.SGPair.sourceIfaceAddr <<
 //			","<<a.SGPair.groupMulticastAddr<< "), LocalMembership = " << a.SGLocalMembership <<
-//			", PruneState = " << a.SGPruneState << ", PPT = " << a.SGPPT.GetDelay().GetSeconds() <<
+//			", PruneState = " << a.PruneState << ", PPT = " << a.SGPPT.GetDelay().GetSeconds() <<
 //			", PT = "<< a.SGPT << ", Assert Winner = " << a.SGAssertState <<
 //			", Assert Timer = "<< a.SGAT << ", Assert winner IP = "<< a.SGAW <<
 //			", Assert winner Metric = "<<a.SGAM<<", Graft/Prune State = " <<

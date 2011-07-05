@@ -483,7 +483,7 @@ private:
 			//NeighborhoodStatus *status = FindNeighborhoodStatus(interface);
 			SourceGroupState *sgs = FindSourceGroupState(interface, ns);
 			sgs->SGLocalMembership = Local_NoInfo;
-			sgs->SGPruneState = Prune_NoInfo;
+			sgs->PruneState = Prune_NoInfo;
 			sgs->SGAssertState = Assert_NoInfo;
 			if(RPF_interface(ns.SGPair.sourceIfaceAddr) == interface){
 				UpstreamState us;
@@ -776,7 +776,7 @@ private:
 		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
 			SourceGroupState *sgState = FindSourceGroupState(i, sgp);
 			if(!sgState) continue;
-			if (i!=RPF_interface(source) && sgState->SGPruneState == Prune_Pruned) {
+			if (i!=RPF_interface(source) && sgState->PruneState == Prune_Pruned) {
 				prune.insert(i);
 			}
 		}
@@ -905,7 +905,7 @@ private:
 
 	void SetPruneState(uint32_t interface, SourceGroupPair sgp, PruneState state){
 		SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
-		sgState->SGPruneState = state;
+		sgState->PruneState = state;
 	}
 };
 
