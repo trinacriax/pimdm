@@ -2850,3 +2850,5 @@ void MulticastRoutingProtocol::InsertNeighborState(uint32_t interface, const Nei
 //		changed) to cause any PIM neighbors to remove the old information immediately.
 //* A Hello message SHOULD be sent after a random delay between 0 and Triggered_Hello_Delay (see 4.8) before any other messages are sent. -> TO CHECK
 //* Check whether it works or not: Seconds(delay.GetMicroSeconds()+1)
+//* How to define RPF_primeChanges and Source directly connected?
+//* How to and when update m_mrib??
