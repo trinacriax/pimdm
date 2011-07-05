@@ -86,6 +86,7 @@
 //   of time.  The period of randomization is configurable and has a
 //   default value of 3 seconds.
 #define JoinDelay 3 //Prune override
+#define TTL_SAMPLE .2
 #define PIM_RESERVED 0
 #define ALL_PIM_ROUTERS "224.0.0.13"
 #define PIM_PORT_NUMBER 703 //IANA Unassigned

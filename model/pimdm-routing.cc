@@ -677,7 +677,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 			sgState->upstream->SG_SAT.Schedule();
 			Ipv4Header ipv4h;
 			packet->RemoveHeader(ipv4h);
-			if(ipv4h.GetTtl() > sgState->SG_DATA_TTL){//TODO: increase means +1 or equal to packet's TTL?
+			double sample = UniformVariable().GetValue();
+			if(sample < TTL_SAMPLE && ipv4h.GetTtl() > sgState->SG_DATA_TTL){//TODO: increase means +1 or equal to packet's TTL?
 				sgState->SG_DATA_TTL = ipv4h.GetTtl();
 			}
 			break;
