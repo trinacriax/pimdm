@@ -1259,7 +1259,7 @@ MulticastRoutingProtocol::PPTTimerExpire(SourceGroupPair &sgp){
 			Time JP_Override_Interval= nstatus->overrideInterval+nstatus->propagationDelay;
 			Time Delay = nstatus->pruneHoldtime - JP_Override_Interval;
 			Delay = (Delay.GetSeconds()>=0 ? Delay: Seconds(0));
-			if(nstatus->neighbors.size()>1){
+			if(nstatus->neighbors.size()>1){// Prune echo
 			//  A PruneEcho(S,G) MUST be sent on I if I has more than one PIM neighbor.
 			//	A PruneEcho(S,G) is simply a Prune(S,G) message
 			//	multicast by the upstream router to a LAN, with itself as the Upstream Neighbor.
@@ -1270,10 +1270,9 @@ MulticastRoutingProtocol::PPTTimerExpire(SourceGroupPair &sgp){
 				SendBroadPacket(packet,msg);
 			//	Its purpose is to add additional reliability so that if a Join that should have
 			//	overridden the Prune is lost locally on the LAN, the PruneEcho(S,G) may be received
-			//	and trigger a new Join message.  A PruneEcho(S,G) is OPTIONAL on an interface with only
-			//	one PIM neighbor.  In addition, the router MUST evaluate any possible transitions in
-			//	the Upstream(S,G) state machine.
-			//  TODO check
+			//	and trigger a new Join message.
+			//	TODO: A PruneEcho(S,G) is OPTIONAL on an interface with only one PIM neighbor.
+			//	TODO: In addition, the router MUST evaluate any possible transitions in the Upstream(S,G) state machine.
 			}
 			break;
 		}
