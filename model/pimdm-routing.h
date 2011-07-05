@@ -883,9 +883,7 @@ private:
 	//TODO AssertWinner(S,G,I) defaults to NULL,
 	Ipv4Address AssertWinner(Ipv4Address source, Ipv4Address group,uint32_t interface) {
 		SourceGroupState *sgState = FindSourceGroupState(interface, source, group);
-		if(!sgState)
-			return NULL;
-		return sgState->SGAW;
+		return (!sgState) ? NULL : sgState->SGAW;
 	}
 
 	//StateRefreshRateLimit(S,G) is TRUE if the time elapsed since the last received StateRefresh(S,G)
