@@ -1178,7 +1178,7 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp){
 				//	The Upstream(S,G) state machine remains in the Forwarding (F) state.
 				if(sgp.sourceIfaceAddr!=m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr){
 					Ipv4Address nextHop = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
-					SendJoin(RPF_interface(nextHop), sgp, nextHop); //broadcast
+					SendJoinUnicast(nextHop, sgp); //broadcast
 				}
 				break;
 			}
@@ -1189,7 +1189,7 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp){
 				//The OverrideTimer (OT(S,G)) expires.  The router MUST send a Join(S,G) to RPF'(S).
 				//	The Upstream(S,G) state machine remains in the AckPending (AP) state.
 				Ipv4Address nextHop = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
-				SendJoin(RPF_interface(nextHop), sgp, nextHop); //broadcast
+				SendJoinUnicast(nextHop, sgp); //broadcast
 				break;
 			}
 			default:{

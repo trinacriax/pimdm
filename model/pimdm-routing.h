@@ -370,7 +370,7 @@ private:
 	void SendPruneBroadcast(uint32_t interface, SourceGroupPair &sgpair);
 	void SendPruneUnicast(Ipv4Address destination, SourceGroupPair &sgpair);
 
-	void SendJoin(uint32_t interface, SourceGroupPair &sgpair, Ipv4Address nexthop);
+	void SendJoinUnicast(Ipv4Address destination, SourceGroupPair &sgpair);
 
 	void RecvData(Ptr<Packet> packet, Ipv4Address sender, Ipv4Address receiver);
 	void SendBroadPacket(Ptr<Packet> packet, const PIMHeader &message);
