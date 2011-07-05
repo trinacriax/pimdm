@@ -823,10 +823,11 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 				//	The router is sending a State Refresh(S,G) message on interface I.
 				//	The router MUST set the Assert Timer (AT(S,G,I)) to three
 				//	times the State Refresh Interval contained in the State Refresh(S,G) message.
+				if(sgState->SG_AT.IsRunning())
 					sgState->SG_AT.Cancel();
-					sgState->SG_AT.SetDelay(Seconds(3*refresh.m_interval));
-					sgState->SG_AT.Schedule();
-					break;
+				sgState->SG_AT.SetDelay(Seconds(3*refresh.m_interval));
+				sgState->SG_AT.Schedule();
+				break;
 				}
 			case Assert_Loser:{
 				//nothing
@@ -1583,8 +1584,12 @@ MulticastRoutingProtocol::SourceDirectlyConnected(SourceGroupPair &sgp){
 	switch (sgState->upstream->origination) {
 		case NotOriginator:{
 			sgState->upstream->origination = Originator;
+			if(sgState->upstream->SG_SRT.IsRunning())
+				sgState->upstream->SG_SRT.Cancel();
 			sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
 			sgState->upstream->SG_SRT.Schedule();
+			if(sgState->upstream->SG_SAT.IsRunning())
+				sgState->upstream->SG_SAT.Cancel();
 			sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
 			sgState->upstream->SG_SAT.Schedule();
 			break;
@@ -1811,12 +1816,12 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 			//Interfaces interested in JOIN
 			for(std::set<uint32_t>::const_iterator iterList = joinList.begin(); iterList != joinList.end(); iterList++){
 				uint32_t out_interface = *iterList;
-				SourceGroupPair sgp (iterJoin->m_sourceAddress,iter->m_multicastGroupAddr.m_groupAddress);
-				SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
-				sgState->upstream->SG_OT.Cancel();
-				sgState->upstream->SG_OT.SetDelay(Seconds(Graft_Retry_Period));
-				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire,this);
-				sgState->upstream->SG_OT.SetArguments(sgp);
+//				SourceGroupPair sgp (iterJoin->m_sourceAddress,iter->m_multicastGroupAddr.m_groupAddress);
+//				SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
+//				sgState->upstream->SG_OT.Cancel();
+//				sgState->upstream->SG_OT.SetDelay(Seconds(Graft_Retry_Period));
+//				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire,this);
+//				sgState->upstream->SG_OT.SetArguments(sgp);
 				// Upstream state machine
 				RecvJoin(jp, sender, receiver, out_interface, *iterJoin, iter->m_multicastGroupAddr);
 			}
@@ -2194,7 +2199,8 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					assertR.GetAssertMessage().m_metric = sgState->AssertWinner.route_metric;
 					Ptr<Packet> packet = Create<Packet> ();
 					SendBroadPacketInterface(packet,assertR,interface);
-					sgState->SG_AT.Cancel();
+					if(sgState->SG_AT.IsRunning())
+						sgState->SG_AT.Cancel();
 					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
 					sgState->SG_AT.Schedule();
 				}
@@ -2212,8 +2218,9 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					sgState->AssertWinner.metric_preference = assert.m_metricPreference;
 					sgState->AssertWinner.route_metric = assert.m_metric;
 					sgState->AssertWinner.ip_address = receiver;
+					if(sgState->SG_AT.IsRunning())
+						sgState->SG_AT.Cancel();
 					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
-					sgState->SG_AT.Cancel();
 					sgState->SG_AT.Schedule();
 					//The router MUST also
 					//	multicast a Prune(S,G) to the Assert winner, with a Prune Hold
@@ -2267,8 +2274,9 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					sgState->AssertWinner.metric_preference = assert.m_metricPreference;
 					sgState->AssertWinner.route_metric = assert.m_metric;
 					sgState->AssertWinner.ip_address = receiver;
+					if(sgState->SG_AT.IsRunning())
+						sgState->SG_AT.Cancel();
 					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
-					sgState->SG_AT.Cancel();
 					sgState->SG_AT.Schedule();
 					if(CouldAssert(assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress,interface)){
 						PIMHeader::MulticastGroupEntry mge;
@@ -2391,6 +2399,8 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					sgState->AssertWinner.ip_address = GetLocalAddress(interface);
 					Ptr<Packet> packet = Create<Packet> ();
 					SendBroadPacketInterface(packet,assertR,interface);
+					if(sgState->SG_AT.IsRunning())
+						sgState->SG_AT.Cancel();
 					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
 					sgState->SG_AT.Schedule();
 				}
@@ -2408,8 +2418,9 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					sgState->AssertWinner.metric_preference = refresh.m_metricPreference;
 					sgState->AssertWinner.route_metric = refresh.m_metric;
 					sgState->AssertWinner.ip_address = refresh.m_originatorAddr.m_unicastAddress;
-					sgState->SG_AT.SetDelay(Seconds(3*refresh.m_interval));
-					sgState->SG_AT.Cancel();
+					if(sgState->SG_AT.IsRunning())
+						sgState->SG_AT.Cancel();
+					sgState->SG_AT.SetDelay(Seconds(3*RefreshInterval));
 					sgState->SG_AT.Schedule();
 					if(CouldAssert(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,interface)){
 						//If CouldAssert(S,G,I) == TRUE,
@@ -2444,7 +2455,8 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 //				assertR.GetAssertMessage().m_metric = sgState->AssertWinner.route_metric;
 				Ptr<Packet> packet = Create<Packet> ();
 				SendBroadPacketInterface(packet,assertR,interface);
-				sgState->SG_AT.Cancel();
+				if(sgState->SG_AT.IsRunning())
+					sgState->SG_AT.Cancel();
 				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
 				sgState->SG_AT.Schedule();
 			}
@@ -2462,7 +2474,8 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				sgState->AssertWinner.metric_preference = refresh.m_metricPreference;
 				sgState->AssertWinner.route_metric = refresh.m_metric;
 				sgState->AssertWinner.ip_address = refresh.m_originatorAddr.m_unicastAddress;
-				sgState->SG_AT.Cancel();
+				if(sgState->SG_AT.IsRunning())
+					sgState->SG_AT.Cancel();
 				sgState->SG_AT.SetDelay(Seconds(3*RefreshInterval));
 				sgState->SG_AT.Schedule();
 				//The router MUST also
@@ -2511,13 +2524,13 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			//	to three times the received State Refresh Interval.  If the
 			//	metric is better than the current Assert Winner, the router MUST
 			//	store the address and metric of the new Assert Winner,
+				if(sgState->SG_AT.IsRunning())
+					sgState->SG_AT.Cancel();
 				sgState->SG_AT.SetDelay(Seconds(3*refresh.m_interval));
-				sgState->SG_AT.Cancel();
 				sgState->SG_AT.Schedule();
 				sgState->AssertWinner.metric_preference = refresh.m_metricPreference;
 				sgState->AssertWinner.route_metric = refresh.m_metric;
 				sgState->AssertWinner.ip_address = refresh.m_originatorAddr.m_unicastAddress;
-
 				if(CouldAssert(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,interface)){
 					//	and if CouldAssert(S,G,I) == TRUE, the router MUST multicast a
 					//	Prune(S,G) to the new Assert winner.
