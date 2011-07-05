@@ -1016,7 +1016,7 @@ MulticastRoutingProtocol::RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ip
 					break;
 				}
 				case GP_AckPending:{
-					if(receiver == RPF_prime(pair.sourceIfaceAddr,pair.groupMulticastAddr)){
+					if(sender == RPF_prime(pair.sourceIfaceAddr,pair.groupMulticastAddr)){
 						sgState->upstream->SG_GRT.Cancel();
 						sgState->upstream->SGGraftPrune = GP_Forwarding;
 					}
