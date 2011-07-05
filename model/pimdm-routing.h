@@ -406,6 +406,18 @@ private:
 
 	void RecvPimDm(Ptr<Socket> socket);
 
+	void UpdateAssertWinner(SourceGroupState *sgState, Ipv4Address source){
+		sgState->AssertWinner.metric_preference = m_mrib.find(source)->second.metricPreference;
+		sgState->AssertWinner.route_metric = m_mrib.find(source)->second.route_metric;
+		sgState->AssertWinner.ip_address = GetLocalAddress(GetReceivingInterface(source));
+	}
+
+	void UpdateAssertWinner(SourceGroupState *sgState, uint32_t metricP, uint32_t routeP, Ipv4Address winner){
+			sgState->AssertWinner.metric_preference = metricP;
+			sgState->AssertWinner.route_metric = routeP;
+			sgState->AssertWinner.ip_address = winner;
+		}
+
 	void NeighborTimeout(uint32_t interface);
 	/**
 	 * Downstream Interface.
