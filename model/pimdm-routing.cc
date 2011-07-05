@@ -603,7 +603,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 //				sgState->AssertWinner.ip_address = GetLocalAddress(interface);
 				Ptr<Packet> packetA = Create<Packet> ();
 				SendBroadPacketInterface(packetA,assert,interface);
-				sgState->SG_AT.Cancel();
+				if(sgState->SG_AT.IsRunning())
+					sgState->SG_AT.Cancel();
 				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
 				sgState->SG_AT.Schedule();
 				break;
@@ -623,8 +624,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 				SendBroadPacketInterface(packetA,assert,interface);
 				//The Assert winner for (S,G) must act as the local forwarder for
 				//  (S,G) on behalf of all downstream members.
-				SendBroadPacketInterface(packet,interface);
-				sgState->SG_AT.Cancel();
+				if(sgState->SG_AT.IsRunning())
+					sgState->SG_AT.Cancel();
 				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
 				sgState->SG_AT.Schedule();
 				break;
@@ -2164,8 +2165,9 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					//	received State Refresh Interval.
 					sgState->AssertState = Assert_Loser;
 					UpdateAssertWinner(assert.m_metricPreference, assert.m_metric, sender);
+					if(sgState->SG_AT.IsRunning())
+						sgState->SG_AT.Cancel();
 					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
-					sgState->SG_AT.Cancel();
 					sgState->SG_AT.Schedule();
 					if(CouldAssert(assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress,interface)){
 						//If CouldAssert(S,G,I) == TRUE,
