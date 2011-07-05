@@ -878,14 +878,14 @@ MulticastRoutingProtocol::RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address
 		for(std::vector<PIMHeader::EncodedSource>::iterator msource = mgroup->m_joinedSourceAddrs.begin();
 					msource != mgroup->m_joinedSourceAddrs.end(); msource++){
 			if(interface == RPF_interface(msource->m_sourceAddress)){
-				RecvGraftDownstream (graft, sender, *msource,mgroup->m_multicastGroupAddr);
+				RecvGraftDownstream (graft, sender, receiver, *msource,mgroup->m_multicastGroupAddr);
 			}
 		}
 	}
 }
 
 void //TODO split as done in join
-MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ipv4Address sender, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group){
+MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group){
 	NS_LOG_FUNCTION(this);
 	uint32_t interface = GetReceivingInterface(sender);
 	Ipv4Address current = GetLocalAddress(interface);

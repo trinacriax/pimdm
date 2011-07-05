@@ -383,7 +383,7 @@ private:
 	void SendGraftUnicast(Ipv4Address destination,SourceGroupPair pair);
 
 	void RecvGraft(PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver);
-	void RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ipv4Address sender,const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group);
+	void RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group);
 
 	void SendGraftAck(uint32_t interface, SourceGroupPair pair);
 	void SendGraftAckUnicast(uint32_t interface, SourceGroupPair &pair, const Ipv4Address receiver);
