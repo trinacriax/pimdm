@@ -40,6 +40,7 @@
 
 namespace ns3 {
 namespace pimdm {
+# define MaxGraftRetry 6
 
 struct AssertMetric {
 	AssertMetric():
@@ -237,9 +238,13 @@ typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 			neighborOverrideInterval(Seconds(0)),
 			neighborGenerationID(0),
 			neighborVersion(0),
-			neighborInterval(RefreshInterval),
-			neighborReserved(0)
-		{}
+			neighborInterval(RefreshInterval)
+//			neighborReserved(0),
+//			neighborGraftRetry(0)
+		{
+			neighborGraftRetry[0] = 0;
+			neighborGraftRetry[1] = MaxGraftRetry;
+		}
 		NeighborState(Ipv4Address neighbor, Ipv4Address rec):
 			neighborIfaceAddr(neighbor),
 			receivingIfaceAddr(rec),
@@ -254,9 +259,12 @@ typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 			neighborOverrideInterval(Seconds(0)),
 			neighborGenerationID(0),
 			neighborVersion(0),
-			neighborInterval(RefreshInterval),
-			neighborReserved(0)
-		{}
+			neighborInterval(RefreshInterval)
+//			neighborReserved(0),
+		{
+			neighborGraftRetry[0] = 0;
+			neighborGraftRetry[1] = MaxGraftRetry;
+		}
 		/// Interface address of the neighbor node.
 		Ipv4Address neighborIfaceAddr;
 		/// Interface address of the local node to the neighbor. //TODO can be removed.
@@ -287,8 +295,10 @@ typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 		uint8_t neighborVersion;
 		/// State Refresh Capable interval in seconds.
 		uint8_t neighborInterval;
-		/// State Refresh Capable reserved all zero.
-		uint16_t neighborReserved;
+//		/// State Refresh Capable reserved all zero.
+//		uint16_t neighborReserved;
+		/// Graft retries.
+		uint8_t neighborGraftRetry[2];
 	};
 
 static inline bool
