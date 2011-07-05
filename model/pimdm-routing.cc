@@ -779,17 +779,19 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 	refresh.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);//TODO check whether params are correct or not.
 	refresh.m_sourceAddr = ForgeEncodedUnicast(sgp.sourceIfaceAddr);
 	Ipv4Address nextHop = m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr;
-	refresh.m_originatorAddr = ForgeEncodedUnicast(nextHop);
+	refresh.m_originatorAddr = ForgeEncodedUnicast(GetLocalAddress(interface));
 	refresh.m_R = 0;
-	refresh.m_metricPreference = m_mrib.find(sgp.sourceIfaceAddr)->second.metricPreference;
-	refresh.m_metric = m_mrib.find(sgp.sourceIfaceAddr)->second.route_metric;
+	refresh.m_metricPreference = sgState->AssertWinner.metric_preference;
+	refresh.m_metric = sgState->AssertWinner.route_metric;
 	refresh.m_maskLength = IPV4_ADDRESS_SIZE;
-	refresh.m_ttl = 7; // TODO ??
-	refresh.m_P = (sgState->PruneState==Prune_Pruned?1:0);
+	refresh.m_ttl = sgState->SG_SR_TTL; // TODO ??
+	refresh.m_P = (sgState->PruneState==Prune_Pruned? 1 : 0);
 	refresh.m_N = 0;
 	refresh.m_O = (!sgState->SG_AT.IsRunning() && (IsUpstream(m_mrib.find(sgp.sourceIfaceAddr)->second.interface,sgp))?1:0);
 	refresh.m_reserved = 0;
-	refresh.m_interval = RefreshInterval;
+	NeighborhoodStatus *ns = FindNeighborhoodStatus(interface);
+	Time tmp = ns->stateRefreshInterval;
+	refresh.m_interval = (uint8_t)(tmp.GetSeconds());
 
 	SendPacket(packet,msg,target);
 	switch (sgState->PruneState) {
