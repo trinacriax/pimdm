@@ -779,7 +779,8 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 		//Send State Refresh(S,G) out interface I. The router has refreshed the Prune(S,G) state on interface I.
 		//	The router MUST reset the Prune Timer (PT(S,G,I)) to the Holdtime from an active Prune received on interface I.
 		//	The Holdtime used SHOULD be the largest active one but MAY be the most recently received active Prune Holdtime.
-			sgState->SG_PT.Cancel();
+			if(sgState->SG_PT.IsRunning())
+				sgState->SG_PT.Cancel();
 			sgState->SG_PT.SetDelay(FindNeighborhoodStatus(interface)->pruneHoldtime);
 			sgState->SG_PT.Schedule();
 			break;
