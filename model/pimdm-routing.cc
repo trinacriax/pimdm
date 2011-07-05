@@ -335,18 +335,40 @@ MulticastRoutingProtocol::ForgePruneMessage (PIMHeader &msg){
 }
 
 void
-MulticastRoutingProtocol::ForgeAssertMessage (uint32_t interface, PIMHeader &msg){
+MulticastRoutingProtocol::ForgeAssertMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp){
 	NS_LOG_FUNCTION(this);
 	ForgeHeaderMessage(PIM_JP, msg);
 	PIMHeader::AssertMessage assertMessage = msg.GetAssertMessage();
-	assertMessage.m_sourceAddr =  ForgeEncodedUnicast(Ipv4Address("0.0.0.0"));
-	assertMessage.m_multicastGroupAddr = ForgeEncodedGroup(Ipv4Address("0.0.0.0"));
+	assertMessage.m_sourceAddr =  ForgeEncodedUnicast(sgp.sourceIfaceAddr);
+	assertMessage.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);
 	assertMessage.m_R = 0;
-	assertMessage.m_metricPreference = 0;
-	assertMessage.m_metric = 0;
+	assertMessage.m_metricPreference = m_mrib.find(sgp.sourceIfaceAddr)->second.metricPreference;
+	assertMessage.m_metric = m_mrib.find(sgp.sourceIfaceAddr)->second.route_metric;
 }
 
 void
+MulticastRoutingProtocol::ForgeAssertCancelMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp){
+	//An AssertCancel(S,G) message is simply an Assert message for (S,G)
+	//with infinite metric.  The Assert winner sends this message when it
+	//changes its upstream interface to this interface.  Other routers will
+	//see this metric, causing those with forwarding state to send their
+	//own Asserts and re-establish an Assert winner.
+	//
+	//AssertCancel messages are simply an optimization.  The original
+	//Assert timeout mechanism will eventually allow a subnet to become
+	//consistent; the AssertCancel mechanism simply causes faster
+	//convergence.  No special processing is required for an AssertCancel
+	//message, as it is simply an Assert message from the current winner
+	NS_LOG_FUNCTION(this);
+	ForgeHeaderMessage(PIM_JP, msg);
+	PIMHeader::AssertMessage assertMessage = msg.GetAssertMessage();
+	assertMessage.m_sourceAddr =  ForgeEncodedUnicast(sgp.sourceIfaceAddr);
+	assertMessage.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);
+	assertMessage.m_R = 0;
+	assertMessage.m_metricPreference = 0xffffffff;
+	assertMessage.m_metric = 0xffffffff;
+}
+
 MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair &sgp, PIMHeader &msg){
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
@@ -569,11 +591,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 				if(!IsDownstream(interface,sgp)) break;
 				sgState->AssertState = Assert_Winner;
 				PIMHeader assert;
-				ForgeAssertMessage(interface,assert);
-				assert.GetAssertMessage().m_sourceAddr.m_unicastAddress = sender;
-				assert.GetAssertMessage().m_multicastGroupAddr.m_groupAddress = receiver;
-				assert.GetAssertMessage().m_metricPreference = m_mrib.find(sender)->second.metricPreference;
-				assert.GetAssertMessage().m_metric = m_mrib.find(sender)->second.route_metric;
+				ForgeAssertMessage(interface,assert,sgp);
 				sgState->SGAssertWinner.metric_preference = m_mrib.find(sender)->second.metricPreference;
 				sgState->SGAssertWinner.route_metric = m_mrib.find(sender)->second.route_metric;
 				sgState->SGAssertWinner.ip_address = GetLocalAddress(interface);
@@ -591,11 +609,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 				//	The router MUST send an Assert(S,G) to interface I and set the Assert Timer (AT(S,G,I) to Assert_Time.
 				if(!IsDownstream(interface,sgp))break;
 				PIMHeader assert;
-				ForgeAssertMessage(interface,assert);
-				assert.GetAssertMessage().m_sourceAddr.m_unicastAddress = sender;
-				assert.GetAssertMessage().m_multicastGroupAddr.m_groupAddress = receiver;
-				assert.GetAssertMessage().m_metricPreference = m_mrib.find(sender)->second.metricPreference;
-				assert.GetAssertMessage().m_metric = m_mrib.find(sender)->second.route_metric;
+				ForgeAssertMessage(interface,assert,sgp);
 				sgState->SGAssertWinner.metric_preference = m_mrib.find(sender)->second.metricPreference;
 				sgState->SGAssertWinner.route_metric = m_mrib.find(sender)->second.route_metric;
 				sgState->SGAssertWinner.ip_address = GetLocalAddress(interface);
@@ -695,11 +709,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 	else{
 		///   Packets that fail the RPF check MUST NOT be forwarded, and the router will conduct an assert process for the (S,G) pair specified in the packet.
 		PIMHeader assert;
-		ForgeAssertMessage(interface,assert);
-		assert.GetAssertMessage().m_sourceAddr.m_unicastAddress = sender;
-		assert.GetAssertMessage().m_multicastGroupAddr.m_groupAddress = receiver;
-		assert.GetAssertMessage().m_metricPreference = m_mrib.find(sender)->second.metricPreference;
-		assert.GetAssertMessage().m_metric = m_mrib.find(sender)->second.route_metric;
+		ForgeAssertMessage(interface,assert,sgp);
 		Ptr<Packet> packetAssert = Create<Packet> ();
 		SendBroadPacketInterface(packetAssert,assert,interface);
 	}
@@ -949,9 +959,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 			//	Graft(S,G) was received, the router MUST respond with a GraftAck(S,G).
 			if(graft.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
 				PIMHeader assertR;
-				ForgeAssertMessage(interface,assertR);
-				assertR.GetAssertMessage().m_sourceAddr.m_unicastAddress = source.m_sourceAddress;
-				assertR.GetAssertMessage().m_multicastGroupAddr.m_groupAddress = group.m_groupAddress;
+				ForgeAssertMessage(interface,assertR,sgp);
 				assertR.GetAssertMessage().m_metricPreference = sgState->SGAssertWinner.metric_preference;
 				assertR.GetAssertMessage().m_metric = sgState->SGAssertWinner.route_metric;
 				Ptr<Packet> packet = Create<Packet> ();
@@ -1644,22 +1652,7 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterfac
 			sgState->AssertState = Assert_NoInfo;
 			//	send an AssertCancel(S,G) to interface I,
 			PIMHeader assertR;
-			ForgeAssertMessage(oldInterface,assertR);
-			assertR.GetAssertMessage().m_sourceAddr.m_unicastAddress = sgp.sourceIfaceAddr;
-			assertR.GetAssertMessage().m_multicastGroupAddr.m_groupAddress = sgp.groupMulticastAddr;
-				//An AssertCancel(S,G) message is simply an Assert message for (S,G)
-				//with infinite metric.  The Assert winner sends this message when it
-				//changes its upstream interface to this interface.  Other routers will
-				//see this metric, causing those with forwarding state to send their
-				//own Asserts and re-establish an Assert winner.
-				//
-				//AssertCancel messages are simply an optimization.  The original
-				//Assert timeout mechanism will eventually allow a subnet to become
-				//consistent; the AssertCancel mechanism simply causes faster
-				//convergence.  No special processing is required for an AssertCancel
-				//message, as it is simply an Assert message from the current winner
-			assertR.GetAssertMessage().m_metricPreference = 0xffffffff;
-			assertR.GetAssertMessage().m_metric = 0xffffffff;
+			ForgeAssertCancelMessage(oldInterface,assertR, sgp);
 			Ptr<Packet> packet = Create<Packet> ();
 			SendBroadPacketInterface(packet,assertR,oldInterface);
 			//  cancel the Assert Timer (AT(S,G,I)),
@@ -1974,9 +1967,8 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,I
 			//	Graft(S,G) was received, the router MUST respond with a GraftAck(S,G).
 			if(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
 				PIMHeader assertR;
-				ForgeAssertMessage(interface,assertR);
-				assertR.GetAssertMessage().m_sourceAddr.m_unicastAddress = source.m_sourceAddress;
-				assertR.GetAssertMessage().m_multicastGroupAddr.m_groupAddress = group.m_groupAddress;
+				SourceGroupPair sgp(source.m_sourceAddress,group.m_groupAddress);
+				ForgeAssertMessage(interface, assertR, sgp);
 				assertR.GetAssertMessage().m_metricPreference = sgState->SGAssertWinner.metric_preference;
 				assertR.GetAssertMessage().m_metric = sgState->SGAssertWinner.route_metric;
 				Ptr<Packet> packet = Create<Packet> ();
@@ -2095,9 +2087,8 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp,Ipv
 				//	Graft(S,G) was received, the router MUST respond with a GraftAck(S,G).
 				if(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
 					PIMHeader assertR;
-					ForgeAssertMessage(interface,assertR);
-					assertR.GetAssertMessage().m_sourceAddr.m_unicastAddress = source.m_sourceAddress;
-					assertR.GetAssertMessage().m_multicastGroupAddr.m_groupAddress = group.m_groupAddress;
+					SourceGroupPair sgp(source.m_sourceAddress,group.m_groupAddress);
+					ForgeAssertMessage(interface,assertR,sgp);
 					assertR.GetAssertMessage().m_metricPreference = sgState->SGAssertWinner.metric_preference;
 					assertR.GetAssertMessage().m_metric = sgState->SGAssertWinner.route_metric;
 					Ptr<Packet> packet = Create<Packet> ();
@@ -2133,11 +2124,8 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 						&& CouldAssert(assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress,RPF_interface(sender))){
 					sgState->AssertState = Assert_Winner;
 					PIMHeader assertR;
-					ForgeAssertMessage(interface,assertR);
-					assertR.GetAssertMessage().m_sourceAddr.m_unicastAddress = assert.m_sourceAddr.m_unicastAddress;
-					assertR.GetAssertMessage().m_multicastGroupAddr.m_groupAddress = assert.m_multicastGroupAddr.m_groupAddress;
-					assertR.GetAssertMessage().m_metricPreference = m_mrib.find(assert.m_sourceAddr.m_unicastAddress)->second.metricPreference;
-					assertR.GetAssertMessage().m_metric = m_mrib.find(assert.m_sourceAddr.m_unicastAddress)->second.route_metric;
+					SourceGroupPair sgp(assert.m_sourceAddr.m_unicastAddress, assert.m_multicastGroupAddr.m_groupAddress);
+					ForgeAssertMessage(interface, assertR, sgp);
 					sgState->SGAssertWinner.metric_preference = m_mrib.find(assert.m_sourceAddr.m_unicastAddress)->second.metricPreference;
 					sgState->SGAssertWinner.route_metric = m_mrib.find(assert.m_sourceAddr.m_unicastAddress)->second.route_metric;
 					sgState->SGAssertWinner.ip_address = GetLocalAddress(interface);
@@ -2191,9 +2179,8 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				//	is in error.  The router MUST send an Assert(S,G) to interface I
 				//	and reset the Assert Timer (AT(S,G,I)) to Assert_Time.
 					PIMHeader assertR;
-					ForgeAssertMessage(interface,assertR);
-					assertR.GetAssertMessage().m_sourceAddr.m_unicastAddress = assert.m_sourceAddr.m_unicastAddress;
-					assertR.GetAssertMessage().m_multicastGroupAddr.m_groupAddress = assert.m_multicastGroupAddr.m_groupAddress;
+					SourceGroupPair sgp(assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress);
+					ForgeAssertMessage(interface, assertR, sgp);
 					assertR.GetAssertMessage().m_metricPreference = sgState->SGAssertWinner.metric_preference;
 					assertR.GetAssertMessage().m_metric = sgState->SGAssertWinner.route_metric;
 					Ptr<Packet> packet = Create<Packet> ();
@@ -2389,11 +2376,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 						&& CouldAssert(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,interface)){
 					sgState->AssertState = Assert_Winner;
 					PIMHeader assertR;
-					ForgeAssertMessage(interface,assertR);
-					assertR.GetAssertMessage().m_sourceAddr.m_unicastAddress = refresh.m_sourceAddr.m_unicastAddress;
-					assertR.GetAssertMessage().m_multicastGroupAddr.m_groupAddress = refresh.m_multicastGroupAddr.m_groupAddress;
-					assertR.GetAssertMessage().m_metricPreference = m_mrib.find(refresh.m_sourceAddr.m_unicastAddress)->second.metricPreference;
-					assertR.GetAssertMessage().m_metric = m_mrib.find(refresh.m_sourceAddr.m_unicastAddress)->second.route_metric;
+					ForgeAssertMessage(interface, assertR, sgp);
 					sgState->SGAssertWinner.metric_preference = m_mrib.find(refresh.m_sourceAddr.m_unicastAddress)->second.metricPreference;
 					sgState->SGAssertWinner.route_metric = m_mrib.find(refresh.m_sourceAddr.m_unicastAddress)->second.route_metric;
 					sgState->SGAssertWinner.ip_address = GetLocalAddress(interface);
@@ -2447,9 +2430,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			struct AssertMetric received (refresh.m_metricPreference,refresh.m_metric, refresh.m_originatorAddr.m_unicastAddress);
 			if(my_assert_metric(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,interface) > received){
 				PIMHeader assertR;
-				ForgeAssertMessage(interface,assertR);
-				assertR.GetAssertMessage().m_sourceAddr.m_unicastAddress = refresh.m_sourceAddr.m_unicastAddress;
-				assertR.GetAssertMessage().m_multicastGroupAddr.m_groupAddress = refresh.m_multicastGroupAddr.m_groupAddress;
+				ForgeAssertMessage(interface, assertR, sgp);
 				assertR.GetAssertMessage().m_metricPreference = sgState->SGAssertWinner.metric_preference;
 				assertR.GetAssertMessage().m_metric = sgState->SGAssertWinner.route_metric;
 				Ptr<Packet> packet = Create<Packet> ();
