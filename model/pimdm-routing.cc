@@ -898,7 +898,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 		//	address on I.  The Prune(S,G) Downstream state machine on interface I stays in the NoInfo (NI)
 		//	state.  A GraftAck(S,G) MUST be unicast to the originator of the Graft(S,G) message.
 			if(graft.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
-				SendGraftAckUnicast(interface,sgp,sender);//TODO check receiver is the previous sender
+				SendGraftAckUnicast(interface,sgp,sender);
 			}
 		}
 		case Prune_PrunePending:{
