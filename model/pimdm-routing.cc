@@ -636,7 +636,11 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 			}
 		}
 	}
-	if(sgState->upstream){
+	if(sgState->upstream || sender == m_mrib.find(sender)->second.nextAddr){
+		if(!sgState->upstream){
+			UpstreamState upstream;
+			sgState->upstream = &upstream;
+		}
 	switch (sgState->upstream->origination) {
 		case NotOriginator:{
 			//Data Packet received from directly connected Source S addressed to group G.
@@ -645,8 +649,12 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 			//	The router SHOULD record the TTL of the packet for use in State Refresh messages.
 			if(m_mrib.find(sender)->second.nextAddr == sender){
 				sgState->upstream->origination = Originator;
+				if(sgState->upstream->SG_SAT.IsRunning())
+					sgState->upstream->SG_SAT.Cancel();
 				sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
 				sgState->upstream->SG_SAT.Schedule();
+				if(sgState->upstream->SG_SRT.IsRunning())
+					sgState->upstream->SG_SRT.Cancel();
 				sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
 				sgState->upstream->SG_SRT.Schedule();
 				Ipv4Header ipv4h;
@@ -663,7 +671,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 		//	is larger than the previously recorded TTL.  A router MAY record
 		//	the TTL based on an implementation specific sampling policy to
 		//	avoid examining the TTL of every multicast packet it handles.
-			sgState->upstream->SG_SAT.Cancel();
+			if(sgState->upstream->SG_SRT.IsRunning())
+				sgState->upstream->SG_SAT.Cancel();
 			sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
 			sgState->upstream->SG_SAT.Schedule();
 			Ipv4Header ipv4h;
@@ -1416,13 +1425,14 @@ MulticastRoutingProtocol::SATTimerExpire (SourceGroupPair &sgp){
 	if(sgState->upstream){
 	switch (sgState->upstream->origination) {
 		case NotOriginator:{
-
+			//nothing
 			break;
 		}
 		case Originator:{
 		//SAT(S,G) Expires.
 		//	The router MUST cancel the SRT(S,G) timer and transition to the NotOriginator (NO) state.
-			sgState->upstream->SG_SRT.Cancel();
+			if(sgState->upstream->SG_SRT.IsRunning())
+				sgState->upstream->SG_SRT.Cancel();
 			sgState->upstream->origination = NotOriginator;
 			break;
 		}
@@ -1604,7 +1614,8 @@ MulticastRoutingProtocol::SourceNoDirectlyConnected(SourceGroupPair &sgp){
 		}
 		case Originator:{
 			sgState->upstream->origination = NotOriginator;
-			sgState->upstream->SG_SRT.Cancel();
+			if(sgState->upstream->SG_SRT.IsRunning())
+				sgState->upstream->SG_SRT.Cancel();
 			sgState->upstream->SG_SAT.Cancel();
 			break;
 		}
