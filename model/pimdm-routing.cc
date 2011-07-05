@@ -347,27 +347,26 @@ MulticastRoutingProtocol::ForgeAssertMessage (uint32_t interface, PIMHeader &msg
 }
 
 void
-MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, Ipv4Address target, SourceGroupPair &sgpair, PIMHeader &msg){
+MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair &sgp, PIMHeader &msg){
 	NS_LOG_FUNCTION(this);
-	ForgeHeaderMessage(PIM_STATE_REF, msg);
-	PIMHeader::StateRefreshMessage refreshMessage = msg.GetStateRefreshMessage();
-	////	pimdm::PIMHeader::EncodedGroup eg= {6,5,1,0,0,4,Ipv4Address("192.168.6.3")};
-////	srMessage->m_multicastGroupAddr = eg;
-////	pimdm::PIMHeader::EncodedUnicast eu = {7,8,Ipv4Address("192.168.6.6")};
-////	srMessage->m_sourceAddr = eu;
-////	pimdm::PIMHeader::EncodedUnicast ou = {20,98,Ipv4Address("192.169.2.6")};
-//	srMessage->m_originatorAddr = ou;
-//	srMessage->m_R = 0;
-//	srMessage->m_metricPreference = 0x0FFFFFFF;
-//	srMessage->m_metric = 0xFFFFFFFF;
-//	srMessage->m_maskLength = 4;
-//	srMessage->m_ttl = 7;
-//	srMessage->m_P = 1;
-//	srMessage->m_N = 0;
-//	srMessage->m_O = 1;
-//	srMessage->m_reserved = 0;
-//	srMessage->m_interval = 10;
-}
+	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
+ 	ForgeHeaderMessage(PIM_STATE_REF, msg);
+	PIMHeader::StateRefreshMessage refresh = msg.GetStateRefreshMessage();
+	refresh.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);//TODO check whether params are correct or not.
+	refresh.m_sourceAddr = ForgeEncodedUnicast(sgp.sourceIfaceAddr);
+	Ipv4Address nextHop = m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr;
+	refresh.m_originatorAddr = ForgeEncodedUnicast(Ipv4Address(GetLocalAddress(interface)));
+	refresh.m_R = 0;
+	refresh.m_metricPreference = m_mrib.find(sgp.sourceIfaceAddr)->second.metricPreference;
+	refresh.m_metric = m_mrib.find(sgp.sourceIfaceAddr)->second.route_metric;
+	refresh.m_maskLength = IPV4_ADDRESS_SIZE;
+	refresh.m_ttl = (sgState->SG_DATA_TTL>0 ? sgState->SG_DATA_TTL : sgState->SG_SR_TTL);
+	refresh.m_P = (sgState->PruneState==Prune_Pruned?1:0);
+	refresh.m_N = 0;
+	refresh.m_O = (!sgState->SG_AT.IsRunning() && (IsUpstream(m_mrib.find(sgp.sourceIfaceAddr)->second.interface,sgp))?1:0);
+	refresh.m_reserved = 0;
+	refresh.m_interval = RefreshInterval;
+ }
 
 void
 MulticastRoutingProtocol::ForgeHelloMessageHoldTime (uint32_t interface, PIMHeader &msg){
@@ -1339,48 +1338,16 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp){
 		//	state machine is in the Pruned (P) state, then the Prune-
 		//	Indicator bit MUST be set to 1 in the State Refresh message being
 		//	sent over I. Otherwise, the Prune-Indicator bit MUST be set to 0.
-			sgState->upstream->SG_SRT.Cancel();
+			if(sgState->upstream->SG_SRT.IsRunning())
+				sgState->upstream->SG_SRT.Cancel();
 			sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
 			sgState->upstream->SG_SRT.Schedule();
-			PIMHeader msg;
-			ForgeHeaderMessage(PIM_STATE_REF, msg);
-			PIMHeader::StateRefreshMessage refresh = msg.GetStateRefreshMessage();
-			refresh.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);//TODO check whether params are correct or not.
-			refresh.m_sourceAddr = ForgeEncodedUnicast(sgp.sourceIfaceAddr);
-			Ipv4Address nextHop = m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr;
-			refresh.m_originatorAddr = ForgeEncodedUnicast(Ipv4Address("0.0.0.0"));
-			refresh.m_R = 0;
-			refresh.m_metricPreference = m_mrib.find(sgp.sourceIfaceAddr)->second.metricPreference;
-			refresh.m_metric = m_mrib.find(sgp.sourceIfaceAddr)->second.route_metric;
-			refresh.m_maskLength = IPV4_ADDRESS_SIZE;
-			refresh.m_ttl = (sgState->SG_DATA_TTL>0 ? sgState->SG_DATA_TTL : sgState->SG_SR_TTL); // TODO ??
-			refresh.m_P = (sgState->PruneState==Prune_Pruned?1:0);
-			refresh.m_N = 0;
-			refresh.m_O = (!sgState->SG_AT.IsRunning() && (IsUpstream(m_mrib.find(sgp.sourceIfaceAddr)->second.interface,sgp))?1:0);
-			refresh.m_reserved = 0;
-			refresh.m_interval = RefreshInterval;
 			for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++){
-				if (IsDownstream(i,sgp)){
-					Ipv4Address current = GetLocalAddress(i);
-					msg.GetStateRefreshMessage().m_originatorAddr.m_unicastAddress = current;
-					SendStateRefresh(i,msg);
-//					switch (sgState->AssertState){
-//			case  Assert_NoInfo:{
-//				break;
-//				}
-//			case Assert_Winner:{
-//
-//					break;
-//				}
-//			case Assert_Loser:{
-//				//nothing
-//				break;
-//			}
-//			default:{
-//				NS_LOG_ERROR("RecvData: Assert State not valid"<<sgState->AssertState);
-//			}
-//		}
-				}
+				PIMHeader refresh;//TODO Check to which interfaces should be sent
+				ForgeStateRefresh(i, sgp, refresh);
+				refresh.GetStateRefreshMessage().m_P = (IsDownstream(i,sgp) ? 1 : 0);
+				Ptr<Packet> packet = Create<Packet> ();
+				SendBroadPacket(packet,refresh);
 			}
 			break;
 		}

@@ -361,7 +361,7 @@ private:
 	void SendNeighHello(uint32_t interface, Ipv4Address destination);
 	void RecvHello(pimdm::PIMHeader::HelloMessage &hello, Ipv4Address sender, Ipv4Address receiver);
 
- 	void ForgeStateRefresh (uint32_t interface, Ipv4Address target, SourceGroupPair &sgpair, PIMHeader &msg);
+ 	void ForgeStateRefresh (uint32_t interface, SourceGroupPair &sgp, PIMHeader &msg);
 	void SendStateRefresh(uint32_t interface, PIMHeader &refresh);
 	void SendStateRefreshPair(uint32_t interface, Ipv4Address target,SourceGroupPair &sgpair);
 	void RecvStateRefresh(PIMHeader::StateRefreshMessage &refresh,Ipv4Address sender, Ipv4Address receiver);
