@@ -1833,11 +1833,14 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 			for(std::set<uint32_t>::const_iterator iterList = pruneList.begin(); iterList != pruneList.end(); iterList++){
 				uint32_t out_interface = *iterList;
 				SourceGroupPair sgp (iterPrune->m_sourceAddress,iter->m_multicastGroupAddr.m_groupAddress);
-				SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
-				sgState->upstream->SG_OT.Cancel();
-				sgState->upstream->SG_OT.SetDelay(Seconds(Graft_Retry_Period));
-				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire,this);
-				sgState->upstream->SG_OT.SetArguments(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress,sgp);
+				if(IsUpstream(interface,sgp)){
+					SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
+					if(sgState->upstream->SG_OT.IsRunning())
+						sgState->upstream->SG_OT.Cancel();
+					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(*iterList)));
+					sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire,this);
+					sgState->upstream->SG_OT.SetArguments(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress,sgp);
+				}
 				// Upstream state machine
 				RecvPrune(jp, sender, receiver, out_interface, *iterPrune, iter->m_multicastGroupAddr);
 			}
