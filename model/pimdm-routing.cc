@@ -2586,82 +2586,80 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 
 void
 MulticastRoutingProtocol::ForwardingStateRefresh(PIMHeader::StateRefreshMessage &refresh,Ipv4Address sender, Ipv4Address receiver){
-//4.5.1.  Forwarding of State Refresh Messages.
-//	When a State Refresh message, SRM, is received, it is forwarded according to the following pseudo-code.
-uint32_t iif = GetReceivingInterface(sender);
-if (iif != RPF_interface(refresh.m_sourceAddr.m_unicastAddress))
-     return;
-//srcaddr(SRM) returns the source address contained in the network
-if (RPF_prime(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress) != refresh.m_sourceAddr.m_unicastAddress)
-     return;
-//StateRefreshRateLimit(S,G) is TRUE if the time elapsed since the last received StateRefresh(S,G)
-//	is less than the configured RefreshLimitInterval.
-   if (StateRefreshRateLimit(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress))
-     return;
-   std::set<uint32_t> nbrs = pim_nbrs();
-   for(std::set<uint32_t>::iterator i_nbrs = nbrs.begin(); i_nbrs != nbrs.end() ; i_nbrs++){
-//TTL(SRM) returns the TTL contained in the State Refresh Message, SRM.
-//	This is different from the TTL contained in the IP header.
-//
-//Threshold(I) returns the minimum TTL that a packet must have before it can be transmitted on interface I.
-     if (refresh.m_ttl == 0 || (refresh.m_ttl - 1) < Threshold(I))
-       continue;     /* Out of TTL, skip this interface */
+	//4.5.1.  Forwarding of State Refresh Messages.
+	//	When a State Refresh message, SRM, is received, it is forwarded according to the following pseudo-code.
+	uint32_t iif = GetReceivingInterface(sender);
+	if (iif != RPF_interface(refresh.m_sourceAddr.m_unicastAddress))
+		return;
+	//srcaddr(SRM) returns the source address contained in the network
+	if (RPF_prime(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress) != sender)//source=sender here? refresh.m_sourceAddr.m_unicastAddress
+		return;
+	//StateRefreshRateLimit(S,G) is TRUE if the time elapsed since the last received StateRefresh(S,G)
+	//	is less than the configured RefreshLimitInterval.
+	if (StateRefreshRateLimit(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress))
+		return;
+	std::set<uint32_t> nbrs = pim_nbrs();
+	for(std::set<uint32_t>::iterator i_nbrs = nbrs.begin(); i_nbrs != nbrs.end() ; i_nbrs++){
+	//TTL(SRM) returns the TTL contained in the State Refresh Message, SRM.
+	//	This is different from the TTL contained in the IP header.
+	//
+	//Threshold(I) returns the minimum TTL that a packet must have before it can be transmitted on interface I.
+	if (refresh.m_ttl == 0 || (refresh.m_ttl - 1) < Threshold(I))
+		continue;     /* Out of TTL, skip this interface */
 	//Boundary(I,G) is TRUE if an administratively scoped boundary for group G is configured on interface I.
-     if (boundary(*i_nbrs,refresh.m_multicastGroupAddr.m_groupAddress))
-       continue;     /* This interface is scope boundary, skip it */
-     if (*i_nbrs == iif)
-       continue;     /* This is the incoming interface, skip it */
-     if (lost_assert(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,*i_nbrs))
-       continue;     /* Let the Assert Winner do State Refresh */
+	if (boundary(*i_nbrs,refresh.m_multicastGroupAddr.m_groupAddress))
+		continue;     /* This interface is scope boundary, skip it */
+	if (*i_nbrs == iif)
+		continue;     /* This is the incoming interface, skip it */
+	if (lost_assert(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,*i_nbrs))
+		continue;     /* Let the Assert Winner do State Refresh */
 
 	PIMHeader refresh2;
 	refresh2.GetStateRefreshMessage() = refresh;
 	PIMHeader::StateRefreshMessage SRMP = refresh2.GetStateRefreshMessage();
-//     Copy SRM to SRM';   /* Make a copy of SRM to forward */
+	//     Copy SRM to SRM';   /* Make a copy of SRM to forward */
 	std::set<uint32_t> prunez =prunes(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress);
-//	 if (I contained in prunes(S,G)) {
-	 if(prunez.find(*i_nbrs)!=prunez.end()){
+	//	 if (I contained in prunes(S,G)) {
+	if(prunez.find(*i_nbrs)!=prunez.end()){
 		SRMP.m_P = 1;
-//       set Prune Indicator bit of SRM' to 1;
-//StateRefreshCapable(I) is TRUE if all neighbors on an interface use the State Refresh option.
-       if (StateRefreshCapable(*i_nbrs)){
-       SourceGroupState *sgState = FindSourceGroupState(*i_nbrs,refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress);
-       	Time pruneHoldTime = FindNeighborhoodStatus(*i_nbrs)->pruneHoldtime;
-       	sgState->SG_PT.SetDelay(pruneHoldTime);
-       	sgState->SG_SR_TTL = (sgState->SG_SR_TTL > refresh.m_ttl? sgState->SG_SR_TTL:refresh.m_ttl);
-         //set PT(S,G) to largest active holdtime read from a Prune  message accepted on I;
-         }
+		//       set Prune Indicator bit of SRM' to 1;
+		//StateRefreshCapable(I) is TRUE if all neighbors on an interface use the State Refresh option.
+		if (StateRefreshCapable(*i_nbrs)){
+			SourceGroupState *sgState = FindSourceGroupState(*i_nbrs,refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress);
+			Time pruneHoldTime = FindNeighborhoodStatus(*i_nbrs)->pruneHoldtime;
+			sgState->SG_PT.SetDelay(pruneHoldTime);
+			sgState->SG_SR_TTL = (sgState->SG_SR_TTL > refresh.m_ttl? sgState->SG_SR_TTL:refresh.m_ttl);
+			//set PT(S,G) to largest active holdtime read from a Prune  message accepted on I;
+		}
 	//	protocol (e.g., IPv4) header of the State Refresh Message, SRM.
 	} else {
-//       set Prune Indicator bit of SRM' to 0;
-SRMP.m_P = 0;
-     }
+	//       set Prune Indicator bit of SRM' to 0;
+		SRMP.m_P = 0;
+	}
 	//my_addr(I) returns this node's network (e.g., IPv4) address on interface I.
-//     set srcaddr(SRM') to my_addr(I);
-     Ipv4Address current = GetLocalAddress(*i_nbrs);
-     SRMP.m_originatorAddr.m_unicastAddress = current;
-//     set TTL of SRM' to TTL(SRM) - 1;
+	//     set srcaddr(SRM') to my_addr(I);
+	Ipv4Address current = GetLocalAddress(*i_nbrs);
+	SRMP.m_originatorAddr.m_unicastAddress = current;
+	//     set TTL of SRM' to TTL(SRM) - 1;
 	SRMP.m_ttl = refresh.m_ttl-1;
-
-//     set metric of SRM' to metric of unicast route used to reach S;
-     SRMP.m_metric= m_mrib.find(SRMP.m_sourceAddr.m_unicastAddress)->second.route_metric;
-//     set pref of SRM' to preference of unicast route used to reach S;
-     SRMP.m_metricPreference = m_mrib.find(SRMP.m_sourceAddr.m_unicastAddress)->second.metricPreference;
-//     set mask of SRM' to mask of route used to reach S;
+	//     set metric of SRM' to metric of unicast route used to reach S;
+	SRMP.m_metric= m_mrib.find(SRMP.m_sourceAddr.m_unicastAddress)->second.route_metric;
+	//     set pref of SRM' to preference of unicast route used to reach S;
+	SRMP.m_metricPreference = m_mrib.find(SRMP.m_sourceAddr.m_unicastAddress)->second.metricPreference;
+	//     set mask of SRM' to mask of route used to reach S;
 	SourceGroupState *sgState = FindSourceGroupState(*i_nbrs,refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress);
-     if (sgState->AssertState == Assert_NoInfo) {
-       //set Assert Override of SRM' to 1;
-       SRMP.m_O = 1;
-     } else {
-       //set Assert Override of SRM' to 0;
-       SRMP.m_O = 0;
-     }
-
-     //transmit SRM' on I;
-     Ptr<Packet> packet;
-     //TODO send on interface
+	if (sgState->AssertState == Assert_NoInfo) {
+	//set Assert Override of SRM' to 1;
+		SRMP.m_O = 1;
+	} else {
+	//set Assert Override of SRM' to 0;
+		SRMP.m_O = 0;
+	}
+	//transmit SRM' on I;
+	Ptr<Packet> packet;
+	//TODO send on interface
 	SendBroadPacket(packet,refresh2);
-   }
+	}
 }
 
 void
