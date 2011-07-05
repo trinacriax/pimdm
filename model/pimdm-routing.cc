@@ -852,7 +852,7 @@ MulticastRoutingProtocol::SendGraft (uint32_t interface, SourceGroupPair pair){
 }
 
 void
-MulticastRoutingProtocol::SendGraftUnicast (uint32_t interface, Ipv4Address target, SourceGroupPair pair){
+MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination, SourceGroupPair pair){
 	NS_LOG_FUNCTION(this);//TODO To complete
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
@@ -860,13 +860,13 @@ MulticastRoutingProtocol::SendGraftUnicast (uint32_t interface, Ipv4Address targ
 	// Create the graft packet TODO
 
 	// Send the packet toward the RPF(S)
+	uint32_t interface = GetReceivingInterface(destination);
 	SendPacket(packet,msg,pair.sourceIfaceAddr);
-	SourceGroupState *sgState = FindSourceGroupState(interface,pair);
+	SourceGroupState *sgState = FindSourceGroupState(interface, pair);
 	sgState->upstream->SG_GRT.Cancel();//remove old events
 	sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::SendGraft, this);//re-schedule transmission
 	sgState->upstream->SG_GRT.SetArguments(interface, pair);
 	sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));//set the timer
-
 }
 
 void
