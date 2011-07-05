@@ -86,6 +86,7 @@
 //   of time.  The period of randomization is configurable and has a
 //   default value of 3 seconds.
 #define JoinDelay 3 //Prune override
+#define PIM_RESERVED 0
 #define ALL_PIM_ROUTERS "224.0.0.13"
 #define PIM_PORT_NUMBER 703 //IANA Unassigned
 
@@ -211,6 +212,27 @@ public:
 		sgState = FindSourceGroupState(interface,sgp);
 		sgState->members = true;
 		//no local member registered
+	}
+
+	void UpdateMRIB(){
+//		Ptr<Packet> receivedPacket;
+//		Address sourceAddress;
+//		InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
+//		Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4 ();
+//		Ipv4Address receiverIfaceAddr = m_socketAddresses[socket].GetLocal ();
+//		NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
+//		Ptr<Ipv4Route> route = 0;
+//		Ipv4Header hdr;
+//		hdr.SetDestination(senderIfaceAddr);
+//		Ptr<NetDevice> oif (0);
+//		Socket::SocketErrno err = Socket::ERROR_NOTERROR;
+//
+//		route = m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif,err);
+//
+//		NS_LOG_DEBUG ("Sender "<< senderIfaceAddr<<", Destination "<< receiverIfaceAddr);
+//		if(route)
+//		NS_LOG_DEBUG (" (SRC: "<< route->GetSource()<< ", GW: "<<route->GetGateway()
+//				<<",DevID: "<< route->GetOutputDevice()->GetIfIndex()<<")");
 	}
 
 
