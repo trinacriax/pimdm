@@ -482,7 +482,7 @@ private:
 			m_IfaceSourceGroup.find(interface)->second.push_back(ns);
 			//NeighborhoodStatus *status = FindNeighborhoodStatus(interface);
 			SourceGroupState *sgs = FindSourceGroupState(interface, ns);
-			sgs->SGLocalMembership = Local_NoInfo;
+			sgs->LocalMembership = Local_NoInfo;
 			sgs->PruneState = Prune_NoInfo;
 			sgs->AssertState = Assert_NoInfo;
 			if(RPF_interface(ns.SGPair.sourceIfaceAddr) == interface){

@@ -107,7 +107,7 @@ struct SourceGroupState{
 	SourceGroupState():
 		members(false),
 		lastStateRefresh(Seconds(0)),
-		SGLocalMembership(Local_NoInfo),
+		LocalMembership(Local_NoInfo),
 		AssertState(Assert_NoInfo),
 		SGAssertWinner(),
 		SG_AT(Timer::CANCEL_ON_DESTROY),
@@ -122,7 +122,7 @@ struct SourceGroupState{
 	/// SourceGroup pair.
 	struct SourceGroupPair SGPair;
 	/// Local membership.
-	enum LocalMembership SGLocalMembership;///<4.1.2. State: One of {"NoInfo", "Include"}
+	enum LocalMembership LocalMembership;///<4.1.2. State: One of {"NoInfo", "Include"}
 	/// Assert Winner State.
 	enum AssertWinnerState AssertState;///4.1.2. State: One of {"NoInfo" (NI), "I lost Assert" (L), "I won Assert" (W)}
 	/// Assert Winner on (S,G,I)
@@ -209,7 +209,7 @@ struct UpstreamState{
 //static inline std::ostream&
 //operator << (std::ostream &os, const SourceGroupState &a){
 //	os << "SourceGroupState (SourceGroupPair = ("<< a.SGPair.sourceIfaceAddr <<
-//			","<<a.SGPair.groupMulticastAddr<< "), LocalMembership = " << a.SGLocalMembership <<
+//			","<<a.SGPair.groupMulticastAddr<< "), LocalMembership = " << a.LocalMembership <<
 //			", PruneState = " << a.PruneState << ", PPT = " << a.SGPPT.GetDelay().GetSeconds() <<
 //			", PT = "<< a.SGPT << ", Assert Winner = " << a.AssertState <<
 //			", Assert Timer = "<< a.SGAT << ", Assert winner IP = "<< a.SGAW <<
