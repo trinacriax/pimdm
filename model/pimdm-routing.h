@@ -478,7 +478,7 @@ private:
 		return FindSourceGroupState(RPF_interface(source),sgp);
 	}
 
-	void InsertSourceGroupState(uint32_t interface, const SourceGroupState &ns) {
+	void InsertSourceGroupState(uint32_t interface, SourceGroupState &ns) {
 		if (!FindSourceGroupState(interface, ns)) {
 			m_IfaceSourceGroup.find(interface)->second.push_back(ns);
 			//NeighborhoodStatus *status = FindNeighborhoodStatus(interface);

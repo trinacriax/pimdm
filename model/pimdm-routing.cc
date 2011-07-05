@@ -539,7 +539,11 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 	// Data Packet arrives on RPF_Interface(S) AND olist(S,G) == NULL AND S NOT directly connected
 	SourceGroupPair sgp(sender, receiver);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
-
+	if(!sgState){
+		SourceGroupState sgs(sgp);
+		InsertSourceGroupState(interface,sgs);
+		sgState = FindSourceGroupState(interface,sgp);
+	}
 
 	if(sgState->upstream->SG_SAT.IsRunning()){
 		sgState->upstream->SG_SAT.Cancel();
