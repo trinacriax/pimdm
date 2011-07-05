@@ -417,7 +417,6 @@ private:
 	 * Interface toward the source of the datagram.  Also known as the RPF Interface.
 	 */
 	bool IsUpstream(uint32_t interface, SourceGroupPair sgpair);
-	uint32_t GetReceiveingInterface(Ipv4Address addr);
 
 	void SendPacket (Ptr<Packet> packet, const PIMMessageList &containedMessages);
 
