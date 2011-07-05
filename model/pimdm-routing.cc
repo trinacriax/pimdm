@@ -980,11 +980,9 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 			if(graft.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
 				PIMHeader assertR;
 				ForgeAssertMessage(interface,assertR,sgp);
-				assertR.GetAssertMessage().m_metricPreference = sgState->AssertWinner.metric_preference;
-				assertR.GetAssertMessage().m_metric = sgState->AssertWinner.route_metric;
 				Ptr<Packet> packet = Create<Packet> ();
 				SendBroadPacketInterface(packet,assertR,interface);
-				SendGraftAckUnicast(interface,sgp,sender);//TODO check receiver is the previous sender
+				SendGraftAckUnicast(interface, sgp, sender);
 			}
 			//An Assert loser that receives a Prune(S,G), Join(S,G), or
 			//  Graft(S,G) directed to it initiates a new Assert negotiation so
