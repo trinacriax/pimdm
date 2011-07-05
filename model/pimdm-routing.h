@@ -404,7 +404,6 @@ private:
 	void ATTimerExpire (SourceGroupPair &sgp);
 	void PPTTimerExpire(SourceGroupPair &sgp);
 	void PTTimerExpire(SourceGroupPair &sgp);
-//	void NLTTimerExpire (SourceGroupPair &sgp);
 	void NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr);
 	void SRTTimerExpire (SourceGroupPair &sgp);
 	void SATTimerExpire (SourceGroupPair &sgp);
@@ -554,10 +553,6 @@ private:
 		if (iter != m_IfaceNeighbors.end())
 			m_IfaceNeighbors.erase(iter);
 	}
-
-//	void SetHelloTimerDelay(Time delay) {
-//		hello_timer.SetDelay(delay);
-//	}
 
 	void SetStateRefreshCapable(uint32_t interface, bool state) {
 		NeighborhoodStatus *in = FindNeighborhoodStatus(interface);
