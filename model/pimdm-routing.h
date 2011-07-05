@@ -857,24 +857,19 @@ private:
 		return assertMetric;
 	}
 
-	struct AssertMetric spt_assert_metric(Ipv4Address source, //Ipv4Address group,
-			uint32_t interface) {
-		struct AssertMetric assertMetric;
-		assertMetric.metric_preference = m_mrib.find(source)->second.metricPreference;
-		assertMetric.route_metric = m_mrib.find(source)->second.route_metric;
-		assertMetric.ip_address = GetLocalAddress(interface); //TODO local node address on that interface?
-		return assertMetric;
+	bool CouldAssert (Ipv4Address source, Ipv4Address group, uint32_t interface) {
+		return RPF_interface(source) != interface;
 	}
-	struct AssertMetric infinite_assert_metric(){
-		struct AssertMetric assertMetric;
-		assertMetric.metric_preference= 0xFFFFFFFF;
-		assertMetric.route_metric = 0xFFFFFFFF;
-		assertMetric.ip_address = Ipv4Address("255.255.255.255");
+
+	struct AssertMetric spt_assert_metric(Ipv4Address source, uint32_t interface) {
+		struct AssertMetric assertMetric (m_mrib.find(source)->second.metricPreference,
+				m_mrib.find(source)->second.route_metric, GetLocalAddress(interface)); //TODO local node address on that interface?
 		return assertMetric;
 	}
 
-	bool CouldAssert (Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		return RPF_interface(source) != interface;
+	struct AssertMetric infinite_assert_metric(){
+		struct AssertMetric assertMetric(0xFFFFFFFF, 0xFFFFFFFF, Ipv4Address("255.255.255.255"));
+		return assertMetric;
 	}
 
 	struct AssertMetric my_assert_metric (Ipv4Address source, Ipv4Address group, uint32_t interface) {
