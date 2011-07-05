@@ -165,7 +165,7 @@ operator == (const SourceGroupState &a, const SourceGroupState &b){
 
 struct UpstreamState{
 	UpstreamState():
-		SGGraftPrune(GP_NoInfo),
+		GraftPrune(GP_NoInfo),
 		SG_GRT(Timer::CANCEL_ON_DESTROY),
 		SG_OT(Timer::CANCEL_ON_DESTROY),
 		SG_PLT(Timer::CANCEL_ON_DESTROY),
@@ -175,7 +175,7 @@ struct UpstreamState{
 	{}
 	///< Upstream interface-specific:
 	/// Graft/Prune State.
-	enum GraftPruneState SGGraftPrune;///< 4.1.2. State: One of {"NoInfo" (NI), "Pruned" (P), "Forwarding" (F),"AckPending" (AP) }
+	enum GraftPruneState GraftPrune;///< 4.1.2. State: One of {"NoInfo" (NI), "Pruned" (P), "Forwarding" (F),"AckPending" (AP) }
 
 	/// GraftRetry Timer (GRT). This timer is set when a Graft is sent upstream.  If a corresponding GraftAck
 	///  is not received before the timer expires, then another Graft is sent, and the GraftRetry Timer is reset.
@@ -214,7 +214,7 @@ struct UpstreamState{
 //			", PT = "<< a.SGPT << ", Assert Winner = " << a.AssertState <<
 //			", Assert Timer = "<< a.SGAT << ", Assert winner IP = "<< a.SGAW <<
 //			", Assert winner Metric = "<<a.SGAM<<", Graft/Prune State = " <<
-//			", GraftPruneState = "<<a.SGGraftPrune<< ", GRT = "<< a.SGGRT.GetDelay().GetSeconds() <<
+//			", GraftPruneState = "<<a.GraftPrune<< ", GRT = "<< a.SGGRT.GetDelay().GetSeconds() <<
 //			", OT = " << a.SGOT << ", SGPLT = "<< a.SGSAT << ", SGSRT = "<< a.SGSRT<<");";
 //	return os;
 //}

@@ -488,7 +488,7 @@ private:
 			if(RPF_interface(ns.SGPair.sourceIfaceAddr) == interface){
 				UpstreamState us;
 				sgs->upstream=&us;
-				sgs->upstream->SGGraftPrune = GP_NoInfo;
+				sgs->upstream->GraftPrune = GP_NoInfo;
 			}
 			//	  		sgs->SG_PPT.Cancel();
 			//	  		sgs->SG_PPT.SetDelay(status->overrideInterval+status->propagationDelay);

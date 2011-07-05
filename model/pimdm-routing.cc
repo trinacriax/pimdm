@@ -525,12 +525,12 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 		sgState->upstream->SG_SAT.Schedule();
 	}
 	if(RPF_interface(sender) == interface){
-		switch (sgState->upstream->SGGraftPrune){
+		switch (sgState->upstream->GraftPrune){
 			//The Upstream(S,G) state machine MUST transition to the Pruned (P)
 			// state, send a Prune(S,G) to RPF'(S), and set PLT(S,G) to t_limit seconds.
 			case GP_Forwarding:{
 				if(olist(sender,receiver).size() == 0 && m_mrib.find(sender)->second.nextAddr != sender){
-					sgState->upstream->SGGraftPrune = GP_Pruned;
+					sgState->upstream->GraftPrune = GP_Pruned;
 					Ipv4Address destination = RPF_prime(sgp);
 					SendPruneUnicast(destination, sgp);
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
@@ -552,7 +552,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 				break;
 			}
 			default:{
-				NS_LOG_ERROR("RecvData: Graft Prune state not valid"<<sgState->upstream->SGGraftPrune);
+				NS_LOG_ERROR("RecvData: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
 			}
 		}
 	}
@@ -1004,7 +1004,7 @@ MulticastRoutingProtocol::RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ip
 			pair.groupMulticastAddr.Print(std::cout);
 			if(interface == RPF_interface(sender)){
 				sgState->upstream->SG_GRT.Cancel(); //TODO check!
-				switch (sgState->upstream->SGGraftPrune){
+				switch (sgState->upstream->GraftPrune){
 				//The Upstream(S,G) state machine MUST transition to the Pruned (P)
 				// state, send a Prune(S,G) to RPF'(S), and set PLT(S,G) to t_limit seconds.
 				case GP_Forwarding:{
@@ -1018,12 +1018,12 @@ MulticastRoutingProtocol::RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ip
 				case GP_AckPending:{
 					if(sender == RPF_prime(pair.sourceIfaceAddr,pair.groupMulticastAddr)){
 						sgState->upstream->SG_GRT.Cancel();
-						sgState->upstream->SGGraftPrune = GP_Forwarding;
+						sgState->upstream->GraftPrune = GP_Forwarding;
 					}
 					break;
 				}
 				default:{
-					NS_LOG_ERROR("RecvGraftAck: Graft Prune state not valid"<<sgState->upstream->SGGraftPrune);
+					NS_LOG_ERROR("RecvGraftAck: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
 				}
 				}
 			}
@@ -1172,7 +1172,7 @@ void
 MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp){
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(sgp.sourceIfaceAddr),sgp);
-		switch (sgState->upstream->SGGraftPrune){
+		switch (sgState->upstream->GraftPrune){
 			case GP_Forwarding:{
 				//The OverrideTimer (OT(S,G)) expires.  The router MUST send a Join(S,G) to RPF'(S) to override a previously detected prune.
 				//	The Upstream(S,G) state machine remains in the Forwarding (F) state.
@@ -1193,7 +1193,7 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp){
 				break;
 			}
 			default:{
-				NS_LOG_ERROR("OT_Timer: state not valid"<<sgState->upstream->SGGraftPrune);
+				NS_LOG_ERROR("OT_Timer: state not valid"<<sgState->upstream->GraftPrune);
 			}
 	}
 //	sgState->upstream->SG_OT.Schedule();
@@ -1204,7 +1204,7 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp){
 void
 MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp){
 	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(sgp.sourceIfaceAddr),sgp);
-	switch (sgState->upstream->SGGraftPrune){
+	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
 			//nothing
 			break;
@@ -1232,7 +1232,7 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp){
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("GRTTimerExpire: state not valid"<<sgState->upstream->SGGraftPrune);
+			NS_LOG_ERROR("GRTTimerExpire: state not valid"<<sgState->upstream->GraftPrune);
 		}
 	}
 }
@@ -1484,13 +1484,13 @@ void
 MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> list){
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(sgp.sourceIfaceAddr),sgp);
-	switch (sgState->upstream->SGGraftPrune){
+	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
 		// olist(S,G) -> NULL AND S NOT directly connected
        	//   The Upstream(S,G) state machine MUST transition to the Pruned (P)  state,
        	//   send a Prune(S,G) to RPF'(S), and set PLT(S,G) to t_limit seconds.
 			if(m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr != sgp.sourceIfaceAddr){
-				sgState ->upstream->SGGraftPrune = GP_Pruned;
+				sgState ->upstream->GraftPrune = GP_Pruned;
 				Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
 				SendPruneBroadcast(RPF_interface(target),sgp);
 				sgState->upstream->SG_PLT.Cancel();
@@ -1508,7 +1508,7 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> li
 		//	no longer be forwarded.  The Upstream(S,G) state machine MUST transition to the Pruned (P) state.
 		//	A Prune(S,G) MUST be multicast to the RPF_interface(S), with RPF'(S) named in the upstream neighbor field.
 		//	The GraftRetry Timer (GRT(S,G)) MUST be cancelled, and PLT(S,G) MUST be set to t_limit seconds.
-			sgState->upstream->SGGraftPrune = GP_Pruned;
+			sgState->upstream->GraftPrune = GP_Pruned;
 			uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 			PIMHeader::MulticastGroupEntry mge;
 			AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(sgp.sourceIfaceAddr));
@@ -1525,7 +1525,7 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> li
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("OList is empty: state not valid"<<sgState->upstream->SGGraftPrune);
+			NS_LOG_ERROR("OList is empty: state not valid"<<sgState->upstream->GraftPrune);
 		}
 		}
 	}
@@ -1534,7 +1534,7 @@ void
 MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp, std::set<uint32_t> list){
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(sgp.sourceIfaceAddr),sgp);
-	switch (sgState->upstream->SGGraftPrune){
+	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
 			//nothing
 			break;
@@ -1547,7 +1547,7 @@ MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp, std::set<uint32_t> lis
         //   The Graft Retry Timer (GRT(S,G)) MUST be set to Graft_Retry_Period.
 			if(m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr != sgp.sourceIfaceAddr){
 				sgState->upstream->SG_PLT.Cancel();
-				sgState->upstream->SGGraftPrune = GP_AckPending;
+				sgState->upstream->GraftPrune = GP_AckPending;
 				Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
 				SendGraftUnicast(target, sgp);
 				sgState->upstream->SG_GRT.Cancel();
@@ -1561,7 +1561,7 @@ MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp, std::set<uint32_t> lis
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("OList is full: state not valid"<<sgState->upstream->SGGraftPrune);
+			NS_LOG_ERROR("OList is full: state not valid"<<sgState->upstream->GraftPrune);
 		}
 		}
 	}
@@ -1571,7 +1571,7 @@ void
 MulticastRoutingProtocol::SourceDirectlyConnected(SourceGroupPair &sgp){
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(sgp.sourceIfaceAddr),sgp);
-	switch (sgState->upstream->SGGraftPrune){
+	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
 			//nothing
 			break;
@@ -1584,11 +1584,11 @@ MulticastRoutingProtocol::SourceDirectlyConnected(SourceGroupPair &sgp){
 		//Unicast routing has changed so that S is directly connected.
 		//	The GraftRetry Timer MUST be canceled, and the Upstream(S,G) state machine MUST transition to the Forwarding(F) state.
 			sgState->upstream->SG_GRT.Cancel();
-			sgState->upstream->SGGraftPrune = GP_Forwarding;
+			sgState->upstream->GraftPrune = GP_Forwarding;
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("SourceDirectlyConnected: state not valid"<<sgState->upstream->SGGraftPrune);
+			NS_LOG_ERROR("SourceDirectlyConnected: state not valid"<<sgState->upstream->GraftPrune);
 		}
 	}
 	if(sgState->upstream){
@@ -1744,20 +1744,20 @@ void
 MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 	std::set<uint32_t> outlist = olist(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
 	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(sgp.sourceIfaceAddr),sgp);
-	switch (sgState->upstream->SGGraftPrune){
+	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
 		//RPF'(S) Changes AND olist(S,G) is NULL
 		//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 		//	The Upstream(S,G) state machine MUST transition to the Pruned (P) state.
 			if(outlist.size()==0){
-				sgState->upstream->SGGraftPrune = GP_Pruned;
+				sgState->upstream->GraftPrune = GP_Pruned;
 			}
 		//RPF'(S) Changes AND olist(S,G) is non-NULL AND S NOT directly connected
 		//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 		//	The Upstream(S,G) state machine MUST transition to the AckPending (AP) state,
 		//	unicast a Graft to the new RPF'(S), and set the GraftRetry Timer (GRT(S,G)) to Graft_Retry_Period.
 			if(outlist.size()>0 && sgp.sourceIfaceAddr != m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr){
-				sgState->upstream->SGGraftPrune = GP_AckPending;
+				sgState->upstream->GraftPrune = GP_AckPending;
 				Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
 				SendGraftUnicast(destination,sgp);
 				sgState->upstream->SG_GRT.Cancel();
@@ -1779,7 +1779,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 			//	The Upstream(S,G) state machine MUST cancel PLT(S,G), transition to the AckPending (AP) state,
 			//	send a Graft unicast to the new RPF'(S), and set the GraftRetry Timer (GRT(S,G)) to Graft_Retry_Period.
 				sgState->upstream->SG_PLT.Cancel();
-				sgState->upstream->SGGraftPrune = GP_AckPending;
+				sgState->upstream->GraftPrune = GP_AckPending;
 				Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
 				SendGraftUnicast(destination,sgp);//TODO check
 				sgState->upstream->SG_GRT.Cancel();
@@ -1794,7 +1794,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 			//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 			//	The Upstream(S,G) state machine MUST transition to the Pruned (P) state.
 			//	The GraftRetry Timer (GRT(S,G)) MUST be canceled.
-				sgState->upstream->SGGraftPrune = GP_Pruned;
+				sgState->upstream->GraftPrune = GP_Pruned;
 				sgState->upstream->SG_GRT.Cancel();
 			}
 			if(outlist.size()>0 && sgp.sourceIfaceAddr != m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr){
@@ -1811,7 +1811,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("RPF prime changed: state not valid"<<sgState->upstream->SGGraftPrune);
+			NS_LOG_ERROR("RPF prime changed: state not valid"<<sgState->upstream->GraftPrune);
 		}
 	}
 }
@@ -1894,7 +1894,7 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(interface,source.m_sourceAddress, group.m_groupAddress);
 	// The node is not directly connected to S.
-	switch (sgState->upstream->SGGraftPrune) {
+	switch (sgState->upstream->GraftPrune) {
 		case GP_Forwarding:{
 		//This event is only relevant if RPF_interface(S) is a shared medium.
 		//	This router sees another router on RPF_interface(S) send a Prune(S,G).
@@ -1932,7 +1932,7 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4
 			break;
 		}
 		default:
-			NS_LOG_ERROR("RecvStateRefresh: Graft Prune state not valid"<<sgState->upstream->SGGraftPrune);
+			NS_LOG_ERROR("RecvStateRefresh: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
 				break;
 		}
 //	}
@@ -2040,7 +2040,7 @@ MulticastRoutingProtocol::RecvJoin(PIMHeader::JoinPruneMessage &jp,Ipv4Address &
 void // TOCHECK
 MulticastRoutingProtocol::RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group){
 	SourceGroupState *sgState = FindSourceGroupState(interface,source.m_sourceAddress, group.m_groupAddress);
-		switch (sgState->upstream->SGGraftPrune) {
+		switch (sgState->upstream->GraftPrune) {
 			case GP_Forwarding:{
 			//This event is only relevant if RPF_interface(S) is a shared medium.
 			//	This router sees another router on RPF_interface(S) send a Join(S,G) to RPF'(S,G).
@@ -2068,7 +2068,7 @@ MulticastRoutingProtocol::RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4A
 				break;
 			}
 			default:
-				NS_LOG_ERROR("RecvStateRefresh: Graft Prune state not valid"<<sgState->upstream->SGGraftPrune);
+				NS_LOG_ERROR("RecvStateRefresh: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
 					break;
 	}
 }
@@ -2338,7 +2338,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 	uint32_t rpf_prime_interface = RPF_interface(RPF_prime(refresh.m_sourceAddr.m_unicastAddress));
 	if(rpf_prime_interface == interface && sgState->upstream){
-		switch (sgState->upstream->SGGraftPrune) {
+		switch (sgState->upstream->GraftPrune) {
 			case GP_Forwarding:{ //OK
 				// The Upstream(S,G) state machine remains in a Forwarding state. If the received State Refresh has the Prune Indicator bit set to
 				//	   one, this router must override the upstream router's Prune state after a short random interval.
@@ -2381,12 +2381,12 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				}
 				if(refresh.m_P == 0){
 					sgState->upstream->SG_GRT.Cancel();
-					sgState->upstream->SGGraftPrune = GP_Forwarding;
+					sgState->upstream->GraftPrune = GP_Forwarding;
 				}
 				break;
 			}
 			default:
-				NS_LOG_ERROR("RecvStateRefresh: Graft Prune state not valid"<<sgState->upstream->SGGraftPrune);
+				NS_LOG_ERROR("RecvStateRefresh: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
 					break;
 			}
 	}
