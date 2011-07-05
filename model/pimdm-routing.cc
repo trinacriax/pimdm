@@ -1911,7 +1911,7 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4
 			break;
 		}
 		default:
-			NS_LOG_ERROR("RecvStateRefresh: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
+			NS_LOG_ERROR("RecvPruneUpstream: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
 				break;
 		}
 //	}
@@ -1999,7 +1999,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,I
 			break;
 			}
 		default:{
-			NS_LOG_ERROR("RecvAssert: Assert State not valid"<<sgState->AssertState);
+			NS_LOG_ERROR("RecvPruneDownstream: Assert State not valid"<<sgState->AssertState);
 		}
 	}
 }
@@ -2046,7 +2046,7 @@ MulticastRoutingProtocol::RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4A
 				break;
 			}
 			default:
-				NS_LOG_ERROR("RecvStateRefresh: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
+				NS_LOG_ERROR("RecvJoinUpstream: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
 					break;
 	}
 }
@@ -2119,7 +2119,7 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp,Ipv
 				break;
 			}
 			default:{
-				NS_LOG_ERROR("RecvAssert: Assert State not valid"<<sgState->AssertState);
+				NS_LOG_ERROR("RecvJoinDownstream: Assert State not valid"<<sgState->AssertState);
 			}
 		}
 	}
