@@ -872,7 +872,7 @@ MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination, SourceGroup
 void
 MulticastRoutingProtocol::RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver){
 	NS_LOG_FUNCTION(this);
-	uint32_t interface = GetRecevingInterface(sender);
+	uint32_t interface = GetReceivingInterface(sender);
 	for(std::vector<PIMHeader::MulticastGroupEntry>::iterator mgroup = graft.m_multicastGroups.begin();
 			mgroup!=graft.m_multicastGroups.end(); mgroup++){
 		for(std::vector<PIMHeader::EncodedSource>::iterator msource = mgroup->m_joinedSourceAddrs.begin();
