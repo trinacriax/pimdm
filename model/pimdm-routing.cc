@@ -1509,19 +1509,18 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> li
 		//	A Prune(S,G) MUST be multicast to the RPF_interface(S), with RPF'(S) named in the upstream neighbor field.
 		//	The GraftRetry Timer (GRT(S,G)) MUST be cancelled, and PLT(S,G) MUST be set to t_limit seconds.
 			sgState->upstream->SGGraftPrune = GP_Pruned;
-			sgState->upstream->SG_GRT.Cancel();
-			sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
-
+			uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 			PIMHeader::MulticastGroupEntry mge;
 			AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(sgp.sourceIfaceAddr));
 			PIMHeader msg;
 			Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
 			ForgePruneMessage(msg);
 			CreateMulticastGroupEntry(msg,mge,ForgeEncodedGroup(sgp.groupMulticastAddr));
-//			Ipv4Address destination = m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr;
-			msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = target;
+			msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = destination;
 			Ptr<Packet> packet = Create<Packet> ();
-			SendPacket(packet,msg,target);
+			SendBroadPacketInterface(packet,msg,GetReceivingInterface(destination));
+			sgState->upstream->SG_GRT.Cancel();
+			sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 
 			break;
 		}
