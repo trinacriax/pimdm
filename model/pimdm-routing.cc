@@ -1658,7 +1658,7 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterfac
 		//	The Prune(S,G) Downstream state machine on interface I MUST transition to the NoInfo (NI) state.
 		//	The PruneTimer (PT(S,G,I)) MUST be cancelled.
 			sgState->PruneState = Prune_NoInfo;
-			sgState->SG_PPT.Cancel();
+			sgState->SG_PT.Cancel();
 			break;
 		}
 		default:
