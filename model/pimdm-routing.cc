@@ -2023,51 +2023,51 @@ void // TOCHECK
 MulticastRoutingProtocol::RecvJoin(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group){
 	NS_LOG_FUNCTION(this);
 	if(RPF_interface(source.m_sourceAddress)==interface){
-		RecvJoinUpstream(jp, source, group, interface,sender);
+		RecvJoinUpstream(jp, sender, receiver, interface, source, group);
 	}
 	else {
-		RecvJoinDownstream(jp, source, group, interface,sender);
+		RecvJoinDownstream(jp, sender, receiver, interface, source, group);
 	}
 }
 
 void // TOCHECK
-MulticastRoutingProtocol::RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface, Ipv4Address &sender){
+MulticastRoutingProtocol::RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group){
 	SourceGroupState *sgState = FindSourceGroupState(interface,source.m_sourceAddress, group.m_groupAddress);
-			switch (sgState->upstream->SGGraftPrune) {
-				case GP_Forwarding:{
-				//This event is only relevant if RPF_interface(S) is a shared medium.
-				//	This router sees another router on RPF_interface(S) send a Join(S,G) to RPF'(S,G).
-				//	If the OT(S,G) is running, then it means that the router had scheduled a Join to override a previously received Prune.
-				//	Another router has responded more quickly with a Join, so the local router SHOULD cancel its OT(S,G), if it is running.
-				//	The Upstream(S,G) state machine remains in the Forwarding (F) state.
-					if(sender == RPF_prime(source.m_sourceAddress, group.m_groupAddress) && sgState->upstream->SG_OT.IsRunning()){
-						sgState->upstream->SG_OT.Cancel();
-					}
-					break;
+		switch (sgState->upstream->SGGraftPrune) {
+			case GP_Forwarding:{
+			//This event is only relevant if RPF_interface(S) is a shared medium.
+			//	This router sees another router on RPF_interface(S) send a Join(S,G) to RPF'(S,G).
+			//	If the OT(S,G) is running, then it means that the router had scheduled a Join to override a previously received Prune.
+			//	Another router has responded more quickly with a Join, so the local router SHOULD cancel its OT(S,G), if it is running.
+			//	The Upstream(S,G) state machine remains in the Forwarding (F) state.
+				if(sender == RPF_prime(source.m_sourceAddress, group.m_groupAddress) && sgState->upstream->SG_OT.IsRunning()){
+					sgState->upstream->SG_OT.Cancel();
 				}
-				case GP_Pruned:{
-				//nothing
-					break;
+				break;
+			}
+			case GP_Pruned:{
+			//nothing
+				break;
+			}
+			case GP_AckPending:{
+			//This event is only relevant if RPF_interface(S) is a shared medium.
+			//	This router sees another router on RPF_interface(S) send a Join(S,G) to RPF'(S,G).
+			//	If the OT(S,G) is running, then it means that the router had scheduled a Join to override a previously received Prune.
+			//	Another router has responded more quickly with a Join, so the local router SHOULD cancel its OT(S,G), if it is running.
+			//	The Upstream(S,G) state machine remains in the AckPending (AP) state.
+				if(receiver == RPF_prime(source.m_sourceAddress) && sgState->upstream->SG_OT.IsRunning()){
+					sgState->upstream->SG_OT.Cancel();
 				}
-				case GP_AckPending:{
-				//This event is only relevant if RPF_interface(S) is a shared medium.
-				//	This router sees another router on RPF_interface(S) send a Join(S,G) to RPF'(S,G).
-				//	If the OT(S,G) is running, then it means that the router had scheduled a Join to override a previously received Prune.
-				//	Another router has responded more quickly with a Join, so the local router SHOULD cancel its OT(S,G), if it is running.
-				//	The Upstream(S,G) state machine remains in the AckPending (AP) state.
-					if(sgState->upstream->SG_OT.IsRunning()){
-						sgState->upstream->SG_OT.Cancel();
-					}
+				break;
+			}
+			default:
+				NS_LOG_ERROR("RecvStateRefresh: Graft Prune state not valid"<<sgState->upstream->SGGraftPrune);
 					break;
-				}
-				default:
-					NS_LOG_ERROR("RecvStateRefresh: Graft Prune state not valid"<<sgState->upstream->SGGraftPrune);
-						break;
-		}
+	}
 }
 
 void // TOCHECK
-MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, uint32_t &interface,Ipv4Address &sender){
+MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group){
 		SourceGroupState *sgState = FindSourceGroupState(interface,source.m_sourceAddress, group.m_groupAddress);
 		Ipv4Address current = GetLocalAddress(interface);
 		switch (sgState->SGPruneState) {
