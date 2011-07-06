@@ -1608,23 +1608,24 @@ MulticastRoutingProtocol::SourceNoDirectlyConnected(SourceGroupPair &sgp){
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(sgp.sourceIfaceAddr),sgp);
 	if(sgState->upstream){
-	switch (sgState->upstream->origination) {
-		case NotOriginator:{
-			//nothing
-			break;
+		switch (sgState->upstream->origination) {
+			case NotOriginator:{
+				//nothing
+				break;
+			}
+			case Originator:{
+				sgState->upstream->origination = NotOriginator;
+				if(sgState->upstream->SG_SRT.IsRunning())
+					sgState->upstream->SG_SRT.Cancel();
+				sgState->upstream->SG_SAT.Cancel();
+				break;
+			}
+			default:{
+				NS_LOG_ERROR("SourceNoDirectlyConnected: Origination state not valid"<<sgState->upstream->origination);
+				break;
+			}
 		}
-		case Originator:{
-			sgState->upstream->origination = NotOriginator;
-			if(sgState->upstream->SG_SRT.IsRunning())
-				sgState->upstream->SG_SRT.Cancel();
-			sgState->upstream->SG_SAT.Cancel();
-			break;
-		}
-		default:{
-			NS_LOG_ERROR("SourceNoDirectlyConnected: Origination state not valid"<<sgState->upstream->origination);
-			break;
-		}
-	}}
+	}
 }
 
 void
