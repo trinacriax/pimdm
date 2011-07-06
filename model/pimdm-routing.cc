@@ -2128,6 +2128,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 	NS_LOG_FUNCTION(this);
 	uint32_t interface = GetReceivingInterface(sender);
 	SourceGroupState *sgState = FindSourceGroupState(interface,assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress);
+	struct AssertMetric received (assert.m_metricPreference, assert.m_metric, receiver);
 	switch (sgState->AssertState){
 			case  Assert_NoInfo:{
 			//Receive Inferior (Assert OR State Refresh) AND CouldAssert(S,G,I)==TRUE.
@@ -2136,7 +2137,6 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 			//   MUST transition to the "I am Assert Winner" state, send an Assert(S,G)
 			//   to interface I, store its own address and metric as the Assert Winner,
 			//   and set the Assert Timer (AT(S,G,I)) to Assert_Time.
-				struct AssertMetric received (assert.m_metricPreference,assert.m_metric, receiver);
 				if(my_assert_metric(assert.m_sourceAddr.m_unicastAddress, assert.m_multicastGroupAddr.m_groupAddress, interface) > received
 						&& CouldAssert(assert.m_sourceAddr.m_unicastAddress, assert.m_multicastGroupAddr.m_groupAddress, interface)){
 					sgState->AssertState = Assert_Winner;
@@ -2186,7 +2186,6 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				break;
 				}
 			case Assert_Winner:{
-				struct AssertMetric received (assert.m_metricPreference,assert.m_metric, receiver);
 				if(received < my_assert_metric(assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress,RPF_interface(sender))){
 				//Receive Inferior Assert or State Refresh
 				//	An (S,G) Assert is received containing a metric for S that is worse than this router's metric for S.
@@ -2248,7 +2247,6 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 			//  TODO: evaluate any possible transitions to its Upstream(S,G) state machine.
 			//	Usually this router will eventually re-assert and win
 			//  when data packets from S have started flowing again.
-				struct AssertMetric received (assert.m_metricPreference,assert.m_metric, receiver);
 				if(received < my_assert_metric(assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress,RPF_interface(sender))){
 					sgState->AssertState = Assert_NoInfo;
 					if(sgState->SG_AT.IsRunning())
