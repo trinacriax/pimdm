@@ -2184,7 +2184,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				}
 			case Assert_Winner:{
 				struct AssertMetric received (assert.m_metricPreference,assert.m_metric, receiver);
-				if(my_assert_metric(assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress,RPF_interface(sender)) > received){
+				if(received < my_assert_metric(assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress,RPF_interface(sender))){
 				//Receive Inferior Assert or State Refresh
 				//	An (S,G) Assert is received containing a metric for S that is worse than this router's metric for S.
 				//	Whoever sent the Assert is in error.  The router MUST send an Assert(S,G) to interface I
@@ -2214,7 +2214,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					sgState->AssertState = Assert_Loser;
 					sgState->AssertWinner.metric_preference = assert.m_metricPreference;
 					sgState->AssertWinner.route_metric = assert.m_metric;
-					sgState->AssertWinner.ip_address = receiver;
+					sgState->AssertWinner.ip_address = sender;
 					if(sgState->SG_AT.IsRunning())
 						sgState->SG_AT.Cancel();
 					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
@@ -2226,13 +2226,12 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					PIMHeader::MulticastGroupEntry mge;
 					AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(assert.m_sourceAddr.m_unicastAddress));
 					PIMHeader msg;
-					Ipv4Address target = receiver;
 					ForgePruneMessage(msg);
 					CreateMulticastGroupEntry(msg,mge,ForgeEncodedGroup(assert.m_multicastGroupAddr.m_groupAddress));
-					msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = target;//TODO check
+					msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = sender;//TODO check
 					msg.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 					Ptr<Packet> packet = Create<Packet> ();
-					SendPacket(packet,msg,target);
+					SendPacket(packet,msg,sender);
 					}
 				break;
 			}
@@ -2276,13 +2275,12 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 						PIMHeader::MulticastGroupEntry mge;
 						AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(assert.m_sourceAddr.m_unicastAddress));
 						PIMHeader prune;
-						Ipv4Address target = receiver;
 						ForgePruneMessage(prune);
 						CreateMulticastGroupEntry(prune,mge,ForgeEncodedGroup(assert.m_multicastGroupAddr.m_groupAddress));
-						prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = target;//TODO check
+						prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = sender;//TODO check
 						prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 						Ptr<Packet> packet = Create<Packet> ();
-						SendPacket(packet,prune,target);
+						SendPacket(packet,prune,sender);
 					}
 				}
 				break;
@@ -2296,7 +2294,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 void
 MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refresh, Ipv4Address sender, Ipv4Address receiver){
 	NS_LOG_FUNCTION(this);
-	NeighborState tmp (sender, receiver);
+	NeighborState tmp (refresh.m_originatorAddr.m_unicastAddress, receiver);
 	uint32_t interface = GetReceivingInterface(receiver);
 	NeighborState *ns = FindNeighborState(interface,tmp);
 	SourceGroupPair sgp (refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress);
