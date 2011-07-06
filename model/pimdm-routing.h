@@ -869,8 +869,12 @@ private:
 		return (sgState && sgState->AssertState == Assert_NoInfo) ? infinite_assert_metric() : sgState->AssertWinner;
 	}
 
+	bool CouldAssertCheck (Ipv4Address source, Ipv4Address group, uint32_t interface, bool couldAssert);
+
 	bool CouldAssert (Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		return RPF_interface(source) != interface;
+		bool ret = RPF_interface(source) != interface;
+		CouldAssertCheck(source,group,interface,ret);
+		return ret;
 	}
 
 	struct AssertMetric spt_assert_metric(Ipv4Address source, uint32_t interface) {

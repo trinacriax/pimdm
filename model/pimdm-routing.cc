@@ -1659,11 +1659,18 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterfac
 			NS_LOG_ERROR("PPTTimerExpire: Prune state not valid"<<sgState->PruneState);
 			break;
 	}
+}
+
+bool
+MulticastRoutingProtocol::CouldAssertCheck (Ipv4Address source, Ipv4Address group, uint32_t interface, bool couldAssert) {
+	SourceGroupPair sgp(source,group);
+	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 	switch (sgState->AssertState){
 		case  Assert_NoInfo:{
 			break;
 			}
 		case Assert_Winner:{
+			if(couldAssert) break;
 			//CouldAssert(S,G,I) -> FALSE
 			//	This router's RPF interface changed, making CouldAssert(S,G,I) false.
 			//	This router can no longer perform the actions of the Assert winner,
@@ -1671,45 +1678,40 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterfac
 			sgState->AssertState = Assert_NoInfo;
 			//	send an AssertCancel(S,G) to interface I,
 			PIMHeader assertR;
-			ForgeAssertCancelMessage(oldInterface,assertR, sgp);
+			ForgeAssertCancelMessage(interface,assertR, sgp);
 			Ptr<Packet> packet = Create<Packet> ();
-			SendBroadPacketInterface(packet,assertR,oldInterface);
+			SendBroadPacketInterface(packet,assertR,interface);
 			//  cancel the Assert Timer (AT(S,G,I)),
-			sgState->SG_AT.Cancel();
+			if(sgState->SG_AT.IsRunning())
+				sgState->SG_AT.Cancel();
 			//  and remove itself as the Assert Winner.
-			sgState->AssertWinner.metric_preference = 0xffffffff;
-			sgState->AssertWinner.route_metric = 0xffffffff;
-			sgState->AssertWinner.ip_address = Ipv4Address("255.255.255.255");
+			UpdateAssertWinner(sgState, 0xffffffff, 0xffffffff, Ipv4Address("255.255.255.255"));
 			break;
 			//An Assert winner for (S,G) sends a cancelling assert when it is
 			//about to stop forwarding on an (S,G) entry.  Example: If a router
 			//is being taken down, then a canceling assert is sent.
 			}
 		case Assert_Loser:{
-			if(CouldAssert(sgp.sourceIfaceAddr,sgp.groupMulticastAddr,newInterface) == false){
-				//CouldAssert -> FALSE
-				//	CouldAssert has become FALSE because interface I has become the
-				//	RPF interface for S.  The Assert state machine MUST transition to
-				//	NoInfo (NI) state, cancel AT(S,G,I), and delete information
-				//	concerning the Assert Winner on I.
-				sgState->AssertState = Assert_NoInfo;
-				sgState->SG_AT.Cancel();
-				sgState->AssertWinner.metric_preference = 0xffffffff;
-				sgState->AssertWinner.route_metric = 0xffffffff;
-				sgState->AssertWinner.ip_address = Ipv4Address("255.255.255.255");
-			}
-			else if(CouldAssert(sgp.sourceIfaceAddr,sgp.groupMulticastAddr,oldInterface) == true){
+			if(couldAssert){
 				//CouldAssert -> TRUE
 				//	CouldAssert has become TRUE because interface I used to be the
 				//	RPF interface for S, and now it is not.  The Assert state machine
 				//	MUST transition to NoInfo (NI) state, cancel AT(S,G,I), and
 				//	delete information concerning the Assert Winner on I.
 				sgState->AssertState = Assert_NoInfo;
-				sgState->SG_AT.Cancel();
-				sgState->AssertWinner.metric_preference = 0xffffffff;
-				sgState->AssertWinner.route_metric = 0xffffffff;
-				sgState->AssertWinner.ip_address = Ipv4Address("255.255.255.255");
-
+				if(sgState->SG_AT.IsRunning())
+					sgState->SG_AT.Cancel();
+				UpdateAssertWinner(sgState, 0xffffffff, 0xffffffff, Ipv4Address("255.255.255.255"));
+			}else{
+				//CouldAssert -> FALSE
+				//	CouldAssert has become FALSE because interface I has become the
+				//	RPF interface for S.  The Assert state machine MUST transition to
+				//	NoInfo (NI) state, cancel AT(S,G,I), and delete information
+				//	concerning the Assert Winner on I.
+				sgState->AssertState = Assert_NoInfo;
+				if(sgState->SG_AT.IsRunning())
+					sgState->SG_AT.Cancel();
+				UpdateAssertWinner(sgState, 0xffffffff, 0xffffffff, Ipv4Address("255.255.255.255"));
 			}
 			break;
 		}
