@@ -1,39 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/*
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation;
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- */
-
-//
-// Simple example of OLSR routing over some point-to-point links
-//
-// Network topology
-//
-//   n0
-//     \ 5 Mb/s, 2ms
-//      \          1.5Mb/s, 10ms
-//       n2 -------------------------n3---------n4
-//      /
-//     / 5 Mb/s, 2ms
-//   n1
-//
-// - all links are point-to-point links with indicated one-way BW/delay
-// - CBR/UDP flows from n0 to n4, and from n3 to n1
-// - UDP packet size of 210 bytes, with per-packet interval 0.00375 sec.
-//   (i.e., DataRate of 448,000 bps)
-// - DropTail queues 
-// - Tracing of queues and packet receptions to file "simple-point-to-point-olsr.tr"
 
 #include <iostream>
 #include <fstream>
@@ -64,6 +28,43 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("YansWifiChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("OlsrRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+	/*
+	* This program is free software; you can redistribute it and/or modify
+	* it under the terms of the GNU General Public License version 2 as
+	* published by the Free Software Foundation;
+	*
+	* This program is distributed in the hope that it will be useful,
+	* but WITHOUT ANY WARRANTY; without even the implied warranty of
+	* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	* GNU General Public License for more details.
+	*
+	* You should have received a copy of the GNU General Public License
+	* along with this program; if not, write to the Free Software
+	* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+	*
+	*/
+
+	//
+	// Simple example of OLSR routing over some point-to-point links
+	//
+	// Network topology
+	//
+	//   n0
+	//     \ 5 Mb/s, 2ms
+	//      \          1.5Mb/s, 10ms        3Mb/s, 4ms
+	//       n2 -------------------------n3---------n4
+	//      /
+	//     / 5 Mb/s, 2ms
+	//   n1
+	//
+	// - all links are point-to-point links with indicated one-way BW/delay
+	// - CBR/UDP flows from n0 to n4, and from n3 to n1
+	// - UDP packet size of 210 bytes, with per-packet interval 0.00375 sec.
+	//   (i.e., DataRate of 448,000 bps)
+	// - DropTail queues
+	// - Tracing of queues and packet receptions to file "simple-point-to-point-olsr.tr"
+
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("DefaultSimulatorImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
