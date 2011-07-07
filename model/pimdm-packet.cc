@@ -84,8 +84,10 @@ PIMHeader::GetSerializedSize (void) const
       case PIM_STATE_REF:
 		  size += m_pim_message.stateRefresh.GetSerializedSize ();
 		  break;
-      default:
+      default:{
         NS_ASSERT (false);
+        break;
+      	 }
       }
     //std::cout << "PIMHeader Size "<< size << "\n";
     return size;
@@ -126,8 +128,10 @@ PIMHeader::Serialize (Buffer::Iterator start) const
 	case PIM_STATE_REF:
 	  m_pim_message.stateRefresh.Serialize(i);
 	  break;
-	default:
+	default:{
 	  NS_ASSERT (false);
+	  break;
+	}
 	}
   	i = start;
     uint16_t checksum = i.CalculateIpChecksum(GetSerializedSize());
@@ -170,8 +174,10 @@ PIMHeader::Deserialize (Buffer::Iterator start)
   	case PIM_STATE_REF:
   	  size += m_pim_message.stateRefresh.Deserialize (i, message_size - PIM_DM_HEADER_SIZE);
   	  break;
-  	default:
+  	default:{
   	  NS_ASSERT (false);
+  	  break;
+  	}
   	}
   return size;
 }
@@ -370,8 +376,10 @@ for (std::vector<HelloEntry>::const_iterator iter = this->m_optionList.begin ();
 						<< ", Reserved = " 	<< he.m_optionValue.stateRefreshCapable.m_reserved<<"\n";
 				break;
 	        }
-	      	default:
+	      	default:{
 	        	NS_ASSERT (false);
+	        	break;
+	      	}
 	        }
 	}
 }
@@ -414,8 +422,10 @@ PIMHeader::HelloMessage::Serialize (Buffer::Iterator start) const
 			i.WriteHtonU16(he.m_optionValue.stateRefreshCapable.m_reserved);
 			break;
 		}
-		default:
+		default:{
 			NS_ASSERT (false);
+			break;
+		}
 		}
   	}
 //  std::cout << "*** HELLO MESSAGE SE ***\n";
@@ -467,8 +477,10 @@ PIMHeader::HelloMessage::Deserialize (Buffer::Iterator start, uint32_t messageSi
 			  helloSizeLeft-=PIM_DM_HELLO_STATEREFRESH;
 			  break;
 		  }
-		  default:
+		  default:{
 			  NS_ASSERT (false);
+			  break;
+		  }
 		  }
       this->m_optionList.push_back(he);
     }
