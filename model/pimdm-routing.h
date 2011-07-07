@@ -869,7 +869,7 @@ private:
 		return (sgState && sgState->AssertState == Assert_NoInfo) ? infinite_assert_metric() : sgState->AssertWinner;
 	}
 
-	bool CouldAssertCheck (Ipv4Address source, Ipv4Address group, uint32_t interface, bool couldAssert);
+	void CouldAssertCheck (Ipv4Address source, Ipv4Address group, uint32_t interface, bool couldAssert);
 
 	bool CouldAssert (Ipv4Address source, Ipv4Address group, uint32_t interface) {
 		bool ret = RPF_interface(source) != interface;

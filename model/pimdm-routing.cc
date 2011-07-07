@@ -1673,7 +1673,7 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterfac
 	}
 }
 
-bool
+void
 MulticastRoutingProtocol::CouldAssertCheck (Ipv4Address source, Ipv4Address group, uint32_t interface, bool couldAssert) {
 	SourceGroupPair sgp(source,group);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
