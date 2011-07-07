@@ -637,6 +637,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 			}
 			default:{
 				NS_LOG_ERROR("RecvData: Assert State not valid"<<sgState->AssertState);
+				break;
 			}
 		}
 	}
@@ -838,6 +839,7 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 			}
 			default:{
 				NS_LOG_ERROR("RecvData: Assert State not valid"<<sgState->AssertState);
+				break;
 			}
 		}
 }
@@ -929,6 +931,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 			if(graft.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
 				SendGraftAckUnicast(interface,sgp,sender);
 			}
+			break;
 		}
 		case Prune_PrunePending:{
 		//Receive Graft(S,G): A Graft(S,G) is received on interface I with the upstream neighbor
@@ -991,6 +994,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 		}
 		default:{
 			NS_LOG_ERROR("RecvAssert: Assert State not valid"<<sgState->AssertState);
+			break;
 		}
 	}
 }
@@ -1050,6 +1054,7 @@ MulticastRoutingProtocol::RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ip
 				}
 				default:{
 					NS_LOG_ERROR("RecvGraftAck: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
+					break;
 				}
 				}
 			}
@@ -1186,6 +1191,7 @@ MulticastRoutingProtocol::NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Add
 				}
 				default:{
 					NS_LOG_ERROR("NLTTimerExpire: Assert State not valid"<<sgState->AssertState);
+					break;
 				}
 			}
 		}
@@ -1218,6 +1224,7 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp){
 			}
 			default:{
 				NS_LOG_ERROR("OT_Timer: state not valid"<<sgState->upstream->GraftPrune);
+				break;
 			}
 	}
 //	sgState->upstream->SG_OT.Schedule();
@@ -1257,6 +1264,7 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp){
 		}
 		default:{
 			NS_LOG_ERROR("GRTTimerExpire: state not valid"<<sgState->upstream->GraftPrune);
+			break;
 		}
 	}
 }
@@ -1411,6 +1419,7 @@ MulticastRoutingProtocol::ATTimerExpire (SourceGroupPair &sgp){
 		}
 		default:{
 			NS_LOG_ERROR("ATTimerExpire: Assert State not valid"<<sgState->AssertState);
+			break;
 		}
 	}
 }
@@ -1512,6 +1521,7 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> li
 		}
 		default:{
 			NS_LOG_ERROR("OList is empty: state not valid"<<sgState->upstream->GraftPrune);
+			break;
 		}
 		}
 	}
@@ -1548,6 +1558,7 @@ MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp, std::set<uint32_t> lis
 		}
 		default:{
 			NS_LOG_ERROR("OList is full: state not valid"<<sgState->upstream->GraftPrune);
+			break;
 		}
 		}
 	}
@@ -1575,6 +1586,7 @@ MulticastRoutingProtocol::SourceDirectlyConnected(SourceGroupPair &sgp){
 		}
 		default:{
 			NS_LOG_ERROR("SourceDirectlyConnected: state not valid"<<sgState->upstream->GraftPrune);
+			break;
 		}
 	}
 	if(sgState->upstream){
@@ -1717,6 +1729,7 @@ MulticastRoutingProtocol::CouldAssertCheck (Ipv4Address source, Ipv4Address grou
 		}
 		default:{
 			NS_LOG_ERROR("RPF_Changes: Assert State not valid"<<sgState->AssertState);
+			break;
 		}
 	}
 }
@@ -1793,6 +1806,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 		}
 		default:{
 			NS_LOG_ERROR("RPF prime changed: state not valid"<<sgState->upstream->GraftPrune);
+			break;
 		}
 	}
 }
@@ -1917,7 +1931,7 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4
 		}
 		default:
 			NS_LOG_ERROR("RecvPruneUpstream: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
-				break;
+			break;
 		}
 //	}
 }
@@ -2003,6 +2017,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,I
 			}
 		default:{
 			NS_LOG_ERROR("RecvPruneDownstream: Assert State not valid"<<sgState->AssertState);
+			break;
 		}
 	}
 }
@@ -2050,7 +2065,7 @@ MulticastRoutingProtocol::RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4A
 			}
 			default:
 				NS_LOG_ERROR("RecvJoinUpstream: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
-					break;
+				break;
 	}
 }
 
@@ -2121,6 +2136,7 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp,Ipv
 			}
 			default:{
 				NS_LOG_ERROR("RecvJoinDownstream: Assert State not valid"<<sgState->AssertState);
+				break;
 			}
 		}
 	}
@@ -2291,6 +2307,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 			}
 			default:{
 				NS_LOG_ERROR("RecvAssert: Assert State not valid"<<sgState->AssertState);
+				break;
 			}
 		}
 }
@@ -2354,7 +2371,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			}
 			default:
 				NS_LOG_ERROR("RecvStateRefresh: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
-					break;
+				break;
 			}
 	}
 	//TODO: Upon startup, a router MAY use any State Refresh messages received  within Hello_Period of its first Hello message on an interface to establish state information.
@@ -2533,6 +2550,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 		}
 		default:{
 			NS_LOG_ERROR("RecvStateRefresh: Assert State not valid"<<sgState->AssertState);
+			break;
 		}
 	}
 }
