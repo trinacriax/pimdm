@@ -48,10 +48,6 @@
 	#include "ns3/olsr-helper.h"
 	#include "ns3/pimdm-helper.h"
 	#include "ns3/pimdm-routing.h"
-	#include "ns3/ipv4-static-routing-helper.h"
-	#include "ns3/ipv4-list-routing-helper.h"
-//	#include "ns3/animation-interface.h"
-
 
 	using namespace ns3;
 
@@ -74,6 +70,7 @@
 	LogComponentEnable ("CsmaChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("CsmaHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Packet", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("DefaultSimulatorImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	#endif
 
@@ -150,6 +147,14 @@
 //	Config::Set("NodeList/3/DeviceList/1/$ns3::CsmaNetDevice/Address", Mac48AddressValue("08:00:2e:00:34:03"));
 //	Config::Set("NodeList/4/DeviceList/0/$ns3::CsmaNetDevice/Address", Mac48AddressValue("08:00:2e:00:34:04"));
 
+
+
+	Ipv4Address multicastSource ("10.1.0.1");
+	Ipv4Address multicastGroup1 ("225.1.1.4");
+	Ipv4Address multicastGroup2 ("225.1.2.4");
+	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup1));
+	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup2));
+
 	NS_LOG_INFO ("Assign IP Addresses.");
 
 	Ipv4AddressHelper ip02;
@@ -167,12 +172,18 @@
 	Ipv4AddressHelper ip34;
 	ip34.SetBase ("10.1.4.0", "255.255.255.0");
 	Ipv4InterfaceContainer ip34i = ip34.Assign (csmaDevices34);
+	uint16_t o2 = 1;
 
-//	Ptr<Ipv4> ipv4 = node->GetObject<Ipv4> ();
+//	Ptr<Ipv4ListRouting> ipv4 = c.Get(0)->GetObject<Ipv4ListRouting> ();
+//	uint32_t num = ipv4->GetNRoutingProtocols();
 //	int32_t interface = ipv4->GetInterfaceForDevice (device);
 //	if (interface == -1){
 //	  interface = ipv4->AddInterface (device);
 //	}
+//	for(uint32_t i = 0; i < num; i++){
+//		Ptr<Ipv4RoutingProtocol> tmp = ipv4->GetRoutingProtocol(1,o2);
+//	}
+
 //	Ipv4InterfaceAddress ipv4Addr = Ipv4InterfaceAddress (NewAddress (), m_mask);
 //	ipv4->AddAddress (interface, ipv4Addr);
 //	ipv4->SetMetric (interface, 1);
@@ -180,30 +191,30 @@
 
 	NS_LOG_INFO ("Configure multicasting.");
 
-	Ipv4Address multicastSource ("10.1.0.1");
-	Ipv4Address multicastGroup ("225.1.2.4");
-
 	// Create the OnOff application to send UDP datagrams of size
 	// 210 bytes at a rate of 448 Kb/s from n0 to n4
 	NS_LOG_INFO ("Create Applications.");
 	uint16_t muticastPort = PIM_PORT_NUMBER;   // Discard port (RFC 863)
+	Address sinkLocalAddress(InetSocketAddress(multicastGroup1, muticastPort));
 
-	OnOffHelper onoff ("ns3::UdpSocketFactory",
-	                   InetSocketAddress (multicastGroup, muticastPort));
+	PacketSinkHelper sink ("ns3::UdpSocketFactory",sinkLocalAddress);
+	ApplicationContainer sinkApps = sink.Install (c.Get (4));
+	sinkApps.Start (Seconds (1.0));
+	sinkApps.Stop (Seconds (10.0));
+
+	OnOffHelper onoff ("ns3::UdpSocketFactory",sinkLocalAddress);
 	onoff.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1)));
 	onoff.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0)));
-
+	onoff.SetAttribute ("DataRate", StringValue ("300bps"));
+	onoff.SetAttribute ("PacketSize", UintegerValue (50));
 	ApplicationContainer apps = onoff.Install (c.Get (0));
 	apps.Start (Seconds (1.0));
 	apps.Stop (Seconds (10.0));
 
 	// Create a packet sink to receive these packets
-	PacketSinkHelper sink ("ns3::UdpSocketFactory",
-	InetSocketAddress (multicastGroup, muticastPort));
 
-	apps = sink.Install (c.Get (4));
-	apps.Start (Seconds (1.0));
-	apps.Stop (Seconds (10.0));
+
+
 
 	AsciiTraceHelper ascii;
 	csmaLinkA.EnableAsciiAll (ascii.CreateFileStream ("csma02.tr"));
