@@ -122,7 +122,184 @@ MulticastRoutingProtocol::AddMulticastGroup(Ipv4Address group){
 		}
 	}
 
+///
+/// \brief Clears the routing table and frees the memory assigned to each one of its entries.
+///
+void
+MulticastRoutingProtocol::Clear (){
+  NS_LOG_FUNCTION_NOARGS ();
+  m_mrib.clear ();
+}
 
+///
+/// \brief Deletes the entry whose destination address is given.
+/// \param dest	address of the destination node.
+///
+void
+MulticastRoutingProtocol::RemoveEntry (Ipv4Address const &dest){
+	NS_LOG_FUNCTION(this);
+	m_mrib.erase (dest);
+}
+
+///
+/// \brief	Finds the appropriate entry which must be used in order to forward
+///		a data packet to a next hop (given a destination).
+///
+/// Imagine a routing table like this: [A,B] [B,C] [C,C]; being each pair of the
+/// form [dest addr,next-hop addr]. In this case, if this function is invoked with
+/// [A,B] then pair [C,C] is returned because C is the next hop that must be used
+/// to forward a data packet destined to A. That is, C is a neighbor of this node,
+/// but B isn't. This function finds the appropiate neighbor for forwarding a packet.
+///
+/// \param entry	the routing table entry which indicates the destination node
+///			we are interested in.
+/// \return		the appropiate routing table entry which indicates the next
+///			hop which must be used for forwarding a data packet, or NULL
+///			if there is no such entry.
+///
+bool
+MulticastRoutingProtocol::FindSendEntry (RoutingMulticastTable const &entry,
+		RoutingMulticastTable &outEntry) const{
+	NS_LOG_FUNCTION(this);
+  outEntry = entry;
+  while (outEntry.nextAddr != outEntry.nextAddr)
+    {
+      if (not Lookup (outEntry.nextAddr, outEntry))
+        return false;
+    }
+  return true;
+}
+
+///
+/// \brief Looks up an entry for the specified destination address.
+/// \param dest	destination address.
+/// \param outEntry output parameter to hold the routing entry result, if found
+/// \return	true if found, false if not found
+///
+bool
+MulticastRoutingProtocol::Lookup (Ipv4Address const &dest, RoutingMulticastTable &outEntry) const {
+	NS_LOG_FUNCTION(this);
+	// Get the iterator at "dest" position
+  std::map<Ipv4Address, RoutingMulticastTable>::const_iterator it = m_mrib.find (dest);
+  // If there is no route to "dest", return NULL
+  if (it == m_mrib.end ())
+	  return false;
+  outEntry = it->second;
+  return true;
+}
+
+///
+/// \brief Adds a new entry into the routing table.
+///
+/// If an entry for the given destination existed, it is deleted and freed.
+///
+/// \param dest		address of the destination node.
+/// \param next		address of the next hop node.
+/// \param iface	address of the local interface.
+/// \param dist		distance to the destination node.
+///
+void
+MulticastRoutingProtocol::AddEntry (Ipv4Address const &source, Ipv4Address const &group,
+                           Ipv4Address const &next,
+                           uint32_t interface)
+{
+  NS_LOG_FUNCTION (this << source << group << next << interface << m_mainAddress);
+
+  // Creates a new rt entry with specified values
+  RoutingMulticastTable &entry = m_mrib[group];
+
+  entry.groupAddr = group;
+  entry.sourceAddr = source;
+  entry.nextAddr = next;
+  entry.interface = interface;
+}
+
+Ptr<Ipv4Route>
+MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
+		Ptr<NetDevice> oif, Socket::SocketErrno &sockerr){
+	NS_LOG_FUNCTION (this << m_ipv4->GetObject<Node> ()->GetId () << header.GetDestination () << oif);
+	Ptr<Ipv4Route> rtentry;
+	RoutingMulticastTable entry1, entry2;
+	bool found = false;
+	if(header.GetDestination().IsMulticast()){
+		NS_LOG_DEBUG("Multicast Packet: (" //<< ipvh.GetSource() << ","<< ipvh.GetDestination()<<") - ("
+				<< header.GetSource() << ","<< header.GetDestination()<<").");
+	}
+	if (Lookup (header.GetDestination(), entry1) != 0)	{//entry in the routing table found
+	  uint32_t interfaceIdx = entry2.interface;
+	  if (oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx))
+		{
+		  // We do not attempt to perform a constrained routing search
+		  // if the caller specifies the oif; we just enforce that
+		  // that the found route matches the requested outbound interface
+		  NS_LOG_DEBUG ("PIM-DM node " << m_mainAddress
+									 << ": RouteOutput for dest=" << header.GetDestination ()
+									 << " Route interface " << interfaceIdx
+									 << " does not match requested output interface "
+									 << m_ipv4->GetInterfaceForDevice (oif));
+		  sockerr = Socket::ERROR_NOROUTETOHOST;
+		  return rtentry;
+		}
+	  rtentry = Create<Ipv4Route> ();
+	  rtentry->SetDestination (header.GetDestination ());
+	  // the source address is the interface address that matches
+	  // the destination address (when multiple are present on the
+	  // outgoing interface, one is selected via scoping rules)
+	  NS_ASSERT (m_ipv4);
+	  uint32_t numOifAddresses = m_ipv4->GetNAddresses (interfaceIdx);
+	  NS_ASSERT (numOifAddresses > 0);
+	  Ipv4InterfaceAddress ifAddr;
+	  if (numOifAddresses == 1) {
+		  ifAddr = m_ipv4->GetAddress (interfaceIdx, 0);
+		} else {
+		  NS_FATAL_ERROR ("XXX Not implemented yet:  IP aliasing and OLSR");
+		}
+	  rtentry->SetSource (ifAddr.GetLocal ());
+	  rtentry->SetGateway (entry2.nextAddr);
+	  rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
+	  sockerr = Socket::ERROR_NOTERROR;
+	  NS_LOG_DEBUG ("Olsr node " << m_mainAddress
+								 << ": RouteOutput for dest=" << header.GetDestination ()
+								 << " --> nextHop=" << entry2.nextAddr
+								 << " interface=" << entry2.interface);
+	  NS_LOG_DEBUG ("Found route to " << rtentry->GetDestination () << " via nh " << rtentry->GetGateway () << " with source addr " << rtentry->GetSource () << " and output dev " << rtentry->GetOutputDevice ());
+	  found = true;
+	}
+	else
+	{
+	  rtentry = m_RoutingTable->RouteOutput (p, header, oif, sockerr);
+
+	  if (rtentry)
+		{
+		  found = true;
+		  NS_LOG_DEBUG ("Found route to " << rtentry->GetDestination () << " via nh " << rtentry->GetGateway () << " with source addr " << rtentry->GetSource () << " and output dev " << rtentry->GetOutputDevice ());
+		}
+	}
+
+	if (!found)
+	{
+	  NS_LOG_DEBUG ("PIM-DM node " << m_mainAddress
+								 << ": RouteOutput for dest=" << header.GetDestination ()
+								 << " No route to host");
+	  sockerr = Socket::ERROR_NOROUTETOHOST;
+	}
+	return rtentry;
+}
+
+
+bool
+MulticastRoutingProtocol::IsMyOwnAddress (const Ipv4Address & a) const
+{
+  for (std::map<Ptr<Socket>, Ipv4InterfaceAddress>::const_iterator j =
+         m_socketAddresses.begin (); j != m_socketAddresses.end (); ++j)
+    {
+      Ipv4InterfaceAddress iface = j->second;
+      if (a == iface.GetLocal ())
+        {
+          return true;
+        }
+    }
+  return false;
 }
 
 bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
@@ -130,6 +307,60 @@ bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
   UnicastForwardCallback ucb, MulticastForwardCallback mcb,
   LocalDeliverCallback lcb, ErrorCallback ecb)
 {
+	  NS_LOG_FUNCTION (this << " " << m_ipv4->GetObject<Node> ()->GetId () << " " << header.GetDestination ());
+
+	  Ipv4Address dst = header.GetDestination ();
+	  Ipv4Address origin = header.GetSource ();
+
+	  // Consume self-originated packets
+	  if (IsMyOwnAddress (origin) == true)
+	    {
+	      return true;
+	    }
+
+	  // Local delivery
+	  NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
+	  uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
+	  if (m_ipv4->IsDestinationAddress (dst, iif))
+	    {
+	      if (!lcb.IsNull ())
+	        {
+	          NS_LOG_LOGIC ("Local delivery to " << dst);
+	          lcb (p, header, iif);
+	          return true;
+	        }
+	      else
+	        {
+	          // The local delivery callback is null.  This may be a multicast
+	          // or broadcast packet, so return false so that another
+	          // multicast routing protocol can handle it.  It should be possible
+	          // to extend this to explicitly check whether it is a unicast
+	          // packet, and invoke the error callback if so
+	          return false;
+	        }
+	    }
+	  if(m_RoutingTable->RouteInput (p, header, idev, ucb, mcb, lcb, ecb))
+	         {
+	           return true;
+	         }
+	       else
+	         {
+
+	 #ifdef NS3_LOG_ENABLE
+	           NS_LOG_DEBUG ("PIMDM node " << m_mainAddress
+	                                      << ": RouteInput for dest=" << header.GetDestination ()
+	                                      << " --> NOT FOUND; ** Dumping routing table...");
+
+	           for (std::map<Ipv4Address, RoutingMulticastTable>::const_iterator iter = m_mrib.begin ();
+	                iter != m_mrib.end (); iter++)
+	             {
+	               NS_LOG_DEBUG ("dest=" << iter->first << " --> next=" << iter->second.nextAddr
+	                                     << " via interface " << iter->second.interface);
+	             }
+
+	           NS_LOG_DEBUG ("** Routing table dump end.");
+	 #endif // NS3_LOG_ENABLE
+	         }
 	return false;
 }
 
