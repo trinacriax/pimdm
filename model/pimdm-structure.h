@@ -44,40 +44,40 @@ namespace pimdm {
 
 struct AssertMetric {
 	AssertMetric():
-		metric_preference(0),
-		route_metric(0),
-		ip_address("0.0.0.0")
+		metricPreference(0),
+		routeMetric(0),
+		IPAddress("0.0.0.0")
 	{}
 	AssertMetric(int m, int r, uint32_t ip):
-			metric_preference(m),
-			route_metric(r),
-			ip_address(ip)
+			metricPreference(m),
+			routeMetric(r),
+			IPAddress(ip)
 		{}
 	AssertMetric(int m, int r, Ipv4Address ip):
-				metric_preference(m),
-				route_metric(r),
-				ip_address(ip)
+				metricPreference(m),
+				routeMetric(r),
+				IPAddress(ip)
 			{}
-     uint32_t metric_preference;
-     uint32_t route_metric;
-     Ipv4Address ip_address;
+     uint32_t metricPreference;
+     uint32_t routeMetric;
+     Ipv4Address IPAddress;
    };
 
 static inline bool
 operator == (const AssertMetric &a, const AssertMetric &b){
-	return (a.metric_preference == b.metric_preference) &&
-			(a.route_metric == b.route_metric);
+	return (a.metricPreference == b.metricPreference) &&
+			(a.routeMetric == b.routeMetric);
 }
 
-//When assert_metrics are compared, the metric_preference and route_metric field are compared in order,
+//When assert_metrics are compared, the metricPreference and routeMetric field are compared in order,
 //	where the first lower value wins.  If all fields are equal, the IP address of the router that
 //  sourced the Assert message is used as a tie-breaker, with the highest IP address winning.
 static inline bool
 operator > (const AssertMetric &a, const AssertMetric &b){
-	return (a.metric_preference < b.metric_preference) ||
-			((a.metric_preference == b.metric_preference) && (a.route_metric < b.route_metric))||
-			((a.metric_preference == b.metric_preference) && (a.route_metric == b.route_metric) &&
-					!(a.ip_address < b.ip_address));
+	return (a.metricPreference < b.metricPreference) ||
+			((a.metricPreference == b.metricPreference) && (a.routeMetric < b.routeMetric))||
+			((a.metricPreference == b.metricPreference) && (a.routeMetric == b.routeMetric) &&
+					!(a.IPAddress < b.IPAddress));
 }
 
 static inline bool

@@ -115,13 +115,14 @@ namespace ns3 {
 namespace pimdm {
 
 struct RoutingMulticastTable {
-	Ipv4Address source; ///< source destination
-	Ipv4Address nextAddr; ///< next hop
-	uint32_t route_metric; ///< route metric
+	Ipv4Address sourceAddr; ///< source destination
+	Ipv4Address groupAddr; ///< source destination
+	Ipv4Address nextAddr; ///< source destination
 	uint32_t interface; ///< interface to source
+	uint32_t routeMetric; ///< route metric
 	uint32_t metricPreference;///< Metric Preference. The preference value assigned to the unicast routing protocol that provided the route to the source.
 	RoutingMulticastTable() : // default values
-		source(), nextAddr(), route_metric(0), interface(0), metricPreference(0) {
+		sourceAddr(), groupAddr(), nextAddr(), routeMetric(0), interface(0), metricPreference(0) {
 	}
 	;
 };
@@ -407,15 +408,15 @@ private:
 	void RecvPimDm(Ptr<Socket> socket);
 
 	void UpdateAssertWinner(SourceGroupState *sgState, Ipv4Address source){
-		sgState->AssertWinner.metric_preference = m_mrib.find(source)->second.metricPreference;
-		sgState->AssertWinner.route_metric = m_mrib.find(source)->second.route_metric;
-		sgState->AssertWinner.ip_address = GetLocalAddress(GetReceivingInterface(source));
+		sgState->AssertWinner.metricPreference = m_mrib.find(source)->second.metricPreference;
+		sgState->AssertWinner.routeMetric = m_mrib.find(source)->second.routeMetric;
+		sgState->AssertWinner.IPAddress = GetLocalAddress(GetReceivingInterface(source));
 	}
 
 	void UpdateAssertWinner(SourceGroupState *sgState, uint32_t metricP, uint32_t routeP, Ipv4Address winner){
-			sgState->AssertWinner.metric_preference = metricP;
-			sgState->AssertWinner.route_metric = routeP;
-			sgState->AssertWinner.ip_address = winner;
+			sgState->AssertWinner.metricPreference = metricP;
+			sgState->AssertWinner.routeMetric = routeP;
+			sgState->AssertWinner.IPAddress = winner;
 		}
 
 	void NeighborTimeout(uint32_t interface);
@@ -879,7 +880,7 @@ private:
 
 	struct AssertMetric spt_assert_metric(Ipv4Address source, uint32_t interface) {
 		struct AssertMetric assertMetric (m_mrib.find(source)->second.metricPreference,
-				m_mrib.find(source)->second.route_metric, GetLocalAddress(interface)); //TODO local node address on that interface?
+				m_mrib.find(source)->second.routeMetric, GetLocalAddress(interface)); //TODO local node address on that interface?
 		return assertMetric;
 	}
 

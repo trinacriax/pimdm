@@ -203,8 +203,8 @@ MulticastRoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) co
 //              *os << iter->second.nextAddr<< "\t\t";
 //            }
       *os << iter->second.metricPreference << "\t";
-      *os << iter->second.route_metric << "\t";
-      *os << "\n";
+      *os << iter->second.routeMetric << "\t";
+      *os << "\nStatic Routing Table:\n";
     }
 }
 
@@ -214,6 +214,7 @@ void MulticastRoutingProtocol::DoStart (){
 	      Ipv4Address loopback ("127.0.0.1");
 	      for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++)
 	        {
+              GetMetric(i);
 	          // Use primary address, if multiple
 	          Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	          if (addr != loopback)
@@ -343,8 +344,8 @@ MulticastRoutingProtocol::ForgeAssertMessage (uint32_t interface, PIMHeader &msg
 	assertMessage.m_sourceAddr =  ForgeEncodedUnicast(sgp.sourceIfaceAddr);
 	assertMessage.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);
 	assertMessage.m_R = 0;
-	assertMessage.m_metricPreference = (sgState==NULL) ? m_mrib.find(sgp.sourceIfaceAddr)->second.metricPreference:sgState->AssertWinner.metric_preference;
-	assertMessage.m_metric = (sgState==NULL) ? m_mrib.find(sgp.sourceIfaceAddr)->second.route_metric: sgState->AssertWinner.route_metric;
+	assertMessage.m_metricPreference = (sgState==NULL) ? m_mrib.find(sgp.sourceIfaceAddr)->second.metricPreference:sgState->AssertWinner.metricPreference;
+	assertMessage.m_metric = (sgState==NULL) ? m_mrib.find(sgp.sourceIfaceAddr)->second.routeMetric: sgState->AssertWinner.routeMetric;
 }
 
 void
@@ -382,7 +383,7 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair
 	refresh.m_originatorAddr = ForgeEncodedUnicast(Ipv4Address(GetLocalAddress(interface)));
 	refresh.m_R = 0;
 	refresh.m_metricPreference = m_mrib.find(sgp.sourceIfaceAddr)->second.metricPreference;
-	refresh.m_metric = m_mrib.find(sgp.sourceIfaceAddr)->second.route_metric;
+	refresh.m_metric = m_mrib.find(sgp.sourceIfaceAddr)->second.routeMetric;
 	refresh.m_maskLength = IPV4_ADDRESS_SIZE;
 	refresh.m_ttl = (sgState->SG_DATA_TTL>0 ? sgState->SG_DATA_TTL : sgState->SG_SR_TTL);
 	refresh.m_P = (sgState->PruneState==Prune_Pruned?1:0);
@@ -599,9 +600,9 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 				PIMHeader assert;
 				ForgeAssertMessage(interface, assert, sgp);
 				UpdateAssertWinner(sgState, sender);
-//				sgState->AssertWinner.metric_preference = m_mrib.find(sender)->second.metricPreference;
-//				sgState->AssertWinner.route_metric = m_mrib.find(sender)->second.route_metric;
-//				sgState->AssertWinner.ip_address = GetLocalAddress(interface);
+//				sgState->AssertWinner.metricPreference = m_mrib.find(sender)->second.metricPreference;
+//				sgState->AssertWinner.routeMetric = m_mrib.find(sender)->second.routeMetric;
+//				sgState->AssertWinner.IPAddress = GetLocalAddress(interface);
 				Ptr<Packet> packetA = Create<Packet> ();
 				SendBroadPacketInterface(packetA,assert,interface);
 				if(sgState->SG_AT.IsRunning())
@@ -618,9 +619,9 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 				if(!IsDownstream(interface,sgp))break;
 				PIMHeader assert;
 				ForgeAssertMessage(interface,assert,sgp);
-				sgState->AssertWinner.metric_preference = m_mrib.find(sender)->second.metricPreference;
-				sgState->AssertWinner.route_metric = m_mrib.find(sender)->second.route_metric;
-				sgState->AssertWinner.ip_address = GetLocalAddress(interface);
+				sgState->AssertWinner.metricPreference = m_mrib.find(sender)->second.metricPreference;
+				sgState->AssertWinner.routeMetric = m_mrib.find(sender)->second.routeMetric;
+				sgState->AssertWinner.IPAddress = GetLocalAddress(interface);
 				Ptr<Packet> packetA = Create<Packet> ();
 				SendBroadPacketInterface(packetA,assert,interface);
 				//The Assert winner for (S,G) must act as the local forwarder for
@@ -782,8 +783,8 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 	Ipv4Address nextHop = m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr;
 	refresh.m_originatorAddr = ForgeEncodedUnicast(GetLocalAddress(interface));
 	refresh.m_R = 0;
-	refresh.m_metricPreference = sgState->AssertWinner.metric_preference;
-	refresh.m_metric = sgState->AssertWinner.route_metric;
+	refresh.m_metricPreference = sgState->AssertWinner.metricPreference;
+	refresh.m_metric = sgState->AssertWinner.routeMetric;
 	refresh.m_maskLength = IPV4_ADDRESS_SIZE;
 	refresh.m_ttl = sgState->SG_SR_TTL; // TODO ??
 	refresh.m_P = (sgState->PruneState==Prune_Pruned? 1 : 0);
@@ -2213,8 +2214,8 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					PIMHeader assertR;
 					SourceGroupPair sgp(assert.m_sourceAddr.m_unicastAddress,assert.m_multicastGroupAddr.m_groupAddress);
 					ForgeAssertMessage(interface, assertR, sgp);
-					assertR.GetAssertMessage().m_metricPreference = sgState->AssertWinner.metric_preference;
-					assertR.GetAssertMessage().m_metric = sgState->AssertWinner.route_metric;
+					assertR.GetAssertMessage().m_metricPreference = sgState->AssertWinner.metricPreference;
+					assertR.GetAssertMessage().m_metric = sgState->AssertWinner.routeMetric;
 					Ptr<Packet> packet = Create<Packet> ();
 					SendBroadPacketInterface(packet,assertR,interface);
 					if(sgState->SG_AT.IsRunning())
@@ -2233,9 +2234,9 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					//	a State Refresh, the router MUST set the Assert Timer (AT(S,G,I))
 					//	to three times the State Refresh Interval.
 					sgState->AssertState = Assert_Loser;
-					sgState->AssertWinner.metric_preference = assert.m_metricPreference;
-					sgState->AssertWinner.route_metric = assert.m_metric;
-					sgState->AssertWinner.ip_address = sender;
+					sgState->AssertWinner.metricPreference = assert.m_metricPreference;
+					sgState->AssertWinner.routeMetric = assert.m_metric;
+					sgState->AssertWinner.IPAddress = sender;
 					if(sgState->SG_AT.IsRunning())
 						sgState->SG_AT.Cancel();
 					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
@@ -2458,8 +2459,8 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			if(received < my_assert_metric(refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress,interface)){
 				PIMHeader assertR;
 				ForgeAssertMessage(interface, assertR, sgp);
-//				assertR.GetAssertMessage().m_metricPreference = sgState->AssertWinner.metric_preference;
-//				assertR.GetAssertMessage().m_metric = sgState->AssertWinner.route_metric;
+//				assertR.GetAssertMessage().m_metricPreference = sgState->AssertWinner.metricPreference;
+//				assertR.GetAssertMessage().m_metric = sgState->AssertWinner.routeMetric;
 				Ptr<Packet> packet = Create<Packet> ();
 				SendBroadPacketInterface(packet,assertR,interface);
 				if(sgState->SG_AT.IsRunning())
@@ -2611,7 +2612,7 @@ MulticastRoutingProtocol::ForwardingStateRefresh(PIMHeader::StateRefreshMessage 
 		// set TTL of SRMP' to TTL(SRM) - 1;
 		SRMP.m_ttl = refresh.m_ttl-1;
 		// set metric of SRMP' to metric of unicast route used to reach S;
-		SRMP.m_metric = m_mrib.find(refresh.m_sourceAddr.m_unicastAddress)->second.route_metric;
+		SRMP.m_metric = m_mrib.find(refresh.m_sourceAddr.m_unicastAddress)->second.routeMetric;
 		// set pref of ' to preference of unicast route used to reach S;
 		SRMP.m_metricPreference = m_mrib.find(refresh.m_sourceAddr.m_unicastAddress)->second.metricPreference;
 		// set mask of SRMP' to mask of route used to reach S;
