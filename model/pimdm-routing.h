@@ -318,6 +318,13 @@ private:
 			m_multicastGroup.erase(group);
 		}
 	}
+
+	uint16_t GetMetric(uint32_t interface);
+
+	void SetMetric(uint32_t interface, uint16_t metric){
+
+	}
+
 	///\name Fields for each interface
 	/// Check that address is one of my interfaces
 	bool IsMyOwnAddress(const Ipv4Address & a) const;

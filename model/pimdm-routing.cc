@@ -100,10 +100,14 @@ MulticastRoutingProtocol::GetTypeId (void)
   return tid;
 }
 
-/* TODO
- * The Generation ID is regenerated whenever PIM forwarding is started or restarted on the interface.
 
-*/
+uint16_t
+MulticastRoutingProtocol::GetMetric(uint32_t interface){
+		Ptr<Ipv4RoutingProtocol> routing = m_ipv4->GetRoutingProtocol();
+		Ptr<Ipv4L3Protocol> l3 = this->GetObject<Ipv4L3Protocol>();
+		NS_LOG_DEBUG("R "<< routing->GetTypeId() << " l3 "<< l3->GetRoutingProtocol());
+		return 1;
+	}
 
 void
 MulticastRoutingProtocol::AddMulticastGroup(Ipv4Address group){
