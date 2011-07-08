@@ -153,6 +153,7 @@ private:
 	Time m_startTime;
 	bool m_stopTx;
 	//}
+	/// Interface excluded from multicast
 	std::set<uint32_t> m_interfaceExclusions;
 
 	///\name Fields for each interface
@@ -166,6 +167,9 @@ private:
 	 * uses the MRIB to make decisions regarding RPF interfaces.
 	 */
 	std::map<Ipv4Address, RoutingMulticastTable> m_mrib; ///< Multicast Routing Information Base (MRIB)
+	/// multicast groups on which the node is interested in
+	std::set<Ipv4Address> m_multicastGroup;
+
 
 	/// IP protocol
 	Ptr<Ipv4> m_ipv4;
@@ -303,6 +307,17 @@ private:
 		return m_stopTx;
 	}
 
+	void AddMulticastGroup(Ipv4Address group);
+
+	bool GetMulticastGroup(Ipv4Address group){
+		return (group.IsMulticast() && m_multicastGroup.find(group)!=m_multicastGroup.end());
+	}
+
+	void DelMulticastGroup(Ipv4Address group){
+		if(group.IsMulticast() && GetMulticastGroup(group)){
+			m_multicastGroup.erase(group);
+		}
+	}
 	///\name Fields for each interface
 	/// Check that address is one of my interfaces
 	bool IsMyOwnAddress(const Ipv4Address & a) const;

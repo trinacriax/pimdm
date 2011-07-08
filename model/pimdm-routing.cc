@@ -81,6 +81,10 @@ MulticastRoutingProtocol::GetTypeId (void)
 			 	 	UintegerValue (Hold_Time_Default),
 			        MakeUintegerAccessor (&MulticastRoutingProtocol::SetHelloHoldTime),
 			        MakeUintegerChecker<uint16_t> ())
+	.AddAttribute ("MulticastGroup", "Multicast group of interest",
+					Ipv4AddressValue("0.0.0.0"),
+					MakeIpv4AddressAccessor(&MulticastRoutingProtocol::AddMulticastGroup),
+					MakeIpv4AddressChecker())
 //	.AddAttribute ("OverrideInterval", "Override interval",
 //					 TimeValue (Seconds (1)),
 //					 MakeTimeAccessor (&MulticastRoutingProtocol::m_overrideInterval),
@@ -101,9 +105,20 @@ MulticastRoutingProtocol::GetTypeId (void)
 
 */
 
-Ptr<Ipv4Route> MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
-									  Ptr<NetDevice> oif, Socket::SocketErrno &sockerr){
-	return NULL;
+void
+MulticastRoutingProtocol::AddMulticastGroup(Ipv4Address group){
+		if(group.IsMulticast() && m_multicastGroup.find(group)==m_multicastGroup.end()){
+			NS_LOG_DEBUG("Interested in group "<< group);
+			m_multicastGroup.insert(group);
+		}
+//		NS_LOG_DEBUG("Groups are ");
+		for(std::set<Ipv4Address>::iterator iter = m_multicastGroup.begin();
+				iter != m_multicastGroup.end(); iter ++ ){
+//			NS_LOG_DEBUG(*iter);
+		}
+	}
+
+
 }
 
 bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
@@ -139,6 +154,9 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAdd
 		ns->pruneHoldtime = Seconds(UniformVariable().GetValue(PruneHoldTime*.3,PruneHoldTime));
 		ns->LANDelayEnabled = true;
 		ns->stateRefreshCapable = true;
+	}
+	for(std::set<Ipv4Address>::iterator iter = m_multicastGroup.begin(); iter!=m_multicastGroup.end();iter++){
+		NS_LOG_DEBUG("subscribe group  " << *iter);
 	}
 	//TODO When a PIM router takes an interface down or changes IP address, a Hello message with a zero Hold Time SHOULD be
 	//sent immediately (with the old IP address if the IP address is changed) to cause any PIM neighbors to remove the old information immediately.
