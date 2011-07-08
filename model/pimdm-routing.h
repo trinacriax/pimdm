@@ -106,6 +106,8 @@
 #include "ns3/ipv4.h"
 #include "ns3/ipv4-routing-protocol.h"
 #include "ns3/ipv4-static-routing.h"
+#include "ns3/ipv4-list-routing.h"
+#include "ns3/ipv4-l3-protocol.h"
 
 #include <vector>
 #include <map>
@@ -133,6 +135,9 @@ class MulticastRoutingProtocol: public Ipv4RoutingProtocol {
 private:
 	uint32_t m_mainInterface; ///< Node main interface.
 	Ipv4Address m_mainAddress; ///< Main address on the main interface.
+
+	// static routing table
+	Ptr<Ipv4StaticRouting> m_RoutingTable;
 
 	///\name Protocol fields;
 	//\{

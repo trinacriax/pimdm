@@ -53,7 +53,8 @@ NS_OBJECT_ENSURE_REGISTERED (MulticastRoutingProtocol);
 
 MulticastRoutingProtocol::MulticastRoutingProtocol() :
 		m_routingTableAssociation(0), m_ipv4 (0), m_lo(0)
-	{}
+	{m_RoutingTable = Create<Ipv4StaticRouting> ();
+	}
 
 MulticastRoutingProtocol::~MulticastRoutingProtocol()
 	{}
@@ -154,6 +155,7 @@ MulticastRoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
   NS_LOG_DEBUG ("Created MulticastRoutingProtocol");
   Ipv4Address loopback ("127.0.0.1");
   m_ipv4 = ipv4;
+  m_RoutingTable->SetIpv4 (ipv4);
 }
 
 Ipv4Address
@@ -171,6 +173,7 @@ MulticastRoutingProtocol::GetLocalAddress (uint32_t interface)
 void MulticastRoutingProtocol::DoDispose ()
 	{
 	m_ipv4 = 0;
+	m_RoutingTable = 0;
 	m_routingTableAssociation = 0;
 
 	for (std::map< Ptr<Socket>, Ipv4InterfaceAddress >::iterator iter = m_socketAddresses.begin ();
@@ -205,6 +208,7 @@ MulticastRoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) co
       *os << iter->second.metricPreference << "\t";
       *os << iter->second.routeMetric << "\t";
       *os << "\nStatic Routing Table:\n";
+      m_RoutingTable->PrintRoutingTable (stream);
     }
 }
 
