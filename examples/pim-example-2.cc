@@ -63,6 +63,7 @@
 	//	LogComponentEnable ("MacLow", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	//	LogComponentEnable ("YansWifiChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	//	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("OlsrRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
@@ -70,6 +71,7 @@
 	LogComponentEnable ("CsmaChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("CsmaHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Packet", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("DefaultSimulatorImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	#endif
@@ -148,7 +150,6 @@
 //	Config::Set("NodeList/4/DeviceList/0/$ns3::CsmaNetDevice/Address", Mac48AddressValue("08:00:2e:00:34:04"));
 
 
-
 	Ipv4Address multicastSource ("10.1.0.1");
 	Ipv4Address multicastGroup1 ("225.1.1.4");
 	Ipv4Address multicastGroup2 ("225.1.2.4");
@@ -157,22 +158,33 @@
 
 	NS_LOG_INFO ("Assign IP Addresses.");
 
+	uint16_t sampleMetric = 1;
 	Ipv4AddressHelper ip02;
 	ip02.SetBase ("10.1.0.0", "255.255.255.0");
 	Ipv4InterfaceContainer ip02i = ip02.Assign (csmaDevices02);
+	ip02i.SetMetric(0, sampleMetric);
+	ip02i.SetMetric(1, sampleMetric);
 
 	Ipv4AddressHelper ip12;
 	ip12.SetBase ("10.1.1.0", "255.255.255.0");
 	Ipv4InterfaceContainer ip12i = ip12.Assign (csmaDevices12);
+	ip12i.SetMetric(0, sampleMetric);
+	ip12i.SetMetric(1, sampleMetric);
 
 	Ipv4AddressHelper ip23;
 	ip23.SetBase ("10.1.3.0", "255.255.255.0");
 	Ipv4InterfaceContainer ip23i = ip23.Assign (csmaDevices23);
+	ip23i.SetMetric(0, sampleMetric);
+	ip23i.SetMetric(1, sampleMetric);
 
 	Ipv4AddressHelper ip34;
 	ip34.SetBase ("10.1.4.0", "255.255.255.0");
 	Ipv4InterfaceContainer ip34i = ip34.Assign (csmaDevices34);
+	ip34i.SetMetric(0, sampleMetric);
+	ip34i.SetMetric(1, sampleMetric);
+
 	uint16_t o2 = 1;
+
 
 //	Ptr<Ipv4ListRouting> ipv4 = c.Get(0)->GetObject<Ipv4ListRouting> ();
 //	uint32_t num = ipv4->GetNRoutingProtocols();
@@ -193,23 +205,40 @@
 
 	// Create the OnOff application to send UDP datagrams of size
 	// 210 bytes at a rate of 448 Kb/s from n0 to n4
-	NS_LOG_INFO ("Create Applications.");
-	uint16_t muticastPort = PIM_PORT_NUMBER;   // Discard port (RFC 863)
-	Address sinkLocalAddress(InetSocketAddress(multicastGroup1, muticastPort));
+//	NS_LOG_INFO ("Create Applications.");
+//	uint16_t muticastPort = PIM_PORT_NUMBER;   // Discard port (RFC 863)
+//	Address sinkLocalAddress(InetSocketAddress(multicastGroup1, muticastPort));
+//
+//	PacketSinkHelper sink ("ns3::UdpSocketFactory",sinkLocalAddress);
+//	ApplicationContainer sinkApps = sink.Install (c.Get (4));
+//	sinkApps.Start (Seconds (1.0));
+//	sinkApps.Stop (Seconds (10.0));
+//
+//	OnOffHelper onoff ("ns3::UdpSocketFactory",sinkLocalAddress);
+//	onoff.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1)));
+//	onoff.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0)));
+//	onoff.SetAttribute ("DataRate", StringValue ("300bps"));
+//	onoff.SetAttribute ("PacketSize", UintegerValue (50));
+//
+//	ApplicationContainer apps = onoff.Install (c.Get (0));
+//	apps.Start (Seconds (1.0));
+//	apps.Stop (Seconds (10.0));
+	// Create a flow from n3 to n1, starting at time 1.1 seconds
+	  OnOffHelper onoff ("ns3::UdpSocketFactory",
+	                     Address (InetSocketAddress (multicastGroup1, PIM_PORT_NUMBER)));
+	  onoff.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1)));
+	  onoff.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0)));
 
-	PacketSinkHelper sink ("ns3::UdpSocketFactory",sinkLocalAddress);
-	ApplicationContainer sinkApps = sink.Install (c.Get (4));
-	sinkApps.Start (Seconds (1.0));
-	sinkApps.Stop (Seconds (10.0));
+	  ApplicationContainer apps = onoff.Install (c.Get (3));
+	  apps.Start (Seconds (1.1));
+	  apps.Stop (Seconds (10.0));
 
-	OnOffHelper onoff ("ns3::UdpSocketFactory",sinkLocalAddress);
-	onoff.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1)));
-	onoff.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0)));
-	onoff.SetAttribute ("DataRate", StringValue ("300bps"));
-	onoff.SetAttribute ("PacketSize", UintegerValue (50));
-	ApplicationContainer apps = onoff.Install (c.Get (0));
-	apps.Start (Seconds (1.0));
-	apps.Stop (Seconds (10.0));
+	  // Create a packet sink to receive these packets
+	  PacketSinkHelper sink ("ns3::UdpSocketFactory",
+	                         Address (InetSocketAddress (Ipv4Address::GetAny (), PIM_PORT_NUMBER)));
+	  apps = sink.Install (c.Get (0));
+	  apps.Start (Seconds (1.1));
+	  apps.Stop (Seconds (10.0));
 
 	// Create a packet sink to receive these packets
 
