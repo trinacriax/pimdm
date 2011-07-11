@@ -476,6 +476,7 @@ void MulticastRoutingProtocol::DoStart (){
 	      for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++)
 	        {
               GetMetric(i);
+              InsertSourceGroupList(i);
 	          // Use primary address, if multiple
 	          Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	          if (addr != loopback)
