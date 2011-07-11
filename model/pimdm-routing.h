@@ -483,9 +483,7 @@ private:
 		if (iter != m_IfaceSourceGroup.end())
 			return;
 		SourceGroupList sgl;
-		m_IfaceSourceGroup.insert(
-				std::pair<uint32_t, SourceGroupList>(interface, sgl));
-
+		m_IfaceSourceGroup.insert(std::pair<uint32_t, SourceGroupList>(interface, sgl));
 	}
 
 	void EraseSourceGroupList(uint32_t interface) {
