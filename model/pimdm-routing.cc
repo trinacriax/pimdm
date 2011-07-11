@@ -265,6 +265,10 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 	  NS_LOG_DEBUG ("Found route to " << rtentry->GetDestination () << " via nh " << rtentry->GetGateway () << " with source addr " << rtentry->GetSource () << " and output dev " << rtentry->GetOutputDevice ());
 	  found = true;
 	}
+	else if (GetMulticastGroup(header.GetDestination())){
+		//Node is interested in this group.
+		RecvData(p,header.GetSource(),header.GetDestination());
+	}
 	else
 	{
 	  rtentry = m_RoutingTable->RouteOutput (p, header, oif, sockerr);
