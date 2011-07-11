@@ -799,7 +799,7 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 void
 MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4Address receiver){
 	NS_LOG_FUNCTION(this);
-	uint32_t interface = GetReceivingInterface(receiver);
+	uint32_t interface = GetReceivingInterface(sender);
 	// Data Packet arrives on RPF_Interface(S) AND olist(S,G) == NULL AND S NOT directly connected
 	SourceGroupPair sgp(sender, receiver);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
