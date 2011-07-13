@@ -228,14 +228,10 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 		Ptr<NetDevice> oif, Socket::SocketErrno &sockerr){
 	NS_LOG_FUNCTION (this << m_ipv4->GetObject<Node> ()->GetId () << header.GetDestination () << oif);
 	Ptr<Ipv4Route> rtentry;
-	RoutingMulticastTable entry1, entry2;
+	RoutingMulticastTable entry1;
 	bool found = false;
-	if(header.GetDestination().IsMulticast()){
-		NS_LOG_DEBUG("Multicast Packet: (" //<< ipvh.GetSource() << ","<< ipvh.GetDestination()<<") - ("
-				<< header.GetSource() << ","<< header.GetDestination()<<").");
-	}
-	if (Lookup (header.GetDestination(), entry1) != 0)	{//entry in the routing table found
-	  uint32_t interfaceIdx = entry2.interface;
+	if(header.GetDestination().IsMulticast() && Lookup (header.GetDestination(), entry1) != 0)	{//entry in the routing table found
+		uint32_t interfaceIdx = entry1.interface;
 	  if (oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx))
 		{
 		  // We do not attempt to perform a constrained routing search
