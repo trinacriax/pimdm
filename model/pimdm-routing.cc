@@ -545,7 +545,6 @@ void MulticastRoutingProtocol::DoStart (){
 void
 MulticastRoutingProtocol::HelloTimerExpire (uint32_t i){
 	Ipv4Address loopback ("127.0.0.1");
-//	for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++){
 	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	  if (addr == loopback)
 		  return;
@@ -556,7 +555,6 @@ MulticastRoutingProtocol::HelloTimerExpire (uint32_t i){
 		  m_IfaceNeighbors.find(i)->second.hello_timer.SetArguments(i);
 	  }
 	  SendHello (i);
-//	}
 }
 
 //	 PIM-DM uses Hello messages to detect other PIM routers.  Hello
@@ -757,6 +755,7 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 	receivedPacket = socket->RecvFrom (sourceAddress);
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4 ();
+	uint16_t senderIfacePort = inetSourceAddr.GetPort();
 	Ipv4Address receiverIfaceAddr = m_socketAddresses[socket].GetLocal ();
 	NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
     Ptr<Ipv4Route> route = 0;
