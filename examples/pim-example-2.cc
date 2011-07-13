@@ -38,20 +38,21 @@
 	#include <iostream>
 	#include <fstream>
 	#include <cassert>
+	#include <string>
 
 	#include "ns3/core-module.h"
 	#include "ns3/network-module.h"
 	#include "ns3/internet-module.h"
-	#include "ns3/csma-helper.h"
 	#include "ns3/point-to-point-module.h"
 	#include "ns3/applications-module.h"
+	#include "ns3/flow-monitor-helper.h"
 	#include "ns3/olsr-helper.h"
 	#include "ns3/pimdm-helper.h"
 	#include "ns3/pimdm-routing.h"
 
 	using namespace ns3;
 
-	NS_LOG_COMPONENT_DEFINE ("SimplePointToPointOlsrExample");
+	NS_LOG_COMPONENT_DEFINE ("PimExample2");
 
 	int
 	main (int argc, char *argv[])
@@ -64,201 +65,151 @@
 	//	LogComponentEnable ("YansWifiChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	//	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("PacketSink", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("OlsrRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("CsmaNetDevice", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("CsmaChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("CsmaHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Ipv4EndPointDemux", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Packet", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("DefaultSimulatorImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	#endif
 
-	// Set up some default values for the simulation.  Use the
+	  // Set up some default values for the simulation.  Use the
+	  Config::SetDefault ("ns3::OnOffApplication::PacketSize", UintegerValue (210));
+	  Config::SetDefault ("ns3::OnOffApplication::DataRate", StringValue ("448kb/s"));
 
-	Config::SetDefault ("ns3::OnOffApplication::PacketSize", UintegerValue (210));
-	Config::SetDefault ("ns3::OnOffApplication::DataRate", StringValue ("448kb/s"));
+	  //DefaultValue::Bind ("DropTailQueue::m_maxPackets", 30);
 
-	//DefaultValue::Bind ("DropTailQueue::m_maxPackets", 30);
+	  // Allow the user to override any of the defaults and the above
+	  // DefaultValue::Bind ()s at run-time, via command-line arguments
+	  CommandLine cmd;
+	  bool enableFlowMonitor = false;
+	  cmd.AddValue ("EnableMonitor", "Enable Flow Monitor", enableFlowMonitor);
+	  cmd.Parse (argc, argv);
 
-	// Allow the user to override any of the defaults and the above
-	// DefaultValue::Bind ()s at run-time, via command-line arguments
-	CommandLine cmd;
-	cmd.Parse (argc, argv);
+	  // Here, we will explicitly create four nodes.  In more sophisticated
+	  // topologies, we could configure a node factory.
+	  NS_LOG_INFO ("Create nodes.");
+	  NodeContainer c;
+	  c.Create (3);
+	  NodeContainer n0n2 = NodeContainer (c.Get (0), c.Get (2));
+	  NodeContainer n1n2 = NodeContainer (c.Get (1), c.Get (2));
 
-	// Here, we will explicitly create four nodes.  In more sophisticated
-	// topologies, we could configure a node factory.
-	NS_LOG_INFO ("Create nodes.");
-	NodeContainer c;
-	c.Create (5);
-	NodeContainer n02 = NodeContainer (c.Get(0), c.Get (2));
-	NodeContainer n12 = NodeContainer (c.Get(1), c.Get (2));
-	NodeContainer n32 = NodeContainer (c.Get(3), c.Get (2));
-	NodeContainer n34 = NodeContainer (c.Get(3), c.Get (4));
+		// Enable OLSR
+		NS_LOG_INFO ("Enabling OLSR Routing.");
+		OlsrHelper olsr;
+		NS_LOG_INFO ("Enabling PIM-DM Routing.");
+		PimDmHelper pimdm;
 
-	NS_LOG_INFO ("Build Topology.");
+		Ipv4StaticRoutingHelper staticRouting;
+		Ipv4ListRoutingHelper list;
+		list.Add (staticRouting, 0);
+		list.Add (olsr, 10);
+		list.Add (pimdm, 11);
 
-	// Enable OLSR
-	NS_LOG_INFO ("Enabling OLSR Routing.");
-	OlsrHelper olsr;
+		InternetStackHelper internet;
+		internet.SetRoutingHelper (list);
+		internet.Install (c);
 
-	NS_LOG_INFO ("Enabling PIM-DM Routing.");
-	PimDmHelper pimdm;
+	  // We create the channels first without any IP addressing information
+	  NS_LOG_INFO ("Create channels.");
+	  PointToPointHelper p2p;
+	  p2p.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
+	  p2p.SetChannelAttribute ("Delay", StringValue ("2ms"));
+	  NetDeviceContainer d0d2 = p2p.Install (n0n2);
 
-	Ipv4StaticRoutingHelper staticRouting;
+	  NetDeviceContainer d1d2 = p2p.Install (n1n2);
 
-	Ipv4ListRoutingHelper list;
-	list.Add (staticRouting, 0);
-	list.Add (olsr, 10);
-	list.Add (pimdm, 11);
+//	  p2p.SetDeviceAttribute ("DataRate", StringValue ("1500kbps"));
+//	  p2p.SetChannelAttribute ("Delay", StringValue ("10ms"));
 
-	InternetStackHelper internet;
-	internet.SetRoutingHelper (list);
-	internet.Install (c);
+	  // Later, we add IP addresses.
+	  NS_LOG_INFO ("Assign IP Addresses.");
+	  Ipv4AddressHelper ipv4;
+	  ipv4.SetBase ("10.1.0.0", "255.255.255.0");
+	  Ipv4InterfaceContainer i0i2 = ipv4.Assign (d0d2);
 
-	NS_LOG_INFO ("Create channels.");
+	  ipv4.SetBase ("10.1.1.0", "255.255.255.0");
+	  Ipv4InterfaceContainer i1i2 = ipv4.Assign (d1d2);
 
-	CsmaHelper csmaLinkA;
-	csmaLinkA.SetChannelAttribute ("DataRate", StringValue ("5Mbps"));
-	csmaLinkA.SetChannelAttribute ("Delay", TimeValue (NanoSeconds (2000)));
-	NetDeviceContainer csmaDevices02 = csmaLinkA.Install (n02);
-	NetDeviceContainer csmaDevices12 = csmaLinkA.Install (n12);
-//	CsmaHelper csma12;
-//	csma12.SetChannelAttribute ("DataRate", StringValue ("5Mbps"));
-//	csma12.SetChannelAttribute ("Delay", TimeValue (NanoSeconds (2000)));
-//	NetDeviceContainer csmaDevices12 = csma12.Install (n12);
-
-	CsmaHelper csmaLinkB;
-	csmaLinkB.SetChannelAttribute ("DataRate", StringValue ("1.5Mbps"));
-	csmaLinkB.SetChannelAttribute ("Delay", TimeValue (NanoSeconds (10000)));
-	NetDeviceContainer csmaDevices23 = csmaLinkB.Install (n32);
-	NetDeviceContainer csmaDevices34 = csmaLinkB.Install (n34);
-//	CsmaHelper csma34;
-//	csma34.SetChannelAttribute ("DataRate", StringValue ("3Mbps"));
-//	csma34.SetChannelAttribute ("Delay", TimeValue (NanoSeconds (4000)));
-//	NetDeviceContainer csmaDevices34 = csma34.Install (n34);
-
-//	Config::Set("NodeList/0/DeviceList/0/$ns3::CsmaNetDevice/Address", Mac48AddressValue("08:00:2e:00:02:00"));
-//	Config::Set("NodeList/2/DeviceList/0/$ns3::CsmaNetDevice/Address", Mac48AddressValue("08:00:2e:00:02:02"));
-//	Config::Set("NodeList/1/DeviceList/0/$ns3::CsmaNetDevice/Address", Mac48AddressValue("08:00:2e:00:12:01"));
-//	Config::Set("NodeList/2/DeviceList/1/$ns3::CsmaNetDevice/Address", Mac48AddressValue("08:00:2e:00:12:02"));
-//	Config::Set("NodeList/3/DeviceList/0/$ns3::CsmaNetDevice/Address", Mac48AddressValue("08:00:2e:00:23:02"));
-//	Config::Set("NodeList/2/DeviceList/2/$ns3::CsmaNetDevice/Address", Mac48AddressValue("08:00:2e:00:23:03"));
-//	Config::Set("NodeList/3/DeviceList/1/$ns3::CsmaNetDevice/Address", Mac48AddressValue("08:00:2e:00:34:03"));
-//	Config::Set("NodeList/4/DeviceList/0/$ns3::CsmaNetDevice/Address", Mac48AddressValue("08:00:2e:00:34:04"));
-
+	  NS_LOG_INFO ("Configure multicasting.");
 
 	Ipv4Address multicastSource ("10.1.0.1");
-	Ipv4Address multicastGroup1 ("225.1.1.4");
-	Ipv4Address multicastGroup2 ("225.1.2.4");
+	Ipv4Address multicastGroup1 (ALL_PIM_ROUTERS4);
+//	Ipv4Address multicastGroup2 ("225.1.2.4");
+
+//	// Now, we will set up multicast routing.  We need to do three things:
+//	// 1) Configure a (static) multicast route on node n2
+//	// 2) Set up a default multicast route on the sender n0
+//	// 3) Have node n4 join the multicast group
+//	// We have a helper that can help us with static multicast
+//	Ipv4StaticRoutingHelper multicast;
+//
+//	// 1) Configure a (static) multicast route on node n2 (multicastRouter)
+//	Ptr<Node> mr0 = c.Get (0);  // The node in question
+//	Ptr<NetDevice> inputIf = n0n2.Get (0);  // The input NetDevice
+//	NetDeviceContainer outputDevices;  // A container of output NetDevices
+//	outputDevices.Add (n0n2.Get (1));  // (we only need one NetDevice here)
+//
+//	multicast.AddMulticastRoute (mr0, multicastSource,
+//							   multicastGroup1, inputIf, outputDevices);
+//
+//	// 2) Set up a default multicast route on the sender n0
+//	Ptr<Node> sender = c.Get (0);
+//	Ptr<NetDevice> senderIf = nd0.Get (0);
+//	multicast.SetDefaultMulticastRoute (sender, senderIf);
+
 	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup1));
-	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup2));
-
-	NS_LOG_INFO ("Assign IP Addresses.");
-
-	uint16_t sampleMetric = 1;
-	Ipv4AddressHelper ip02;
-	ip02.SetBase ("10.1.0.0", "255.255.255.0");
-	Ipv4InterfaceContainer ip02i = ip02.Assign (csmaDevices02);
-	ip02i.SetMetric(0, sampleMetric);
-	ip02i.SetMetric(1, sampleMetric);
-
-	Ipv4AddressHelper ip12;
-	ip12.SetBase ("10.1.1.0", "255.255.255.0");
-	Ipv4InterfaceContainer ip12i = ip12.Assign (csmaDevices12);
-	ip12i.SetMetric(0, sampleMetric);
-	ip12i.SetMetric(1, sampleMetric);
-
-	Ipv4AddressHelper ip23;
-	ip23.SetBase ("10.1.3.0", "255.255.255.0");
-	Ipv4InterfaceContainer ip23i = ip23.Assign (csmaDevices23);
-	ip23i.SetMetric(0, sampleMetric);
-	ip23i.SetMetric(1, sampleMetric);
-
-	Ipv4AddressHelper ip34;
-	ip34.SetBase ("10.1.4.0", "255.255.255.0");
-	Ipv4InterfaceContainer ip34i = ip34.Assign (csmaDevices34);
-	ip34i.SetMetric(0, sampleMetric);
-	ip34i.SetMetric(1, sampleMetric);
-
-	uint16_t o2 = 1;
+//	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup2));
 
 
-//	Ptr<Ipv4ListRouting> ipv4 = c.Get(0)->GetObject<Ipv4ListRouting> ();
-//	uint32_t num = ipv4->GetNRoutingProtocols();
-//	int32_t interface = ipv4->GetInterfaceForDevice (device);
-//	if (interface == -1){
-//	  interface = ipv4->AddInterface (device);
-//	}
-//	for(uint32_t i = 0; i < num; i++){
-//		Ptr<Ipv4RoutingProtocol> tmp = ipv4->GetRoutingProtocol(1,o2);
-//	}
-
-//	Ipv4InterfaceAddress ipv4Addr = Ipv4InterfaceAddress (NewAddress (), m_mask);
-//	ipv4->AddAddress (interface, ipv4Addr);
-//	ipv4->SetMetric (interface, 1);
-//	ipv4->SetUp (interface);
-
-	NS_LOG_INFO ("Configure multicasting.");
-
-	// Create the OnOff application to send UDP datagrams of size
-	// 210 bytes at a rate of 448 Kb/s from n0 to n4
-//	NS_LOG_INFO ("Create Applications.");
-//	uint16_t muticastPort = PIM_PORT_NUMBER;   // Discard port (RFC 863)
-//	Address sinkLocalAddress(InetSocketAddress(multicastGroup1, muticastPort));
-//
-//	PacketSinkHelper sink ("ns3::UdpSocketFactory",sinkLocalAddress);
-//	ApplicationContainer sinkApps = sink.Install (c.Get (4));
-//	sinkApps.Start (Seconds (1.0));
-//	sinkApps.Stop (Seconds (10.0));
-//
-//	OnOffHelper onoff ("ns3::UdpSocketFactory",sinkLocalAddress);
-//	onoff.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1)));
-//	onoff.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0)));
-//	onoff.SetAttribute ("DataRate", StringValue ("300bps"));
-//	onoff.SetAttribute ("PacketSize", UintegerValue (50));
-//
-//	ApplicationContainer apps = onoff.Install (c.Get (0));
-//	apps.Start (Seconds (1.0));
-//	apps.Stop (Seconds (10.0));
-	// Create a flow from n3 to n1, starting at time 1.1 seconds
+	NS_LOG_INFO ("Create Applications.");
+	  uint16_t port = PIM_PORT_NUMBER;   // Discard port (RFC 863)
 	  OnOffHelper onoff ("ns3::UdpSocketFactory",
-	                     Address (InetSocketAddress (multicastGroup1, PIM_PORT_NUMBER)));
+	                     Address (InetSocketAddress (multicastGroup1, port)));
 	  onoff.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1)));
 	  onoff.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0)));
-
-	  ApplicationContainer apps = onoff.Install (c.Get (3));
-	  apps.Start (Seconds (1.1));
+	  ApplicationContainer apps = onoff.Install (c.Get (0));
+	  apps.Start (Seconds (1.0));
 	  apps.Stop (Seconds (10.0));
 
 	  // Create a packet sink to receive these packets
 	  PacketSinkHelper sink ("ns3::UdpSocketFactory",
-	                         Address (InetSocketAddress (Ipv4Address::GetAny (), PIM_PORT_NUMBER)));
-	  apps = sink.Install (c.Get (0));
-	  apps.Start (Seconds (1.1));
-	  apps.Stop (Seconds (10.0));
-
-	// Create a packet sink to receive these packets
+	                         Address (InetSocketAddress (Ipv4Address::GetAny (), port)));
+	  apps = sink.Install (c.Get (1));
+	  apps.Start (Seconds (1.0));
+	  apps.Stop (Seconds (30.0));
 
 
+	  AsciiTraceHelper ascii;
+	  p2p.EnableAsciiAll (ascii.CreateFileStream ("simple-global-routing.tr"));
+	  p2p.EnablePcapAll ("simple-global-routing");
 
 
-	AsciiTraceHelper ascii;
-	csmaLinkA.EnableAsciiAll (ascii.CreateFileStream ("csma02.tr"));
-	csmaLinkA.EnablePcapAll ("csma02.pcap");
+//	  // Flow Monitor
+	  Ptr<FlowMonitor> flowmon;
+	  if (enableFlowMonitor)
+	    {
+//	      FlowMonitorHelper flowmonHelper;
+//	      flowmon = flowmonHelper.InstallAll ();
+	    }
 
-//	AnimationInterface anim;
-//	anim.SetOutputFile("p2p-multicast.tr");
-//	anim.StartAnimation();
+	  NS_LOG_INFO ("Run Simulation.");
+	  Simulator::Stop (Seconds (31));
+	  Simulator::Run ();
+	  NS_LOG_INFO ("Done.");
 
-	Simulator::Stop (Seconds (100));
+	  if (enableFlowMonitor)
+	    {
+//	      flowmon->SerializeToXmlFile ("simple-global-routing.flowmon", false, false);
+	    }
 
-	NS_LOG_INFO ("Run Simulation.");
-	Simulator::Run ();
-	Simulator::Destroy ();
-	NS_LOG_INFO ("Done.");
-
-	return 0;
-}
+	  Simulator::Destroy ();
+	  return 0;
+	}
