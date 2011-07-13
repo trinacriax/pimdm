@@ -264,8 +264,8 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 		  NS_FATAL_ERROR ("XXX Not implemented yet:  IP aliasing and PIM-DM");
 		}
 	  rtentry->SetSource (ifAddr.GetLocal ());
-	  rtentry->SetGateway (entry2.nextAddr);
 	  rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
+	  rtentry->SetGateway(Ipv4Address::GetAny());//TODO CHECK
 	  sockerr = Socket::ERROR_NOTERROR;
 	  NS_LOG_DEBUG ("PIM-DM Routing: Src = " << rtentry->GetSource() << ", Dest = " << rtentry->GetDestination()<< ", GW = "<< rtentry->GetGateway () << ", interface = " << interfaceIdx<<" device = "<<rtentry->GetOutputDevice()->GetMulticast(rtentry->GetDestination()));
 	  found = true;
