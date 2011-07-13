@@ -119,6 +119,15 @@ MulticastRoutingProtocol::GetMetricPreference(uint32_t interface){
 	}
 
 void
+MulticastRoutingProtocol::AddMulticastRoute (Ipv4Address source, Ipv4Address group, uint32_t inputInterface, std::vector<uint32_t> outputInterfaces){
+	// We need to convert the NetDeviceContainer to an array of interface numbers
+  NS_ASSERT_MSG (inputInterface >= 0,
+                 "Ipv4StaticRoutingHelper::AddMulticastRoute(): "
+                 "Expected an interface associated with the device input");
+  Ipv4MulticastRoutingTableEntry *route = new Ipv4MulticastRoutingTableEntry ();
+  *route = Ipv4MulticastRoutingTableEntry::CreateMulticastRoute (source, group, inputInterface, outputInterfaces);
+   m_multicastRoutes.push_back (route);
+}
 MulticastRoutingProtocol::AddMulticastGroup(Ipv4Address group){
 		if(group.IsMulticast() && m_multicastGroup.find(group)==m_multicastGroup.end()){
 			NS_LOG_DEBUG("Interested in group "<< group);
