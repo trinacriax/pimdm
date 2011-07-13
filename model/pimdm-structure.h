@@ -190,7 +190,7 @@ operator == (const SourceGroupState &a, const SourceGroupState &b){
 
 struct UpstreamState{
 	UpstreamState():
-		GraftPrune(GP_NoInfo),
+		GraftPrune(GP_Forwarding),
 		SG_GRT(Timer::CANCEL_ON_DESTROY),
 		SG_OT(Timer::CANCEL_ON_DESTROY),
 		SG_PLT(Timer::CANCEL_ON_DESTROY),
