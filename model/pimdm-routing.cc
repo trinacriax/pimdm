@@ -261,17 +261,13 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 	  if (numOifAddresses == 1) {
 		  ifAddr = m_ipv4->GetAddress (interfaceIdx, 0);
 		} else {
-		  NS_FATAL_ERROR ("XXX Not implemented yet:  IP aliasing and OLSR");
+		  NS_FATAL_ERROR ("XXX Not implemented yet:  IP aliasing and PIM-DM");
 		}
 	  rtentry->SetSource (ifAddr.GetLocal ());
 	  rtentry->SetGateway (entry2.nextAddr);
 	  rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
 	  sockerr = Socket::ERROR_NOTERROR;
-	  NS_LOG_DEBUG ("Olsr node " << m_mainAddress
-								 << ": RouteOutput for dest=" << header.GetDestination ()
-								 << " --> nextHop=" << entry2.nextAddr
-								 << " interface=" << entry2.interface);
-	  NS_LOG_DEBUG ("Found route to " << rtentry->GetDestination () << " via nh " << rtentry->GetGateway () << " with source addr " << rtentry->GetSource () << " and output dev " << rtentry->GetOutputDevice ());
+	  NS_LOG_DEBUG ("PIM-DM Routing: Src = " << rtentry->GetSource() << ", Dest = " << rtentry->GetDestination()<< ", GW = "<< rtentry->GetGateway () << ", interface = " << interfaceIdx<<" device = "<<rtentry->GetOutputDevice()->GetMulticast(rtentry->GetDestination()));
 	  found = true;
 	}
 	else if (GetMulticastGroup(header.GetDestination())){
@@ -349,6 +345,8 @@ bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
 	          // multicast routing protocol can handle it.  It should be possible
 	          // to extend this to explicitly check whether it is a unicast
 	          // packet, and invoke the error callback if so
+
+	    	  //TODO implement here the callback
 	          return false;
 	        }
 	    }
@@ -367,8 +365,9 @@ bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
 	           for (std::map<Ipv4Address, RoutingMulticastTable>::const_iterator iter = m_mrib.begin ();
 	                iter != m_mrib.end (); iter++)
 	             {
-	               NS_LOG_DEBUG ("dest=" << iter->first << " --> next=" << iter->second.nextAddr
-	                                     << " via interface " << iter->second.interface);
+	               NS_LOG_DEBUG ("dest=" << iter->first
+//	            		   << " --> next=" << iter->second.nextAddr
+	                       << " via interface " << iter->second.interface);
 	             }
 
 	           NS_LOG_DEBUG ("** Routing table dump end.");
@@ -380,16 +379,15 @@ bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
 void
 MulticastRoutingProtocol::NotifyInterfaceUp (uint32_t i)
 {NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Up: "<<i);}
+
 void
 MulticastRoutingProtocol::NotifyInterfaceDown (uint32_t i)
 {NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Down "<<i);
-//TODO When a PIM router takes an interface down or changes IP address, a Hello message with a zero Hold Time SHOULD be
-//sent immediately (with the old IP address if the IP address is changed) to cause any PIM neighbors to remove the old information immediately.
 }
+
 void
 MulticastRoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAddress address){
 	NS_LOG_FUNCTION(this);
-	NS_LOG_DEBUG("+ Address("<<interface<<") = "<< address);
 	Ipv4Address loopback ("127.0.0.1");
 	Ipv4Address addr = m_ipv4->GetAddress (interface, 0).GetLocal ();
 	if (addr != loopback){
@@ -3056,6 +3054,7 @@ void
 MulticastRoutingProtocol::SetMainInterface (uint32_t interface){
 	NS_LOG_FUNCTION(this);
 	m_mainAddress = m_ipv4->GetAddress (interface, 0).GetLocal ();
+	NS_LOG_DEBUG("MainAddress ("<<interface<< ") = "<<m_mainAddress);
 	}
 
 void
@@ -3068,7 +3067,7 @@ bool
 MulticastRoutingProtocol::UsesNonPimDmOutgoingInterface (const Ipv4RoutingTableEntry &route){
 	NS_LOG_FUNCTION(this);
 	std::set<uint32_t>::const_iterator ci = m_interfaceExclusions.find (route.GetInterface ());
-	// The outgoing interface is a non-OLSR interface if a match is found
+	// The outgoing interface is a non-PIMDM interface if a match is found
 	// before reaching the end of the list of excluded interfaces
 	return (ci != m_interfaceExclusions.end ());
 }
@@ -3108,3 +3107,5 @@ void MulticastRoutingProtocol::InsertNeighborState(uint32_t interface, const Nei
 //		definitive specification.  All PIM control messages have IP protocol number 103.  All PIM-DM messages MUST be sent with a TTL of 1 (IPV4).  All
 //		PIM-DM messages except Graft and Graft Ack messages MUST be sent to the ALL-PIM-ROUTERS group.  Graft messages SHOULD be unicast to the
 //		RPF'(S).  Graft Ack messages MUST be unicast to the sender of the Graft.
+//* When a PIM router takes an interface down or changes IP address, a Hello message with a zero Hold Time SHOULD be
+//		sent immediately (with the old IP address if the IP address is changed) to cause any PIM neighbors to remove the old information immediately.
