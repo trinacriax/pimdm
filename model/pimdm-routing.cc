@@ -424,13 +424,26 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAdd
 		ns->pruneHoldtime = Seconds(UniformVariable().GetValue(PruneHoldTime*.3,PruneHoldTime));
 		ns->LANDelayEnabled = true;
 		ns->stateRefreshCapable = true;
+		GetRouteMetric(interface);
+		InsertSourceGroupList(interface);
+		// Use primary address, if multiple
+		NS_LOG_DEBUG("Address("<<interface<< ") = "<<address);
+		if (m_mainAddress == Ipv4Address ()){
+			m_mainAddress = addr;
+			SetMainInterface(interface);
+			Timer *helloTimer = &m_IfaceNeighbors.find(interface)->second.hello_timer;
+			Time rndHello = Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay));
+			Simulator::Schedule (rndHello, &MulticastRoutingProtocol::HelloTimerExpire, this, interface);
+			helloTimer->SetDelay(m_helloTime);
+			helloTimer->SetFunction(&MulticastRoutingProtocol::HelloTimerExpire,this);
+			helloTimer->SetArguments(interface);
+		}
 	}
-	for(std::set<Ipv4Address>::iterator iter = m_multicastGroup.begin(); iter!=m_multicastGroup.end();iter++){
-		NS_LOG_DEBUG("subscribe group  " << *iter);
-	}
-	//TODO When a PIM router takes an interface down or changes IP address, a Hello message with a zero Hold Time SHOULD be
-	//sent immediately (with the old IP address if the IP address is changed) to cause any PIM neighbors to remove the old information immediately.
+//	for(std::set<Ipv4Address>::iterator iter = m_multicastGroup.begin(); iter!=m_multicastGroup.end();iter++){
+//		NS_LOG_DEBUG("subscribe group  " << *iter);
+//	}
 }
+
 void
 MulticastRoutingProtocol::NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress address)
 {NS_LOG_FUNCTION(this);NS_LOG_DEBUG("- Address("<<interface<<") = "<< address);}
@@ -501,69 +514,28 @@ MulticastRoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) co
 }
 
 void MulticastRoutingProtocol::DoStart (){
-	if (m_mainAddress == Ipv4Address ())
-	    {
-	      Ipv4Address loopback ("127.0.0.1");
-	      for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++)
-	        {
-              GetMetric(i);
-              InsertSourceGroupList(i);
-	          // Use primary address, if multiple
-	          Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
-	          if (addr != loopback)
-	            {
-	              m_mainAddress = addr;
-	              SetMainInterface(i);
-//	              If a Hello message is received from an active neighbor with a
-//	                different Generation ID (GenID), the neighbor has restarted and may
-//	                not contain the correct (S,G) state.
-	              m_generationID = UniformVariable().GetInteger(1,INT_MAX);///force value > 0
-	              NS_LOG_DEBUG("Address("<<i<< ") = "<<addr<< ", Generation Id = "<< m_generationID);
-	              break;
-	            }
-	        }
-
-	      NS_ASSERT (m_mainAddress != Ipv4Address ());
-	    }
-	  m_startTime = Simulator::Now();
-	  Ipv4Address loopback ("127.0.0.1");
-
-	  for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++)
-	    {
-	      Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
-	      if (addr == loopback)
-	        continue;
-	      Timer *helloTimer = &m_IfaceNeighbors.find(i)->second.hello_timer;
-	      Time rndHello = Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay));
-	      Simulator::Schedule (rndHello, &MulticastRoutingProtocol::HelloTimerExpire, this, i);
-	      helloTimer->SetDelay(m_helloTime);
-	      helloTimer->SetFunction(&MulticastRoutingProtocol::HelloTimerExpire,this);
-	      helloTimer->SetArguments(i);
-
-		  NS_LOG_DEBUG ("Starting PIM_DM on Interface = "<<i<<", Address ("<<i<<") = "<<addr<<", Hello "<< rndHello.GetSeconds());
-
-	      // Create a socket to listen only on this interface
-	      Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (),
-	                                                 UdpSocketFactory::GetTypeId());
-	      socket->SetAllowBroadcast (true);
-	      InetSocketAddress inetAddr (m_ipv4->GetAddress (i, 0).GetLocal (), PIM_PORT_NUMBER);
-	      socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm,  this));
-	      if (socket->Bind (inetAddr))
-	        {
-	          NS_FATAL_ERROR ("Failed to bind() PIMDM socket");
-	        }
-	      socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
-	      m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
-
-	    }
-//	  if(canRunOlsr)
-//	   {
-	  /*
-	   * The Hello Timer (HT) MUST be set to random value between 0 and Triggered_Hello_Delay
-	   * When PIM is enabled on an interface or when a router first starts.
-	   */
-	      NS_LOG_DEBUG ("PIMDM on node " << m_mainAddress << " started");
-//	   }
+	NS_LOG_FUNCTION(this);
+	if(m_generationID==0)
+		m_generationID = UniformVariable().GetInteger(1,INT_MAX);///force value > 0
+	m_startTime = Simulator::Now();
+	Ipv4Address loopback ("127.0.0.1");
+	for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++){
+		Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
+		if (addr == loopback)
+			continue;
+		NS_LOG_DEBUG ("Starting PIM_DM on Interface = "<<i<<", Address ("<<i<<") = "<<addr);
+		// Create a socket to listen only on this interface
+		Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), UdpSocketFactory::GetTypeId());
+		socket->SetAllowBroadcast (true);
+		InetSocketAddress inetAddr (m_ipv4->GetAddress (i, 0).GetLocal (), PIM_PORT_NUMBER);
+		socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm,  this));
+		if (socket->Bind (inetAddr)){
+			NS_FATAL_ERROR ("Failed to bind() PIMDM socket");
+		}
+		socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
+		m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
+	}
+	NS_LOG_DEBUG ("PIMDM up on " << m_mainAddress << ", Generation Id = "<< m_generationID<<", Starting @ "<<m_startTime);
 }
 
 void
