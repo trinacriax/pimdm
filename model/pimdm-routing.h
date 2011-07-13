@@ -88,7 +88,6 @@
 #define JoinDelay 3 //Prune override
 #define TTL_SAMPLE .2
 #define PIM_RESERVED 0
-#define ALL_PIM_ROUTERS "224.0.0.13"
 #define PIM_PORT_NUMBER 703 //IANA Unassigned
 
 #include "ns3/test.h"
@@ -119,12 +118,9 @@ namespace pimdm {
 struct RoutingMulticastTable {
 	Ipv4Address sourceAddr; ///< source destination
 	Ipv4Address groupAddr; ///< source destination
-	Ipv4Address nextAddr; ///< source destination
 	uint32_t interface; ///< interface to source
-	uint32_t routeMetric; ///< route metric
-	uint32_t metricPreference;///< Metric Preference. The preference value assigned to the unicast routing protocol that provided the route to the source.
 	RoutingMulticastTable() : // default values
-		sourceAddr(), groupAddr(), nextAddr(), routeMetric(0), interface(0), metricPreference(0) {
+		sourceAddr(), groupAddr(), interface(0) {
 	}
 	;
 };
@@ -138,6 +134,9 @@ private:
 
 	// static routing table
 	Ptr<Ipv4StaticRouting> m_RoutingTable;
+
+	typedef std::list<Ipv4MulticastRoutingTableEntry *> MulticastRoutes;
+    MulticastRoutes m_multicastRoutes;
 
 	///\name Protocol fields;
 	//\{
@@ -307,6 +306,8 @@ private:
 		return m_stopTx;
 	}
 
+	void AddMulticastRoute (Ipv4Address source, Ipv4Address group, uint32_t inputInterface, std::vector<uint32_t> outputInterfaces);
+
 	void AddMulticastGroup(Ipv4Address group);
 
 	bool GetMulticastGroup(Ipv4Address group){
@@ -319,11 +320,15 @@ private:
 		}
 	}
 
-	uint16_t GetMetric(uint32_t interface);
+	uint16_t GetMetricPreference(uint32_t interface);
 
-	void SetMetric(uint32_t interface, uint16_t metric){
+	void SetMetricPreference(uint32_t interface, uint16_t metric){}
 
-	}
+	uint16_t GetRouteMetric(uint32_t interface);
+
+	void SetRouteMetric(uint32_t interface, uint16_t metric){}
+
+	Ipv4Address GetNextHop(Ipv4Address destination);
 
 	///\name Fields for each interface
 	/// Check that address is one of my interfaces
@@ -435,8 +440,8 @@ private:
 	void RecvPimDm(Ptr<Socket> socket);
 
 	void UpdateAssertWinner(SourceGroupState *sgState, Ipv4Address source){
-		sgState->AssertWinner.metricPreference = m_mrib.find(source)->second.metricPreference;
-		sgState->AssertWinner.routeMetric = m_mrib.find(source)->second.routeMetric;
+		sgState->AssertWinner.metricPreference = GetMetricPreference(GetReceivingInterface(source));
+		sgState->AssertWinner.routeMetric = GetRouteMetric(GetReceivingInterface(source));
 		sgState->AssertWinner.IPAddress = GetLocalAddress(GetReceivingInterface(source));
 	}
 
@@ -869,11 +874,11 @@ private:
 	//The macro I_Am_Assert_loser(S, G, I) is true if the Assert state
 	//   machine (in Section 4.6) for (S,G) on interface I is in the "I am
 	//   Assert Loser" state.
-	Ipv4Address RPF_prime(Ipv4Address source,Ipv4Address group) {
+	Ipv4Address RPF_prime(Ipv4Address source, Ipv4Address group) {
 		if (I_Am_Assert_loser(source, group, RPF_interface(source))) {
 			return AssertWinner(source, group, RPF_interface(source));
 		} else {
-			return m_mrib.find(source)->second.nextAddr;
+			return GetNextHop(source);
 		}
 	}
 
@@ -882,7 +887,7 @@ private:
 	}
 
 	Ipv4Address RPF_prime(Ipv4Address source) {
-		return m_mrib.find(source)->second.nextAddr;
+		return GetNextHop(source);
 	}
 
 	bool I_Am_Assert_loser(Ipv4Address source, Ipv4Address group, uint32_t interface) {
@@ -904,8 +909,8 @@ private:
 	}
 
 	struct AssertMetric spt_assert_metric(Ipv4Address source, uint32_t interface) {
-		struct AssertMetric assertMetric (m_mrib.find(source)->second.metricPreference,
-				m_mrib.find(source)->second.routeMetric, GetLocalAddress(interface)); //TODO local node address on that interface?
+		struct AssertMetric assertMetric (GetMetricPreference(interface),
+				GetRouteMetric(interface), GetLocalAddress(interface)); //TODO local node address on that interface?
 		return assertMetric;
 	}
 

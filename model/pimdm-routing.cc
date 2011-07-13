@@ -44,6 +44,7 @@
 #include "ns3/trace-source-accessor.h"
 #include "ns3/ipv4-header.h"
 #include "ns3/log.h"
+#include "ns3/ipv4-routing-table-entry.h"
 
 namespace ns3{
 namespace pimdm{
@@ -102,10 +103,18 @@ MulticastRoutingProtocol::GetTypeId (void)
 
 
 uint16_t
-MulticastRoutingProtocol::GetMetric(uint32_t interface){
+MulticastRoutingProtocol::GetRouteMetric(uint32_t interface){
 		Ptr<Ipv4RoutingProtocol> routing = m_ipv4->GetRoutingProtocol();
 		Ptr<Ipv4L3Protocol> l3 = this->GetObject<Ipv4L3Protocol>();
-		NS_LOG_DEBUG("R "<< routing->GetTypeId() << " l3 "<< l3->GetRoutingProtocol()<< " Metric "<< l3->GetMetric(interface));
+		//TODO I need the unicast routing metric
+		NS_LOG_DEBUG("R "<< routing->GetTypeId() << " l3 "<< l3->GetRoutingProtocol()<< " Metric "<< l3->GetMetric(interface)<< " ipv4metric "<< m_ipv4->GetMetric(interface));
+
+		return 1;
+	}
+
+uint16_t
+MulticastRoutingProtocol::GetMetricPreference(uint32_t interface){
+	//TODO
 		return 1;
 	}
 
@@ -161,12 +170,12 @@ bool
 MulticastRoutingProtocol::FindSendEntry (RoutingMulticastTable const &entry,
 		RoutingMulticastTable &outEntry) const{
 	NS_LOG_FUNCTION(this);
-  outEntry = entry;
-  while (outEntry.nextAddr != outEntry.nextAddr)
-    {
-      if (not Lookup (outEntry.nextAddr, outEntry))
-        return false;
-    }
+//  outEntry = entry;
+//  while (outEntry.nextAddr != outEntry.nextAddr)
+//    {
+//      if (not Lookup (outEntry.nextAddr, outEntry))
+//        return false;
+//    }
   return true;
 }
 
@@ -203,14 +212,14 @@ MulticastRoutingProtocol::AddEntry (Ipv4Address const &source, Ipv4Address const
                            Ipv4Address const &next,
                            uint32_t interface)
 {
-  NS_LOG_FUNCTION (this << source << group << next << interface << m_mainAddress);
+  NS_LOG_FUNCTION (this << "SRC:"<< source << " DST:"<< group <<" NXT:"<< next << " IFC:"<< interface << " MIF:"<< m_mainAddress);
 
   // Creates a new rt entry with specified values
   RoutingMulticastTable &entry = m_mrib[group];
 
   entry.groupAddr = group;
   entry.sourceAddr = source;
-  entry.nextAddr = next;
+//  entry.nextAddr = next;
   entry.interface = interface;
 }
 
@@ -606,8 +615,8 @@ MulticastRoutingProtocol::ForgeAssertMessage (uint32_t interface, PIMHeader &msg
 	assertMessage.m_sourceAddr =  ForgeEncodedUnicast(sgp.sourceIfaceAddr);
 	assertMessage.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);
 	assertMessage.m_R = 0;
-	assertMessage.m_metricPreference = (sgState==NULL) ? m_mrib.find(sgp.sourceIfaceAddr)->second.metricPreference:sgState->AssertWinner.metricPreference;
-	assertMessage.m_metric = (sgState==NULL) ? m_mrib.find(sgp.sourceIfaceAddr)->second.routeMetric: sgState->AssertWinner.routeMetric;
+	assertMessage.m_metricPreference = (sgState==NULL) ? GetMetricPreference(GetReceivingInterface(sgp.sourceIfaceAddr)):sgState->AssertWinner.metricPreference;
+	assertMessage.m_metric = (sgState==NULL) ? GetRouteMetric(GetReceivingInterface(sgp.sourceIfaceAddr)): sgState->AssertWinner.routeMetric;
 }
 
 void
@@ -641,11 +650,11 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair
 	PIMHeader::StateRefreshMessage refresh = msg.GetStateRefreshMessage();
 	refresh.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);//TODO check whether params are correct or not.
 	refresh.m_sourceAddr = ForgeEncodedUnicast(sgp.sourceIfaceAddr);
-	Ipv4Address nextHop = m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr;
+	Ipv4Address nextHop = GetNextHop(sgp.sourceIfaceAddr);
 	refresh.m_originatorAddr = ForgeEncodedUnicast(Ipv4Address(GetLocalAddress(interface)));
 	refresh.m_R = 0;
-	refresh.m_metricPreference = m_mrib.find(sgp.sourceIfaceAddr)->second.metricPreference;
-	refresh.m_metric = m_mrib.find(sgp.sourceIfaceAddr)->second.routeMetric;
+	refresh.m_metricPreference = GetMetricPreference(GetReceivingInterface(sgp.sourceIfaceAddr));
+	refresh.m_metric = GetRouteMetric(GetReceivingInterface(sgp.sourceIfaceAddr));
 	refresh.m_maskLength = IPV4_ADDRESS_SIZE;
 	refresh.m_ttl = (sgState->SG_DATA_TTL>0 ? sgState->SG_DATA_TTL : sgState->SG_SR_TTL);
 	refresh.m_P = (sgState->PruneState==Prune_Pruned?1:0);
@@ -683,8 +692,8 @@ void
 MulticastRoutingProtocol::ForgeHelloMessageStateRefresh (uint32_t interface, PIMHeader &msg){
 	PIMHeader::HelloMessage::HelloEntry staterefresh = {PIMHeader::HelloMessage::StateRefreshCapable, PIM_DM_HELLO_STATEREFRESH};
 	staterefresh.m_optionValue.stateRefreshCapable.m_version = 1;
-	staterefresh.m_optionValue.stateRefreshCapable.m_reserved = 0;
 	staterefresh.m_optionValue.stateRefreshCapable.m_interval = (uint8_t)(m_IfaceNeighbors.find(interface)->second.stateRefreshInterval).GetSeconds();
+	staterefresh.m_optionValue.stateRefreshCapable.m_reserved = 0;
 	msg.GetHelloMessage().m_optionList.push_back(staterefresh);
 }
 
@@ -863,9 +872,6 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 				PIMHeader assert;
 				ForgeAssertMessage(interface, assert, sgp);
 				UpdateAssertWinner(sgState, sender);
-//				sgState->AssertWinner.metricPreference = m_mrib.find(sender)->second.metricPreference;
-//				sgState->AssertWinner.routeMetric = m_mrib.find(sender)->second.routeMetric;
-//				sgState->AssertWinner.IPAddress = GetLocalAddress(interface);
 				Ptr<Packet> packetA = Create<Packet> ();
 				SendBroadPacketInterface(packetA,assert,interface);
 				if(sgState->SG_AT.IsRunning())
@@ -882,8 +888,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 				if(!IsDownstream(interface,sgp))break;
 				PIMHeader assert;
 				ForgeAssertMessage(interface,assert,sgp);
-				sgState->AssertWinner.metricPreference = m_mrib.find(sender)->second.metricPreference;
-				sgState->AssertWinner.routeMetric = m_mrib.find(sender)->second.routeMetric;
+				sgState->AssertWinner.metricPreference = GetMetricPreference(interface);
+				sgState->AssertWinner.routeMetric = GetRouteMetric(interface);
 				sgState->AssertWinner.IPAddress = GetLocalAddress(interface);
 				Ptr<Packet> packetA = Create<Packet> ();
 				SendBroadPacketInterface(packetA,assert,interface);
@@ -2876,9 +2882,9 @@ MulticastRoutingProtocol::ForwardingStateRefresh(PIMHeader::StateRefreshMessage 
 		// set TTL of SRMP' to TTL(SRM) - 1;
 		SRMP.m_ttl = refresh.m_ttl-1;
 		// set metric of SRMP' to metric of unicast route used to reach S;
-		SRMP.m_metric = m_mrib.find(refresh.m_sourceAddr.m_unicastAddress)->second.routeMetric;
+		SRMP.m_metric = GetMetricPreference(GetReceivingInterface(refresh.m_sourceAddr.m_unicastAddress));
 		// set pref of ' to preference of unicast route used to reach S;
-		SRMP.m_metricPreference = m_mrib.find(refresh.m_sourceAddr.m_unicastAddress)->second.metricPreference;
+		SRMP.m_metricPreference = GetMetricPreference(GetReceivingInterface(refresh.m_sourceAddr.m_unicastAddress));
 		// set mask of SRMP' to mask of route used to reach S;
 		SourceGroupState *sgState = FindSourceGroupState(*i_nbrs,refresh.m_sourceAddr.m_unicastAddress,refresh.m_multicastGroupAddr.m_groupAddress);
 		if (sgState->AssertState == Assert_NoInfo) {
