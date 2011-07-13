@@ -764,9 +764,9 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 
 	NS_LOG_DEBUG ("Sender "<< senderIfaceAddr<<", Destination "<< receiverIfaceAddr);
 	if(route)
-	NS_LOG_DEBUG (" (SRC: "<< route->GetSource()<< ", GW: "<<route->GetGateway()
-			<<",DevID: "<< route->GetOutputDevice()->GetIfIndex()<<")");
-	NS_ASSERT (inetSourceAddr.GetPort () == PIM_PORT_NUMBER);
+	NS_LOG_DEBUG (" ("<< route->GetSource()<< " <--> "<<route->GetGateway() <<" <--> "<<route->GetDestination()
+			<<" :: DevID: "<< route->GetOutputDevice()->GetIfIndex()<<")");
+	//TODO NS_ASSERT (senderIfacePort == PIM_PORT_NUMBER);
 	//Within PIM-DM, route and state information associated with an (S,G) entry MUST be maintained as long as any
 	//	timer associated with that (S,G) entry is active.  When no timer associated with an (S,G) entry is active,
 	//	all information concerning that (S,G) route may be discarded.
