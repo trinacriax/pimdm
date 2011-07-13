@@ -462,7 +462,7 @@ MulticastRoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) co
     iter != m_mrib.end (); iter++)
     {
       *os << iter->first << "\t\t";
-      *os << iter->second.nextAddr << "\t\t";
+//      *os << iter->second.nextAddr << "\t\t";
 //      if (Names::FindName (m_ipv4->GetNetDevice (iter->second.nextAddr)) != "")
 //            {
 //              *os << Names::FindName (m_ipv4->GetNetDevice (iter->second.nextAddr)) << "\t\t";
@@ -471,8 +471,8 @@ MulticastRoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) co
 //            {
 //              *os << iter->second.nextAddr<< "\t\t";
 //            }
-      *os << iter->second.metricPreference << "\t";
-      *os << iter->second.routeMetric << "\t";
+//      *os << iter->second.metricPreference << "\t";
+//      *os << iter->second.routeMetric << "\t";
       *os << "\nStatic Routing Table:\n";
       m_RoutingTable->PrintRoutingTable (stream);
     }
@@ -739,6 +739,18 @@ MulticastRoutingProtocol::AddMulticastGroupSourcePrune (PIMHeader::MulticastGrou
 	m_entry.m_prunedSourceAddrs.push_back(source);
 }
 
+Ipv4Address
+MulticastRoutingProtocol::GetNextHop(Ipv4Address destination){
+	Ptr<Ipv4Route> route = 0;
+	Ptr<Packet> receivedPacket;
+	Ipv4Header hdr;
+	hdr.SetDestination(destination);
+	Ptr<NetDevice> oif (0);
+	Socket::SocketErrno err = Socket::ERROR_NOTERROR;
+	route = m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif, err);
+	return route->GetGateway();
+}
+
 void
 MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 	NS_LOG_FUNCTION(this);
@@ -828,7 +840,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 			//The Upstream(S,G) state machine MUST transition to the Pruned (P)
 			// state, send a Prune(S,G) to RPF'(S), and set PLT(S,G) to t_limit seconds.
 			case GP_Forwarding:{
-				if(olist(sender,receiver).size() == 0 && m_mrib.find(sender)->second.nextAddr != sender){
+				if(olist(sender,receiver).size() == 0 && GetNextHop(sender) != sender){
 					sgState->upstream->GraftPrune = GP_Pruned;
 					Ipv4Address destination = RPF_prime(sgp);
 					SendPruneUnicast(destination, sgp);
@@ -837,7 +849,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 					break;
 				}
 			case GP_Pruned:{
-				if(!sgState->upstream->SG_PLT.IsRunning() && m_mrib.find(sender)->second.nextAddr != sender){
+				if(!sgState->upstream->SG_PLT.IsRunning() && GetNextHop(sender) != sender){
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 					sgState->upstream->SG_PLT.Schedule();
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
@@ -911,7 +923,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 			}
 		}
 	}
-	if(sgState->upstream || sender == m_mrib.find(sender)->second.nextAddr){
+	if(sgState->upstream || sender == GetNextHop(sender)){
 		if(!sgState->upstream){
 			UpstreamState upstream;
 			sgState->upstream = &upstream;
@@ -922,7 +934,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 			//	The router MUST transition to an Originator (O) state, set SAT(S,G) to SourceLifetime,
 			//	and set SRT(S,G) to StateRefreshInterval.
 			//	The router SHOULD record the TTL of the packet for use in State Refresh messages.
-			if(m_mrib.find(sender)->second.nextAddr == sender){
+			if(GetNextHop(sender) == sender){
 				sgState->upstream->origination = Originator;
 				if(sgState->upstream->SG_SAT.IsRunning())
 					sgState->upstream->SG_SAT.Cancel();
@@ -1049,7 +1061,7 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 	PIMHeader::StateRefreshMessage refresh = msg.GetStateRefreshMessage();
 	refresh.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);//TODO check whether params are correct or not.
 	refresh.m_sourceAddr = ForgeEncodedUnicast(sgp.sourceIfaceAddr);
-	Ipv4Address nextHop = m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr;
+	Ipv4Address nextHop = GetNextHop(sgp.sourceIfaceAddr);
 	refresh.m_originatorAddr = ForgeEncodedUnicast(GetLocalAddress(interface));
 	refresh.m_R = 0;
 	refresh.m_metricPreference = sgState->AssertWinner.metricPreference;
@@ -1476,7 +1488,7 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp){
 			case GP_Forwarding:{
 				//The OverrideTimer (OT(S,G)) expires.  The router MUST send a Join(S,G) to RPF'(S) to override a previously detected prune.
 				//	The Upstream(S,G) state machine remains in the Forwarding (F) state.
-				if(sgp.sourceIfaceAddr!=m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr){
+				if(sgp.sourceIfaceAddr != GetNextHop(sgp.sourceIfaceAddr)){
 					Ipv4Address nextHop = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
 					SendJoinUnicast(nextHop, sgp); //broadcast
 				}
@@ -1754,7 +1766,7 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> li
 		// olist(S,G) -> NULL AND S NOT directly connected
        	//   The Upstream(S,G) state machine MUST transition to the Pruned (P)  state,
        	//   send a Prune(S,G) to RPF'(S), and set PLT(S,G) to t_limit seconds.
-			if(m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr != sgp.sourceIfaceAddr){
+			if(GetNextHop(sgp.sourceIfaceAddr) != sgp.sourceIfaceAddr){
 				sgState ->upstream->GraftPrune = GP_Pruned;
 				Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
 				SendPruneBroadcast(RPF_interface(target),sgp);
@@ -1811,7 +1823,7 @@ MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp, std::set<uint32_t> lis
         //   indicating that traffic from S addressed to group G  must be forwarded.
         //   The Upstream(S,G) state machine MUST cancel PLT(S,G), transition to the AckPending (AP) state and unicast a Graft message to RPF'(S).
         //   The Graft Retry Timer (GRT(S,G)) MUST be set to Graft_Retry_Period.
-			if(m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr != sgp.sourceIfaceAddr){
+			if(GetNextHop(sgp.sourceIfaceAddr) != sgp.sourceIfaceAddr){
 				sgState->upstream->SG_PLT.Cancel();
 				sgState->upstream->GraftPrune = GP_AckPending;
 				Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
@@ -2020,7 +2032,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 		//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 		//	The Upstream(S,G) state machine MUST transition to the AckPending (AP) state,
 		//	unicast a Graft to the new RPF'(S), and set the GraftRetry Timer (GRT(S,G)) to Graft_Retry_Period.
-			if(outlist.size()>0 && sgp.sourceIfaceAddr != m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr){
+			if(outlist.size()>0 && sgp.sourceIfaceAddr != GetNextHop(sgp.sourceIfaceAddr)){
 				sgState->upstream->GraftPrune = GP_AckPending;
 				Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
 				SendGraftUnicast(destination,sgp);
@@ -2031,13 +2043,13 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 			break;
 		}
 		case GP_Pruned:{
-			if(outlist.size()==0 && sgp.sourceIfaceAddr != m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr){
+			if(outlist.size()==0 && sgp.sourceIfaceAddr != GetNextHop(sgp.sourceIfaceAddr)){
 			//RPF'(S) Changes AND olist(S,G) == NULL AND S NOT directly connected
 			//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 			//	The Upstream(S,G) state machine stays in the Pruned (P) state and MUST cancel the PLT(S,G) timer.
 				sgState->upstream->SG_PLT.Cancel();
 			}
-			if(outlist.size()>0 && sgp.sourceIfaceAddr != m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr){
+			if(outlist.size()>0 && sgp.sourceIfaceAddr != GetNextHop(sgp.sourceIfaceAddr)){
 			//RPF'(S) Changes AND olist(S,G) == non-NULL AND S NOT directly connected
 			//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 			//	The Upstream(S,G) state machine MUST cancel PLT(S,G), transition to the AckPending (AP) state,
@@ -2053,7 +2065,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 			break;
 		}
 		case GP_AckPending:{
-			if(outlist.size()==0 && sgp.sourceIfaceAddr != m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr){
+			if(outlist.size()==0 && sgp.sourceIfaceAddr != GetNextHop(sgp.sourceIfaceAddr)){
 			//RPF'(S) Changes AND olist(S,G) == NULL AND S NOT directly connected
 			//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 			//	The Upstream(S,G) state machine MUST transition to the Pruned (P) state.
@@ -2061,7 +2073,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp){
 				sgState->upstream->GraftPrune = GP_Pruned;
 				sgState->upstream->SG_GRT.Cancel();
 			}
-			if(outlist.size()>0 && sgp.sourceIfaceAddr != m_mrib.find(sgp.sourceIfaceAddr)->second.nextAddr){
+			if(outlist.size()>0 && sgp.sourceIfaceAddr != GetNextHop(sgp.sourceIfaceAddr)){
 				//RPF'(S) Changes AND olist(S,G) does not become NULL AND S NOT directly connected
 				//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 				//	The Upstream(S,G) state machine stays in the AckPending (AP) state.
@@ -2169,7 +2181,7 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4
 		//	As this router is in Forwarding state, it must override the Prune after a short random interval.
 		//	If OT(S,G) is not running, the router MUST set OT(S,G) to t_override seconds.
 		//	The Upstream(S,G) state machine remains in Forwarding (F) state.
-			if(m_mrib.find(source.m_sourceAddress)->second.nextAddr != source.m_sourceAddress && !sgState->upstream->SG_OT.IsRunning()){
+			if(GetNextHop(source.m_sourceAddress) != source.m_sourceAddress && !sgState->upstream->SG_OT.IsRunning()){
 				sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 				sgState->upstream->SG_OT.Schedule();
 				}
