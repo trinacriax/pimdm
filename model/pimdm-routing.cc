@@ -296,7 +296,8 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 	}
 	else if (GetMulticastGroup(header.GetDestination())){
 		//Node is interested in this group.
-		RecvData(p,header.GetSource(),header.GetDestination());
+		NS_LOG_ERROR("Multicast "<< header.GetDestination());
+//		RecvData(p,header.GetSource(),header.GetDestination());
 	}
 	else
 	{
@@ -804,7 +805,7 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 		break;
 		}
 	default:{
-		RecvData (receivedPacket,senderIfaceAddr,receiverIfaceAddr);
+//		RecvData (receivedPacket,senderIfaceAddr,receiverIfaceAddr);
 		break;
 		}
 	}
@@ -812,7 +813,21 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 
 
 void
-MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4Address receiver){
+MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
+//MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4Address receiver){
+	NS_LOG_FUNCTION(this);
+	Ptr<Packet> receivedPacket;
+	Address sourceAddress;
+	receivedPacket = socket->RecvFrom (sourceAddress);
+	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
+	Ipv4Address sender = inetSourceAddr.GetIpv4 ();
+	uint16_t senderIfacePort = inetSourceAddr.GetPort();
+	Ipv4Address receiver = m_socketAddresses[socket].GetLocal ();
+//	Ipv4Header ipv4h;
+//	receivedPacket->RemoveHeader(ipv4h);
+//	NS_LOG_DEBUG(ipv4h.GetSource()<<ipv4h.GetDestination());
+	NS_ASSERT (receiver != Ipv4Address ());
+
 	NS_LOG_FUNCTION(this);
 	uint32_t interface = GetReceivingInterface(sender);
 	// Data Packet arrives on RPF_Interface(S) AND olist(S,G) == NULL AND S NOT directly connected
@@ -823,7 +838,6 @@ MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4
 		InsertSourceGroupState(interface,sgs);
 		sgState = FindSourceGroupState(interface,sgp);
 	}
-
 	if(sgState->upstream->SG_SAT.IsRunning()){
 		sgState->upstream->SG_SAT.Cancel();
 		sgState->upstream->SG_SAT.Schedule();

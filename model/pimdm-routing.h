@@ -429,7 +429,7 @@ private:
 
 	void SendJoinUnicast(Ipv4Address destination, SourceGroupPair &sgpair);
 
-	void RecvData(Ptr<Packet> packet, Ipv4Address sender, Ipv4Address receiver);
+	void RecvData(Ptr<Socket> socket);
 	void SendBroadPacket(Ptr<Packet> packet, const PIMHeader &message);
 	void SendPacket(Ptr<Packet> packet, const PIMHeader &message, Ipv4Address destination);
 	void SendBroadPacketInterface (Ptr<Packet> packet, const PIMHeader &message, uint32_t interface);
