@@ -1458,17 +1458,18 @@ MulticastRoutingProtocol::SendBroadPacketInterface (Ptr<Packet> packet, const PI
 void
 MulticastRoutingProtocol::SendBroadPacketInterface (Ptr<Packet> packet, uint32_t interface){
   NS_LOG_DEBUG ("PIMDM node " << GetLocalAddress(interface) << " sending a Data packet");
-
-  // Send it
-  for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
-      m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
-    {
-	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
-		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-		  NS_LOG_DEBUG ("Destination: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface);
-		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
-	  }
-  }
+  m_ipv4->Send(packet, GetLocalAddress(interface), GetLocalAddress(interface).GetBroadcast(), PIM_IP_PROTOCOL_NUM, GetRoute(GetLocalAddress(interface).GetBroadcast()));
+//
+//  // Send it
+//  for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
+//      m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
+//    {
+//	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
+//		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
+//		  NS_LOG_DEBUG ("Destination: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface);
+//		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
+//	  }
+//  }
 }
 
 bool
