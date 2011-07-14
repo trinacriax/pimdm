@@ -739,6 +739,7 @@ private:
 		uint32_t upstream = UpstreamInterface(source);
 		std::set<uint32_t> down;
 		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
+			if(IsLoopInterface(i))continue;
 			if (i != upstream) {
 				down.insert(i);
 			}
@@ -789,6 +790,7 @@ private:
 	std::set<uint32_t> pim_include(Ipv4Address source, Ipv4Address group) {
 		std::set<uint32_t> include;
 		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
+			if(IsLoopInterface(i))continue;
 			if (local_receiver_include(source, group, i)) {
 				include.insert(i);
 			}
@@ -814,11 +816,18 @@ private:
 	std::set<uint32_t> pim_exclude(Ipv4Address source, Ipv4Address group) {
 		std::set<uint32_t> exclude;
 		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
+			if(IsLoopInterface(i))continue;
 			if (local_receiver_exclude(source, group, i)) {
 				exclude.insert(i);
 			}
 		}
 		return exclude;
+	}
+
+	bool IsLoopInterface(uint32_t interface){
+		Ipv4Address loopback ("127.0.0.1");
+		Ipv4Address addr = m_ipv4->GetAddress (interface, 0).GetLocal ();
+		return (addr==loopback);
 	}
 
 	/*
@@ -827,9 +836,9 @@ private:
 	std::set<uint32_t> pim_nbrs(void) {
 		std::set<uint32_t> pimNbrs;
 		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
-			if (m_IfaceNeighbors.find(i)->second.neighbors.size() > 0) {
+			if(IsLoopInterface(i))continue;
+			if (m_IfaceNeighbors.find(i)->second.neighbors.size() > 0)
 				pimNbrs.insert(i);
-			}
 		}
 		return pimNbrs;
 	}
@@ -842,6 +851,7 @@ private:
 		std::set<uint32_t> prune;
 		SourceGroupPair sgp(source,group);
 		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
+			if(IsLoopInterface(i))continue;
 			SourceGroupState *sgState = FindSourceGroupState(i, sgp);
 			if(!sgState) continue;
 			if (i!=RPF_interface(source) && sgState->PruneState == Prune_Pruned) {
@@ -860,6 +870,7 @@ private:
 	std::set<uint32_t> lost_assert(Ipv4Address source, Ipv4Address group) {
 		std::set<uint32_t> set;
 		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
+			if(IsLoopInterface(i))continue;
 			if (lost_assert(source, group, i))
 				set.insert(i);
 		}
@@ -889,6 +900,7 @@ private:
 	std::set<uint32_t> boundary(Ipv4Address G) {
 		std::set<uint32_t> bound;
 		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
+			if(IsLoopInterface(i))continue;
 			if(boundary(i,G)) //TODO administratively scoped boundary
 			bound.insert(i);
 		}
