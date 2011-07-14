@@ -761,11 +761,10 @@ private:
 	 * members on interface I that seek to receive traffic sent specifically by S to G.
 	 */
 	bool local_receiver_include(Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		if(group==NULL){//no group - no way to identify members
-//			NS_LOG_ERROR("Error: Source: "<< source<<", Group is NULL "<< group);
+		if(group==Ipv4Address::GetAny()){//no group - no way to identify members
 			return false;
 		}
-		else if(source!=NULL & group!=NULL){
+		else if(source!=Ipv4Address::GetAny() & group!=Ipv4Address::GetAny()){
 			SourceGroupPair sgp(source,group);
 			return (FindSourceGroupState(interface,sgp)==NULL?false:FindSourceGroupState(interface,sgp)->members);
 		}else{
@@ -807,7 +806,7 @@ private:
 	// True if local_receiver_include(*,G,I) is true
 	// but none of the local members seek to receive traffic from S.
 	bool local_receiver_exclude(Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		return local_receiver_include(NULL, group, interface)
+		return local_receiver_include(Ipv4Address::GetAny(), group, interface)
 				&& seek_traffic_from(source,group,interface); // TODO
 	}
 
@@ -966,7 +965,7 @@ private:
 	//TODO AssertWinner(S,G,I) defaults to NULL,
 	Ipv4Address AssertWinner(Ipv4Address source, Ipv4Address group,uint32_t interface) {
 		SourceGroupState *sgState = FindSourceGroupState(interface, source, group);
-		return (!sgState) ? NULL : sgState->SGAW;
+		return (!sgState) ? Ipv4Address::GetAny() : sgState->SGAW;
 	}
 
 	//StateRefreshRateLimit(S,G) is TRUE if the time elapsed since the last received StateRefresh(S,G)
