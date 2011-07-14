@@ -1429,15 +1429,7 @@ MulticastRoutingProtocol::SendPacket (Ptr<Packet> packet, const PIMHeader &messa
   // Trace it
   m_txPacketTrace (message);
 
-  // Send it
-  for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
-      m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
-    {
-	  if(i->second.GetLocal() == GetLocalAddress(GetReceivingInterface(destination))){
-		  NS_LOG_DEBUG ("Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<GetReceivingInterface(destination));
-		  i->first->SendTo (packet, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
-		}
-    }
+  m_ipv4->Send(packet, GetLocalAddress(GetReceivingInterface(destination)),destination,PIM_IP_PROTOCOL_NUM,GetRoute(destination));
 }
 
 void
