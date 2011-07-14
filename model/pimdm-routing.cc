@@ -430,7 +430,7 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAdd
 		// Use primary address, if multiple
 		NS_LOG_DEBUG("Address("<<interface<< ") = "<<address);
 		if (m_mainAddress == Ipv4Address ()){
-			m_mainAddress = addr;
+			m_mainAddress = m_ipv4->GetAddress (interface, 0).GetLocal ();
 			SetMainInterface(interface);
 			Timer *helloTimer = &m_IfaceNeighbors.find(interface)->second.hello_timer;
 			Time rndHello = Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay));
@@ -758,6 +758,8 @@ MulticastRoutingProtocol::GetNextHop(Ipv4Address destination){
 	Ptr<NetDevice> oif (0);
 	Socket::SocketErrno err = Socket::ERROR_NOTERROR;
 	route = m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif, err);
+	if(route->GetGateway()==Ipv4Address::GetAny())
+		return destination;
 	return route->GetGateway();
 }
 
@@ -854,6 +856,10 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 		SourceGroupState sgs(sgp);
 		InsertSourceGroupState(interface,sgs);
 		sgState = FindSourceGroupState(interface,sgp);
+	}
+	if(IsUpstream(interface,sgp)){
+		UpstreamState upstream;
+		sgState->upstream = &upstream;
 	}
 	if(sgState->upstream->SG_SAT.IsRunning()){
 		sgState->upstream->SG_SAT.Cancel();
@@ -954,9 +960,6 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 		}
 	}
 	if(sgState->upstream || sender == GetNextHop(sender)){
-		if(!sgState->upstream){
-			UpstreamState upstream;
-			sgState->upstream = &upstream;
 	switch (sgState->upstream->origination) {
 		case NotOriginator:{
 			//Data Packet received from directly connected Source S addressed to group G.
@@ -977,9 +980,10 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 				sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
 				sgState->upstream->SG_SRT.SetArguments(sgp);
 				sgState->upstream->SG_SRT.Schedule();
-				Ipv4Header ipv4h;
-				packet->RemoveHeader(ipv4h);
-				sgState->SG_DATA_TTL = ipv4h.GetTtl();
+//				Ipv4Header ipv4h;
+//				receivedPacket->RemoveHeader(ipv4h);
+//				sgState->SG_DATA_TTL = ipv4h.GetTtl();
+				sgState->SG_DATA_TTL = 1; //TODO fix it
 			}
 			break;
 		}
@@ -998,7 +1002,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 			sgState->upstream->SG_SAT.SetArguments(sgp);
 			sgState->upstream->SG_SAT.Schedule();
 			Ipv4Header ipv4h;
-			packet->RemoveHeader(ipv4h);
+			receivedPacket->RemoveHeader(ipv4h);
 			double sample = UniformVariable().GetValue();
 			if(sample < TTL_SAMPLE && ipv4h.GetTtl() > sgState->SG_DATA_TTL){//TODO: increase means +1 or equal to packet's TTL?
 				sgState->SG_DATA_TTL = ipv4h.GetTtl();
@@ -1029,8 +1033,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 	///      and the interface on which that the packet arrived.
 	///   Packets that fail the RPF check MUST NOT be forwarded, and the router will conduct an assert process for the (S,G) pair specified in the packet.
 	///   Packets for which a route to the source cannot be found MUST be discarded.
-
 	if(RPF_interface(sender)<0){///   Packets for which a route to the source cannot be found MUST be discarded.
+		NS_LOG_DEBUG("RPF_Interface not found "<<RPF_interface(sender));
 		return;
 	}
 	if(interface == RPF_interface(sender)){
@@ -1038,7 +1042,9 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 			/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
 			/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
 			oiflist = olist(sender,receiver);
+			GetPrinterList(oiflist);
 			oiflist.erase(interface);
+			GetPrinterList(oiflist);
 		}
 	}
 	else{
@@ -1048,11 +1054,12 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 		Ptr<Packet> packetAssert = Create<Packet> ();
 		SendBroadPacketInterface(packetAssert,assert,interface);
 	}
+	GetPrinterList(oiflist);
 	if(oiflist.size()){
 		// Forward packet on all interfaces in oiflist
 		// TODO: should forward in case it is the AssertWinner?
 		for(std::set<uint32_t>::iterator out = oiflist.begin(); out!=oiflist.end(); out++){
-			SendBroadPacketInterface(packet,*out);
+			SendBroadPacketInterface(receivedPacket,*out);
 		}
 	}
 	else {
