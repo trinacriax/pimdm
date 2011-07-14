@@ -28,7 +28,7 @@
 
 #include "pimdm-routing.h"
 #include "ns3/socket-factory.h"
-#include "ns3/udp-socket-factory.h"
+#include "ns3/ipv4-raw-socket-factory.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
 #include "ns3/names.h"
@@ -144,15 +144,21 @@ MulticastRoutingProtocol::AddMulticastGroup(Ipv4Address group){
 					///Registering endpoint for that address...
 					NS_LOG_DEBUG ("Registering endpoint = "<< i <<", Address = "<<group);
 					// Create a socket to listen only on this interface
-					Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), UdpSocketFactory::GetTypeId());
+					Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
+//					Ipv4RawSocketImpl
+					socket->SetAttribute("Protocol",UintegerValue(PIM_IP_PROTOCOL_NUM));
+					socket->SetAttribute("IpHeaderInclude",BooleanValue(true));
+//					Ptr<Ipv4RawSocketImpl> raw = socket->GetObject<Ipv4RawSocketImpl>();
 					socket->SetAllowBroadcast (true);
 					InetSocketAddress inetAddr (ALL_PIM_ROUTERS4, PIM_PORT_NUMBER);
-					socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm, this));
+					socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvData, this));
 					if (socket->Bind (inetAddr)){
 						NS_FATAL_ERROR ("Failed to bind() PIMDM socket");
 					}
-					socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
-					m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
+//					socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
+//					m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
+					Ipv4InterfaceAddress mgroup(group, Ipv4Mask::GetOnes());
+					m_socketAddresses[socket] = mgroup;
 				}
 			}
 		}
@@ -526,7 +532,9 @@ void MulticastRoutingProtocol::DoStart (){
 			continue;
 		NS_LOG_DEBUG ("Starting PIM_DM on Interface = "<<i<<", Address ("<<i<<") = "<<addr);
 		// Create a socket to listen only on this interface
-		Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), UdpSocketFactory::GetTypeId());
+		Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
+		socket->SetAttribute("Protocol",UintegerValue(PIM_IP_PROTOCOL_NUM));
+		socket->SetAttribute("IpHeaderInclude",BooleanValue(true));
 		socket->SetAllowBroadcast (true);
 		InetSocketAddress inetAddr (m_ipv4->GetAddress (i, 0).GetLocal (), PIM_PORT_NUMBER);
 		socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm,  this));
