@@ -749,11 +749,7 @@ private:
 
 	/// \brief RPF interface towards the source S as indicated by the MRIB.
 	/// \param source Source IPv4 address
-	uint32_t RPF_interface(Ipv4Address source) {
-		if (m_mrib.find(source) == m_mrib.end())
-			return -1;
-		return m_mrib.find(source)->second.interface;
-	}
+	uint32_t RPF_interface(Ipv4Address source);
 
 	/*
 	 * The macro local_receiver_include(S,G,I) is true if the IGMP module or

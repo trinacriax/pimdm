@@ -579,6 +579,10 @@ MulticastRoutingProtocol::IsUpstream (uint32_t interface, SourceGroupPair sgpair
 	return (interface == RPF_interface(sgpair.sourceIfaceAddr));
 }
 
+uint32_t
+MulticastRoutingProtocol::RPF_interface(Ipv4Address source) {
+	return m_ipv4->GetInterfaceForDevice(GetRoute(source)->GetOutputDevice());
+}
 
 void
 MulticastRoutingProtocol::ForgeHeaderMessage (enum PIMType type, PIMHeader &msg){
