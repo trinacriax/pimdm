@@ -63,19 +63,20 @@
 	//	LogComponentEnable ("SimpleGlobalRoutingExample", LOG_LEVEL_INFO);
 	//	LogComponentEnable ("MacLow", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	//	LogComponentEnable ("YansWifiChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	//	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("ObjectBase", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PacketSink", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("OlsrRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("CsmaNetDevice", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("CsmaChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("CsmaHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("CsmaNetDevice", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("CsmaChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("CsmaHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Node", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Ipv4EndPointDemux", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Packet", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("DefaultSimulatorImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	#endif
@@ -144,48 +145,48 @@
 	Ipv4Address multicastGroup1 (ALL_PIM_ROUTERS4);
 //	Ipv4Address multicastGroup2 ("225.1.2.4");
 
-//	// Now, we will set up multicast routing.  We need to do three things:
-//	// 1) Configure a (static) multicast route on node n2
-//	// 2) Set up a default multicast route on the sender n0
-//	// 3) Have node n4 join the multicast group
-//	// We have a helper that can help us with static multicast
-//	Ipv4StaticRoutingHelper multicast;
-//
-//	// 1) Configure a (static) multicast route on node n2 (multicastRouter)
-//	Ptr<Node> mr0 = c.Get (0);  // The node in question
-//	Ptr<NetDevice> inputIf = n0n2.Get (0);  // The input NetDevice
-//	NetDeviceContainer outputDevices;  // A container of output NetDevices
-//	outputDevices.Add (n0n2.Get (1));  // (we only need one NetDevice here)
-//
-//	multicast.AddMulticastRoute (mr0, multicastSource,
-//							   multicastGroup1, inputIf, outputDevices);
-//
-//	// 2) Set up a default multicast route on the sender n0
-//	Ptr<Node> sender = c.Get (0);
-//	Ptr<NetDevice> senderIf = nd0.Get (0);
-//	multicast.SetDefaultMulticastRoute (sender, senderIf);
-
 	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup1));
 //	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup2));
 
 
 	NS_LOG_INFO ("Create Applications.");
-	  uint16_t port = PIM_PORT_NUMBER;   // Discard port (RFC 863)
-	  OnOffHelper onoff ("ns3::UdpSocketFactory",
-	                     Address (InetSocketAddress (multicastGroup1, port)));
+
+	  OnOffHelper onoff ("ns3::Ipv4RawSocketFactory", Address (InetSocketAddress (multicastGroup1, PIM_PORT_NUMBER)));
 	  onoff.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1)));
+	  onoff.SetAttribute("Protocol", TypeIdValue(Ipv4RawSocketFactory::GetTypeId()));
 	  onoff.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0)));
 	  ApplicationContainer apps = onoff.Install (c.Get (0));
-	  apps.Start (Seconds (1.0));
+	  apps.Start (Seconds (4.0));
 	  apps.Stop (Seconds (10.0));
 
 	  // Create a packet sink to receive these packets
-	  PacketSinkHelper sink ("ns3::UdpSocketFactory",
-	                         Address (InetSocketAddress (Ipv4Address::GetAny (), port)));
+	  PacketSinkHelper sink ("ns3::Ipv4RawSocketFactory", Address (InetSocketAddress (Ipv4Address::GetAny (), PIM_PORT_NUMBER)));
 	  apps = sink.Install (c.Get (1));
-	  apps.Start (Seconds (1.0));
+	  apps.Start (Seconds (3.0));
 	  apps.Stop (Seconds (30.0));
 
+	  Ptr<Application> app = c.Get(0)->GetApplication(0);
+	  Ptr<OnOffApplication> of = app->GetObject<OnOffApplication>();
+	  Ptr<OnOffApplication> ofb = c.Get(0)->GetObject<OnOffApplication>();
+//	  Ptr<SocketFactory> rx = c.Get(0)->GetObject<Ipv4RawSocketFactory> ();
+
+	  of->m_socket = Socket::CreateSocket (c.Get(0), Ipv4RawSocketFactory::GetTypeId());
+	  Ptr<Socket> rxSocket = of->m_socket;
+	  rxSocket->Bind ();
+	  rxSocket->Connect(InetSocketAddress (multicastGroup1, PIM_PORT_NUMBER));
+	  rxSocket->SetAllowBroadcast (true);
+	  rxSocket->ShutdownRecv ();
+	  rxSocket->SetAttribute("Protocol",UintegerValue(103));
+	  rxSocket->SetAttribute("IpHeaderInclude",BooleanValue(true));
+	  of->GetSocket();
+      // Create the IPv4 Raw sockets
+//      Ptr<SocketFactory> rxSocketFactory = c.Get(0)->GetObject<Ipv4RawSocketFactory> ();
+//      Ptr<Socket> rxSocket = rxSocketFactory->CreateSocket ();
+//      rxSocket->Bind (InetSocketAddress (multicastGroup1, 0));
+//      rxSocket->SetRecvCallback (MakeCallback (&, this));
+//
+//      txSocket->SetAttribute("Protocol",UintegerValue(PIM_IP_PROTOCOL_NUM));
+//      txSocket->SetAttribute("IpHeaderInclude",BooleanValue(true));
 
 	  AsciiTraceHelper ascii;
 	  p2p.EnableAsciiAll (ascii.CreateFileStream ("simple-global-routing.tr"));
