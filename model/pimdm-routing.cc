@@ -104,10 +104,10 @@ MulticastRoutingProtocol::GetTypeId (void)
 
 uint16_t
 MulticastRoutingProtocol::GetRouteMetric(uint32_t interface){
-		Ptr<Ipv4RoutingProtocol> routing = m_ipv4->GetRoutingProtocol();
-		Ptr<Ipv4L3Protocol> l3 = this->GetObject<Ipv4L3Protocol>();
-		//TODO I need the unicast routing metric
-		NS_LOG_DEBUG("R "<< routing->GetTypeId() << " l3 "<< l3->GetRoutingProtocol()<< " Metric "<< l3->GetMetric(interface)<< " ipv4metric "<< m_ipv4->GetMetric(interface));
+//		Ptr<Ipv4RoutingProtocol> routing = m_ipv4->GetRoutingProtocol();
+//		Ptr<Ipv4L3Protocol> l3 = this->GetObject<Ipv4L3Protocol>();
+//		//TODO I need the unicast routing metric
+//		NS_LOG_DEBUG("R "<< routing->GetTypeId() << " l3 "<< l3->GetRoutingProtocol()<< " Metric "<< l3->GetMetric(interface)<< " ipv4metric "<< m_ipv4->GetMetric(interface));
 
 		return 1;
 	}
