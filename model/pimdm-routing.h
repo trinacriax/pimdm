@@ -276,6 +276,7 @@ private:
 	virtual void SetIpv4(Ptr<Ipv4> ipv4);
 	// From Ipv4RoutingProtocol
 	virtual void PrintRoutingTable(Ptr<OutputStreamWrapper> stream) const;
+	Ptr<Ipv4Route> GetRoute(Ipv4Address source);
 
 	void DoDispose();
 

@@ -584,6 +584,17 @@ MulticastRoutingProtocol::RPF_interface(Ipv4Address source) {
 	return m_ipv4->GetInterfaceForDevice(GetRoute(source)->GetOutputDevice());
 }
 
+Ptr<Ipv4Route>
+MulticastRoutingProtocol::GetRoute(Ipv4Address source) {
+	Ptr<Ipv4Route> route = 0;
+	Ptr<Packet> receivedPacket;
+	Ipv4Header hdr;
+	hdr.SetDestination(source);
+	Ptr<NetDevice> oif (0);
+	Socket::SocketErrno err = Socket::ERROR_NOTERROR;
+	return m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif, err);
+}
+
 void
 MulticastRoutingProtocol::ForgeHeaderMessage (enum PIMType type, PIMHeader &msg){
 	NS_LOG_FUNCTION(this);
