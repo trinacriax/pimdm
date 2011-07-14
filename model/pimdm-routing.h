@@ -640,6 +640,21 @@ private:
 		in->overrideInterval = interval;
 	}
 
+	void GetPrinterList(std::set<uint32_t> resB){
+		std::cout<<GetObject<Node>()->GetId()<<" :: ";
+		for(std::set<uint32_t>::iterator iter = resB.begin(); iter!= resB.end(); iter++){
+			std::cout<<*iter<<" ";
+		}
+		std::cout<<"...END\n";
+	}
+
+	void GetPrinterList(std::vector<uint32_t> resB){
+		std::cout<<GetObject<Node>()->GetId()<<" :: ";
+		for(std::vector<uint32_t>::iterator iter = resB.begin(); iter!= resB.end(); iter++){
+			std::cout<<*iter<<" ";
+		}
+		std::cout<<"...END\n";
+	}
 	///
 	/// \brief The most important macros are those defining the outgoing
 	///   interface list (or "olist") for the relevant state.
@@ -652,35 +667,44 @@ private:
 
 		std::vector<uint32_t> resA;
 		std::set<uint32_t> pim_nbrz = pim_nbrs();/// The set pim_nbrs is the set of all interfaces on which the router has at least one active PIM neighbor.
+		GetPrinterList(pim_nbrz);
 		std::set<uint32_t> prunez = prunes(source, group); /// prunes(S,G) = {all interfaces I such that DownstreamPState(S,G,I) is in Pruned state}
+		GetPrinterList(prunez);
 		/// pim_nbrs *(-)* prunes(S,G)
 		set_difference(pim_nbrz.begin(), pim_nbrz.end(), prunez.begin(),prunez.end(), resA.begin());
-
+		GetPrinterList(resA);
+		GetPrinterList(pim_nbrz);
 		std::vector<uint32_t> resB;
-		std::set<uint32_t> inc = pim_include(NULL, group); /// pim_include(*,G) = {all interfaces I such that: local_receiver_include(*,G,I)}
+		std::set<uint32_t> inc = pim_include(Ipv4Address::GetAny(), group); /// pim_include(*,G) = {all interfaces I such that: local_receiver_include(*,G,I)}
+		GetPrinterList(inc);
 		std::set<uint32_t> exc = pim_exclude(source, group); /// pim_exclude(S,G) = {all interfaces I such that: local_receiver_exclude(S,G,I)}
+		GetPrinterList(exc);
 		/// pim_include(*,G) *(-)* pim_exclude(S,G)
 		set_difference(inc.begin(), inc.end(), exc.begin(), exc.end(),resB.begin());
-
+		GetPrinterList(resB);
 		std::vector<uint32_t> result;
 		/// pim_nbrs (-) prunes(S,G) *(+)* (pim_include(*,G) (-) pim_exclude(S,G) )
 		set_union(resA.begin(), resA.end(), resB.begin(), resB.end(),result.begin());
-
+		GetPrinterList(result);
 		std::set<uint32_t> incC = pim_include(source, group); /// pim_include(S,G) = {all interfaces I such that: local_receiver_include(S,G,I)}
+		GetPrinterList(incC);
 		/// pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) *(+)* pim_include(S,G)
 		set_union(result.begin(), result.end(), incC.begin(), incC.end(),resA.begin());
+		GetPrinterList(resA);
 
 		std::set<uint32_t> lostC = lost_assert(source, group);
+		GetPrinterList(lostC);
 		/// pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) (+) pim_include(S,G) *(-)* lost_assert(S,G)
 		set_difference(resA.begin(), resA.end(), lostC.begin(), lostC.end(),resB.begin());
-
+		GetPrinterList(resB);
 		std::set<uint32_t> boundC = boundary(group);
+		GetPrinterList(boundC);
 		std::vector<uint32_t> resC;
 		/// pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) (+) pim_include(S,G) (-) lost_assert(S,G) *(-)* boundary(G)
 		set_difference(resB.begin(), resB.end(), boundC.begin(), boundC.end(),resC.begin());
-
+		GetPrinterList(resC);
 		std::set<uint32_t> olist(resC.begin(), resC.end());
-
+		GetPrinterList(olist);
 		return olist;
 	}
 
