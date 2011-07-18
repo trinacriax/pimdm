@@ -826,7 +826,10 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 	if(route)
 	NS_LOG_DEBUG ("Sender "<< senderIfaceAddr<<", Destination "<< receiverIfaceAddr<< " ("<< route->GetSource()<< " <--> "<<route->GetGateway() <<" <--> "<<senderIfaceAddr
 			<<" :: DevID: "<< route->GetOutputDevice()->GetIfIndex()<<")");
-//	if(ipv4header.GetDestination() != Ipv4Address(ALL_PIM_ROUTERS4)) {return RecvData(socket);}
+	if(ipv4header.GetDestination().IsMulticast() && ipv4header.GetDestination() != Ipv4Address(ALL_PIM_ROUTERS4)) {
+		NS_LOG_ERROR("Received "<< ipv4header.GetDestination() <<" it should be captured by another callback.");
+//		return RecvData(socket);
+	}
 	//TODO NS_ASSERT (senderIfacePort == PIM_PORT_NUMBER);
 	//Within PIM-DM, route and state information associated with an (S,G) entry MUST be maintained as long as any
 	//	timer associated with that (S,G) entry is active.  When no timer associated with an (S,G) entry is active,
