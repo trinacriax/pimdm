@@ -777,9 +777,8 @@ MulticastRoutingProtocol::CreateMulticastGroupEntry (PIMHeader::MulticastGroupEn
 void
 MulticastRoutingProtocol::AddMulticastGroupEntry (PIMHeader &msg, PIMHeader::MulticastGroupEntry &entry){
 	NS_LOG_FUNCTION(this);
-	PIMHeader::JoinPruneMessage jpMessage = msg.GetJoinPruneMessage();
-	jpMessage.m_joinPruneMessage.m_numGroups = 1 + jpMessage.m_joinPruneMessage.m_numGroups;
-	jpMessage.m_multicastGroups.push_back(entry);
+	msg.GetJoinPruneMessage().m_joinPruneMessage.m_numGroups = 1 + msg.GetJoinPruneMessage().m_joinPruneMessage.m_numGroups;
+	msg.GetJoinPruneMessage().m_multicastGroups.push_back(entry);
 }
 void
 MulticastRoutingProtocol::AddMulticastGroupSourceJoin (PIMHeader::MulticastGroupEntry &m_entry, PIMHeader::EncodedSource source){
