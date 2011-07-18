@@ -227,7 +227,7 @@ MulticastRoutingProtocol::FindSendEntry (RoutingMulticastTable const &entry,
 ///
 bool
 MulticastRoutingProtocol::Lookup (Ipv4Address const &dest, RoutingMulticastTable &outEntry) const {
-	NS_LOG_FUNCTION(this);
+	NS_LOG_FUNCTION(this << dest);
 	// Get the iterator at "dest" position
   std::map<Ipv4Address, RoutingMulticastTable>::const_iterator it = m_mrib.find (dest);
   // If there is no route to "dest", return NULL
@@ -579,6 +579,20 @@ void MulticastRoutingProtocol::DoStart (){
 	}
 }
 
+
+//	 PIM-DM uses Hello messages to detect other PIM routers.  Hello
+//	   messages are sent periodically on each PIM enabled interface.  Hello
+//	   messages are multicast to the ALL-PIM-ROUTERS group.  When PIM is
+//	   enabled on an interface or when a router first starts, the Hello
+//	   Timer (HT) MUST be set to random value between 0 and
+//	   Triggered_Hello_Delay.  This prevents synchronization of Hello
+//	   messages if multiple routers are powered on simultaneously.
+//
+//	   After the initial Hello message, a Hello message MUST be sent every
+//	   Hello_Period.  A single Hello timer MAY be used to trigger sending
+//	   Hello messages on all active interfaces.  The Hello Timer SHOULD NOT
+//	   be reset except when it expires.
+
 void
 MulticastRoutingProtocol::HelloTimerExpire (uint32_t i){
 	Ipv4Address loopback ("127.0.0.1");
@@ -595,22 +609,6 @@ MulticastRoutingProtocol::HelloTimerExpire (uint32_t i){
 	  }
 	  SendHello (i);
 }
-
-//	 PIM-DM uses Hello messages to detect other PIM routers.  Hello
-//	   messages are sent periodically on each PIM enabled interface.  Hello
-//	   messages are multicast to the ALL-PIM-ROUTERS group.  When PIM is
-//	   enabled on an interface or when a router first starts, the Hello
-//	   Timer (HT) MUST be set to random value between 0 and
-//	   Triggered_Hello_Delay.  This prevents synchronization of Hello
-//	   messages if multiple routers are powered on simultaneously.
-//
-//	   After the initial Hello message, a Hello message MUST be sent every
-//	   Hello_Period.  A single Hello timer MAY be used to trigger sending
-//	   Hello messages on all active interfaces.  The Hello Timer SHOULD NOT
-//	   be reset except when it expires.
-
-
-
 
 bool
 MulticastRoutingProtocol::IsDownstream (uint32_t interface, SourceGroupPair sgpair){
