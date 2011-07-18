@@ -552,8 +552,8 @@ void MulticastRoutingProtocol::DoStart (){
 
 		// Create a socket to listen only on this interface
 		Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
-//		socket->SetAttribute("Protocol",UintegerValue(PIM_IP_PROTOCOL_NUM));
-//		socket->SetAttribute("IpHeaderInclude",BooleanValue(false));
+		socket->SetAttribute("Protocol",UintegerValue(PIM_IP_PROTOCOL_NUM));
+		socket->SetAttribute("IpHeaderInclude",BooleanValue(false));
 		socket->SetAllowBroadcast (true);
 		InetSocketAddress inetAddr (addr , PIM_PORT_NUMBER);
 		socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm,  this));
