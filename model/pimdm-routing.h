@@ -28,9 +28,9 @@
 #define __PIM_DM_ROUTING_H__
 
 /// Timer Name: Hello Timer (HT). Periodic interval for hello messages.
-#define Hello_Period 30
+#define Hello_Period 30 // TODO is 30s, I set 2 just for testing
 /// Timer Name: Hello Timer (HT). Random interval for initial Hello message on bootup or triggered Hello message to a rebooting neighbor.
-#define Triggered_Hello_Delay 5
+#define Triggered_Hello_Delay 2
 /// The Hold Time in the Hello Message should be set to a value that can
 ///   reasonably be expected to keep the Hello active until a new Hello
 ///   message is received.  On most links, this will be 3.5 times the value
@@ -111,6 +111,8 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <algorithm>
+#include <iterator>
 
 namespace ns3 {
 namespace pimdm {
@@ -652,19 +654,19 @@ private:
 	}
 
 	void GetPrinterList(std::set<uint32_t> resB){
-		std::cout<<GetObject<Node>()->GetId()<<" :: ";
+		std::cout<<"Elements: \n";
 		for(std::set<uint32_t>::iterator iter = resB.begin(); iter!= resB.end(); iter++){
 			std::cout<<*iter<<" ";
 		}
-		std::cout<<"...END\n";
+		std::cout<<"\n";
 	}
 
 	void GetPrinterList(std::vector<uint32_t> resB){
-		std::cout<<GetObject<Node>()->GetId()<<" :: ";
+		std::cout<<"Elements: \n";
 		for(std::vector<uint32_t>::iterator iter = resB.begin(); iter!= resB.end(); iter++){
-			std::cout<<*iter<<" ";
+			std::cout<<*iter<<", ";
 		}
-		std::cout<<"...END\n";
+		std::cout<<"\n";
 	}
 	///
 	/// \brief The most important macros are those defining the outgoing
@@ -676,47 +678,48 @@ private:
 	///
 	std::set<uint32_t> immediate_olist(Ipv4Address source, Ipv4Address group) {
 
-		std::vector<uint32_t> resA;
+		std::set<uint32_t> resA;
 		std::set<uint32_t> pim_nbrz = pim_nbrs();/// The set pim_nbrs is the set of all interfaces on which the router has at least one active PIM neighbor.
 		GetPrinterList(pim_nbrz);
 		std::set<uint32_t> prunez = prunes(source, group); /// prunes(S,G) = {all interfaces I such that DownstreamPState(S,G,I) is in Pruned state}
 		GetPrinterList(prunez);
 		/// pim_nbrs *(-)* prunes(S,G)
-		set_difference(pim_nbrz.begin(), pim_nbrz.end(), prunez.begin(),prunez.end(), resA.begin());
+		std::set_difference(pim_nbrz.begin(), pim_nbrz.end(), prunez.begin(), prunez.end(),
+				 std::inserter(resA, resA.end()));
 		GetPrinterList(resA);
 		GetPrinterList(pim_nbrz);
-		std::vector<uint32_t> resB;
+		std::set<uint32_t> resB;
 		std::set<uint32_t> inc = pim_include(Ipv4Address::GetAny(), group); /// pim_include(*,G) = {all interfaces I such that: local_receiver_include(*,G,I)}
 		GetPrinterList(inc);
 		std::set<uint32_t> exc = pim_exclude(source, group); /// pim_exclude(S,G) = {all interfaces I such that: local_receiver_exclude(S,G,I)}
 		GetPrinterList(exc);
 		/// pim_include(*,G) *(-)* pim_exclude(S,G)
-		set_difference(inc.begin(), inc.end(), exc.begin(), exc.end(),resB.begin());
+		std::set_difference(inc.begin(), inc.end(), exc.begin(), exc.end(), std::inserter(resB, resB.end()));
 		GetPrinterList(resB);
-		std::vector<uint32_t> result;
+		std::set<uint32_t> result;
 		/// pim_nbrs (-) prunes(S,G) *(+)* (pim_include(*,G) (-) pim_exclude(S,G) )
-		set_union(resA.begin(), resA.end(), resB.begin(), resB.end(),result.begin());
+		std::set_union(resA.begin(), resA.end(), resB.begin(), resB.end(), std::inserter(result, result.end()));
 		GetPrinterList(result);
 		std::set<uint32_t> incC = pim_include(source, group); /// pim_include(S,G) = {all interfaces I such that: local_receiver_include(S,G,I)}
 		GetPrinterList(incC);
 		/// pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) *(+)* pim_include(S,G)
-		set_union(result.begin(), result.end(), incC.begin(), incC.end(),resA.begin());
+		std::set_union(result.begin(), result.end(), incC.begin(), incC.end(), std::inserter(resA, resA.end()));
 		GetPrinterList(resA);
 
 		std::set<uint32_t> lostC = lost_assert(source, group);
 		GetPrinterList(lostC);
 		/// pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) (+) pim_include(S,G) *(-)* lost_assert(S,G)
-		set_difference(resA.begin(), resA.end(), lostC.begin(), lostC.end(),resB.begin());
+		std::set_difference(resA.begin(), resA.end(), lostC.begin(), lostC.end(),std::inserter(resB, resB.end()));
 		GetPrinterList(resB);
 		std::set<uint32_t> boundC = boundary(group);
 		GetPrinterList(boundC);
-		std::vector<uint32_t> resC;
+		std::set<uint32_t> resC;
 		/// pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) (+) pim_include(S,G) (-) lost_assert(S,G) *(-)* boundary(G)
-		set_difference(resB.begin(), resB.end(), boundC.begin(), boundC.end(),resC.begin());
+		std::set_difference(resB.begin(), resB.end(), boundC.begin(), boundC.end(),std::inserter(resC, resC.end()));
 		GetPrinterList(resC);
-		std::set<uint32_t> olist(resC.begin(), resC.end());
-		GetPrinterList(olist);
-		return olist;
+//		std::set<uint32_t> olist(resC.begin(), resC.end());
+//		GetPrinterList(olist);
+		return resC;
 	}
 
 	void SourceDirectlyConnected(SourceGroupPair &sgp);
