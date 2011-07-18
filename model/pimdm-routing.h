@@ -339,7 +339,14 @@ private:
 	bool UsesNonPimDmOutgoingInterface(const Ipv4RoutingTableEntry &route);
 
 	uint32_t GetReceivingInterface(Ipv4Address addr){
-		return m_ipv4->GetInterfaceForAddress(addr);
+		uint32_t interface = -1;
+		if(!addr.IsMulticast()){
+			Ptr<Ipv4Route> route = GetRoute(addr);
+			Ptr<NetDevice> dev = route->GetOutputDevice();
+			interface = m_ipv4->GetInterfaceForDevice(dev);
+		}
+		return interface;
+	}
 	}
 
 	///< Randomized delay to prevent response implosion when sending a join message  to override someone else's prune
