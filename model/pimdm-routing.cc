@@ -829,6 +829,7 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 	NS_LOG_FUNCTION(this);
 	Ptr<Packet> receivedPacket;
 	Address sourceAddress;
+	uint32_t interface = m_ipv4->GetInterfaceForDevice(socket->GetBoundNetDevice());
 	receivedPacket = socket->RecvFrom (sourceAddress);
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4 ();
@@ -838,12 +839,15 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
     Ptr<Ipv4Route> route = GetRoute(senderIfaceAddr);
 	Ipv4Header ipv4header;
 	receivedPacket->RemoveHeader(ipv4header);
+	Ipv4Address group = ipv4header.GetDestination();
 	if(route)
-	NS_LOG_DEBUG ("Sender "<< senderIfaceAddr<<", Destination "<< receiverIfaceAddr<< " ("<< route->GetSource()<< " <--> "<<route->GetGateway() <<" <--> "<<senderIfaceAddr
-			<<" :: DevID: "<< route->GetOutputDevice()->GetIfIndex()<<")");
+		NS_LOG_DEBUG("RecvPimDm Sender "<< senderIfaceAddr<<", Group " << group << ", Destination "<< receiverIfaceAddr<< " ("<< route->GetSource()<< " <--> "
+			<<route->GetGateway() <<" <--> "<<senderIfaceAddr <<" vs " <<interface<<")");
 	if(ipv4header.GetDestination().IsMulticast() && ipv4header.GetDestination() != Ipv4Address(ALL_PIM_ROUTERS4)) {
 		NS_LOG_ERROR("Received "<< ipv4header.GetDestination() <<" it should be captured by another callback.");
 //		return RecvData(socket);
+		SourceGroupPair sgp (senderIfaceAddr,receiverIfaceAddr);
+		RPFCheck(sgp, interface);
 	}
 	//TODO NS_ASSERT (senderIfacePort == PIM_PORT_NUMBER);
 	//Within PIM-DM, route and state information associated with an (S,G) entry MUST be maintained as long as any
