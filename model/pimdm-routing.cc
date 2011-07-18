@@ -268,7 +268,16 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 		Ptr<NetDevice> oif, Socket::SocketErrno &sockerr){
 	NS_LOG_FUNCTION (this << m_ipv4->GetObject<Node> ()->GetId () << header.GetDestination () << oif);
 	Ptr<Ipv4Route> rtentry;
+	if (m_socketAddresses.empty ())
+	{
+	  sockerr = Socket::ERROR_NOROUTETOHOST;
+	  NS_LOG_LOGIC ("No PIMDM interfaces");
+	  return rtentry;
+	}
+	sockerr = Socket::ERROR_NOTERROR;
 	RoutingMulticastTable entry1;
+	NS_LOG_DEBUG ("PIM-DM node " << m_mainAddress << ": RouteOutput for dest=" << header.GetDestination ());
+
 	bool found = false;
 	if(header.GetDestination().IsMulticast() && Lookup (header.GetDestination(), entry1) != 0)	{//entry in the routing table found
 		uint32_t interfaceIdx = entry1.interface;
