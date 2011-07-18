@@ -1511,7 +1511,7 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, const PIMHeader 
   m_txPacketTrace (message);
   // Send
   Ptr<Ipv4Route> route = GetRoute(destination);
-  uint32_t interface = route->GetOutputDevice()->GetIfIndex();
+  uint32_t interface = m_ipv4->GetInterfaceForDevice(route->GetOutputDevice());
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
         m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
       {
