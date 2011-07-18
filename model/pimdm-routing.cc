@@ -1017,12 +1017,12 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 				break;
 			}
 			default:{
-				NS_LOG_ERROR("RecvData: Assert State not valid"<<sgState->AssertState);
+				NS_LOG_ERROR("RecvData: Assert State not valid "<<sgState->AssertState);
 				break;
 			}
 		}
 	}
-	if(sgState->upstream || sender == GetNextHop(sender)){
+	if(sgState->upstream != NULL || sender == GetNextHop(sender)){
 	switch (sgState->upstream->origination) {
 		case NotOriginator:{
 			//Data Packet received from directly connected Source S addressed to group G.
