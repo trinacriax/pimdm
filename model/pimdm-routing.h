@@ -534,18 +534,20 @@ private:
 		return FindSourceGroupState(RPF_interface(source),sgp);
 	}
 
-	void InsertSourceGroupState(uint32_t interface, SourceGroupState &ns) {
+	void InsertSourceGroupState(uint32_t interface, SourceGroupState ns) {
 		if (!FindSourceGroupState(interface, ns)) {
 			m_IfaceSourceGroup.find(interface)->second.push_back(ns);
 			//NeighborhoodStatus *status = FindNeighborhoodStatus(interface);
 			SourceGroupState *sgs = FindSourceGroupState(interface, ns);
+			sgs->upstream = NULL;
 			sgs->LocalMembership = Local_NoInfo;
 			sgs->PruneState = Prune_NoInfo;
 			sgs->AssertState = Assert_NoInfo;
 			if(RPF_interface(ns.SGPair.sourceIfaceAddr) == interface){
 				UpstreamState us;
 				sgs->upstream=&us;
-				sgs->upstream->GraftPrune = GP_NoInfo;
+//				sgs->upstream->GraftPrune = GP_NoInfo;
+				sgs->upstream;
 			}
 			//	  		sgs->SG_PPT.Cancel();
 			//	  		sgs->SG_PPT.SetDelay(status->overrideInterval+status->propagationDelay);
@@ -566,6 +568,44 @@ private:
 			//	  		///sgs->SG_SRT.SetFunction (&MulticastRoutingProtocol::???, this);
 		}
 	}
+
+
+	SourceGroupState* InsertSourceGroupState(uint32_t interface, SourceGroupPair sgp) {
+		SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
+			if (sgState == NULL) {
+				SourceGroupState sgs;
+				sgs.SGPair.sourceIfaceAddr = sgp.sourceIfaceAddr;
+				sgs.SGPair.groupMulticastAddr = sgp.groupMulticastAddr;
+				sgs.LocalMembership = Local_NoInfo;
+				sgs.PruneState = Prune_NoInfo;
+				sgs.AssertState = Assert_NoInfo;
+				sgs.upstream = NULL;
+				m_IfaceSourceGroup.find(interface)->second.push_back(sgs);
+				sgState = FindSourceGroupState(interface, sgp);
+				if(RPF_interface(sgs.SGPair.sourceIfaceAddr) == interface){
+					sgState->upstream= new UpstreamState;
+				}
+				//	  		sgs->SG_PPT.Cancel();
+				//	  		sgs->SG_PPT.SetDelay(status->overrideInterval+status->propagationDelay);
+				//	  		///sgs->SG_PPT.SetFunction (&MulticastRoutingProtocol::???, this);
+				//	  		sgs->SG_PT.Cancel();
+				//	  		///sgs->SG_PT.SetFunction (&MulticastRoutingProtocol::???, this);
+				//	  		sgs->SG_AT.Cancel();
+				//	  		sgs->SG_AT.SetDelay(Time(Seconds(180)));
+				//	  		///sgs->SG_AT.SetFunction (&MulticastRoutingProtocol::???, this);
+				//	  		sgs->SG_PLT.Cancel();
+				//	  		sgs->SG_PLT.SetDelay(Seconds(210));
+				//	  		///sgs->SG_PLT.SetFunction (&MulticastRoutingProtocol::???, this);
+				//	  		sgs->SG_SAT.Cancel();
+				//	  		sgs->SG_SAT.SetDelay(Seconds(210));
+				//	  		///sgs->SG_SAT.SetFunction (&MulticastRoutingProtocol::???, this);
+				//	  		sgs->SG_SRT.Cancel();
+				//	  		sgs->SG_SRT.SetDelay(Seconds(60));
+				//	  		///sgs->SG_SRT.SetFunction (&MulticastRoutingProtocol::???, this);
+				}
+			return sgState;
+		}
+
 
 	void EraseSourceGroupState(uint32_t interface, const SourceGroupState &ns) {
 		SourceGroupList *sgl = FindSourceGroupList(interface);

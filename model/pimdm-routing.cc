@@ -876,7 +876,6 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 
 void
 MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
-//MulticastRoutingProtocol::RecvData (Ptr<Packet> packet, Ipv4Address sender, Ipv4Address receiver){
 	NS_LOG_FUNCTION(this);
 	Ptr<Packet> receivedPacket;
 	Address sourceAddress;
@@ -884,27 +883,28 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address sender = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
-	Ipv4Address receiver = m_socketAddresses[socket].GetLocal ();
-//	Ipv4Header ipv4h;
-//	receivedPacket->RemoveHeader(ipv4h);
-//	NS_LOG_DEBUG(ipv4h.GetSource()<<ipv4h.GetDestination());
-	NS_ASSERT (receiver != Ipv4Address ());
-
-	NS_LOG_FUNCTION(this);
-	uint32_t interface = GetReceivingInterface(sender);
-	interface = socket->GetBoundNetDevice()->GetIfIndex();
+	Ipv4Address group = m_socketAddresses[socket].GetLocal ();
+	NS_ASSERT (group != Ipv4Address ());
+	uint32_t interface = m_ipv4->GetInterfaceForDevice(socket->GetBoundNetDevice());
 	// Data Packet arrives on RPF_Interface(S) AND olist(S,G) == NULL AND S NOT directly connected
-	SourceGroupPair sgp(sender, receiver);
+	SourceGroupPair sgp(sender, group);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 	if(!sgState){
-		SourceGroupState sgs(sgp);
-		InsertSourceGroupState(interface,sgs);
+		sgState = InsertSourceGroupState(interface,sgp);
+		RoutingMulticastTable entry;
+		Lookup(sender,entry);
 		sgState = FindSourceGroupState(interface,sgp);
+		if(!Lookup(sender,entry)){
+			entry.interface = interface;
+			entry.sourceAddr = sender;
+			entry.groupAddr = group;
+			entry.nextAddr = GetRoute(sender)->GetGateway();
+			if(entry.nextAddr == entry.sourceAddr){
+				//Nodes is direclty connected to source
+			}
+		}
 	}
-	if(IsUpstream(interface,sgp)){
-		UpstreamState upstream;
-		sgState->upstream = &upstream;
-	}
+//	RPFCheck(sgp,interface);
 	if(sgState->upstream->SG_SAT.IsRunning()){
 		sgState->upstream->SG_SAT.Cancel();
 		sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
@@ -916,7 +916,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 			//The Upstream(S,G) state machine MUST transition to the Pruned (P)
 			// state, send a Prune(S,G) to RPF'(S), and set PLT(S,G) to t_limit seconds.
 			case GP_Forwarding:{
-				if(olist(sender,receiver).size() == 0 && GetNextHop(sender) != sender){
+				if(olist(sender,group).size() == 0 && GetNextHop(sender) != sender){
 					sgState->upstream->GraftPrune = GP_Pruned;
 					Ipv4Address destination = RPF_prime(sgp);
 					SendPruneUnicast(destination, sgp);
@@ -1085,7 +1085,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 		if(sgState->PruneState != Prune_Pruned ){
 			/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
 			/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
-			oiflist = olist(sender,receiver);
+			oiflist = olist(sender,group);
 			GetPrinterList(oiflist);
 			oiflist.erase(interface);
 			GetPrinterList(oiflist);
