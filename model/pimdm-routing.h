@@ -771,6 +771,8 @@ private:
 
 	void RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterface, uint32_t newInterface);
 
+	void RPFCheck(SourceGroupPair sgp, uint32_t interface);
+
 	void olistCheck(SourceGroupPair &sgp, std::set<uint32_t> list);
 	void olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> list);
 	void olistFull(SourceGroupPair &sgp, std::set<uint32_t> list);
@@ -781,6 +783,7 @@ private:
 	/// \param group Multicast group IPv4 address
 	std::set<uint32_t> olist(Ipv4Address source, Ipv4Address group) {
 		std::set<uint32_t> _olist = immediate_olist(source, group);
+		GetPrinterList(_olist);
 		_olist.erase(RPF_interface(source));
 		return _olist;
 	}

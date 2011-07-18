@@ -810,6 +810,22 @@ MulticastRoutingProtocol::GetNextHop(Ipv4Address destination){
 }
 
 void
+MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, uint32_t interface){
+	RoutingMulticastTable entry;
+	if(Lookup(sgp.sourceIfaceAddr,entry)){
+		if(entry.interface != interface){
+			RPF_Changes(sgp,entry.interface,interface);
+			entry.interface = interface;
+		}
+		if(entry.nextAddr != GetRoute(sgp.sourceIfaceAddr)->GetGateway()){
+			RPF_primeChanges(sgp);
+			entry.nextAddr = GetRoute(sgp.sourceIfaceAddr)->GetGateway();
+		}
+	}
+}
+
+
+void
 MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 	NS_LOG_FUNCTION(this);
 	Ptr<Packet> receivedPacket;
@@ -904,7 +920,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 			}
 		}
 	}
-//	RPFCheck(sgp,interface);
+	RPFCheck(sgp,interface);
 	if(sgState->upstream->SG_SAT.IsRunning()){
 		sgState->upstream->SG_SAT.Cancel();
 		sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
