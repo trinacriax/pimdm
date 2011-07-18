@@ -867,7 +867,7 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 		break;
 		}
 	default:{
-//		RecvData (receivedPacket,senderIfaceAddr,receiverIfaceAddr);
+		NS_LOG_ERROR("Packet unrecognized.... "<< receivedPacket<<"Sender "<< senderIfaceAddr<<", Destination "<< receiverIfaceAddr);
 		break;
 		}
 	}
