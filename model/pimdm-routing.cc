@@ -311,32 +311,32 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 		}
 	  rtentry->SetSource (ifAddr.GetLocal ());
 	  rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
-	  rtentry->SetGateway(Ipv4Address::GetAny());//TODO CHECK
+	  rtentry->SetGateway(entry1.nextAddr);
 	  sockerr = Socket::ERROR_NOTERROR;
 	  NS_LOG_DEBUG ("PIM-DM Routing: Src = " << rtentry->GetSource() << ", Dest = " << rtentry->GetDestination()<< ", GW = "<< rtentry->GetGateway () << ", interface = " << interfaceIdx<<" device = "<<rtentry->GetOutputDevice()->GetMulticast(rtentry->GetDestination()));
 	  found = true;
 	}
-	else if (GetMulticastGroup(header.GetDestination())){
-		//Node is interested in this group.
-		NS_LOG_ERROR("Multicast "<< header.GetDestination());
-//		RecvData(p,header.GetSource(),header.GetDestination());
-	}
-	else
-	{
-	  rtentry = m_RoutingTable->RouteOutput (p, header, oif, sockerr);
+//	else if (GetMulticastGroup(header.GetDestination())){
+//		//Node is interested in this group.
+//		NS_LOG_ERROR("Multicast "<< header.GetDestination());
+////		RecvData(p,header.GetSource(),header.GetDestination());
+//	}
+//	else
+//	{
+//	  rtentry = m_RoutingTable->RouteOutput (p, header, oif, sockerr);
 
-	  if (rtentry)
-		{
-		  found = true;
-		  NS_LOG_DEBUG ("Found route to " << rtentry->GetDestination () << " via nh " << rtentry->GetGateway () << " with source addr " << rtentry->GetSource () << " and output dev " << rtentry->GetOutputDevice ());
-		}
-	}
+//	  if (rtentry)
+//		{
+//		  found = true;
+//		  NS_LOG_DEBUG ("Found route to " << rtentry->GetDestination () << " via nh " << rtentry->GetGateway () << " with source addr " << rtentry->GetSource () << " and output dev " << rtentry->GetOutputDevice ());
+//		}
+//	}
 
 	if (!found)
 	{
 	  NS_LOG_DEBUG ("PIM-DM node " << m_mainAddress
-								 << ": RouteOutput for dest=" << header.GetDestination ()
-								 << " No route to host");
+			  << ": RouteOutput for dest=" << header.GetDestination ()
+			  << " No route to host");
 	  sockerr = Socket::ERROR_NOROUTETOHOST;
 	}
 	return rtentry;
