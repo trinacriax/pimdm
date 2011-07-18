@@ -132,43 +132,38 @@ MulticastRoutingProtocol::AddMulticastRoute (Ipv4Address source, Ipv4Address gro
 
 void
 MulticastRoutingProtocol::AddMulticastGroup(Ipv4Address group){
-//	if(group.IsMulticast() && m_multicastGroup.find(group)==m_multicastGroup.end()){
-//		NS_LOG_DEBUG("Interested in group "<< group);
-//		m_multicastGroup.insert(group);
-//		Ipv4Address loopback ("127.0.0.1");
-//		for(int i = 0; i < m_ipv4->GetNInterfaces (); i++){
-//			NS_LOG_DEBUG("D("<<i<<") = " << m_ipv4->GetNetDevice (i)<< ", I "<< m_ipv4->GetNetDevice (i)->GetIfIndex()<<", Addr = "<<  m_ipv4->GetAddress (i, 0).GetLocal ());
-//			Ipv4Address source = m_ipv4->GetAddress (i, 0).GetLocal ();
-//			if(source != loopback){
-//				RoutingMulticastTable entry1;
-//				if(!Lookup(group,entry1)){
-//					AddEntry(source,group,Ipv4Address::GetAny(),i);
-//					///Registering endpoint for that address...
-//					NS_LOG_DEBUG ("Registering Group = "<< group<< " Interface "<< i <<", Address = "<<source);
-//					// Create a socket to listen only on this interface
-//					Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), UdpSocketFactory::GetTypeId());
-////					socket->SetAttribute("Protocol",UintegerValue(PIM_IP_PROTOCOL_NUM));
-////					socket->SetAttribute("IpHeaderInclude",BooleanValue(true));
-////					Ptr<Ipv4RawSocketImpl> raw = socket->GetObject<Ipv4RawSocketImpl>();
-//					socket->SetAllowBroadcast (true);
-////					InetSocketAddress inetAddr (group, PIM_PORT_NUMBER);
-//					InetSocketAddress inetAddr (group);
-//					if(group == ALL_PIM_ROUTERS4)
-//						socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm, this));
-//					else
-//						socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvData, this));
-//					if (socket->Bind (inetAddr)){
-//						NS_FATAL_ERROR ("Failed to bind() PIMDM socket");
-//					}
-//					socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
-//					Ipv4InterfaceAddress mgroup(group, Ipv4Mask::GetOnes());
-////					m_socketAddresses[socket] = mgroup;
-//					m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
+	if(group.IsMulticast() && !GetMulticastGroup(group)){//multicast address and group not already registered
+		NS_LOG_DEBUG("Adding subscription for multicast group \""<< group<<"\"");
+		m_multicastGroup.insert(group);
+		Ipv4Address loopback ("127.0.0.1");
+		for(int i = 0; i < m_ipv4->GetNInterfaces (); i++){
+			NS_LOG_DEBUG("D("<<i<<") = " << m_ipv4->GetNetDevice (i)<<", Addr = "<<  m_ipv4->GetAddress (i, 0).GetLocal ());
+			Ipv4Address sender = m_ipv4->GetAddress (i, 0).GetLocal ();
+			if(sender != loopback){
+				RoutingMulticastTable entry1;
+				if(!Lookup(group,entry1)){
+					AddEntry(sender,group,Ipv4Address::GetAny(),i);
+					NS_LOG_DEBUG ("Registering Group = "<< group<< " on interface "<< i <<" with sender address = "<<sender);
+					///Registering endpoint for that address... by creating a socket to listen only on this interface
+					Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), UdpSocketFactory::GetTypeId());
+//					socket->SetAttribute("Protocol",UintegerValue(PIM_IP_PROTOCOL_NUM));
+//					socket->SetAttribute("IpHeaderInclude",BooleanValue(true));
+					socket->SetAllowBroadcast (false);
+					InetSocketAddress inetAddr (group, PIM_PORT_NUMBER);
+//					InetSocketAddress inetAddr (group);//Register for any port
+					socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvData, this));
+					if (socket->Bind (inetAddr)){
+						NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<group);
+					}
+					socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
+					Ipv4InterfaceAddress mgroup(group, Ipv4Mask::GetOnes());
+					m_socketAddresses[socket] = mgroup;
+//					m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0); //working!
 //					NS_LOG_DEBUG("D "<<socket->GetBoundNetDevice()<<", D("<<i<<") = " << m_ipv4->GetNetDevice (i)<< ", i "<< m_ipv4->GetNetDevice (i)->GetIfIndex()<<" add "<<m_socketAddresses[socket].GetLocal());
-//				}
-//			}
-//		}
-//	}
+				}
+			}
+		}
+	}
 }
 
 ///
