@@ -3094,7 +3094,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 	NS_LOG_DEBUG("Sender "<< sender<< " Receiver "<< receiver);
 	uint16_t entry = 0;
 	NeighborState tmp(sender,receiver);
-	uint32_t interface = GetReceivingInterface(receiver);
+	uint32_t interface = GetReceivingInterface(sender);
 	NeighborState *ns = FindNeighborState(interface,tmp);
 	if(!ns){// Hello message received from a new neighbor
 		InsertNeighborState(interface,tmp);
