@@ -3306,7 +3306,7 @@ void MulticastRoutingProtocol::InsertNeighborState(uint32_t interface, const Nei
 		FindNeighborhoodStatus(interface)->neighbors.push_back(ns);
 		NeighborState *neighbor = FindNeighborState(interface, ns);
 		neighbor->neigborNLT.Cancel();
-		neighbor->neigborNLT.SetFunction(&MulticastRoutingProtocol::NLTTimerExpire,this);
+//		neighbor->neigborNLT.SetFunction(&MulticastRoutingProtocol::NLTTimerExpire,this);
 		neighbor->neighborCreation = Simulator::Now();
 		//TODO Neighbor timeout disabled
 		//neighbor->neighborTimeout = Simulator::Now() + Seconds(Hello_Period+Propagation_Delay);
