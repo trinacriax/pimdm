@@ -294,6 +294,7 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 		  sockerr = Socket::ERROR_NOROUTETOHOST;
 		  return rtentry;
 		}
+
 	  rtentry = Create<Ipv4Route> ();
 	  rtentry->SetDestination (header.GetDestination ());
 	  // the source address is the interface address that matches
@@ -444,8 +445,7 @@ MulticastRoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
 {
   NS_ASSERT (ipv4 != 0);
   NS_ASSERT (m_ipv4 == 0);
-  NS_LOG_DEBUG ("Created MulticastRoutingProtocol");
-  Ipv4Address loopback ("127.0.0.1");
+  NS_LOG_DEBUG ("Created pimdm::MulticastRoutingProtocol");
   m_ipv4 = ipv4;
   m_RoutingTable->SetIpv4 (ipv4);
 }
@@ -634,11 +634,11 @@ MulticastRoutingProtocol::RPF_interface(Ipv4Address source) {
 }
 
 Ptr<Ipv4Route>
-MulticastRoutingProtocol::GetRoute(Ipv4Address source) {
+MulticastRoutingProtocol::GetRoute(Ipv4Address destination) {
 	Ptr<Ipv4Route> route = 0;
 	Ptr<Packet> receivedPacket;
 	Ipv4Header hdr;
-	hdr.SetDestination(source);
+	hdr.SetDestination(destination);
 	Ptr<NetDevice> oif (0);
 	Socket::SocketErrno err = Socket::ERROR_NOTERROR;
 	return m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif, err);
@@ -762,7 +762,7 @@ MulticastRoutingProtocol::ForgeHelloMessage (uint32_t interface, PIMHeader &msg)
 	ForgeHelloMessageLANPD(interface,msg);
 	ForgeHelloMessageGenID(interface,msg);
 	if(m_IfaceNeighbors.find(interface)->second.stateRefreshCapable){
-		ForgeHelloMessageStateRefresh(interface,msg);
+//		ForgeHelloMessageStateRefresh(interface,msg);//todo uncomment
 	}
 }
 
@@ -781,7 +781,6 @@ MulticastRoutingProtocol::AddMulticastGroupEntry (PIMHeader &msg, PIMHeader::Mul
 	jpMessage.m_joinPruneMessage.m_numGroups = 1 + jpMessage.m_joinPruneMessage.m_numGroups;
 	jpMessage.m_multicastGroups.push_back(entry);
 }
-
 void
 MulticastRoutingProtocol::AddMulticastGroupSourceJoin (PIMHeader::MulticastGroupEntry m_entry, PIMHeader::EncodedSource source){
 	NS_LOG_FUNCTION(this);
