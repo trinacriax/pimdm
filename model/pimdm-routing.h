@@ -399,9 +399,9 @@ private:
 	void ForgeAssertCancelMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp);
 
 	void AddMulticastGroupEntry(PIMHeader &msg,PIMHeader::MulticastGroupEntry &entry);
-	void CreateMulticastGroupEntry(PIMHeader &msg,PIMHeader::MulticastGroupEntry m_entry,PIMHeader::EncodedGroup group);
-	void AddMulticastGroupSourceJoin(PIMHeader::MulticastGroupEntry m_entry,PIMHeader::EncodedSource source);
-	void AddMulticastGroupSourcePrune(PIMHeader::MulticastGroupEntry m_entry,PIMHeader::EncodedSource source);
+	void CreateMulticastGroupEntry(PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedGroup group);
+	void AddMulticastGroupSourceJoin(PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedSource source);
+	void AddMulticastGroupSourcePrune(PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedSource source);
 
 	void SendHello(uint32_t interface);
 	void SendNeighHello(uint32_t interface, Ipv4Address destination);
