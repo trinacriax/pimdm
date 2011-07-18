@@ -1043,8 +1043,6 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 				sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
 				sgState->upstream->SG_SRT.SetArguments(sgp);
 				sgState->upstream->SG_SRT.Schedule();
-//				Ipv4Header ipv4h;
-//				receivedPacket->RemoveHeader(ipv4h);
 //				sgState->SG_DATA_TTL = ipv4h.GetTtl();
 				sgState->SG_DATA_TTL = 1; //TODO fix it
 			}
