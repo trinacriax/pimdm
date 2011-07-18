@@ -199,7 +199,6 @@ public:
 	MulticastRoutingProtocol();
 	virtual ~MulticastRoutingProtocol();
 
-	void SetMainInterface(uint32_t interface);
 	uint32_t GetMainInterface() {
 		return m_mainInterface;
 	}

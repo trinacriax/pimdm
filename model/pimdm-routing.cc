@@ -3165,13 +3165,6 @@ MulticastRoutingProtocol::NeighborTimeout(uint32_t interface){
 }
 
 void
-MulticastRoutingProtocol::SetMainInterface (uint32_t interface){
-	NS_LOG_FUNCTION(this);
-	m_mainAddress = m_ipv4->GetAddress (interface, 0).GetLocal ();
-	NS_LOG_DEBUG("MainAddress ("<<interface<< ") = "<<m_mainAddress);
-	}
-
-void
 MulticastRoutingProtocol::SetInterfaceExclusions (std::set<uint32_t> exceptions){
 	NS_LOG_FUNCTION(this);
 	m_interfaceExclusions = exceptions;
