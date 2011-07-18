@@ -172,7 +172,7 @@ private:
 
 	/// IP protocol
 	Ptr<Ipv4> m_ipv4;
-
+	uint32_t m_identification;
 	/// Raw socket per each IP interface, map socket -> iface address (IP + mask)
 	std::map<Ptr<Socket> , Ipv4InterfaceAddress> m_socketAddresses;
 	/// Pointer to socket.
