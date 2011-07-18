@@ -820,25 +820,24 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
 	Ipv4Address receiverIfaceAddr = m_socketAddresses[socket].GetLocal ();
 	NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
-    Ptr<Ipv4Route> route = 0;
-    Ipv4Header hdr;
-    hdr.SetDestination(senderIfaceAddr);
-    Ptr<NetDevice> oif (0);
-    Socket::SocketErrno err = Socket::ERROR_NOTERROR;
-
-	route = m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif,err);
-
-	NS_LOG_DEBUG ("Sender "<< senderIfaceAddr<<", Destination "<< receiverIfaceAddr);
+    Ptr<Ipv4Route> route = GetRoute(senderIfaceAddr);
+	NS_LOG_DEBUG ("Sender "<< senderIfaceAddr<<", Destination "<< receiverIfaceAddr<< " Size "<< receivedPacket->GetSize());
+	Ipv4Header ipv4header;
+	NS_LOG_DEBUG("Size1 "<<receivedPacket->GetSize());
+	receivedPacket->RemoveHeader(ipv4header);
+	NS_LOG_DEBUG("Size2 "<<receivedPacket->GetSize());
 	if(route)
-	NS_LOG_DEBUG (" ("<< route->GetSource()<< " <--> "<<route->GetGateway() <<" <--> "<<route->GetDestination()
+	NS_LOG_DEBUG (" ("<< route->GetSource()<< " <--> "<<route->GetGateway() <<" <--> "<<senderIfaceAddr
 			<<" :: DevID: "<< route->GetOutputDevice()->GetIfIndex()<<")");
+//	if(ipv4header.GetDestination() != Ipv4Address(ALL_PIM_ROUTERS4)) {return RecvData(socket);}
 	//TODO NS_ASSERT (senderIfacePort == PIM_PORT_NUMBER);
 	//Within PIM-DM, route and state information associated with an (S,G) entry MUST be maintained as long as any
 	//	timer associated with that (S,G) entry is active.  When no timer associated with an (S,G) entry is active,
 	//	all information concerning that (S,G) route may be discarded.
-	Ptr<Packet> packet = receivedPacket;
+	NS_LOG_DEBUG("Size3 "<<receivedPacket->GetSize());
 	PIMHeader pimdmPacket;
-	packet->RemoveHeader(pimdmPacket);
+	receivedPacket->RemoveHeader(pimdmPacket);
+	NS_LOG_DEBUG("Size4 "<<receivedPacket->GetSize());
 	if(pimdmPacket.GetType()!=PIM_HELLO && !IsValidSG(GetReceivingInterface(receiverIfaceAddr), senderIfaceAddr, receiverIfaceAddr)){
 			NS_LOG_DEBUG ("PIM-DM No running timer: discarded");
 			return;
