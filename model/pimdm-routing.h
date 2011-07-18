@@ -347,6 +347,30 @@ private:
 		}
 		return interface;
 	}
+
+	Ipv4Header BuildHeader(Ipv4Address source, Ipv4Address destination, uint8_t protocol, uint16_t payloadSize, uint8_t ttl, bool mayFragment){
+		Ipv4Header ipv4header;
+	  ipv4header.SetSource(source);
+	  ipv4header.SetDestination(destination);
+	  ipv4header.SetProtocol(protocol);
+	  ipv4header.SetPayloadSize(payloadSize);
+	  ipv4header.SetTtl(ttl);
+	  if(mayFragment){
+		  ipv4header.SetMayFragment();
+		  ipv4header.SetIdentification(m_identification);
+		  m_identification++;
+	  }
+	    else
+	      {
+	    	ipv4header.SetDontFragment ();
+	    	ipv4header.SetIdentification (m_identification);
+	        m_identification++;
+	      }
+	    if (Node::ChecksumEnabled ())
+	      {
+	    	ipv4header.EnableChecksum ();
+	      }
+	    return ipv4header;
 	}
 
 	///< Randomized delay to prevent response implosion when sending a join message  to override someone else's prune
