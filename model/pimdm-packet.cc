@@ -154,6 +154,7 @@ PIMHeader::Deserialize (Buffer::Iterator start)
   m_reserved = (uint8_t)(ver_type & 0xff);		// 00000000 11111111
   m_checksum = i.ReadNtohU16();			// 00000000 00000000 11111111 11111111
   uint32_t message_size = i.GetSize();
+  NS_ASSERT(message_size >0);
   switch (m_type)
   	{
   	case PIM_HELLO:
