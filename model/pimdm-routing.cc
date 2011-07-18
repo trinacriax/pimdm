@@ -1532,8 +1532,8 @@ MulticastRoutingProtocol::SendPacketPIMRouters(Ptr<Packet> packet, const PIMHead
         m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
       {
 	  NS_LOG_DEBUG ("Socket ("<<i->first<<") "<< i->second.GetLocal() << " to Destination: " << ALL_PIM_ROUTERS4 << ":"<<PIM_PORT_NUMBER
-			  << ", Local "<<GetLocalAddress(interface));
-	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
+			  << ", Local "<<GetLocalAddress(interface)<< ", If "<<  m_ipv4->GetInterfaceForDevice (i->first->GetBoundNetDevice()));
+	  if(m_ipv4->GetInterfaceForDevice (i->first->GetBoundNetDevice()) == interface){
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
 		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
 		  break;
