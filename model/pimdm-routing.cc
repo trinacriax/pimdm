@@ -229,12 +229,12 @@ bool
 MulticastRoutingProtocol::Lookup (Ipv4Address const &dest, RoutingMulticastTable &outEntry) const {
 	NS_LOG_FUNCTION(this << dest);
 	// Get the iterator at "dest" position
-  std::map<Ipv4Address, RoutingMulticastTable>::const_iterator it = m_mrib.find (dest);
-  // If there is no route to "dest", return NULL
-  if (it == m_mrib.end ())
-	  return false;
-  outEntry = it->second;
-  return true;
+	std::map<Ipv4Address, RoutingMulticastTable>::const_iterator it = m_mrib.find (dest);
+	// If there is no route to "dest", return NULL
+	if (it == m_mrib.end ())
+		return false;
+	outEntry = it->second;
+	return true;
 }
 
 ///
