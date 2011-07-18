@@ -253,7 +253,7 @@ MulticastRoutingProtocol::AddEntry (Ipv4Address const &source, Ipv4Address const
 
   entry.groupAddr = group;
   entry.sourceAddr = source;
-//  entry.nextAddr = next;
+  entry.nextAddr = next;
   entry.interface = interface;
 }
 

@@ -118,9 +118,10 @@ namespace pimdm {
 struct RoutingMulticastTable {
 	Ipv4Address sourceAddr; ///< source destination
 	Ipv4Address groupAddr; ///< source destination
+	Ipv4Address nextAddr; ///< source destination
 	uint32_t interface; ///< interface to source
 	RoutingMulticastTable() : // default values
-		sourceAddr(), groupAddr(), interface(0) {
+		sourceAddr(), groupAddr(), nextAddr(), interface(0) {
 	}
 	;
 };
