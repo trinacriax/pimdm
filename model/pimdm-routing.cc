@@ -762,7 +762,7 @@ MulticastRoutingProtocol::ForgeHelloMessage (uint32_t interface, PIMHeader &msg)
 	ForgeHelloMessageLANPD(interface,msg);
 	ForgeHelloMessageGenID(interface,msg);
 	if(m_IfaceNeighbors.find(interface)->second.stateRefreshCapable){
-//		ForgeHelloMessageStateRefresh(interface,msg);//todo uncomment
+		ForgeHelloMessageStateRefresh(interface,msg);//todo uncomment
 	}
 }
 
