@@ -72,15 +72,15 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("PacketSink", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("OlsrRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("CsmaNetDevice", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("CsmaNetDevice", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("CsmaChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("CsmaHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Node", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Node", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Ipv4EndPointDemux", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("UdpL4Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Packet", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 
@@ -115,7 +115,7 @@ main (int argc, char *argv[])
 	csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
 	csma.SetDeviceAttribute ("EncapsulationMode", StringValue ("Llc"));
 	NetDeviceContainer d0d2 = csma.Install (c);
-	//	  NetDeviceContainer d1d2 = csma.Install (c.Get(1),c.Get(2));
+//	NetDeviceContainer d1d2 = csma.Install (c.Get(1),c.Get(2));
 
 	// Enable OLSR
 	NS_LOG_INFO ("Enabling OLSR Routing.");
@@ -155,24 +155,24 @@ main (int argc, char *argv[])
 
 	NS_LOG_INFO ("Configure multicasting.");
 
-//	Ipv4Address multicastSource ("10.0.1.1");
-//	Ipv4Address multicastGroupD(ALL_PIM_ROUTERS4);
-//	Ipv4Address multicastGroup1 ("225.1.2.4");
-//
-//	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroupD));
-//	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup1));
+	Ipv4Address multicastSource ("10.0.1.1");
+	Ipv4Address multicastGroup1 ("225.1.2.4");
 
-//	NS_LOG_INFO ("Create Source");
-//	InetSocketAddress dst = InetSocketAddress (multicastGroup1, PIM_PORT_NUMBER);
-//	OnOffHelper onoff = OnOffHelper ("ns3::UdpSocketFactory", dst);
-//	onoff.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
-//	onoff.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0.0)));
-//	onoff.SetAttribute ("DataRate", DataRateValue (DataRate (15000)));
-//	onoff.SetAttribute ("PacketSize", UintegerValue (1200));
-//
-//	ApplicationContainer apps = onoff.Install (c.Get (0));
-//	apps.Start (Seconds (4.0));
-//	apps.Stop (Seconds (10.0));
+//	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroupD));
+	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup1));
+
+	NS_LOG_INFO ("Create Source");
+	Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
+	InetSocketAddress dst = InetSocketAddress (multicastGroup1, PIM_PORT_NUMBER);
+	OnOffHelper onoff = OnOffHelper ("ns3::UdpSocketFactory", dst);
+	onoff.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
+	onoff.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0.0)));
+	onoff.SetAttribute ("DataRate", DataRateValue (DataRate (15000)));
+	onoff.SetAttribute ("PacketSize", UintegerValue (1200));
+
+	ApplicationContainer apps = onoff.Install (c.Get (0));
+	apps.Start (Seconds (4.0));
+	apps.Stop (Seconds (10.0));
 
 //	NS_LOG_INFO ("Create Sink.");
 //	Config::SetDefault("$ns3::PacketSink::Rx",MakeCallback(&pimdm::MulticastRoutingProtocol::));
