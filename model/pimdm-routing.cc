@@ -894,6 +894,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 
 	NS_LOG_FUNCTION(this);
 	uint32_t interface = GetReceivingInterface(sender);
+	interface = socket->GetBoundNetDevice()->GetIfIndex();
 	// Data Packet arrives on RPF_Interface(S) AND olist(S,G) == NULL AND S NOT directly connected
 	SourceGroupPair sgp(sender, receiver);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
