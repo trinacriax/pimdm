@@ -1062,12 +1062,12 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 			sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
 			sgState->upstream->SG_SAT.SetArguments(sgp);
 			sgState->upstream->SG_SAT.Schedule();
-			Ipv4Header ipv4h;
-			receivedPacket->RemoveHeader(ipv4h);
-			double sample = UniformVariable().GetValue();
-			if(sample < TTL_SAMPLE && ipv4h.GetTtl() > sgState->SG_DATA_TTL){//TODO: increase means +1 or equal to packet's TTL?
-				sgState->SG_DATA_TTL = ipv4h.GetTtl();
-			}
+//			Ipv4Header ipv4h; // TODO
+//			receivedPacket->RemoveHeader(ipv4h);
+//			double sample = UniformVariable().GetValue();
+//			if(sample < TTL_SAMPLE && ipv4h.GetTtl() > sgState->SG_DATA_TTL){//TODO: increase means +1 or equal to packet's TTL?
+//				sgState->SG_DATA_TTL = ipv4h.GetTtl();
+//			}
 			break;
 		}
 		default:{
