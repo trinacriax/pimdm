@@ -30,7 +30,7 @@
 /// Timer Name: Hello Timer (HT). Periodic interval for hello messages.
 #define Hello_Period 30 // TODO is 30s, I set 2 just for testing
 /// Timer Name: Hello Timer (HT). Random interval for initial Hello message on bootup or triggered Hello message to a rebooting neighbor.
-#define Triggered_Hello_Delay 2
+#define Triggered_Hello_Delay 5
 /// The Hold Time in the Hello Message should be set to a value that can
 ///   reasonably be expected to keep the Hello active until a new Hello
 ///   message is received.  On most links, this will be 3.5 times the value
@@ -116,14 +116,22 @@
 
 namespace ns3 {
 namespace pimdm {
-
-struct RoutingMulticastTable {
+struct MulticastEntry {
 	Ipv4Address sourceAddr; ///< source destination
-	Ipv4Address groupAddr; ///< source destination
 	Ipv4Address nextAddr; ///< source destination
 	uint32_t interface; ///< interface to source
+	MulticastEntry() : // default values
+		sourceAddr(), nextAddr(), interface(0) {
+	}
+	;
+};
+
+
+struct RoutingMulticastTable {
+	Ipv4Address groupAddr; ///< multicast group address
+	std::map <uint32_t,MulticastEntry> mgroup; ///< source destination
 	RoutingMulticastTable() : // default values
-		sourceAddr(), groupAddr(), nextAddr(), interface(0) {
+		groupAddr() {
 	}
 	;
 };
