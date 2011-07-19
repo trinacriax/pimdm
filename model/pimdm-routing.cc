@@ -1495,9 +1495,8 @@ MulticastRoutingProtocol::SendPacketBroadcast (Ptr<Packet> packet, const PIMHead
       Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
       Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), bcast, PIM_IP_PROTOCOL_NUM,packet->GetSize(),1,false);
       packet->AddHeader(ipv4Header);
-      NS_LOG_DEBUG ("Broadcast: " << bcast << ":"<<PIM_PORT_NUMBER);
+      NS_LOG_DEBUG ("...sending Broadcast: " << bcast << ":"<<PIM_PORT_NUMBER);
       i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
-      packet->RemoveHeader(ipv4Header);
     }
 }
 
@@ -1516,7 +1515,7 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, const PIMHeader 
   	  if(route->GetSource() == i->second.GetLocal ()){
   		  Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM,packet->GetSize(),1,false);
   		  packet->AddHeader(ipv4Header);
-  		  NS_LOG_DEBUG ("Node " << route->GetSource()<< " is sending packet "<<packet << " to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface);
+  		  NS_LOG_DEBUG ("...sending Node " << route->GetSource()<< " is sending packet "<<packet << " to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface);
   		  i->first->SendTo (packet, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
   		  break;//packet->RemoveHeader(ipv4Header);
   	  }
@@ -1552,6 +1551,7 @@ MulticastRoutingProtocol::SendPacketPIMRouters(Ptr<Packet> packet, const PIMHead
 	  NS_LOG_DEBUG ("Socket ("<<i->first<<") "<< i->second.GetLocal() << " to Destination: " << ALL_PIM_ROUTERS4 << ":"<<PIM_PORT_NUMBER
 			  << ", Local "<<GetLocalAddress(interface)<< ", If "<<  m_ipv4->GetInterfaceForDevice (i->first->GetBoundNetDevice()));
 	  if(m_ipv4->GetInterfaceForDevice (i->first->GetBoundNetDevice()) == interface && !i->second.GetLocal ().IsMulticast()){
+		  NS_LOG_DEBUG ("...sending");
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
 		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
 		  break;
@@ -1578,11 +1578,9 @@ MulticastRoutingProtocol::SendPacketBroadcastInterface (Ptr<Packet> packet, uint
     {
 	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-		  Ipv4Header ipv4Header = BuildHeader(GetLocalAddress(interface),bcast, PIM_IP_PROTOCOL_NUM,packet->GetSize(),1,false);
-		  packet->AddHeader(ipv4Header);
-		  NS_LOG_DEBUG ("Destination: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface);
+		  NS_LOG_DEBUG ("...sending Destination: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface);
 		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
-		  packet->RemoveHeader(ipv4Header);
+		  break;
 	  }
   }
 }
