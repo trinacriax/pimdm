@@ -702,7 +702,7 @@ private:
 	}
 
 	void GetPrinterList(std::set<uint32_t> resB){
-		std::cout<<"Elements: \n";
+		std::cout<<"Elements: ";
 		for(std::set<uint32_t>::iterator iter = resB.begin(); iter!= resB.end(); iter++){
 			std::cout<<*iter<<" ";
 		}
@@ -710,7 +710,7 @@ private:
 	}
 
 	void GetPrinterList(std::vector<uint32_t> resB){
-		std::cout<<"Elements: \n";
+		std::cout<<"Elements: ";
 		for(std::vector<uint32_t>::iterator iter = resB.begin(); iter!= resB.end(); iter++){
 			std::cout<<*iter<<", ";
 		}
@@ -735,7 +735,6 @@ private:
 		std::set_difference(pim_nbrz.begin(), pim_nbrz.end(), prunez.begin(), prunez.end(),
 				 std::inserter(resA, resA.end()));
 		GetPrinterList(resA);
-		GetPrinterList(pim_nbrz);
 		std::set<uint32_t> resB;
 		std::set<uint32_t> inc = pim_include(Ipv4Address::GetAny(), group); /// pim_include(*,G) = {all interfaces I such that: local_receiver_include(*,G,I)}
 		GetPrinterList(inc);
@@ -793,6 +792,7 @@ private:
 		std::set<uint32_t> _olist = immediate_olist(source, group);
 		GetPrinterList(_olist);
 		_olist.erase(RPF_interface(source));
+		GetPrinterList(_olist);
 		return _olist;
 	}
 
