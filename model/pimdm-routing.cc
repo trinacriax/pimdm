@@ -141,7 +141,7 @@ MulticastRoutingProtocol::AddMulticastGroup(Ipv4Address group){
 			Ipv4Address sender = m_ipv4->GetAddress (i, 0).GetLocal ();
 			if(sender != loopback){
 				RoutingMulticastTable entry1;
-				if(!Lookup(group,entry1)){
+				if(!Lookup(group,entry1) || entry1.interface != i){
 					AddEntry(sender,group,Ipv4Address::GetAny(),i);
 					NS_LOG_DEBUG ("Registering Group = "<< group<< " on interface "<< i <<" with sender address = "<<sender);
 					///Registering endpoint for that address... by creating a socket to listen only on this interface
