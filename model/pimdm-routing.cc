@@ -1120,6 +1120,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 		// Forward packet on all interfaces in oiflist
 		// TODO: should forward in case it is the AssertWinner?
 		for(std::set<uint32_t>::iterator out = oiflist.begin(); out!=oiflist.end(); out++){
+			Ipv4Header ipv4Header = BuildHeader(GetLocalAddress(*out),group, PIM_IP_PROTOCOL_NUM,receivedPacket->GetSize(),1,false);
+			receivedPacket->AddHeader(ipv4Header);
 			SendPacketBroadcastInterface(receivedPacket,*out);
 		}
 	}
@@ -1494,6 +1496,8 @@ MulticastRoutingProtocol::SendPacketBroadcast (Ptr<Packet> packet, const PIMHead
       m_socketAddresses.begin (); i != m_socketAddresses.end (); i++) {
       Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
       Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), bcast, PIM_IP_PROTOCOL_NUM,packet->GetSize(),1,false);
+//      Ptr<Packet> copy = packet->Copy();
+//      copy->AddHeader(ipv4Header);
       packet->AddHeader(ipv4Header);
       NS_LOG_DEBUG ("...sending Broadcast: " << bcast << ":"<<PIM_PORT_NUMBER);
       i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
