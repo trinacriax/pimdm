@@ -944,14 +944,14 @@ private:
 		if (RPF_interface(source) == interface) {
 			return false;
 		} else {
-			return (AssertWinner(source, group, interface)!=NULL && AssertWinner(source, group, interface)  != GetLocalAddress(interface)
+			return (AssertWinner(source, group, interface)!=Ipv4Address::GetAny() && AssertWinner(source, group, interface)  != GetLocalAddress(interface)
 					&& (AssertWinnerMetric(source, group, interface) > spt_assert_metric(source, interface)));
 		}
 	}
 
 	bool boundary(uint32_t interface, Ipv4Address group){
 		//TODO administratively scoped boundary
-		return true;
+		return false;
 	}
 
 	/*
