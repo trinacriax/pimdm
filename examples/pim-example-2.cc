@@ -68,17 +68,17 @@ main (int argc, char *argv[])
 	//	LogComponentEnable ("MacLow", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	//	LogComponentEnable ("YansWifiChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("PacketSink", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("OlsrRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("OlsrRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("CsmaNetDevice", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("CsmaNetDevice", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("CsmaChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("CsmaHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("Node", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("Node", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Ipv4EndPointDemux", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("UdpL4Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
@@ -104,9 +104,9 @@ main (int argc, char *argv[])
 	// topologies, we could configure a node factory.
 	NS_LOG_INFO ("Create nodes.");
 	NodeContainer c;
-	c.Create (2);
+	c.Create (3);
 	NodeContainer n0n2 = NodeContainer (c.Get (0), c.Get (1));
-	//	  NodeContainer n1n2 = NodeContainer (c.Get (1), c.Get (2));
+	NodeContainer n1n2 = NodeContainer (c.Get (1), c.Get (2));
 
 	// connect all our nodes to a shared channel.
 	NS_LOG_INFO ("Build Topology.");
@@ -114,8 +114,8 @@ main (int argc, char *argv[])
 	csma.SetChannelAttribute ("DataRate", DataRateValue (DataRate (5000000)));
 	csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
 	csma.SetDeviceAttribute ("EncapsulationMode", StringValue ("Llc"));
-	NetDeviceContainer d0d2 = csma.Install (c);
-//	NetDeviceContainer d1d2 = csma.Install (c.Get(1),c.Get(2));
+	NetDeviceContainer d0d2 = csma.Install (n0n2);
+	NetDeviceContainer d1d2 = csma.Install (n1n2);
 
 	// Enable OLSR
 	NS_LOG_INFO ("Enabling OLSR Routing.");
@@ -133,32 +133,20 @@ main (int argc, char *argv[])
 	internet.SetRoutingHelper (list);
 	internet.Install (c);
 
-	//	  // We create the channels first without any IP addressing information
-	//	  NS_LOG_INFO ("Create channels.");
-	//	  PointToPointHelper p2p;
-	//	  p2p.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
-	//	  p2p.SetChannelAttribute ("Delay", StringValue ("2ms"));
-	//	  NetDeviceContainer d0d2 = p2p.Install (n0n2);
-	//
-	//	  NetDeviceContainer d1d2 = p2p.Install (n1n2);
-	//	  p2p.SetDeviceAttribute ("DataRate", StringValue ("1500kbps"));
-	//	  p2p.SetChannelAttribute ("Delay", StringValue ("10ms"));
-
 	// Later, we add IP addresses.
 	NS_LOG_INFO ("Assign IP Addresses.");
 	Ipv4AddressHelper ipv4;
 	ipv4.SetBase ("10.0.1.0", "255.255.255.0");
 	Ipv4InterfaceContainer i0i2 = ipv4.Assign (d0d2);
-	//
-	//	  ipv4.SetBase ("10.1.1.0", "255.255.255.0");
-	//	  Ipv4InterfaceContainer i1i2 = ipv4.Assign (d1d2);
+
+	ipv4.SetBase ("10.1.1.0", "255.255.255.0");
+	Ipv4InterfaceContainer i1i2 = ipv4.Assign (d1d2);
 
 	NS_LOG_INFO ("Configure multicasting.");
 
 	Ipv4Address multicastSource ("10.0.1.1");
 	Ipv4Address multicastGroup1 ("225.1.2.4");
 
-//	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroupD));
 	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup1));
 
 	NS_LOG_INFO ("Create Source");
