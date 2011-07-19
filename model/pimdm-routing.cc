@@ -836,7 +836,7 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 	receivedPacket->RemoveHeader(ipv4header);
 	Ipv4Address group = ipv4header.GetDestination();
 	if(route)
-		NS_LOG_DEBUG("RecvPimDm Sender "<< senderIfaceAddr<<", Group " << group << ", Destination "<< receiverIfaceAddr<< " ("<< route->GetSource()<< " <--> "
+		NS_LOG_DEBUG("Sender "<< senderIfaceAddr<<", Group " << group << ", Destination "<< receiverIfaceAddr<< " ("<< route->GetSource()<< " <--> "
 			<<route->GetGateway() <<" <--> "<<senderIfaceAddr <<" vs " <<interface<<")");
 	if(ipv4header.GetDestination().IsMulticast() && ipv4header.GetDestination() != Ipv4Address(ALL_PIM_ROUTERS4)) {
 		NS_LOG_ERROR("Received "<< ipv4header.GetDestination() <<" it should be captured by another callback.");
@@ -907,7 +907,6 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 		sgState = InsertSourceGroupState(interface,sgp);
 		RoutingMulticastTable entry;
 		Lookup(sender,entry);
-		sgState = FindSourceGroupState(interface,sgp);
 		if(!Lookup(sender,entry)){
 			entry.interface = interface;
 			entry.sourceAddr = sender;
