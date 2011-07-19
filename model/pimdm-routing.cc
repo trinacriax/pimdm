@@ -183,9 +183,9 @@ MulticastRoutingProtocol::Clear (){
 /// \param dest	address of the destination node.
 ///
 void
-MulticastRoutingProtocol::RemoveEntry (Ipv4Address const &dest){
+MulticastRoutingProtocol::RemoveEntry (Ipv4Address const &group){
 	NS_LOG_FUNCTION(this);
-	m_mrib.erase (dest);
+	m_mrib.erase (group);
 }
 
 ///
@@ -224,10 +224,10 @@ MulticastRoutingProtocol::FindSendEntry (RoutingMulticastTable const &entry,
 /// \return	true if found, false if not found
 ///
 bool
-MulticastRoutingProtocol::Lookup (Ipv4Address const &dest, RoutingMulticastTable &outEntry) const {
-	NS_LOG_FUNCTION(this << dest);
+MulticastRoutingProtocol::Lookup (Ipv4Address const &group, RoutingMulticastTable &outEntry) const {
+	NS_LOG_FUNCTION(this << group);
 	// Get the iterator at "dest" position
-	std::map<Ipv4Address, RoutingMulticastTable>::const_iterator it = m_mrib.find (dest);
+	std::map<Ipv4Address, RoutingMulticastTable>::const_iterator it = m_mrib.find (group);
 	// If there is no route to "dest", return NULL
 	if (it == m_mrib.end ())
 		return false;
@@ -276,9 +276,10 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 
 	bool found = false;
 	if(header.GetDestination().IsMulticast() && Lookup (header.GetDestination(), entry1))	{//entry in the routing table found
-	uint32_t interface =  m_ipv4->GetInterfaceForDevice (oif);
-	uint32_t interfaceIdx = (entry1.mgroup.find(interface) != entry1.mgroup.end() ?
-	entry1.mgroup[m_ipv4->GetInterfaceForDevice (oif)].interface:-1);//todo check
+		uint32_t interface =  m_ipv4->GetInterfaceForDevice (oif);
+		uint32_t interfaceIdx = (entry1.mgroup.find(interface) != entry1.mgroup.end() ?
+				entry1.mgroup[m_ipv4->GetInterfaceForDevice (oif)].interface:-1);//todo check
+	  if (oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx))
 		{
 		  // We do not attempt to perform a constrained routing search
 		  // if the caller specifies the oif; we just enforce that
@@ -410,7 +411,7 @@ bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
 	                iter != m_mrib.end (); iter++)
 	             {
 //	               NS_LOG_DEBUG ("dest=" << iter->first
-//	            		   << " --> next=" << iter->second.nextAddr
+////	            		   << " --> next=" << iter->second.nextAddr
 //	                       << " via interface " << iter->second.interface);
 	             }
 
