@@ -271,17 +271,27 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 	  NS_LOG_LOGIC ("No PIMDM interfaces");
 	  return rtentry;
 	}
+	bool found = false;
 	sockerr = Socket::ERROR_NOTERROR;
 	RoutingMulticastTable entry1;
 	NS_LOG_DEBUG ("PIM-DM node " << m_mainAddress << ": RouteOutput for dest=" << header.GetDestination ());
-
-	bool found = false;
-	if(header.GetDestination().IsMulticast() && Lookup (header.GetDestination(), entry1))	{//entry in the routing table found
-		uint32_t interface =  m_ipv4->GetInterfaceForDevice (oif);
-		uint32_t interfaceIdx = (entry1.mgroup.find(interface) != entry1.mgroup.end() ?
-				entry1.mgroup[m_ipv4->GetInterfaceForDevice (oif)].interface:-1);//todo check
-	  if (oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx))
-		{
+	if(header.GetDestination().IsMulticast()) {//entry in the routing table found
+		uint32_t interfaceIdx = -1;
+		if(oif!=NULL)//we are sending on a specific device, so we "want" to use that interface
+			interfaceIdx = m_ipv4->GetInterfaceForDevice (oif);//
+		else if(IsMyOwnAddress(header.GetSource()))//since we deal with multicast packet, and the interface is null...this might be the source
+			interfaceIdx = m_ipv4->GetInterfaceForAddress(header.GetSource());
+		else if(Lookup(header.GetDestination(),entry1))//we don't know anything :( looking for the first entry for this group;
+			interfaceIdx = entry1.mgroup.begin()->first;
+		else if(m_multicastGroup.find(header.GetDestination()) != m_multicastGroup.end())//Interested in the multicast, and queried with empty source...I am the source!
+			interfaceIdx = m_ipv4->GetInterfaceForAddress(m_mainAddress);
+//			interfaceIdx = entry1.mgroup.begin()!=entry1.mgroup.end() ? entry1.mgroup.begin()->first:-1;
+	if (oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx)){
+//		if(header.GetDestination().IsMulticast() && Lookup (header.GetDestination(), entry1)) {//entry in the routing table found
+//			uint32_t interface =  m_ipv4->GetInterfaceForDevice (oif);
+//		uint32_t interfaceIdx = (entry1.mgroup.find(interface) != entry1.mgroup.end() ?
+//				entry1.mgroup[m_ipv4->GetInterfaceForDevice (oif)].interface:-1);//todo check
+//	  if (oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx)){
 		  // We do not attempt to perform a constrained routing search
 		  // if the caller specifies the oif; we just enforce that
 		  // that the found route matches the requested outbound interface
@@ -306,11 +316,14 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 	  if (numOifAddresses == 1) {
 		  ifAddr = m_ipv4->GetAddress (interfaceIdx, 0);
 		} else {
-		  NS_FATAL_ERROR ("XXX Not implemented yet:  IP aliasing and PIM-DM");
+		  NS_FATAL_ERROR ("XXX Not implemented yet:  IP aliasing");
 		}
 	  rtentry->SetSource (ifAddr.GetLocal ());
+      Ipv4Address bcast = m_ipv4->GetAddress (interfaceIdx, 0).GetLocal().GetSubnetDirectedBroadcast ( m_ipv4->GetAddress (interfaceIdx, 0).GetMask());
 	  rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
-	  rtentry->SetGateway(entry1.mgroup[interfaceIdx].nextAddr);
+//	  rtentry->SetGateway(entry1.mgroup[interfaceIdx].nextAddr);
+	  rtentry->SetGateway(bcast);
+	  //m_ipv4->GetAddress (interfaceIdx, 0).GetLocal().GetBroadcast());//*** Problem with GW
 	  sockerr = Socket::ERROR_NOTERROR;
 	  NS_LOG_DEBUG ("PIM-DM Routing: Src = " << rtentry->GetSource() << ", Dest = " << rtentry->GetDestination()<< ", GW = "<< rtentry->GetGateway () << ", interface = " << interfaceIdx<<" device = "<<rtentry->GetOutputDevice()->GetMulticast(rtentry->GetDestination()));
 	  found = true;
