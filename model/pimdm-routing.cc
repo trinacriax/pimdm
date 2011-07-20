@@ -931,9 +931,9 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 		sgState = InsertSourceGroupState(interface,sgp);
 		RoutingMulticastTable entry;
 		if(!Lookup(group,entry)){
-			entry.mgroup[interface].interface = interface;
-			entry.mgroup[interface].sourceAddr = sender;
-			entry.mgroup[interface].nextAddr = GetRoute(sender)->GetGateway();
+			AddEntry(sender,group,GetRoute(sender)->GetGateway(),interface);
+			Lookup(group,entry);
+			NS_LOG_DEBUG("Add Entry "<<entry.mgroup[interface].sourceAddr<<", "<<entry.groupAddr<<", "<<entry.mgroup[interface].nextAddr<<", "<<entry.mgroup[interface].interface);
 			if(entry.mgroup[interface].nextAddr == entry.mgroup[interface].sourceAddr){
 				//Nodes is directly connected to source
 			}
