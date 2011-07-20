@@ -254,6 +254,7 @@ MulticastRoutingProtocol::AddEntry (Ipv4Address const &source, Ipv4Address const
 
   // Creates a new rt entry with specified values
   RoutingMulticastTable &entry = m_mrib[group];
+  entry.groupAddr = group;
   entry.mgroup[interface].interface = interface;
   entry.mgroup[interface].sourceAddr = source;
   entry.mgroup[interface].nextAddr = next;
