@@ -46,6 +46,8 @@
 #include "ns3/ipv4-header.h"
 #include "ns3/log.h"
 #include "ns3/ipv4-routing-table-entry.h"
+//#include "ns3/udp-socket.h"
+#include "ns3/udp-l4-protocol.h"
 
 namespace ns3{
 namespace pimdm{
@@ -1129,12 +1131,13 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 		Ptr<Packet> packetAssert = Create<Packet> ();
 		SendPacketBroadcastInterface(packetAssert,assert,interface);
 	}
+	NS_LOG_DEBUG("Data forwarding towards "<< oiflist.size()<<" interfaces");
 	GetPrinterList(oiflist);
 	if(oiflist.size()){
 		// Forward packet on all interfaces in oiflist
 		// TODO: should forward in case it is the AssertWinner?
 		for(std::set<uint32_t>::iterator out = oiflist.begin(); out!=oiflist.end(); out++){
-			Ipv4Header ipv4Header = BuildHeader(GetLocalAddress(*out),group, PIM_IP_PROTOCOL_NUM,receivedPacket->GetSize(),1,false);
+			Ipv4Header ipv4Header = BuildHeader(sender,group, UdpL4Protocol::PROT_NUMBER,receivedPacket->GetSize(),1,false);
 			receivedPacket->AddHeader(ipv4Header);
 			SendPacketBroadcastInterface(receivedPacket,*out);
 		}
