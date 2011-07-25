@@ -1194,9 +1194,9 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 			/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
 			/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
 			oiflist = olist(sender,group);
-			GetPrinterList(oiflist);
+			GetPrinterList("olist",oiflist);
 			oiflist.erase(interface);
-			GetPrinterList(oiflist);
+			GetPrinterList("olist - RPF_interface",oiflist);
 		}
 	}
 	else{
@@ -1206,8 +1206,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 		Ptr<Packet> packetAssert = Create<Packet> ();
 		SendPacketBroadcastInterface(packetAssert,assert,interface);
 	}
-	NS_LOG_DEBUG("Data forwarding towards "<< oiflist.size()<<" interfaces");
-	GetPrinterList(oiflist);
+	NS_LOG_DEBUG("Data forwarding towards > "<< oiflist.size()<<" < interfaces");
+	GetPrinterList("oiflist",oiflist);
 	if(oiflist.size()){
 		// Forward packet on all interfaces in oiflist
 		// TODO: should forward in case it is the AssertWinner?
