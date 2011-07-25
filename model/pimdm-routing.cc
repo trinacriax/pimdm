@@ -1213,13 +1213,12 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 		// TODO: should forward in case it is the AssertWinner?
 		for(std::set<uint32_t>::iterator out = oiflist.begin(); out!=oiflist.end(); out++){
 			Ipv4Header ipv4Header = BuildHeader(sender,group, UdpL4Protocol::PROT_NUMBER,receivedPacket->GetSize(),1,false);
-			receivedPacket->AddHeader(ipv4Header);
-			SendPacketBroadcastInterface(receivedPacket,*out);
+			SendPacketHBroadcastInterface(receivedPacket,ipv4Header,*out);
 		}
 	}
 	else {
 		//  If the list is empty, then the router will conduct a prune process for the (S,G) pair specified in the packet.
-		SendPruneBroadcast(interface,sgp);
+		SendPruneBroadcast(interface,sgp);//TODO is broadcast on the interface??
 	}
 }
 
@@ -1677,6 +1676,41 @@ MulticastRoutingProtocol::SendPacketBroadcastInterface (Ptr<Packet> packet, uint
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
 		  NS_LOG_DEBUG ("...sending Destination: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<< ", Socket "<< i->first);
 		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
+		  break;
+	  }
+  }
+}
+
+
+void
+MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv4Header &ipv4Header, uint32_t interface){
+  NS_LOG_DEBUG("SRC: "<< GetLocalAddress(interface)<< ", PPP: "<< PIM_IP_PROTOCOL_NUM
+  		  <<", RT: " << GetRoute(GetLocalAddress(interface)));
+  // Send it
+  for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
+      m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
+    {
+	  NS_LOG_DEBUG(i->second.GetLocal()<<","<<i->second.GetBroadcast()<<","<<i->second.GetMask()<<","<<i->second.IsSecondary());
+	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
+	      SocketAddressTag tag;
+//	      packet->RemoveAllPacketTags();
+	      packet->RemovePacketTag(tag);
+		  UdpHeader udpHeader;
+		  if(Node::ChecksumEnabled ())
+		    {
+		      udpHeader.EnableChecksums ();
+		      udpHeader.InitializeChecksum(ipv4Header.GetSource(), ipv4Header.GetDestination(), UdpL4Protocol::PROT_NUMBER);
+		    }
+		  udpHeader.SetSourcePort(PIM_PORT_NUMBER);
+		  udpHeader.SetDestinationPort(PIM_PORT_NUMBER);
+
+		  packet->AddHeader (udpHeader);
+		  packet->AddHeader(udpHeader);
+		  packet->AddHeader(ipv4Header);
+
+		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
+		  NS_LOG_DEBUG ("...sending Destination: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
+		  i->first->SendTo (packet, 0, InetSocketAddress (ipv4Header.GetDestination(), PIM_PORT_NUMBER));
 		  break;
 	  }
   }
