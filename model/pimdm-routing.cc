@@ -1464,15 +1464,6 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 }
 
 void
-MulticastRoutingProtocol::SendGraftAck (uint32_t interface, SourceGroupPair pair)
-{
-	NS_LOG_FUNCTION(this);
-	Ptr<Packet> packet = Create<Packet> ();
-	PIMHeader msg;
-	ForgeHeaderMessage(PIM_GRAFT_ACK, msg);//TODO
-}
-
-void
 MulticastRoutingProtocol::SendGraftAckUnicast(uint32_t interface, SourceGroupPair &pair, const Ipv4Address destination)
 {
 	NS_LOG_FUNCTION(this);
