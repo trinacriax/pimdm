@@ -1579,15 +1579,13 @@ MulticastRoutingProtocol::SendPacketBroadcast (Ptr<Packet> packet, const PIMHead
   NS_LOG_FUNCTION(this);
   packet->AddHeader(message);
     // Trace it
-//  m_txPacketTrace (packet, message);
+  //  m_txPacketTrace (packet, message);
 
   // Send it
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
       m_socketAddresses.begin (); i != m_socketAddresses.end (); i++) {
       Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
       Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), bcast, PIM_IP_PROTOCOL_NUM,packet->GetSize(),1,false);
-//      Ptr<Packet> copy = packet->Copy();
-//      copy->AddHeader(ipv4Header);
       packet->AddHeader(ipv4Header);
       NS_LOG_DEBUG ("...sending Broadcast: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface = "<< m_ipv4->GetInterfaceForDevice(i->first->GetBoundNetDevice()) <<", Socket = "<<i->first);
       i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
@@ -1623,9 +1621,8 @@ MulticastRoutingProtocol::SendPacketPIMRouters(Ptr<Packet> packet, const PIMHead
   if(m_stopTx) return;
   packet->AddHeader(message);
   // Trace it
-//  m_txPacketTrace (message);
+  //  m_txPacketTrace (message);
   // Send
-
   for(int i = 0; i <m_ipv4->GetNInterfaces();i++){
 	 if(IsLoopInterface(i)) continue;
 	 SendPacketPIMRouters(packet,message,i);
@@ -1640,7 +1637,7 @@ MulticastRoutingProtocol::SendPacketPIMRouters(Ptr<Packet> packet, const PIMHead
   Ipv4Header ipv4header = BuildHeader(GetLocalAddress(interface),Ipv4Address(ALL_PIM_ROUTERS4), PIM_IP_PROTOCOL_NUM,packet->GetSize(),1,false);
   packet->AddHeader(ipv4header);
   // Trace it
-//  m_txPacketTrace (message);
+  //  m_txPacketTrace (message);
   // Send
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
         m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
@@ -1661,7 +1658,7 @@ MulticastRoutingProtocol::SendPacketBroadcastInterface (Ptr<Packet> packet, cons
 {
   packet->AddHeader(message);
   // Trace it
-//  m_txPacketTrace (packet, message);
+  //  m_txPacketTrace (packet, message);
   // Send it
   SendPacketBroadcastInterface(packet,interface);
 }
@@ -1698,7 +1695,6 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
 	  NS_LOG_DEBUG(i->second.GetLocal()<<","<<i->second.GetBroadcast()<<","<<i->second.GetMask()<<","<<i->second.IsSecondary());
 	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
 	      SocketAddressTag tag;
-//	      packet->RemoveAllPacketTags();
 	      packet->RemovePacketTag(tag);
 		  UdpHeader udpHeader;
 		  if(Node::ChecksumEnabled ())
