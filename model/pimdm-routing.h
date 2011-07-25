@@ -177,9 +177,12 @@ private:
 	 * uses the MRIB to make decisions regarding RPF interfaces.
 	 */
 	std::map<Ipv4Address, RoutingMulticastTable> m_mrib; ///< Multicast Routing Information Base (MRIB)
+
+
+	/// multicast groups for which the node is a source
+	std::set<Ipv4Address> m_multicastSource;
 	/// multicast groups on which the node is interested in
 	std::set<Ipv4Address> m_multicastGroup;
-
 
 	/// IP protocol
 	Ptr<Ipv4> m_ipv4;
@@ -319,8 +322,17 @@ private:
 
 	void AddMulticastRoute (Ipv4Address source, Ipv4Address group, uint32_t inputInterface, std::vector<uint32_t> outputInterfaces);
 
-	void AddMulticastGroup(Ipv4Address group);
+	void AddMulticastSource(Ipv4Address group);
+	bool GetMulticastSource(Ipv4Address group){
+		return (group.IsMulticast() && m_multicastSource.find(group)!=m_multicastSource.end());
+	}
+	void DelMulticastSource(Ipv4Address group){
+		if(group.IsMulticast() && GetMulticastGroup(group)){
+			m_multicastSource.erase(group);
+		}
+	}
 
+	void AddMulticastGroup(Ipv4Address group);
 	bool GetMulticastGroup(Ipv4Address group){
 		return (group.IsMulticast() && m_multicastGroup.find(group)!=m_multicastGroup.end());
 	}

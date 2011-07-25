@@ -47,6 +47,7 @@
 #include "ns3/log.h"
 #include "ns3/ipv4-routing-table-entry.h"
 //#include "ns3/udp-socket.h"
+#include "ns3/udp-header.h"
 #include "ns3/udp-l4-protocol.h"
 
 namespace ns3{
@@ -85,6 +86,10 @@ MulticastRoutingProtocol::GetTypeId (void)
 			 	 	UintegerValue (Hold_Time_Default),
 			        MakeUintegerAccessor (&MulticastRoutingProtocol::SetHelloHoldTime),
 			        MakeUintegerChecker<uint16_t> ())
+	.AddAttribute ("MulticastSource", "Multicast source for a group ",
+					Ipv4AddressValue("0.0.0.0"),
+					MakeIpv4AddressAccessor(&MulticastRoutingProtocol::AddMulticastSource),
+					MakeIpv4AddressChecker())
 	.AddAttribute ("MulticastGroup", "Multicast group of interest",
 					Ipv4AddressValue("0.0.0.0"),
 					MakeIpv4AddressAccessor(&MulticastRoutingProtocol::AddMulticastGroup),
@@ -130,6 +135,23 @@ MulticastRoutingProtocol::AddMulticastRoute (Ipv4Address source, Ipv4Address gro
   Ipv4MulticastRoutingTableEntry *route = new Ipv4MulticastRoutingTableEntry ();
   *route = Ipv4MulticastRoutingTableEntry::CreateMulticastRoute (source, group, inputInterface, outputInterfaces);
    m_multicastRoutes.push_back (route);
+void
+MulticastRoutingProtocol::AddMulticastSource(Ipv4Address group){
+	if(m_multicastSource.find(group)==m_multicastSource.end()){
+		m_multicastSource.insert(group);
+//		Ipv4Address loopback ("127.0.0.1");
+//		for(int i = 0; i < m_ipv4->GetNInterfaces (); i++){
+//			Ipv4Address sender = m_ipv4->GetAddress (i, 0).GetLocal ();
+//			if(sender == loopback) continue;
+//				SourceGroupPair sgp (sender,group);
+//				SourceGroupState *sgState = FindSourceGroupState(i,sgp);
+//			if(!sgState)
+//				InsertSourceGroupState(i,sgp);
+//			NeighborhoodStatus *nstatus = FindNeighborhoodStatus(i);
+//			if(!nstatus)
+//				InsertNeighborhoodStatus(i);
+//		}
+	}
 }
 
 void
@@ -138,19 +160,34 @@ MulticastRoutingProtocol::AddMulticastGroup(Ipv4Address group){
 		NS_LOG_DEBUG("Adding subscription for multicast group \""<< group<<"\"");
 		m_multicastGroup.insert(group);
 		Ipv4Address loopback ("127.0.0.1");
-		bool ok = false;
+		bool ok = false;//since we can bind just one socket per (GROUP-PORT), the loop is executed just once.
 		for(int i = 0; i < m_ipv4->GetNInterfaces (); i++){
 			NS_LOG_DEBUG("D("<<i<<") = " << m_ipv4->GetNetDevice (i)<<", Addr = "<<  m_ipv4->GetAddress (i, 0).GetLocal ());
 			Ipv4Address sender = m_ipv4->GetAddress (i, 0).GetLocal ();
 			if(sender != loopback){
 				RoutingMulticastTable entry1;
+				// Check if the node has already registered that mgroup
 				if(!Lookup(group,entry1) || entry1.mgroup.find(i) == entry1.mgroup.end()){
+					// if the node is a source for this group, put itself as Source in the entry
+					sender = (GetMulticastSource(group)?sender:Ipv4Address::GetAny());
 					AddEntry(sender,group,Ipv4Address::GetAny(),i);
 					if(ok)continue;
 					ok = true;
-					NS_LOG_DEBUG ("Registering Group = "<< group<< " on interface "<< i <<" with sender address = "<<sender);
+					if(sender!=Ipv4Address::GetAny()){
+						//The source node is particular, since it has no information about SourceGroupState and NeighborhoodStatus
+						// Here we just initialize such entries for future use.
+						for(int i = 0; i < m_ipv4->GetNInterfaces (); i++){
+							Ipv4Address senderBis = m_ipv4->GetAddress (i, 0).GetLocal ();
+							if(senderBis == loopback) continue;
+							InsertSourceGroupList(i);
+							SourceGroupPair sgp (senderBis,group);
+							if(!FindSourceGroupState(i,sgp)) InsertSourceGroupState(i,sgp);
+							if(!FindNeighborhoodStatus(i)) InsertNeighborhoodStatus(i);
+						}
+					}
 					///Registering endpoint for that address... by creating a socket to listen only on this interface
 					Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), UdpSocketFactory::GetTypeId());
+					NS_LOG_DEBUG("Registering Socket = "<<socket<< " Device = "<<m_ipv4->GetNetDevice (i)<<" Destination = "<<  group << ", LocalAddr = "<<group<<", I = "<<i);
 					socket->SetAllowBroadcast (true);
 					InetSocketAddress inetAddr (group, PIM_PORT_NUMBER);
 					socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvData, this));
