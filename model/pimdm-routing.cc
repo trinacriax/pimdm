@@ -813,6 +813,36 @@ MulticastRoutingProtocol::SendHelloReply (uint32_t interface, Ipv4Address destin
 }
 
 void
+MulticastRoutingProtocol::ForgeGraftAckMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp, Ipv4Address upstreamNeighbor)
+{
+	NS_LOG_FUNCTION(this);
+	ForgeHeaderMessage(PIM_GRAFT, msg);
+	PIMHeader::JoinPruneMessage &jpMessage = msg.GetJoinPruneMessage();
+	jpMessage.m_joinPruneMessage.m_upstreamNeighborAddr = ForgeEncodedUnicast(upstreamNeighbor);
+	jpMessage.m_joinPruneMessage.m_reserved = 0;
+	jpMessage.m_joinPruneMessage.m_numGroups = 0;
+	jpMessage.m_joinPruneMessage.m_holdTime = Seconds(Hold_Time_Default);
+}
+
+void
+MulticastRoutingProtocol::SendGraftAckUnicast(SourceGroupPair &sgp, const Ipv4Address destination)
+{
+	NS_LOG_FUNCTION(this);
+	Ptr<Packet> packet = Create<Packet> ();
+	PIMHeader msg;
+	// Create the graft packet
+	ForgeGraftMessage(PIM_GRAFT_ACK, msg, sgp, destination);
+	PIMHeader::MulticastGroupEntry mge;
+	CreateMulticastGroupEntry(mge,ForgeEncodedGroup(sgp.groupMulticastAddr));
+	AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(sgp.sourceIfaceAddr));
+	AddMulticastGroupEntry(msg,mge);
+	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<","<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
+	// Send the packet toward the RPF(S)
+	uint32_t interface = GetReceivingInterface(destination);
+	SendPacketUnicast(packet,msg,sgp.sourceIfaceAddr);
+}
+
+void
 MulticastRoutingProtocol::ForgeGraftMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp, Ipv4Address upstreamNeighbor)
 {
 	NS_LOG_FUNCTION(this);
@@ -827,7 +857,7 @@ MulticastRoutingProtocol::ForgeGraftMessage (uint32_t interface, PIMHeader &msg,
 void
 MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination,SourceGroupPair sgp)
 {
-	NS_LOG_FUNCTION(this);//TODO To check
+	NS_LOG_FUNCTION(this);
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
 	// Create the graft packet
@@ -1393,7 +1423,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 		//	address on I.  The Prune(S,G) Downstream state machine on interface I stays in the NoInfo (NI)
 		//	state.  A GraftAck(S,G) MUST be unicast to the originator of the Graft(S,G) message.
 			if(graft.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
-				SendGraftAckUnicast(interface,sgp,sender);
+				SendGraftAckUnicast(sgp,sender);
 			}
 			break;
 		}
@@ -1404,7 +1434,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 		//	message to the Graft originator.  The PrunePending Timer (PPT(S,G,I)) MUST be cancelled.
 			if(graft.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
 				sgState->PruneState = Prune_NoInfo;
-				SendGraftAckUnicast(interface,sgp,sender);
+				SendGraftAckUnicast(sgp,sender);
 				sgState->SG_PPT.Cancel();
 			}
 			break;
@@ -1417,7 +1447,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 		case Prune_Pruned:{
 			if(graft.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
 				sgState->PruneState = Prune_NoInfo;
-				SendGraftAckUnicast(interface,sgp,sender);
+				SendGraftAckUnicast(sgp,sender);
 				sgState->SG_PPT.Cancel();
 			}
 			break;
@@ -1449,7 +1479,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 				ForgeAssertMessage(interface,assertR,sgp);
 				Ptr<Packet> packet = Create<Packet> ();
 				SendPacketBroadcastInterface(packet,assertR,interface);
-				SendGraftAckUnicast(interface, sgp, sender);
+				SendGraftAckUnicast(sgp, sender);
 			}
 			//An Assert loser that receives a Prune(S,G), Join(S,G), or
 			//  Graft(S,G) directed to it initiates a new Assert negotiation so
@@ -1461,15 +1491,6 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 			break;
 		}
 	}
-}
-
-void
-MulticastRoutingProtocol::SendGraftAckUnicast(uint32_t interface, SourceGroupPair &pair, const Ipv4Address destination)
-{
-	NS_LOG_FUNCTION(this);
-	Ptr<Packet> packet = Create<Packet> ();
-	PIMHeader msg;
-	ForgeHeaderMessage(PIM_GRAFT_ACK, msg);//TODO
 }
 
 void

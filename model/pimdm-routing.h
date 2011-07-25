@@ -459,7 +459,8 @@ private:
 	void RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver);
 	void RecvGraftDownstream (PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group);
 
-	void SendGraftAckUnicast (uint32_t interface, SourceGroupPair &pair, const Ipv4Address receiver);
+	void ForgeGraftAckMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp, Ipv4Address upstreamNeighbor);
+	void SendGraftAckUnicast (SourceGroupPair &pair, const Ipv4Address receiver);
 	void RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ipv4Address sender,Ipv4Address receiver);
 
 	void SendPruneBroadcast (uint32_t interface, SourceGroupPair &sgpair);
