@@ -317,8 +317,10 @@ MulticastRoutingProtocol::AddEntry (Ipv4Address const &source, Ipv4Address const
   NS_LOG_FUNCTION (this << "SRC:"<< source << " DST:"<< group <<" NXT:"<< next << " IFC:"<< interface << " MIF:"<< m_mainAddress);
 
   // Creates a new rt entry with specified values
-  RoutingMulticastTable &entry = m_mrib[group];
-  entry.groupAddr = group;
+  RoutingMulticastTable &entry = m_mrib[group];//DEBUG
+  m_mrib[group].groupAddr = group;
+  //  entry.groupAddr = group;
+  MulticastEntry &me = m_mrib[group].mgroup[interface];//DEBUG
   entry.mgroup[interface].interface = interface;
   entry.mgroup[interface].sourceAddr = source;
   entry.mgroup[interface].nextAddr = next;
