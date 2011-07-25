@@ -1303,24 +1303,13 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
-	ForgeHeaderMessage(PIM_STATE_REF, msg);
-	PIMHeader::StateRefreshMessage refresh = msg.GetStateRefreshMessage();
-	refresh.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);//TODO check whether params are correct or not.
-	refresh.m_sourceAddr = ForgeEncodedUnicast(sgp.sourceIfaceAddr);
-	Ipv4Address nextHop = GetNextHop(sgp.sourceIfaceAddr);
-	refresh.m_originatorAddr = ForgeEncodedUnicast(GetLocalAddress(interface));
-	refresh.m_R = 0;
-	refresh.m_metricPreference = sgState->AssertWinner.metricPreference;
-	refresh.m_metric = sgState->AssertWinner.routeMetric;
-	refresh.m_maskLength = IPV4_ADDRESS_SIZE;
-	refresh.m_ttl = sgState->SG_SR_TTL; // TODO ??
-	refresh.m_P = (sgState->PruneState==Prune_Pruned? 1 : 0);
-	refresh.m_N = 0;
-	refresh.m_O = (!sgState->SG_AT.IsRunning() && (IsUpstream(interface,sgp))?1:0);//todo check
-	refresh.m_reserved = 0;
+	ForgeStateRefresh(interface,sgp,msg);
 	NeighborhoodStatus *ns = FindNeighborhoodStatus(interface);
+	NS_ASSERT_MSG(ns!=NULL,"SendStateRefreshPair, invalid NeighborhoodStatus on "<< interface);
 	Time tmp = ns->stateRefreshInterval;
-	refresh.m_interval = (uint8_t)(tmp.GetSeconds());
+	msg.GetStateRefreshMessage().m_metricPreference = sgState->AssertWinner.metricPreference;
+	msg.GetStateRefreshMessage().m_metric = sgState->AssertWinner.routeMetric;
+	msg.GetStateRefreshMessage().m_interval = (uint8_t)(tmp.GetSeconds());
 
 	SendPacketUnicast(packet,msg,target);
 	switch (sgState->PruneState) {
@@ -1359,7 +1348,7 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 			//	times the State Refresh Interval contained in the State Refresh(S,G) message.
 			if(sgState->SG_AT.IsRunning())
 				sgState->SG_AT.Cancel();
-			sgState->SG_AT.SetDelay(Seconds(3*refresh.m_interval));
+			sgState->SG_AT.SetDelay(Seconds(3*msg.GetStateRefreshMessage().m_interval));
 			sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire,this);
 			sgState->SG_AT.SetArguments(sgp);
 			sgState->SG_AT.Schedule();
