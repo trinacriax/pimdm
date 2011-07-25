@@ -699,6 +699,39 @@ MulticastRoutingProtocol::GetRoute(Ipv4Address destination) {
 	return m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif, err);
 }
 
+
+void
+MulticastRoutingProtocol::CreateMulticastGroupEntry (PIMHeader::MulticastGroupEntry &m_entry,  PIMHeader::EncodedGroup group)
+{
+	NS_LOG_FUNCTION(this);
+	m_entry.m_multicastGroupAddr = group;
+	m_entry.m_numberJoinedSources = 0;
+	m_entry.m_numberPrunedSources = 0;
+}
+
+void
+MulticastRoutingProtocol::AddMulticastGroupEntry (PIMHeader &msg, PIMHeader::MulticastGroupEntry &entry)
+{
+	NS_LOG_FUNCTION(this);
+	msg.GetJoinPruneMessage().m_joinPruneMessage.m_numGroups = 1 + msg.GetJoinPruneMessage().m_joinPruneMessage.m_numGroups;
+	msg.GetJoinPruneMessage().m_multicastGroups.push_back(entry);
+}
+void
+MulticastRoutingProtocol::AddMulticastGroupSourceJoin (PIMHeader::MulticastGroupEntry &m_entry, PIMHeader::EncodedSource source)
+{
+	NS_LOG_FUNCTION(this);
+	m_entry.m_numberJoinedSources = 1 + m_entry.m_numberJoinedSources;
+	m_entry.m_joinedSourceAddrs.push_back(source);
+}
+
+void
+MulticastRoutingProtocol::AddMulticastGroupSourcePrune (PIMHeader::MulticastGroupEntry &m_entry, PIMHeader::EncodedSource source)
+{
+	NS_LOG_FUNCTION(this);
+	m_entry.m_numberPrunedSources = 1 + m_entry.m_numberPrunedSources;
+	m_entry.m_prunedSourceAddrs.push_back(source);
+}
+
 void
 MulticastRoutingProtocol::ForgeHeaderMessage (enum PIMType type, PIMHeader &msg)
 {
@@ -706,6 +739,113 @@ MulticastRoutingProtocol::ForgeHeaderMessage (enum PIMType type, PIMHeader &msg)
 	msg.SetVersion(2);
 	msg.SetType(type);
 	msg.SetReserved(0);
+}
+
+void
+MulticastRoutingProtocol::ForgeHelloMessageHoldTime (uint32_t interface, PIMHeader &msg)
+{
+	PIMHeader::HelloMessage &helloMessage = msg.GetHelloMessage();//TODO holdtime for the corresponding interface
+	PIMHeader::HelloMessage::HelloEntry holdtime = {PIMHeader::HelloMessage::HelloHoldTime, PIM_DM_HELLO_HOLDTIME};
+	holdtime.m_optionValue.holdTime.m_holdTime = Seconds(m_helloHoldTime);
+	msg.GetHelloMessage().m_optionList.push_back(holdtime);
+}
+
+void
+MulticastRoutingProtocol::ForgeHelloMessageLANPD (uint32_t interface, PIMHeader &msg)
+{
+	PIMHeader::HelloMessage::HelloEntry lanpd = {PIMHeader::HelloMessage::LANPruneDelay, PIM_DM_HELLO_LANPRUNDELAY};
+	lanpd.m_optionValue.lanPruneDelay.m_T = 0;
+	lanpd.m_optionValue.lanPruneDelay.m_propagationDelay = m_IfaceNeighbors.find(interface)->second.propagationDelay;
+	lanpd.m_optionValue.lanPruneDelay.m_overrideInterval = m_IfaceNeighbors.find(interface)->second.overrideInterval;
+	msg.GetHelloMessage().m_optionList.push_back(lanpd);
+}
+
+void
+MulticastRoutingProtocol::ForgeHelloMessageGenID (uint32_t interface, PIMHeader &msg)
+{
+	PIMHeader::HelloMessage::HelloEntry genid = {PIMHeader::HelloMessage::GenerationID, PIM_DM_HELLO_GENERATIONID};
+	genid.m_optionValue.generationID.m_generatioID = m_generationID;
+	msg.GetHelloMessage().m_optionList.push_back(genid);
+}
+
+void
+MulticastRoutingProtocol::ForgeHelloMessageStateRefresh (uint32_t interface, PIMHeader &msg)
+{
+	PIMHeader::HelloMessage::HelloEntry staterefresh = {PIMHeader::HelloMessage::StateRefreshCapable, PIM_DM_HELLO_STATEREFRESH};
+	staterefresh.m_optionValue.stateRefreshCapable.m_version = 1;
+	staterefresh.m_optionValue.stateRefreshCapable.m_interval = (uint8_t)(m_IfaceNeighbors.find(interface)->second.stateRefreshInterval).GetSeconds();
+	staterefresh.m_optionValue.stateRefreshCapable.m_reserved = 0;
+	msg.GetHelloMessage().m_optionList.push_back(staterefresh);
+}
+
+void
+MulticastRoutingProtocol::ForgeHelloMessage (uint32_t interface, PIMHeader &msg)
+{
+	NS_LOG_FUNCTION(this);
+	ForgeHeaderMessage(PIM_HELLO, msg);
+	ForgeHelloMessageHoldTime(interface,msg);
+	ForgeHelloMessageLANPD(interface,msg);
+	ForgeHelloMessageGenID(interface,msg);
+	if(m_IfaceNeighbors.find(interface)->second.stateRefreshCapable){
+		ForgeHelloMessageStateRefresh(interface,msg);
+	}
+}
+
+void
+MulticastRoutingProtocol::SendHello (uint32_t interface)
+{///< Sec. 4.3.1. RFC 3973
+	NS_LOG_FUNCTION(this);
+	Ptr<Packet> packet = Create<Packet> ();
+	PIMHeader msg;
+	ForgeHelloMessage(interface, msg);
+	SendPacketPIMRouters(packet,msg,interface);
+}
+
+void
+MulticastRoutingProtocol::SendHelloReply (uint32_t interface, Ipv4Address destination)
+{///< Sec. 4.3.1. RFC 3973
+	NS_LOG_FUNCTION(this);
+	Ptr<Packet> packet = Create<Packet> ();
+	PIMHeader msg;
+	ForgeHelloMessage(interface, msg);
+	NS_LOG_DEBUG("Send Hello Reply to "<< destination);
+	SendPacketUnicast(packet,msg,destination);
+}
+
+void
+MulticastRoutingProtocol::ForgeGraftMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp, Ipv4Address upstreamNeighbor)
+{
+	NS_LOG_FUNCTION(this);
+	ForgeHeaderMessage(PIM_GRAFT, msg);
+	PIMHeader::JoinPruneMessage &jpMessage = msg.GetJoinPruneMessage();
+	jpMessage.m_joinPruneMessage.m_upstreamNeighborAddr = ForgeEncodedUnicast(upstreamNeighbor);
+	jpMessage.m_joinPruneMessage.m_reserved = 0;
+	jpMessage.m_joinPruneMessage.m_numGroups = 0;
+	jpMessage.m_joinPruneMessage.m_holdTime = Seconds(Hold_Time_Default);
+}
+
+void
+MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination,SourceGroupPair sgp)
+{
+	NS_LOG_FUNCTION(this);//TODO To check
+	Ptr<Packet> packet = Create<Packet> ();
+	PIMHeader msg;
+	// Create the graft packet
+	ForgeGraftMessage(PIM_GRAFT, msg, sgp, destination);
+	PIMHeader::MulticastGroupEntry mge;
+	CreateMulticastGroupEntry(mge,ForgeEncodedGroup(sgp.groupMulticastAddr));
+	AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(sgp.sourceIfaceAddr));
+	AddMulticastGroupEntry(msg,mge);
+	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<","<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
+	// Send the packet toward the RPF(S)
+	uint32_t interface = GetReceivingInterface(destination);
+	SendPacketUnicast(packet,msg,sgp.sourceIfaceAddr);
+
+	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
+	sgState->upstream->SG_GRT.Cancel();//remove old events
+	sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::SendGraftUnicast, this);//re-schedule transmission
+	sgState->upstream->SG_GRT.SetArguments(destination, sgp);
+	sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));//set the timer
 }
 
 void
@@ -781,87 +921,6 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair
 	refresh.m_interval = RefreshInterval;
 }
 
-void
-MulticastRoutingProtocol::ForgeHelloMessageHoldTime (uint32_t interface, PIMHeader &msg)
-{
-	PIMHeader::HelloMessage &helloMessage = msg.GetHelloMessage();//TODO holdtime for the corresponding interface
-	PIMHeader::HelloMessage::HelloEntry holdtime = {PIMHeader::HelloMessage::HelloHoldTime, PIM_DM_HELLO_HOLDTIME};
-	holdtime.m_optionValue.holdTime.m_holdTime = Seconds(m_helloHoldTime);
-	msg.GetHelloMessage().m_optionList.push_back(holdtime);
-}
-
-void
-MulticastRoutingProtocol::ForgeHelloMessageLANPD (uint32_t interface, PIMHeader &msg)
-{
-	PIMHeader::HelloMessage::HelloEntry lanpd = {PIMHeader::HelloMessage::LANPruneDelay, PIM_DM_HELLO_LANPRUNDELAY};
-	lanpd.m_optionValue.lanPruneDelay.m_T = 0;
-	lanpd.m_optionValue.lanPruneDelay.m_propagationDelay = m_IfaceNeighbors.find(interface)->second.propagationDelay;
-	lanpd.m_optionValue.lanPruneDelay.m_overrideInterval = m_IfaceNeighbors.find(interface)->second.overrideInterval;
-	msg.GetHelloMessage().m_optionList.push_back(lanpd);
-}
-
-void
-MulticastRoutingProtocol::ForgeHelloMessageGenID (uint32_t interface, PIMHeader &msg)
-{
-	PIMHeader::HelloMessage::HelloEntry genid = {PIMHeader::HelloMessage::GenerationID, PIM_DM_HELLO_GENERATIONID};
-	genid.m_optionValue.generationID.m_generatioID = m_generationID;
-	msg.GetHelloMessage().m_optionList.push_back(genid);
-}
-
-void
-MulticastRoutingProtocol::ForgeHelloMessageStateRefresh (uint32_t interface, PIMHeader &msg)
-{
-	PIMHeader::HelloMessage::HelloEntry staterefresh = {PIMHeader::HelloMessage::StateRefreshCapable, PIM_DM_HELLO_STATEREFRESH};
-	staterefresh.m_optionValue.stateRefreshCapable.m_version = 1;
-	staterefresh.m_optionValue.stateRefreshCapable.m_interval = (uint8_t)(m_IfaceNeighbors.find(interface)->second.stateRefreshInterval).GetSeconds();
-	staterefresh.m_optionValue.stateRefreshCapable.m_reserved = 0;
-	msg.GetHelloMessage().m_optionList.push_back(staterefresh);
-}
-
-void
-MulticastRoutingProtocol::ForgeHelloMessage (uint32_t interface, PIMHeader &msg)
-{
-	NS_LOG_FUNCTION(this);
-	ForgeHeaderMessage(PIM_HELLO, msg);
-	ForgeHelloMessageHoldTime(interface,msg);
-	ForgeHelloMessageLANPD(interface,msg);
-	ForgeHelloMessageGenID(interface,msg);
-	if(m_IfaceNeighbors.find(interface)->second.stateRefreshCapable){
-		ForgeHelloMessageStateRefresh(interface,msg);//todo uncomment
-	}
-}
-
-void
-MulticastRoutingProtocol::CreateMulticastGroupEntry (PIMHeader::MulticastGroupEntry &m_entry,  PIMHeader::EncodedGroup group)
-{
-	NS_LOG_FUNCTION(this);
-	m_entry.m_multicastGroupAddr = group;
-	m_entry.m_numberJoinedSources = 0;
-	m_entry.m_numberPrunedSources = 0;
-}
-
-void
-MulticastRoutingProtocol::AddMulticastGroupEntry (PIMHeader &msg, PIMHeader::MulticastGroupEntry &entry)
-{
-	NS_LOG_FUNCTION(this);
-	msg.GetJoinPruneMessage().m_joinPruneMessage.m_numGroups = 1 + msg.GetJoinPruneMessage().m_joinPruneMessage.m_numGroups;
-	msg.GetJoinPruneMessage().m_multicastGroups.push_back(entry);
-}
-void
-MulticastRoutingProtocol::AddMulticastGroupSourceJoin (PIMHeader::MulticastGroupEntry &m_entry, PIMHeader::EncodedSource source)
-{
-	NS_LOG_FUNCTION(this);
-	m_entry.m_numberJoinedSources = 1 + m_entry.m_numberJoinedSources;
-	m_entry.m_joinedSourceAddrs.push_back(source);
-}
-
-void
-MulticastRoutingProtocol::AddMulticastGroupSourcePrune (PIMHeader::MulticastGroupEntry &m_entry, PIMHeader::EncodedSource source)
-{
-	NS_LOG_FUNCTION(this);
-	m_entry.m_numberPrunedSources = 1 + m_entry.m_numberPrunedSources;
-	m_entry.m_prunedSourceAddrs.push_back(source);
-}
 
 Ipv4Address
 MulticastRoutingProtocol::GetNextHop(Ipv4Address destination)
@@ -1289,91 +1348,32 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 			NS_LOG_ERROR("SendStateRefreshPair : Prune state not valid"<<sgState->PruneState);
 			break;
 	}
-		switch (sgState->AssertState){
-			case  Assert_NoInfo:{
-				break;
-				}
-			case Assert_Winner:{
-				//Send State Refresh
-				//	The router is sending a State Refresh(S,G) message on interface I.
-				//	The router MUST set the Assert Timer (AT(S,G,I)) to three
-				//	times the State Refresh Interval contained in the State Refresh(S,G) message.
-				if(sgState->SG_AT.IsRunning())
-					sgState->SG_AT.Cancel();
-				sgState->SG_AT.SetDelay(Seconds(3*refresh.m_interval));
-				sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire,this);
-				sgState->SG_AT.SetArguments(sgp);
-				sgState->SG_AT.Schedule();
-				break;
-				}
-			case Assert_Loser:{
-				//nothing
-				break;
+	switch (sgState->AssertState){
+		case  Assert_NoInfo:{
+			break;
 			}
-			default:{
-				NS_LOG_ERROR("RecvData: Assert State not valid"<<sgState->AssertState);
-				break;
+		case Assert_Winner:{
+			//Send State Refresh
+			//	The router is sending a State Refresh(S,G) message on interface I.
+			//	The router MUST set the Assert Timer (AT(S,G,I)) to three
+			//	times the State Refresh Interval contained in the State Refresh(S,G) message.
+			if(sgState->SG_AT.IsRunning())
+				sgState->SG_AT.Cancel();
+			sgState->SG_AT.SetDelay(Seconds(3*refresh.m_interval));
+			sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire,this);
+			sgState->SG_AT.SetArguments(sgp);
+			sgState->SG_AT.Schedule();
+			break;
 			}
+		case Assert_Loser:{
+			//nothing
+			break;
 		}
-}
-
-void
-MulticastRoutingProtocol::SendHello (uint32_t interface)
-{///< Sec. 4.3.1.
-	NS_LOG_FUNCTION(this);
-	Ptr<Packet> packet = Create<Packet> ();
-	PIMHeader msg;
-	ForgeHelloMessage(interface, msg);
-	SendPacketPIMRouters(packet,msg,interface);//TODO broadcast packet on a specific interface
-}
-
-void
-MulticastRoutingProtocol::SendNeighHello (uint32_t interface, Ipv4Address destination)
-{///< Sec. 4.3.1.
-	NS_LOG_FUNCTION(this);
-	Ptr<Packet> packet = Create<Packet> ();
-	PIMHeader msg;
-	ForgeHelloMessage(interface, msg);
-	NS_LOG_DEBUG("Send Hello Reply to "<< destination);
-	SendPacketUnicast(packet,msg,destination);
-}
-
-void
-MulticastRoutingProtocol::SendGraft (uint32_t interface, SourceGroupPair pair)
-{
-	NS_LOG_FUNCTION(this);//TODO To complete
-	Ptr<Packet> packet = Create<Packet> ();
-	PIMHeader msg;
-	ForgeHeaderMessage(PIM_GRAFT, msg);
-	// Create the graft packet
-
-	// Send the packet toward the RPF(S)
-
-	SendPacketUnicast(packet,msg,pair.sourceIfaceAddr);
-	SourceGroupState *sgState = FindSourceGroupState(interface,pair);
-	sgState->upstream->SG_GRT.Cancel();//remove old events
-	sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::SendGraft, this);//re-schedule transmission
-	sgState->upstream->SG_GRT.SetArguments(interface, pair);
-	sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));//set the timer
-}
-
-void
-MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination, SourceGroupPair pair)
-{
-	NS_LOG_FUNCTION(this);//TODO To complete
-	Ptr<Packet> packet = Create<Packet> ();
-	PIMHeader msg;
-	ForgeHeaderMessage(PIM_GRAFT, msg);
-	// Create the graft packet TODO
-
-	// Send the packet toward the RPF(S)
-	uint32_t interface = GetReceivingInterface(destination);
-	SendPacketUnicast(packet,msg,pair.sourceIfaceAddr);
-	SourceGroupState *sgState = FindSourceGroupState(interface, pair);
-	sgState->upstream->SG_GRT.Cancel();//remove old events
-	sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::SendGraft, this);//re-schedule transmission
-	sgState->upstream->SG_GRT.SetArguments(interface, pair);
-	sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));//set the timer
+		default:{
+			NS_LOG_ERROR("RecvData: Assert State not valid"<<sgState->AssertState);
+			break;
+		}
+	}
 }
 
 void
@@ -3334,7 +3334,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 		// If a Hello message is received from a new neighbor, the receiving router SHOULD send its own Hello message
 		//    after a random delay between 0 and Triggered_Hello_Delay.
 		Time delay = Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay));
-		Simulator::Schedule (delay, &MulticastRoutingProtocol::SendNeighHello, this, interface, sender);
+		Simulator::Schedule (delay, &MulticastRoutingProtocol::SendHelloReply, this, interface, sender);
 		NS_LOG_DEBUG(sender<< " first Hello, reply at "<<(Simulator::Now()+delay).GetSeconds());
 	}
 	while(entry < hello.m_optionList.size()){
@@ -3378,7 +3378,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 					//  A Hello message SHOULD be sent after a random delay between 0 and Triggered_Hello_Delay (see 4.8) before any other messages are sent.
 					Simulator::Schedule (Seconds(0), &MulticastRoutingProtocol::SetStopTx, this);
 					Simulator::Schedule (Seconds(delay.GetMicroSeconds()-1), &MulticastRoutingProtocol::UnsetStopTx, this);
-					Simulator::Schedule (delay, &MulticastRoutingProtocol::SendNeighHello, this,interface,sender);
+					Simulator::Schedule (delay, &MulticastRoutingProtocol::SendHelloReply, this,interface,sender);
 					delay = Seconds(delay.GetSeconds()+0.1);
 					SourceGroupList sgList = m_IfaceSourceGroup.find(interface)->second;
 					for(std::list<SourceGroupState>::iterator sgElement = sgList.begin(); sgElement!=sgList.end(); sgElement++){

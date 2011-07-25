@@ -426,6 +426,7 @@ private:
 	void ForgePruneMessage (PIMHeader &msg, Ipv4Address const upstreamNeighbor);
 	void ForgeAssertMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp);
 	void ForgeAssertCancelMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp);
+	void ForgeGraftMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp, Ipv4Address upstreamNeighbor);
 
 	void AddMulticastGroupEntry (PIMHeader &msg,PIMHeader::MulticastGroupEntry &entry);
 	void CreateMulticastGroupEntry (PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedGroup group);
@@ -433,11 +434,10 @@ private:
 	void AddMulticastGroupSourcePrune (PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedSource source);
 
 	void SendHello (uint32_t interface);
-	void SendNeighHello (uint32_t interface, Ipv4Address destination);
+	void SendHelloReply (uint32_t interface, Ipv4Address destination);
 	void RecvHello (pimdm::PIMHeader::HelloMessage &hello, Ipv4Address sender, Ipv4Address receiver);
 
  	void ForgeStateRefresh (uint32_t interface, SourceGroupPair &sgp, PIMHeader &msg);
-	void SendStateRefresh (uint32_t interface, PIMHeader &refresh);
 	void SendStateRefreshPair (uint32_t interface, Ipv4Address target,SourceGroupPair &sgpair);
 	void RecvStateRefresh (PIMHeader::StateRefreshMessage &refresh,Ipv4Address sender, Ipv4Address receiver);
 	void ForwardingStateRefresh (PIMHeader::StateRefreshMessage &refresh,Ipv4Address sender, Ipv4Address receiver);
@@ -454,7 +454,6 @@ private:
 
 	void RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Address sender,Ipv4Address receiver);
 
-	void SendGraft (uint32_t interface, SourceGroupPair pair);
 	void SendGraftUnicast (Ipv4Address destination,SourceGroupPair pair);
 
 	void RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver);
