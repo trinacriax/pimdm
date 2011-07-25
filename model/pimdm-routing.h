@@ -269,6 +269,7 @@ private:
 	void AddEntry(const Ipv4Address &dest, const Ipv4Address &next,uint32_t interface, uint32_t distance);
 	void AddEntry(const Ipv4Address &dest, const Ipv4Address &next,const Ipv4Address &interfaceAddress, uint32_t distance);
 	bool Lookup(const Ipv4Address &dest, RoutingMulticastTable &outEntry) const;
+	bool Lookup (Ipv4Address const &group, uint32_t const interface, RoutingMulticastTable &outEntry, MulticastEntry &me) const;
 	bool FindSendEntry(const RoutingMulticastTable &entry,RoutingMulticastTable &outEntry) const;
 	Ipv4Address GetLocalAddress(uint32_t interface);
 

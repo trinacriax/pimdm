@@ -135,6 +135,7 @@ MulticastRoutingProtocol::AddMulticastRoute (Ipv4Address source, Ipv4Address gro
   Ipv4MulticastRoutingTableEntry *route = new Ipv4MulticastRoutingTableEntry ();
   *route = Ipv4MulticastRoutingTableEntry::CreateMulticastRoute (source, group, inputInterface, outputInterfaces);
    m_multicastRoutes.push_back (route);
+}
 void
 MulticastRoutingProtocol::AddMulticastSource(Ipv4Address group){
 	if(m_multicastSource.find(group)==m_multicastSource.end()){
@@ -255,8 +256,8 @@ MulticastRoutingProtocol::FindSendEntry (RoutingMulticastTable const &entry,
 }
 
 ///
-/// \brief Looks up an entry for the specified destination address.
-/// \param dest	destination address.
+/// \brief Looks up an entry for the specified multicast group address.
+/// \param group group address.
 /// \param outEntry output parameter to hold the routing entry result, if found
 /// \return	true if found, false if not found
 ///
@@ -269,6 +270,19 @@ MulticastRoutingProtocol::Lookup (Ipv4Address const &group, RoutingMulticastTabl
 	if (it == m_mrib.end ())
 		return false;
 	outEntry = it->second;
+	return true;
+}
+
+bool
+MulticastRoutingProtocol::Lookup (Ipv4Address const &group, uint32_t const interface, RoutingMulticastTable &outEntry, MulticastEntry &me) const {
+	NS_LOG_FUNCTION(this << group<< interface);
+	// Get the iterator at "dest" position
+	std::map<Ipv4Address, RoutingMulticastTable>::const_iterator it = m_mrib.find (group);
+	// If there is no route to "dest", return NULL
+	if (it == m_mrib.end ())
+		return false;
+	outEntry = it->second;
+	me = outEntry.mgroup.find(interface)->second;
 	return true;
 }
 
