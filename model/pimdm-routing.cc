@@ -2037,7 +2037,7 @@ MulticastRoutingProtocol::SATTimerExpire (SourceGroupPair &sgp){
 
 
 void
-MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgpair){
+MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgp){
 	NS_LOG_FUNCTION(this);
 //	uint32_t interface = GetReceiveingInterface(destination);
 	//TODO
@@ -2045,7 +2045,7 @@ MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupP
 
 
 void
-MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupPair &sgpair){
+MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupPair &sgp){
 	NS_LOG_FUNCTION(this);
 	//	uint32_t interface = GetReceiveingInterface(destination);
 	//TODO
