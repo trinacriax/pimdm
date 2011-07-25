@@ -512,10 +512,12 @@ PIMHeader::JoinPruneGraftMessage::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
   this->m_upstreamNeighborAddr.Serialize(i);
-  i.Next(this->m_upstreamNeighborAddr.GetSerializedSize());
+  uint16_t size = this->m_upstreamNeighborAddr.GetSerializedSize();
+  i.Next(size);
   i.WriteU8(this->m_reserved);
   i.WriteU8(this->m_numGroups);
-  i.WriteHtonU16(this->m_holdTime.GetSeconds());
+  uint16_t hold = this->m_holdTime.GetSeconds();
+  i.WriteHtonU16(hold);
 //  std::cout << "Join SE\n";
 //  Print(std::cout);
 //  std::cout << "\n";
@@ -530,7 +532,8 @@ PIMHeader::JoinPruneGraftMessage::Deserialize (Buffer::Iterator start, uint32_t 
   i.Next(size);
   this->m_reserved = i.ReadU8();
   this->m_numGroups = i.ReadU8();
-  this->m_holdTime = Time(Seconds(i.ReadNtohU16()));
+  uint16_t hold = i.ReadNtohU16();
+  this->m_holdTime = Seconds(hold);
   size +=4;
 //  std::cout << "Join DE\n";
 //  Print(std::cout);
