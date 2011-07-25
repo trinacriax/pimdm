@@ -730,14 +730,14 @@ MulticastRoutingProtocol::ForgeHeaderMessage (enum PIMType type, PIMHeader &msg)
 }
 
 void
-MulticastRoutingProtocol::ForgePruneMessage (PIMHeader &msg){
+MulticastRoutingProtocol::ForgePruneMessage (PIMHeader &msg, Ipv4Address const upstreamNeighbor){
 	NS_LOG_FUNCTION(this);
 	ForgeHeaderMessage(PIM_JP, msg);
-	PIMHeader::JoinPruneMessage jpMessage = msg.GetJoinPruneMessage();
-	jpMessage.m_joinPruneMessage.m_upstreamNeighborAddr = ForgeEncodedUnicast(Ipv4Address("0.0.0.0"));
+	PIMHeader::JoinPruneMessage &jpMessage = msg.GetJoinPruneMessage();
+	jpMessage.m_joinPruneMessage.m_upstreamNeighborAddr = ForgeEncodedUnicast(Ipv4Address(upstreamNeighbor));
 	jpMessage.m_joinPruneMessage.m_reserved = 0;
 	jpMessage.m_joinPruneMessage.m_numGroups = 0;
-	jpMessage.m_joinPruneMessage.m_holdTime = Time(Hold_Time_Default);
+	jpMessage.m_joinPruneMessage.m_holdTime = Seconds(Hold_Time_Default);
 }
 
 void
@@ -1230,10 +1230,10 @@ MulticastRoutingProtocol::SendPruneBroadcast (uint32_t interface, SourceGroupPai
 	PIMHeader::MulticastGroupEntry mge;
 	PIMHeader msg;
 	Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr); //TODO is broadcast or not?
-	ForgePruneMessage(msg);
+	ForgePruneMessage(msg,target);
 	CreateMulticastGroupEntry(mge,ForgeEncodedGroup(sgp.groupMulticastAddr));
 	AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(sgp.sourceIfaceAddr));
-	msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = target;
+//	msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = target;
 	AddMulticastGroupEntry(msg,mge);
 	Ptr<Packet> packet = Create<Packet> ();
 	NS_LOG_DEBUG("Sending Prune for source \""<<sgp.sourceIfaceAddr <<"\" and group \""<< sgp.groupMulticastAddr<<"\" to UpstreamNeighbor \""<< target<<"\"");
@@ -1591,7 +1591,7 @@ MulticastRoutingProtocol::SendPacketBroadcast (Ptr<Packet> packet, const PIMHead
 //      Ptr<Packet> copy = packet->Copy();
 //      copy->AddHeader(ipv4Header);
       packet->AddHeader(ipv4Header);
-      NS_LOG_DEBUG ("...sending Broadcast: " << bcast << ":"<<PIM_PORT_NUMBER);
+      NS_LOG_DEBUG ("...sending Broadcast: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface = "<< m_ipv4->GetInterfaceForDevice(i->first->GetBoundNetDevice()) <<", Socket = "<<i->first);
       i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
     }
 }
@@ -1843,8 +1843,8 @@ MulticastRoutingProtocol::PPTTimerExpire(SourceGroupPair &sgp){
 			//	A PruneEcho(S,G) is simply a Prune(S,G) message
 			//	multicast by the upstream router to a LAN, with itself as the Upstream Neighbor.
 				PIMHeader msg;
-				ForgePruneMessage(msg);
-				msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = GetLocalAddress(interface);
+				ForgePruneMessage(msg,GetLocalAddress(interface));
+//				msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = GetLocalAddress(interface);
 				Ptr<Packet> packet = Create<Packet> ();
 				SendPacketBroadcast(packet,msg);
 			//	Its purpose is to add additional reliability so that if a Join that should have
@@ -2061,9 +2061,9 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> li
 			AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(sgp.sourceIfaceAddr));
 			PIMHeader msg;
 			Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
-			ForgePruneMessage(msg);
+			ForgePruneMessage(msg,destination);
 			CreateMulticastGroupEntry(mge,ForgeEncodedGroup(sgp.groupMulticastAddr));
-			msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = destination;
+//			msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = destination;
 			AddMulticastGroupEntry(msg,mge);
 			Ptr<Packet> packet = Create<Packet> ();
 			SendPacketBroadcastInterface(packet,msg,GetReceivingInterface(destination));
@@ -2772,9 +2772,9 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 						PIMHeader::MulticastGroupEntry mge;
 						AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(assert.m_sourceAddr.m_unicastAddress));
 						PIMHeader prune;
-						ForgePruneMessage(prune);
+						ForgePruneMessage(prune,sender) ;
 						CreateMulticastGroupEntry(mge,ForgeEncodedGroup(assert.m_multicastGroupAddr.m_groupAddress));
-						prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = sender;
+//						prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = sender;
 						prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 						AddMulticastGroupEntry(prune,mge);
 						Ptr<Packet> packet = Create<Packet> ();
@@ -2831,9 +2831,9 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					PIMHeader::MulticastGroupEntry mge;
 					AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(assert.m_sourceAddr.m_unicastAddress));
 					PIMHeader msg;
-					ForgePruneMessage(msg);
+					ForgePruneMessage(msg,sender);
 					CreateMulticastGroupEntry(mge,ForgeEncodedGroup(assert.m_multicastGroupAddr.m_groupAddress));
-					msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = sender;//TODO check
+//					msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = sender;//TODO check
 					msg.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 					AddMulticastGroupEntry(msg,mge);
 					Ptr<Packet> packet = Create<Packet> ();
@@ -2883,9 +2883,9 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 						PIMHeader::MulticastGroupEntry mge;
 						AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(assert.m_sourceAddr.m_unicastAddress));
 						PIMHeader prune;
-						ForgePruneMessage(prune);
+						ForgePruneMessage(prune,sender);
 						CreateMulticastGroupEntry(mge,ForgeEncodedGroup(assert.m_multicastGroupAddr.m_groupAddress));
-						prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = sender;//TODO check
+//						prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = sender;//TODO check
 						prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 						AddMulticastGroupEntry(prune,mge);
 						Ptr<Packet> packet = Create<Packet> ();
@@ -3039,9 +3039,9 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 						PIMHeader::MulticastGroupEntry mge;
 						AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(refresh.m_sourceAddr.m_unicastAddress));
 						PIMHeader msg;
-						ForgePruneMessage(msg);
+						ForgePruneMessage(msg,refresh.m_originatorAddr.m_unicastAddress);
 						CreateMulticastGroupEntry(mge,ForgeEncodedGroup(refresh.m_multicastGroupAddr.m_groupAddress));
-						msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = refresh.m_originatorAddr.m_unicastAddress;
+//						msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = refresh.m_originatorAddr.m_unicastAddress;
 						msg.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 						AddMulticastGroupEntry(msg,mge);
 						Ptr<Packet> packet = Create<Packet> ();
@@ -3096,7 +3096,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				PIMHeader::MulticastGroupEntry mge;
 				AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(refresh.m_sourceAddr.m_unicastAddress));
 				PIMHeader prune;
-				ForgePruneMessage(prune);
+				ForgePruneMessage(prune,refresh.m_originatorAddr.m_unicastAddress);
 				CreateMulticastGroupEntry(mge,ForgeEncodedGroup(refresh.m_multicastGroupAddr.m_groupAddress));
 				prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = refresh.m_originatorAddr.m_unicastAddress;//TODO check
 				prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
@@ -3147,9 +3147,9 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					PIMHeader::MulticastGroupEntry mge;
 					AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(refresh.m_sourceAddr.m_unicastAddress));
 					PIMHeader prune;
-					ForgePruneMessage(prune);
+					ForgePruneMessage(prune,refresh.m_originatorAddr.m_unicastAddress);
 					CreateMulticastGroupEntry(mge,ForgeEncodedGroup(refresh.m_multicastGroupAddr.m_groupAddress));
-					prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = refresh.m_originatorAddr.m_unicastAddress;//TODO check
+//					prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = refresh.m_originatorAddr.m_unicastAddress;//TODO check
 					prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 					AddMulticastGroupEntry(prune,mge);
 					Ptr<Packet> packet = Create<Packet> ();
