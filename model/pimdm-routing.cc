@@ -132,10 +132,11 @@ MulticastRoutingProtocol::AddMulticastRoute (Ipv4Address source, Ipv4Address gro
   NS_ASSERT_MSG (inputInterface >= 0,
                  "Ipv4StaticRoutingHelper::AddMulticastRoute(): "
                  "Expected an interface associated with the device input");
-  Ipv4MulticastRoutingTableEntry *route = new Ipv4MulticastRoutingTableEntry ();
-  *route = Ipv4MulticastRoutingTableEntry::CreateMulticastRoute (source, group, inputInterface, outputInterfaces);
-   m_multicastRoutes.push_back (route);
+//  Ipv4MulticastRoutingTableEntry *route = new Ipv4MulticastRoutingTableEntry ();
+//  *route = Ipv4MulticastRoutingTableEntry::CreateMulticastRoute (source, group, inputInterface, outputInterfaces);
+//   m_multicastRoutes.push_back (route);
 }
+
 void
 MulticastRoutingProtocol::AddMulticastSource(Ipv4Address group){
 	if(m_multicastSource.find(group)==m_multicastSource.end()){
