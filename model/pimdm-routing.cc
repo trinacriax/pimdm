@@ -286,6 +286,18 @@ MulticastRoutingProtocol::Lookup (Ipv4Address const &group, uint32_t const inter
 	return true;
 }
 
+bool
+MulticastRoutingProtocol::UpdateEntry (Ipv4Address const &group, uint32_t const interface, Ipv4Address const &source, Ipv4Address const &next) {
+	NS_LOG_FUNCTION(this << group<< interface);
+	// Get the iterator at "dest" position
+	// If there is no route to "dest", return NULL
+	if (m_mrib.find (group) == m_mrib.end ())
+		return false;
+	m_mrib.find (group)->second.mgroup.find(interface)->second.sourceAddr = source;
+	m_mrib.find (group)->second.mgroup.find(interface)->second.nextAddr = next;
+	return true;
+}
+
 ///
 /// \brief Adds a new entry into the routing table.
 ///
@@ -975,20 +987,30 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket){
 	uint32_t interface = m_ipv4->GetInterfaceForDevice(socket->GetBoundNetDevice());
 	// Data Packet arrives on RPF_Interface(S) AND olist(S,G) == NULL AND S NOT directly connected
 	SourceGroupPair sgp(sender, group);
+	Ptr<Ipv4Route> rpf_route = GetRoute(sender);
+	NS_LOG_DEBUG("SRC: "<< sender<<" GRP: "<<group<<" IFC: "<<interface<<" RPF: "<<rpf_route->GetGateway());
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 	if(!sgState){
-		sgState = InsertSourceGroupState(interface,sgp);
+		InsertSourceGroupState(interface,sgp);
+		sgState = FindSourceGroupState(interface,sgp);
 		RoutingMulticastTable entry;
+		MulticastEntry mentry;
 		if(!Lookup(group,entry)){
-			AddEntry(sender,group,GetRoute(sender)->GetGateway(),interface);
-			Lookup(group,entry);
+			AddEntry(sender,group,rpf_route->GetGateway(),interface);
 			NS_LOG_DEBUG("Add Entry "<<entry.mgroup[interface].sourceAddr<<", "<<entry.groupAddr<<", "<<entry.mgroup[interface].nextAddr<<", "<<entry.mgroup[interface].interface);
 			if(entry.mgroup[interface].nextAddr == entry.mgroup[interface].sourceAddr){
 				//Nodes is directly connected to source
 			}
 		}
+		if(mentry.nextAddr == Ipv4Address::GetAny() && mentry.sourceAddr == Ipv4Address::GetAny()){
+			UpdateEntry(group, interface, sender, rpf_route->GetGateway());
+		}
 	}
 	RPFCheck(sgp,interface);
+	///////////////////////// TO REMOVE WITH IGMP
+	if(GetMulticastGroup(group))
+		sgState->members = true;
+	/////////////////////////
 	if(sgState->upstream->SG_SAT.IsRunning()){
 		sgState->upstream->SG_SAT.Cancel();
 		sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
