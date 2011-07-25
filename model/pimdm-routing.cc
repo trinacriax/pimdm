@@ -925,7 +925,7 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
-	Ipv4Address receiverIfaceAddr = m_socketAddresses[socket].GetLocal ();
+	Ipv4Address receiverIfaceAddr = m_ipv4->GetAddress(interface,0).GetLocal();
 	NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
     Ptr<Ipv4Route> route = GetRoute(senderIfaceAddr);
 	Ipv4Header ipv4header;
