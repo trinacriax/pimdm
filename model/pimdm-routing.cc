@@ -921,7 +921,6 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair
 	refresh.m_interval = RefreshInterval;
 }
 
-
 Ipv4Address
 MulticastRoutingProtocol::GetNextHop(Ipv4Address destination)
 {
@@ -983,7 +982,6 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
 			<<route->GetGateway() <<" <--> "<<senderIfaceAddr <<" vs " <<interface<<")");
 	if(ipv4header.GetDestination().IsMulticast() && ipv4header.GetDestination() != Ipv4Address(ALL_PIM_ROUTERS4)) {
 		NS_LOG_ERROR("Received "<< ipv4header.GetDestination() <<" it should be captured by another callback.");
-//		return RecvData(socket);
 		SourceGroupPair sgp (senderIfaceAddr,receiverIfaceAddr);
 		RPFCheck(sgp, interface);
 	}
@@ -1067,7 +1065,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		}
 	}
 	RPFCheck(sgp,interface);
-	///////////////////////// TO REMOVE WITH IGMP
+	///////////////////////// TODO: TO REMOVE WITH IGMP
 	if(GetMulticastGroup(group))
 		sgState->members = true;
 	/////////////////////////
