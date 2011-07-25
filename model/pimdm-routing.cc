@@ -534,26 +534,22 @@ void
 MulticastRoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const
 {
   std::ostream* os = stream->GetStream ();
-  *os << "Source\t\tNextHop\t\tPreference\tMetric\n";
+  *os << "Group\tInterface\t\tSource\tNextHop\n";
 
   for (std::map<Ipv4Address, RoutingMulticastTable>::const_iterator iter = m_mrib.begin ();
     iter != m_mrib.end (); iter++)
     {
-      *os << iter->first << "\t\t";
-//      *os << iter->second.nextAddr << "\t\t";
-//      if (Names::FindName (m_ipv4->GetNetDevice (iter->second.nextAddr)) != "")
-//            {
-//              *os << Names::FindName (m_ipv4->GetNetDevice (iter->second.nextAddr)) << "\t\t";
-//            }
-//          else
-//            {
-//              *os << iter->second.nextAddr<< "\t\t";
-//            }
-//      *os << iter->second.metricPreference << "\t";
-//      *os << iter->second.routeMetric << "\t";
-      *os << "\nStatic Routing Table:\n";
-      m_RoutingTable->PrintRoutingTable (stream);
+      *os << iter->first << "\t\n";
+      for(std::map <uint32_t,MulticastEntry>::const_iterator iface = iter->second.mgroup.begin();
+    		  iface != iter->second.mgroup.end() ; iface++)
+      {
+    	  *os << "\t"<< iface->first << "\t\t";
+    	  *os << "\t"<< iface->second.sourceAddr<< "\t\t";
+    	  *os << "\t"<< iface->second.nextAddr<< "\t\n";
+      }
     }
+	*os << "\nStatic Routing Table:\n";
+	m_RoutingTable->PrintRoutingTable (stream);
 }
 
 void MulticastRoutingProtocol::DoStart ()
