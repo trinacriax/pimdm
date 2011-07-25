@@ -356,7 +356,7 @@ struct NeighborhoodStatus{
 		overrideInterval(Seconds(Override_Interval)),
 		stateRefreshInterval(Seconds(RefreshInterval)),
 		pruneHoldtime(Seconds(PruneHoldTime))
-		{}
+		{neighbors.clear();}
 	bool stateRefreshCapable; ///< State refresh capability.
 	bool LANDelayEnabled; ///< LAN Delay Enabled.
 	Timer hello_timer;///< Hello Timer (HT) (RFC 3973, section 4.1.1).
