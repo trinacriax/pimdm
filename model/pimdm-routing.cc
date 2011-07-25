@@ -521,6 +521,11 @@ void MulticastRoutingProtocol::DoDispose ()
 	  iter->first->Close ();
 	}
 	m_socketAddresses.clear ();
+	m_IfaceNeighbors.clear();
+	m_IfacePimEnabled.clear();
+	m_IfaceSourceGroup.clear();
+	m_multicastGroup.clear();
+	m_multicastSource.clear();
 
 	Ipv4RoutingProtocol::DoDispose ();
 	}
