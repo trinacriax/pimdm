@@ -32,59 +32,57 @@
 /// Timer Name: Hello Timer (HT). Random interval for initial Hello message on bootup or triggered Hello message to a rebooting neighbor.
 #define Triggered_Hello_Delay 5
 /// The Hold Time in the Hello Message should be set to a value that can
-///   reasonably be expected to keep the Hello active until a new Hello
-///   message is received.  On most links, this will be 3.5 times the value
-///   of Hello_Period.
+///  reasonably be expected to keep the Hello active until a new Hello
+///  message is received. On most links, this will be 3.5 times the value
+///  of Hello_Period.
 #define Hold_Time_Default (3.5*Hello_Period) //seconds
-/// Timer Name: Assert Timer (AT(S,G,I)). Period after last assert before assert state is timed out.
+/// Timer Name: Assert Timer (AT (S,G,I)). Period after last assert before assert state is timed out.
 #define Assert_Time 180
-/// Timer Name: Graft Retry Timer (GRT(S,G)). In the absence of receipt of a GraftAck message, the time before retransmission of a Graft message.
+/// Timer Name: Graft Retry Timer (GRT (S,G)). In the absence of receipt of a GraftAck message, the time before retransmission of a Graft message.
 #define Graft_Retry_Period 3
 /// Used to prevent Prune storms on a LAN.
 #define t_limit 210
-/// Timer Name: Upstream Override Timer (OT(S,G)).
+/// Timer Name: Upstream Override Timer (OT (S,G)).
 #define t_short t_override
 #define t_shorter 2
-/// Timer Name: Source Active Timer (SAT(S,G)).
-///   Period of time after receiving a multicast message a directly
-///   attached router will continue to send State Refresh messages.
+/// Timer Name: Source Active Timer (SAT (S,G)).
+///  Period of time after receiving a multicast message a directly
+///  attached router will continue to send State Refresh messages.
 #define SourceLifetime 210
-/// Timer Name: State Refresh Timer (SRT(S,G)).
-///   Interval between successive state refresh messages.
+/// Timer Name: State Refresh Timer (SRT (S,G)).
+///  Interval between successive state refresh messages.
 #define RefreshInterval 60
 #define StateRefreshInterval RefreshInterval
-/// If all routers on a LAN are using the LAN Prune Delay option, the Override_Interval (OI(I)) MUST be set to the
-///   largest value on the LAN.  Otherwise, the Override_Interval (OI(I)) MUST be set to 2.5 seconds.
+/// If all routers on a LAN are using the LAN Prune Delay option, the Override_Interval (OI (I)) MUST be set to the
+///  largest value on the LAN. Otherwise, the Override_Interval (OI (I)) MUST be set to 2.5 seconds.
 #define Override_Interval 2.5
 // The J/P_Override_Interval is the sum of the interface's
-//	 Override_Interval (OI(I)) and Propagation_Delay (PD(I)).  If all
+//	 Override_Interval (OI (I)) and Propagation_Delay (PD (I)). If all
 //	 routers on a LAN are using the LAN Prune Delay option, both
-//	 parameters MUST be set to the largest value on the LAN.  Otherwise,
-//	 the Override_Interval (OI(I)) MUST be set to 2.5 seconds, and the
-//	 Propagation_Delay (PD(I)) MUST be set to 0.5 seconds.
+//	 parameters MUST be set to the largest value on the LAN. Otherwise,
+//	 the Override_Interval (OI (I)) MUST be set to 2.5 seconds, and the
+//	 Propagation_Delay (PD (I)) MUST be set to 0.5 seconds.
 #define Propagation_Delay 0.5
-//  The number of seconds a receiving PIM-DM router MUST keep a Prune
-//     state alive, unless removed by a Join or Graft message.  If the
-//     Hold Time is '0xffff', the receiver MUST NOT remove the Prune state
-//     unless a corresponding Join or Graft message is received.  The Hold
-//     Time is ignored in Join messages.
+// The number of seconds a receiving PIM-DM router MUST keep a Prune
+//   state alive, unless removed by a Join or Graft message. If the
+//   Hold Time is '0xffff', the receiver MUST NOT remove the Prune state
+//   unless a corresponding Join or Graft message is received. The Hold
+//   Time is ignored in Join messages.
 #define PruneHoldTime 0xffff
-/// Threshold(I) returns the minimum TTL that a packet must have before it can be transmitted on interface I. TODO what is it?
-#define Threshold(uint32_t) 2 //TODO check what is it
-//  The number of seconds a receiving PIM-DM router MUST keep a Prune
-//     state alive, unless removed by a Join or Graft message.  If the
-//     Hold Time is '0xffff', the receiver MUST NOT remove the Prune state
-//     unless a corresponding Join or Graft message is received.  The Hold
-//     Time is ignored in Join messages.
+// The number of seconds a receiving PIM-DM router MUST keep a Prune
+//   state alive, unless removed by a Join or Graft message. If the
+//   Hold Time is '0xffff', the receiver MUST NOT remove the Prune state
+//   unless a corresponding Join or Graft message is received. The Hold
+//   Time is ignored in Join messages.
 #define PruneHoldTime 0xffff
 //If all routers on a LAN support the LAN Prune Delay option, then the
-//   PIM routers on that LAN will use the values received to adjust their
-//   J/P_Override_Interval on that interface and the interface is LAN
-//   Delay Enabled.  Briefly, to avoid synchronization of Prune Override
-//   (Join) messages when multiple downstream routers share a multi-access
-//   link, sending of these messages is delayed by a small random amount
-//   of time.  The period of randomization is configurable and has a
-//   default value of 3 seconds.
+//  PIM routers on that LAN will use the values received to adjust their
+//  J/P_Override_Interval on that interface and the interface is LAN
+//  Delay Enabled. Briefly, to avoid synchronization of Prune Override
+//  (Join) messages when multiple downstream routers share a multi-access
+//  link, sending of these messages is delayed by a small random amount
+//  of time. The period of randomization is configurable and has a
+//  default value of 3 seconds.
 #define JoinDelay 3 //Prune override
 #define TTL_SAMPLE .2
 #define PIM_RESERVED 0
@@ -120,8 +118,8 @@ struct MulticastEntry {
 	Ipv4Address sourceAddr; ///< source destination
 	Ipv4Address nextAddr; ///< source destination
 	uint32_t interface; ///< interface to source
-	MulticastEntry() : // default values
-		sourceAddr(), nextAddr(), interface(0) {
+	MulticastEntry () : // default values
+		sourceAddr (), nextAddr (), interface (0) {
 	}
 	;
 };
@@ -130,15 +128,15 @@ struct MulticastEntry {
 struct RoutingMulticastTable {
 	Ipv4Address groupAddr; ///< multicast group address
 	std::map <uint32_t,MulticastEntry> mgroup; ///< source destination
-	RoutingMulticastTable() : // default values
-		groupAddr() {
+	RoutingMulticastTable () : // default values
+		groupAddr () {
 	}
 	;
 };
 
 /// This class encapsulates all data structures needed for maintaining internal state of an PIM_DM node.
 class MulticastRoutingProtocol: public Ipv4RoutingProtocol {
-	//  friend class;
+	// friend class;
 private:
 	uint32_t m_mainInterface; ///< Node main interface.
 	Ipv4Address m_mainAddress; ///< Main address on the main interface.
@@ -147,7 +145,7 @@ private:
 	Ptr<Ipv4StaticRouting> m_RoutingTable;
 
 	typedef std::list<Ipv4MulticastRoutingTableEntry *> MulticastRoutes;
-    MulticastRoutes m_multicastRoutes;
+  MulticastRoutes m_multicastRoutes;
 
 	///\name Protocol fields;
 	//\{
@@ -173,7 +171,7 @@ private:
 	/**
 	 * This is the multicast topology table, which is typically derived
 	 * from the unicast routing table, or from routing protocols such as
-	 * MBGP that carry multicast-specific topology information.  PIM-DM
+	 * MBGP that carry multicast-specific topology information. PIM-DM
 	 * uses the MRIB to make decisions regarding RPF interfaces.
 	 */
 	std::map<Ipv4Address, RoutingMulticastTable> m_mrib; ///< Multicast Routing Information Base (MRIB)
@@ -205,39 +203,39 @@ private:
 	TracedCallback<uint32_t> m_routingTableChanged;
 
 protected:
-	virtual void DoStart(void);
+	virtual void DoStart (void);
 
 public:
-	static TypeId GetTypeId(void);
+	static TypeId GetTypeId (void);
 
-	MulticastRoutingProtocol();
-	virtual ~MulticastRoutingProtocol();
+	MulticastRoutingProtocol ();
+	virtual ~MulticastRoutingProtocol ();
 
-	uint32_t GetMainInterface() {
+	uint32_t GetMainInterface () {
 		return m_mainInterface;
 	}
 
-	void SetInterfaceExclusions(std::set<uint32_t> exceptions);
-	std::set<uint32_t> GetInterfaceExclusions() const {
+	void SetInterfaceExclusions (std::set<uint32_t> exceptions);
+	std::set<uint32_t> GetInterfaceExclusions () const {
 		return m_interfaceExclusions;
 	}
 	/**
 	 * Return the list of routing table entries discovered by OLSR
 	 **/
-	std::vector<RoutingMulticastTable> GetRoutingTableEntries() const;
+	std::vector<RoutingMulticastTable> GetRoutingTableEntries () const;
 
-	void register_member(Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		SourceGroupPair sgp(source,group);
-		SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
-		if(sgState==NULL){
-			InsertSourceGroupState(interface,*sgState);
+	void register_member (Ipv4Address source, Ipv4Address group, uint32_t interface) {
+		SourceGroupPair sgp (source,group);
+		SourceGroupState *sgState = FindSourceGroupState (interface,sgp);
+		if (sgState==NULL){
+			InsertSourceGroupState (interface,*sgState);
 		}
-		sgState = FindSourceGroupState(interface,sgp);
+		sgState = FindSourceGroupState (interface,sgp);
 		sgState->members = true;
 		//no local member registered
 	}
 
-	void UpdateMRIB(){
+	void UpdateMRIB (){
 //		Ptr<Packet> receivedPacket;
 //		Address sourceAddress;
 //		InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
@@ -246,152 +244,160 @@ public:
 //		NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
 //		Ptr<Ipv4Route> route = 0;
 //		Ipv4Header hdr;
-//		hdr.SetDestination(senderIfaceAddr);
+//		hdr.SetDestination (senderIfaceAddr);
 //		Ptr<NetDevice> oif (0);
 //		Socket::SocketErrno err = Socket::ERROR_NOTERROR;
 //
-//		route = m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif,err);
+//		route = m_ipv4->GetRoutingProtocol ()->RouteOutput (receivedPacket,hdr, oif,err);
 //
 //		NS_LOG_DEBUG ("Sender "<< senderIfaceAddr<<", Destination "<< receiverIfaceAddr);
-//		if(route)
-//		NS_LOG_DEBUG (" (SRC: "<< route->GetSource()<< ", GW: "<<route->GetGateway()
-//				<<",DevID: "<< route->GetOutputDevice()->GetIfIndex()<<")");
+//		if (route)
+//		NS_LOG_DEBUG (" (SRC: "<< route->GetSource ()<< ", GW: "<<route->GetGateway ()
+//				<<",DevID: "<< route->GetOutputDevice ()->GetIfIndex ()<<")");
 	}
 
 
 private:
-	void Clear();
-	uint32_t GetSize() const {
-		return m_mrib.size();
+	void Clear ();
+	uint32_t GetSize () const {
+		return m_mrib.size ();
 	}
 
-	void RemoveEntry(const Ipv4Address &dest);
-	void AddEntry(const Ipv4Address &dest, const Ipv4Address &next,uint32_t interface, uint32_t distance);
-	void AddEntry(const Ipv4Address &dest, const Ipv4Address &next,const Ipv4Address &interfaceAddress, uint32_t distance);
-	bool Lookup(const Ipv4Address &dest, RoutingMulticastTable &outEntry) const;
+	void RemoveEntry (const Ipv4Address &dest);
+	void AddEntry (const Ipv4Address &dest, const Ipv4Address &next,uint32_t interface, uint32_t distance);
+	void AddEntry (const Ipv4Address &dest, const Ipv4Address &next,const Ipv4Address &interfaceAddress, uint32_t distance);
+	bool Lookup (const Ipv4Address &dest, RoutingMulticastTable &outEntry) const;
 	bool Lookup (Ipv4Address const &group, uint32_t const interface, RoutingMulticastTable &outEntry, MulticastEntry &me) const;
 	bool UpdateEntry (Ipv4Address const &group, uint32_t const interface, Ipv4Address const &source, Ipv4Address const &next) ;
-	bool FindSendEntry(const RoutingMulticastTable &entry,RoutingMulticastTable &outEntry) const;
-	Ipv4Address GetLocalAddress(uint32_t interface);
+
+	Ipv4Address GetLocalAddress (uint32_t interface);
 
 	// From Ipv4RoutingProtocol
-	virtual Ptr<Ipv4Route> RouteOutput(Ptr<Packet> p, const Ipv4Header &header,Ptr<NetDevice> oif, Socket::SocketErrno &sockerr);
+	virtual Ptr<Ipv4Route> RouteOutput (Ptr<Packet> p, const Ipv4Header &header,Ptr<NetDevice> oif, Socket::SocketErrno &sockerr);
 	// From Ipv4RoutingProtocol
-	virtual bool RouteInput(Ptr<const Packet> p, const Ipv4Header &header,Ptr<const NetDevice> idev, UnicastForwardCallback ucb,
+	virtual bool RouteInput (Ptr<const Packet> p, const Ipv4Header &header,Ptr<const NetDevice> idev, UnicastForwardCallback ucb,
 			MulticastForwardCallback mcb, LocalDeliverCallback lcb,ErrorCallback ecb);
 	// From Ipv4RoutingProtocol
-	virtual void NotifyInterfaceUp(uint32_t interface);
+	virtual void NotifyInterfaceUp (uint32_t interface);
 	// From Ipv4RoutingProtocol
-	virtual void NotifyInterfaceDown(uint32_t interface);
+	virtual void NotifyInterfaceDown (uint32_t interface);
 	// From Ipv4RoutingProtocol
-	virtual void NotifyAddAddress(uint32_t interface,Ipv4InterfaceAddress address);
+	virtual void NotifyAddAddress (uint32_t interface,Ipv4InterfaceAddress address);
 	// From Ipv4RoutingProtocol
-	virtual void NotifyRemoveAddress(uint32_t interface,Ipv4InterfaceAddress address);
+	virtual void NotifyRemoveAddress (uint32_t interface,Ipv4InterfaceAddress address);
 	// From Ipv4RoutingProtocol
-	virtual void SetIpv4(Ptr<Ipv4> ipv4);
+	virtual void SetIpv4 (Ptr<Ipv4> ipv4);
 	// From Ipv4RoutingProtocol
-	virtual void PrintRoutingTable(Ptr<OutputStreamWrapper> stream) const;
-	Ptr<Ipv4Route> GetRoute(Ipv4Address source);
+	virtual void PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const;
+	Ptr<Ipv4Route> GetRoute (Ipv4Address source);
 
-	void DoDispose();
+	void DoDispose ();
 
-	void SetHelloHoldTime(uint16_t holdt){
+	void SetHelloHoldTime (uint16_t holdt){
 		m_helloHoldTime = holdt;
 	}
 
-	uint16_t GetHelloHoldTime(){
+	uint16_t GetHelloHoldTime (){
 		return m_helloHoldTime;
 	}
 
-	void SetGenerationID(uint32_t gid) {
+	void SetGenerationID (uint32_t gid) {
 		m_generationID = gid;
 	}
-	uint32_t GetGenerationID() {
+	uint32_t GetGenerationID () {
 		return m_generationID;
 	}
 
-	void SetStopTx() {
+	void SetStopTx () {
 		m_stopTx = true;
 	}
 
-	void UnsetStopTx() {
+	void UnsetStopTx () {
 		m_stopTx = false;
 	}
 
-	bool GetStopTx(){
+	bool GetStopTx (){
 		return m_stopTx;
 	}
 
 	void AddMulticastRoute (Ipv4Address source, Ipv4Address group, uint32_t inputInterface, std::vector<uint32_t> outputInterfaces);
 
-	void AddMulticastSource(Ipv4Address group);
-	bool GetMulticastSource(Ipv4Address group){
-		return (group.IsMulticast() && m_multicastSource.find(group)!=m_multicastSource.end());
+	void AddMulticastSource (Ipv4Address group);
+	bool GetMulticastSource (Ipv4Address group){
+		return (group.IsMulticast () && m_multicastSource.find (group)!=m_multicastSource.end ());
 	}
-	void DelMulticastSource(Ipv4Address group){
-		if(group.IsMulticast() && GetMulticastGroup(group)){
-			m_multicastSource.erase(group);
+	void DelMulticastSource (Ipv4Address group){
+		if (group.IsMulticast () && GetMulticastGroup (group)){
+			m_multicastSource.erase (group);
 		}
 	}
 
-	void AddMulticastGroup(Ipv4Address group);
-	bool GetMulticastGroup(Ipv4Address group){
-		return (group.IsMulticast() && m_multicastGroup.find(group)!=m_multicastGroup.end());
+	void AddMulticastGroup (Ipv4Address group);
+	bool GetMulticastGroup (Ipv4Address group){
+		return (group.IsMulticast () && m_multicastGroup.find (group)!=m_multicastGroup.end ());
 	}
 
-	void DelMulticastGroup(Ipv4Address group){
-		if(group.IsMulticast() && GetMulticastGroup(group)){
-			m_multicastGroup.erase(group);
+	void DelMulticastGroup (Ipv4Address group){
+		if (group.IsMulticast () && GetMulticastGroup (group)){
+			m_multicastGroup.erase (group);
 		}
 	}
 
-	uint16_t GetMetricPreference(uint32_t interface);
+	/// The preference value assigned to the unicast routing protocol that provided the route to the source
+	uint16_t GetMetricPreference (uint32_t interface);
 
-	void SetMetricPreference(uint32_t interface, uint16_t metric){}
+	void SetMetricPreference (uint32_t interface, uint16_t metric){}
 
-	uint16_t GetRouteMetric(uint32_t interface);
+	/// The cost metric of the unicast route to the source. The metric is in units applicable to the unicast routing protocol used.
+	uint16_t GetRouteMetric (uint32_t interface);
 
-	void SetRouteMetric(uint32_t interface, uint16_t metric){}
+	void SetRouteMetric (uint32_t interface, uint16_t metric){}
 
-	Ipv4Address GetNextHop(Ipv4Address destination);
+	Ipv4Address GetNextHop (Ipv4Address destination);
 
 	///\name Fields for each interface
 	/// Check that address is one of my interfaces
-	bool IsMyOwnAddress(const Ipv4Address & a) const;
+	bool IsMyOwnAddress (const Ipv4Address & a) const;
 
-	bool IsValidSG(uint32_t interface, const Ipv4Address & source,const Ipv4Address & group);
+	bool IsValidSG (uint32_t interface, const Ipv4Address & source,const Ipv4Address & group);
 
-	bool UsesNonPimDmOutgoingInterface(const Ipv4RoutingTableEntry &route);
+	bool UsesNonPimDmOutgoingInterface (const Ipv4RoutingTableEntry &route);
 
-	uint32_t GetReceivingInterface(Ipv4Address addr){
+	uint32_t GetReceivingInterface (Ipv4Address addr){
 		uint32_t interface = -1;
-		if(!addr.IsMulticast()){
-			Ptr<Ipv4Route> route = GetRoute(addr);
-			Ptr<NetDevice> dev = route->GetOutputDevice();
-			interface = m_ipv4->GetInterfaceForDevice(dev);
+		if (!addr.IsMulticast ()){
+			Ptr<Ipv4Route> route = GetRoute (addr);
+			Ptr<NetDevice> dev = route->GetOutputDevice ();
+			interface = m_ipv4->GetInterfaceForDevice (dev);
 		}
 		return interface;
 	}
 
-	Ipv4Header BuildHeader(Ipv4Address source, Ipv4Address destination, uint8_t protocol, uint16_t payloadSize, uint8_t ttl, bool mayFragment);
-
-	///< Randomized delay to prevent response implosion when sending a join message  to override someone else's prune
-	/// t_override is a random value between 0 and the interface's Override_Interval (OI(I)).
-	/// If all routers on a LAN are using the LAN Prune Delay option, the Override_Interval (OI(I)) MUST be set to the
-	/// largest value on the LAN.  Otherwise, the Override_Interval (OI(I)) MUST be set to 2.5 seconds.
-
-	uint32_t t_override(uint32_t interface){
-		return UniformVariable().GetValue(0, OverrideInterval(interface));
+	/// Threshold (I) returns the minimum TTL that a packet must have before it can be transmitted on interface I. TODO what is it?
+	uint32_t getThreshold (uint32_t interface){
+		return 2; //TODO check what is it
 	}
 
-	uint32_t OverrideInterval(uint32_t interface){
-			NeighborhoodStatus *ns = FindNeighborhoodStatus(interface);
+
+	Ipv4Header BuildHeader (Ipv4Address source, Ipv4Address destination, uint8_t protocol, uint16_t payloadSize, uint8_t ttl, bool mayFragment);
+
+	///< Randomized delay to prevent response implosion when sending a join message to override someone else's prune
+	/// t_override is a random value between 0 and the interface's Override_Interval (OI (I)).
+	/// If all routers on a LAN are using the LAN Prune Delay option, the Override_Interval (OI (I)) MUST be set to the
+	/// largest value on the LAN. Otherwise, the Override_Interval (OI (I)) MUST be set to 2.5 seconds.
+
+	uint32_t t_override (uint32_t interface){
+		return UniformVariable ().GetValue (0, OverrideInterval (interface));
+	}
+
+	uint32_t OverrideInterval (uint32_t interface){
+			NeighborhoodStatus *ns = FindNeighborhoodStatus (interface);
 			bool LPDO = true;
-			for(std::list<NeighborState>::iterator iter = ns->neighbors.begin(); iter!=ns->neighbors.end() && LPDO; iter++){
-				LPDO = LPDO && (iter->neighborOverrideInterval.GetSeconds()>0);
-				ns->overrideInterval = Max(ns->overrideInterval ,iter->neighborOverrideInterval);
+			for (std::list<NeighborState>::iterator iter = ns->neighbors.begin (); iter!=ns->neighbors.end () && LPDO; iter++){
+				LPDO = LPDO && (iter->neighborOverrideInterval.GetSeconds ()>0);
+				ns->overrideInterval = Max (ns->overrideInterval ,iter->neighborOverrideInterval);
 			}
-			return (LPDO?ns->overrideInterval.GetSeconds():Override_Interval);
+			return (LPDO?ns->overrideInterval.GetSeconds ():Override_Interval);
 	}
 
 	PIMHeader::EncodedUnicast ForgeEncodedUnicast (Ipv4Address unicast){
@@ -399,425 +405,425 @@ private:
 			return egroup;
 		}
 
-	PIMHeader::EncodedGroup ForgeEncodedGroup(Ipv4Address group){
+	PIMHeader::EncodedGroup ForgeEncodedGroup (Ipv4Address group){
 		PIMHeader::EncodedGroup egroup = {AF_IPv4, NATIVE_ENCODING, 0, 0, 0, IPV4_ADDRESS_SIZE, group};
 		return egroup;
 	}
 
-	PIMHeader::EncodedSource ForgeEncodedSource(Ipv4Address source){
+	PIMHeader::EncodedSource ForgeEncodedSource (Ipv4Address source){
 		PIMHeader::EncodedSource esource = {AF_IPv4, NATIVE_ENCODING, 0, 0, 0, 0, IPV4_ADDRESS_SIZE, source};
 		return esource;
 	}
 
-	void ForgeHeaderMessage(enum PIMType type, PIMHeader &msg);
-	void ForgeHelloMessage(uint32_t interface, PIMHeader &msg);
+	void ForgeHeaderMessage (enum PIMType type, PIMHeader &msg);
+	void ForgeHelloMessage (uint32_t interface, PIMHeader &msg);
 	void ForgeHelloMessageHoldTime (uint32_t interface, PIMHeader &msg);
 	void ForgeHelloMessageLANPD (uint32_t interface, PIMHeader &msg);
 	void ForgeHelloMessageGenID (uint32_t interface, PIMHeader &msg);
 	void ForgeHelloMessageStateRefresh (uint32_t interface, PIMHeader &msg);
 
-//	void ForgePruneMessage(PIMHeader &msg);
+//	void ForgePruneMessage (PIMHeader &msg);
 	void ForgePruneMessage (PIMHeader &msg, Ipv4Address const upstreamNeighbor);
 	void ForgeAssertMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp);
 	void ForgeAssertCancelMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp);
 
-	void AddMulticastGroupEntry(PIMHeader &msg,PIMHeader::MulticastGroupEntry &entry);
-	void CreateMulticastGroupEntry(PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedGroup group);
-	void AddMulticastGroupSourceJoin(PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedSource source);
-	void AddMulticastGroupSourcePrune(PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedSource source);
+	void AddMulticastGroupEntry (PIMHeader &msg,PIMHeader::MulticastGroupEntry &entry);
+	void CreateMulticastGroupEntry (PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedGroup group);
+	void AddMulticastGroupSourceJoin (PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedSource source);
+	void AddMulticastGroupSourcePrune (PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedSource source);
 
-	void SendHello(uint32_t interface);
-	void SendNeighHello(uint32_t interface, Ipv4Address destination);
-	void RecvHello(pimdm::PIMHeader::HelloMessage &hello, Ipv4Address sender, Ipv4Address receiver);
+	void SendHello (uint32_t interface);
+	void SendNeighHello (uint32_t interface, Ipv4Address destination);
+	void RecvHello (pimdm::PIMHeader::HelloMessage &hello, Ipv4Address sender, Ipv4Address receiver);
 
  	void ForgeStateRefresh (uint32_t interface, SourceGroupPair &sgp, PIMHeader &msg);
-	void SendStateRefresh(uint32_t interface, PIMHeader &refresh);
-	void SendStateRefreshPair(uint32_t interface, Ipv4Address target,SourceGroupPair &sgpair);
-	void RecvStateRefresh(PIMHeader::StateRefreshMessage &refresh,Ipv4Address sender, Ipv4Address receiver);
-	void ForwardingStateRefresh(PIMHeader::StateRefreshMessage &refresh,Ipv4Address sender, Ipv4Address receiver);
+	void SendStateRefresh (uint32_t interface, PIMHeader &refresh);
+	void SendStateRefreshPair (uint32_t interface, Ipv4Address target,SourceGroupPair &sgpair);
+	void RecvStateRefresh (PIMHeader::StateRefreshMessage &refresh,Ipv4Address sender, Ipv4Address receiver);
+	void ForwardingStateRefresh (PIMHeader::StateRefreshMessage &refresh,Ipv4Address sender, Ipv4Address receiver);
 
-	void RecvJP(PIMHeader::JoinPruneMessage &jp, Ipv4Address sender,Ipv4Address receiver);
+	void RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address sender,Ipv4Address receiver);
 
-	void RecvJoin(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
-	void RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
-	void RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
+	void RecvJoin (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
+	void RecvJoinUpstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
+	void RecvJoinDownstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
 
-	void RecvPrune(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
-	void RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
-	void RecvPruneDownstream(PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
+	void RecvPrune (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
+	void RecvPruneUpstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
+	void RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
 
-	void RecvAssert(PIMHeader::AssertMessage &assert, Ipv4Address sender,Ipv4Address receiver);
+	void RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Address sender,Ipv4Address receiver);
 
-	void SendGraft(uint32_t interface, SourceGroupPair pair);
-	void SendGraftUnicast(Ipv4Address destination,SourceGroupPair pair);
+	void SendGraft (uint32_t interface, SourceGroupPair pair);
+	void SendGraftUnicast (Ipv4Address destination,SourceGroupPair pair);
 
-	void RecvGraft(PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver);
-	void RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group);
+	void RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver);
+	void RecvGraftDownstream (PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group);
 
-	void SendGraftAck(uint32_t interface, SourceGroupPair pair);
-	void SendGraftAckUnicast(uint32_t interface, SourceGroupPair &pair, const Ipv4Address receiver);
-	void RecvGraftAck(PIMHeader::GraftAckMessage &graftAck, Ipv4Address sender,Ipv4Address receiver);
+	void SendGraftAck (uint32_t interface, SourceGroupPair pair);
+	void SendGraftAckUnicast (uint32_t interface, SourceGroupPair &pair, const Ipv4Address receiver);
+	void RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ipv4Address sender,Ipv4Address receiver);
 
-	void SendPruneBroadcast(uint32_t interface, SourceGroupPair &sgpair);
-	void SendPruneUnicast(Ipv4Address destination, SourceGroupPair &sgpair);
+	void SendPruneBroadcast (uint32_t interface, SourceGroupPair &sgpair);
+	void SendPruneUnicast (Ipv4Address destination, SourceGroupPair &sgpair);
 
-	void SendJoinUnicast(Ipv4Address destination, SourceGroupPair &sgpair);
+	void SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgpair);
 
-	void RecvData(Ptr<Socket> socket);
-	void SendPacketBroadcast(Ptr<Packet> packet, const PIMHeader &message);
-	void SendPacketUnicast(Ptr<Packet> packet, const PIMHeader &message, Ipv4Address destination);
+	void RecvData (Ptr<Socket> socket);
+	void SendPacketBroadcast (Ptr<Packet> packet, const PIMHeader &message);
+	void SendPacketUnicast (Ptr<Packet> packet, const PIMHeader &message, Ipv4Address destination);
 	void SendPacketBroadcastInterface (Ptr<Packet> packet, const PIMHeader &message, uint32_t interface);
 	void SendPacketBroadcastInterface (Ptr<Packet> packet, uint32_t interface);
 	void SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv4Header &ipv4Header, uint32_t interface);
-	void SendPacketPIMRouters(Ptr<Packet> packet, const PIMHeader &message);
-	void SendPacketPIMRouters(Ptr<Packet> packet, const PIMHeader &message, uint32_t interface);
+	void SendPacketPIMRouters (Ptr<Packet> packet, const PIMHeader &message);
+	void SendPacketPIMRouters (Ptr<Packet> packet, const PIMHeader &message, uint32_t interface);
 	//end
-	void NeighborRestart(uint32_t interface);
+	void NeighborRestart (uint32_t interface);
 
-	void RecvPimDm(Ptr<Socket> socket);
+	void RecvPimDm (Ptr<Socket> socket);
 
-	void UpdateAssertWinner(SourceGroupState *sgState, Ipv4Address source){
-		sgState->AssertWinner.metricPreference = GetMetricPreference(GetReceivingInterface(source));
-		sgState->AssertWinner.routeMetric = GetRouteMetric(GetReceivingInterface(source));
-		sgState->AssertWinner.IPAddress = GetLocalAddress(GetReceivingInterface(source));
+	void UpdateAssertWinner (SourceGroupState *sgState, Ipv4Address source){
+		sgState->AssertWinner.metricPreference = GetMetricPreference (GetReceivingInterface (source));
+		sgState->AssertWinner.routeMetric = GetRouteMetric (GetReceivingInterface (source));
+		sgState->AssertWinner.IPAddress = GetLocalAddress (GetReceivingInterface (source));
 	}
 
-	void UpdateAssertWinner(SourceGroupState *sgState, uint32_t metricP, uint32_t routeP, Ipv4Address winner){
+	void UpdateAssertWinner (SourceGroupState *sgState, uint32_t metricP, uint32_t routeP, Ipv4Address winner){
 			sgState->AssertWinner.metricPreference = metricP;
 			sgState->AssertWinner.routeMetric = routeP;
 			sgState->AssertWinner.IPAddress = winner;
 		}
 
-	void NeighborTimeout(uint32_t interface);
+	void NeighborTimeout (uint32_t interface);
 	/**
 	 * Downstream Interface.
 	 * All interfaces that are not the upstream interface, including the router itself.
 	 */
-	bool IsDownstream(uint32_t interface, SourceGroupPair sgpair);
+	bool IsDownstream (uint32_t interface, SourceGroupPair sgpair);
 	/**
 	 * Upstream Interface.
-	 * Interface toward the source of the datagram.  Also known as the RPF Interface.
+	 * Interface toward the source of the datagram. Also known as the RPF Interface.
 	 */
-	bool IsUpstream(uint32_t interface, SourceGroupPair sgpair);
+	bool IsUpstream (uint32_t interface, SourceGroupPair sgpair);
 
 	void SendPacket (Ptr<Packet> packet, const PIMMessageList &containedMessages);
 
-	void HelloTimerExpire(uint32_t i);
-	void OTTimerExpire(SourceGroupPair &sg);
-	void GRTTimerExpire(SourceGroupPair &sgp);
-	void PLTTimerExpire(SourceGroupPair &sgp);
+	void HelloTimerExpire (uint32_t i);
+	void OTTimerExpire (SourceGroupPair &sg);
+	void GRTTimerExpire (SourceGroupPair &sgp);
+	void PLTTimerExpire (SourceGroupPair &sgp);
 	void ATTimerExpire (SourceGroupPair &sgp);
-	void PPTTimerExpire(SourceGroupPair &sgp);
-	void PTTimerExpire(SourceGroupPair &sgp);
+	void PPTTimerExpire (SourceGroupPair &sgp);
+	void PTTimerExpire (SourceGroupPair &sgp);
 	void NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr);
 	void SRTTimerExpire (SourceGroupPair &sgp);
 	void SATTimerExpire (SourceGroupPair &sgp);
 
-	SourceGroupList* FindSourceGroupList(uint32_t interface) {
+	SourceGroupList* FindSourceGroupList (uint32_t interface) {
 		std::map<uint32_t, SourceGroupList>::iterator iter =
-				m_IfaceSourceGroup.find(interface);
-		return (iter == m_IfaceSourceGroup.end() ? NULL : &iter->second);
+				m_IfaceSourceGroup.find (interface);
+		return (iter == m_IfaceSourceGroup.end () ? NULL : &iter->second);
 	}
 
-	void InsertSourceGroupList(uint32_t interface) {
+	void InsertSourceGroupList (uint32_t interface) {
 		std::map<uint32_t, SourceGroupList>::iterator iter =
-				m_IfaceSourceGroup.find(interface);
-		if (iter != m_IfaceSourceGroup.end())
+				m_IfaceSourceGroup.find (interface);
+		if (iter != m_IfaceSourceGroup.end ())
 			return;
 		SourceGroupList sgl;
-		m_IfaceSourceGroup.insert(std::pair<uint32_t, SourceGroupList>(interface, sgl));
+		m_IfaceSourceGroup.insert (std::pair<uint32_t, SourceGroupList> (interface, sgl));
 	}
 
-	void EraseSourceGroupList(uint32_t interface) {
-		m_IfaceSourceGroup.erase(interface);
+	void EraseSourceGroupList (uint32_t interface) {
+		m_IfaceSourceGroup.erase (interface);
 	}
 
-	SourceGroupState* FindSourceGroupState(uint32_t interface,const SourceGroupState &sgs) {
-		SourceGroupList *sgl = FindSourceGroupList(interface);
+	SourceGroupState* FindSourceGroupState (uint32_t interface,const SourceGroupState &sgs) {
+		SourceGroupList *sgl = FindSourceGroupList (interface);
 		if (!sgl)
 			return NULL;
-		for (SourceGroupList::iterator iter = sgl->begin(); iter != sgl->end(); iter++) {
+		for (SourceGroupList::iterator iter = sgl->begin (); iter != sgl->end (); iter++) {
 			if (*iter == sgs)
-				return &(*iter);
+				return & (*iter);
 		}
 		return NULL;
 	}
 
-	SourceGroupState* FindSourceGroupState(uint32_t interface,const SourceGroupPair &sgp) {
-		SourceGroupList *sgl = FindSourceGroupList(interface);
+	SourceGroupState* FindSourceGroupState (uint32_t interface,const SourceGroupPair &sgp) {
+		SourceGroupList *sgl = FindSourceGroupList (interface);
 		if (!sgl)
 			return NULL;
-		for (SourceGroupList::iterator iter = sgl->begin(); iter != sgl->end(); iter++) {
+		for (SourceGroupList::iterator iter = sgl->begin (); iter != sgl->end (); iter++) {
 			if (iter->SGPair == sgp)
-				return &(*iter);
+				return & (*iter);
 		}
 		return NULL;
 	}
-	SourceGroupState* FindSourceGroupState(uint32_t interface, const Ipv4Address source, const Ipv4Address group) {
-		SourceGroupPair sgp(source,group);
-		return FindSourceGroupState(RPF_interface(source),sgp);
+	SourceGroupState* FindSourceGroupState (uint32_t interface, const Ipv4Address source, const Ipv4Address group) {
+		SourceGroupPair sgp (source,group);
+		return FindSourceGroupState (RPF_interface (source),sgp);
 	}
 
-	void InsertSourceGroupState(uint32_t interface, SourceGroupState ns) {
-		if (!FindSourceGroupState(interface, ns)) {
-			m_IfaceSourceGroup.find(interface)->second.push_back(ns);
-			//NeighborhoodStatus *status = FindNeighborhoodStatus(interface);
-			SourceGroupState *sgs = FindSourceGroupState(interface, ns);
+	void InsertSourceGroupState (uint32_t interface, SourceGroupState ns) {
+		if (!FindSourceGroupState (interface, ns)) {
+			m_IfaceSourceGroup.find (interface)->second.push_back (ns);
+			//NeighborhoodStatus *status = FindNeighborhoodStatus (interface);
+			SourceGroupState *sgs = FindSourceGroupState (interface, ns);
 			sgs->upstream = NULL;
 			sgs->LocalMembership = Local_NoInfo;
 			sgs->PruneState = Prune_NoInfo;
 			sgs->AssertState = Assert_NoInfo;
-			if(RPF_interface(ns.SGPair.sourceIfaceAddr) == interface){
+			if (RPF_interface (ns.SGPair.sourceIfaceAddr) == interface){
 				UpstreamState us;
 				sgs->upstream=&us;
 //				sgs->upstream->GraftPrune = GP_NoInfo;
 				sgs->upstream;
 			}
-			//	  		sgs->SG_PPT.Cancel();
-			//	  		sgs->SG_PPT.SetDelay(status->overrideInterval+status->propagationDelay);
-			//	  		///sgs->SG_PPT.SetFunction (&MulticastRoutingProtocol::???, this);
-			//	  		sgs->SG_PT.Cancel();
-			//	  		///sgs->SG_PT.SetFunction (&MulticastRoutingProtocol::???, this);
-			//	  		sgs->SG_AT.Cancel();
-			//	  		sgs->SG_AT.SetDelay(Time(Seconds(180)));
-			//	  		///sgs->SG_AT.SetFunction (&MulticastRoutingProtocol::???, this);
-			//	  		sgs->SG_PLT.Cancel();
-			//	  		sgs->SG_PLT.SetDelay(Seconds(210));
-			//	  		///sgs->SG_PLT.SetFunction (&MulticastRoutingProtocol::???, this);
-			//	  		sgs->SG_SAT.Cancel();
-			//	  		sgs->SG_SAT.SetDelay(Seconds(210));
-			//	  		///sgs->SG_SAT.SetFunction (&MulticastRoutingProtocol::???, this);
-			//	  		sgs->SG_SRT.Cancel();
-			//	  		sgs->SG_SRT.SetDelay(Seconds(60));
-			//	  		///sgs->SG_SRT.SetFunction (&MulticastRoutingProtocol::???, this);
+			//	 		sgs->SG_PPT.Cancel ();
+			//	 		sgs->SG_PPT.SetDelay (status->overrideInterval+status->propagationDelay);
+			//	 		///sgs->SG_PPT.SetFunction (&MulticastRoutingProtocol::???, this);
+			//	 		sgs->SG_PT.Cancel ();
+			//	 		///sgs->SG_PT.SetFunction (&MulticastRoutingProtocol::???, this);
+			//	 		sgs->SG_AT.Cancel ();
+			//	 		sgs->SG_AT.SetDelay (Time (Seconds (180)));
+			//	 		///sgs->SG_AT.SetFunction (&MulticastRoutingProtocol::???, this);
+			//	 		sgs->SG_PLT.Cancel ();
+			//	 		sgs->SG_PLT.SetDelay (Seconds (210));
+			//	 		///sgs->SG_PLT.SetFunction (&MulticastRoutingProtocol::???, this);
+			//	 		sgs->SG_SAT.Cancel ();
+			//	 		sgs->SG_SAT.SetDelay (Seconds (210));
+			//	 		///sgs->SG_SAT.SetFunction (&MulticastRoutingProtocol::???, this);
+			//	 		sgs->SG_SRT.Cancel ();
+			//	 		sgs->SG_SRT.SetDelay (Seconds (60));
+			//	 		///sgs->SG_SRT.SetFunction (&MulticastRoutingProtocol::???, this);
 		}
 	}
 
 
-	void InsertSourceGroupState(uint32_t interface, SourceGroupPair sgp) {
-		SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
+	void InsertSourceGroupState (uint32_t interface, SourceGroupPair sgp) {
+		SourceGroupState *sgState = FindSourceGroupState (interface, sgp);
 			if (sgState == NULL) {
-				SourceGroupState sgs(sgp);
+				SourceGroupState sgs (sgp);
 				sgs.LocalMembership = Local_NoInfo;
 				sgs.PruneState = Prune_NoInfo;
 				sgs.AssertState = Assert_NoInfo;
 				sgs.upstream = NULL;
-				m_IfaceSourceGroup.find(interface)->second.push_back(sgs);
-				sgState = FindSourceGroupState(interface, sgp);
-				uint32_t rpf_i = RPF_interface(sgs.SGPair.sourceIfaceAddr);
-				if(rpf_i== interface){
+				m_IfaceSourceGroup.find (interface)->second.push_back (sgs);
+				sgState = FindSourceGroupState (interface, sgp);
+				uint32_t rpf_i = RPF_interface (sgs.SGPair.sourceIfaceAddr);
+				if (rpf_i== interface){
 					sgState->upstream = new UpstreamState;
 				}
-				//	  		sgs->SG_PPT.Cancel();
-				//	  		sgs->SG_PPT.SetDelay(status->overrideInterval+status->propagationDelay);
-				//	  		///sgs->SG_PPT.SetFunction (&MulticastRoutingProtocol::???, this);
-				//	  		sgs->SG_PT.Cancel();
-				//	  		///sgs->SG_PT.SetFunction (&MulticastRoutingProtocol::???, this);
-				//	  		sgs->SG_AT.Cancel();
-				//	  		sgs->SG_AT.SetDelay(Time(Seconds(180)));
-				//	  		///sgs->SG_AT.SetFunction (&MulticastRoutingProtocol::???, this);
-				//	  		sgs->SG_PLT.Cancel();
-				//	  		sgs->SG_PLT.SetDelay(Seconds(210));
-				//	  		///sgs->SG_PLT.SetFunction (&MulticastRoutingProtocol::???, this);
-				//	  		sgs->SG_SAT.Cancel();
-				//	  		sgs->SG_SAT.SetDelay(Seconds(210));
-				//	  		///sgs->SG_SAT.SetFunction (&MulticastRoutingProtocol::???, this);
-				//	  		sgs->SG_SRT.Cancel();
-				//	  		sgs->SG_SRT.SetDelay(Seconds(60));
-				//	  		///sgs->SG_SRT.SetFunction (&MulticastRoutingProtocol::???, this);
+				//	 		sgs->SG_PPT.Cancel ();
+				//	 		sgs->SG_PPT.SetDelay (status->overrideInterval+status->propagationDelay);
+				//	 		///sgs->SG_PPT.SetFunction (&MulticastRoutingProtocol::???, this);
+				//	 		sgs->SG_PT.Cancel ();
+				//	 		///sgs->SG_PT.SetFunction (&MulticastRoutingProtocol::???, this);
+				//	 		sgs->SG_AT.Cancel ();
+				//	 		sgs->SG_AT.SetDelay (Time (Seconds (180)));
+				//	 		///sgs->SG_AT.SetFunction (&MulticastRoutingProtocol::???, this);
+				//	 		sgs->SG_PLT.Cancel ();
+				//	 		sgs->SG_PLT.SetDelay (Seconds (210));
+				//	 		///sgs->SG_PLT.SetFunction (&MulticastRoutingProtocol::???, this);
+				//	 		sgs->SG_SAT.Cancel ();
+				//	 		sgs->SG_SAT.SetDelay (Seconds (210));
+				//	 		///sgs->SG_SAT.SetFunction (&MulticastRoutingProtocol::???, this);
+				//	 		sgs->SG_SRT.Cancel ();
+				//	 		sgs->SG_SRT.SetDelay (Seconds (60));
+				//	 		///sgs->SG_SRT.SetFunction (&MulticastRoutingProtocol::???, this);
 				}
 		}
 
 
-	void EraseSourceGroupState(uint32_t interface, const SourceGroupState &ns) {
-		SourceGroupList *sgl = FindSourceGroupList(interface);
+	void EraseSourceGroupState (uint32_t interface, const SourceGroupState &ns) {
+		SourceGroupList *sgl = FindSourceGroupList (interface);
 		if (!sgl)
 			return;
-		for (SourceGroupList::iterator iter = sgl->begin(); iter != sgl->end(); iter++) {
+		for (SourceGroupList::iterator iter = sgl->begin (); iter != sgl->end (); iter++) {
 			if (*iter == ns) {
-				sgl->erase(iter++);
+				sgl->erase (iter++);
 			}
 		}
 	}
 
-	void ChangeSourceGroupState(uint32_t oldinterface, uint32_t newinterface, const SourceGroupState &ns) {
-		SourceGroupList *sgl = FindSourceGroupList(oldinterface);
-		SourceGroupList *sgl_new = FindSourceGroupList(newinterface);
+	void ChangeSourceGroupState (uint32_t oldinterface, uint32_t newinterface, const SourceGroupState &ns) {
+		SourceGroupList *sgl = FindSourceGroupList (oldinterface);
+		SourceGroupList *sgl_new = FindSourceGroupList (newinterface);
 		if (!sgl || !sgl_new)
 			return;
-		for (SourceGroupList::iterator iter = sgl->begin(); iter != sgl->end(); iter++) {
+		for (SourceGroupList::iterator iter = sgl->begin (); iter != sgl->end (); iter++) {
 			if (*iter == ns) {
-				sgl_new->push_back(*iter);
-				sgl->erase(iter++);
+				sgl_new->push_back (*iter);
+				sgl->erase (iter++);
 			}
 		}
 	}
 
-	NeighborhoodStatus* FindNeighborhoodStatus(uint32_t interface) {
+	NeighborhoodStatus* FindNeighborhoodStatus (uint32_t interface) {
 		std::map<uint32_t, NeighborhoodStatus>::iterator iter =
-				m_IfaceNeighbors.find(interface);
-		return (iter == m_IfaceNeighbors.end() ? NULL : &(iter->second));
+				m_IfaceNeighbors.find (interface);
+		return (iter == m_IfaceNeighbors.end () ? NULL : & (iter->second));
 	}
 
-	void InsertNeighborhoodStatus(const uint32_t interface) {
-		if (!FindNeighborhoodStatus(interface)) {
+	void InsertNeighborhoodStatus (const uint32_t interface) {
+		if (!FindNeighborhoodStatus (interface)) {
 			NeighborhoodStatus *is = new NeighborhoodStatus;
-			m_IfaceNeighbors.insert(std::pair<uint32_t, NeighborhoodStatus>(interface, *is));
+			m_IfaceNeighbors.insert (std::pair<uint32_t, NeighborhoodStatus> (interface, *is));
 		}
 	}
 
-	void EraseNeighborhoodStatus(const uint32_t interface) {
-		m_IfaceNeighbors.erase(interface);
+	void EraseNeighborhoodStatus (const uint32_t interface) {
+		m_IfaceNeighbors.erase (interface);
 	}
 
-	NeighborState* FindNeighborState(uint32_t interface, const NeighborState ns) {
-		NeighborhoodStatus *status = FindNeighborhoodStatus(interface);
+	NeighborState* FindNeighborState (uint32_t interface, const NeighborState ns) {
+		NeighborhoodStatus *status = FindNeighborhoodStatus (interface);
 		if (!status)
 			return NULL;
 		NeighborList *list = &status->neighbors;
-		for (NeighborList::iterator iter = list->begin(); iter != list->end(); iter++) {
-			NeighborState *no = &(*iter);
+		for (NeighborList::iterator iter = list->begin (); iter != list->end (); iter++) {
+			NeighborState *no = & (*iter);
 			if (*iter == ns)//non li confronta
-				return &(*iter);
+				return & (*iter);
 		}
 		return NULL;
 	}
 
-	void InsertNeighborState(uint32_t interface, const NeighborState ns);
+	void InsertNeighborState (uint32_t interface, const NeighborState ns);
 
-	void EraseNeighborState(uint32_t interface, const NeighborState &ns) {
-		FindNeighborhoodStatus(interface)->neighbors.remove(ns);
+	void EraseNeighborState (uint32_t interface, const NeighborState &ns) {
+		FindNeighborhoodStatus (interface)->neighbors.remove (ns);
 	}
 
-	void EraseNeighborState(const uint32_t interface) {
+	void EraseNeighborState (const uint32_t interface) {
 		std::map<uint32_t, NeighborhoodStatus>::iterator iter =
-				m_IfaceNeighbors.find(interface);
-		if (iter != m_IfaceNeighbors.end())
-			m_IfaceNeighbors.erase(iter);
+				m_IfaceNeighbors.find (interface);
+		if (iter != m_IfaceNeighbors.end ())
+			m_IfaceNeighbors.erase (iter);
 	}
 
-	void SetStateRefreshCapable(uint32_t interface, bool state) {
-		NeighborhoodStatus *in = FindNeighborhoodStatus(interface);
+	void SetStateRefreshCapable (uint32_t interface, bool state) {
+		NeighborhoodStatus *in = FindNeighborhoodStatus (interface);
 		in->stateRefreshCapable = state;
 	}
 
-	void SetLANDelayEnabled(uint32_t interface, bool state) {
-		NeighborhoodStatus *in = FindNeighborhoodStatus(interface);
+	void SetLANDelayEnabled (uint32_t interface, bool state) {
+		NeighborhoodStatus *in = FindNeighborhoodStatus (interface);
 		in->LANDelayEnabled = state;
 	}
 
-	void SetPropagationDelay(uint32_t interface, Time delay) {
-		NeighborhoodStatus *in = FindNeighborhoodStatus(interface);
+	void SetPropagationDelay (uint32_t interface, Time delay) {
+		NeighborhoodStatus *in = FindNeighborhoodStatus (interface);
 		in->propagationDelay = delay;
 	}
 
-	void SetOverrideInterval(uint32_t interface, Time interval) {
-		NeighborhoodStatus *in = FindNeighborhoodStatus(interface);
+	void SetOverrideInterval (uint32_t interface, Time interval) {
+		NeighborhoodStatus *in = FindNeighborhoodStatus (interface);
 		in->overrideInterval = interval;
 	}
 
-	void GetPrinterList(std::string string, std::set<uint32_t> resB){
+	void GetPrinterList (std::string string, std::set<uint32_t> resB){
 		std::cout<<string<<": ";
-		for(std::set<uint32_t>::iterator iter = resB.begin(); iter!= resB.end(); iter++){
+		for (std::set<uint32_t>::iterator iter = resB.begin (); iter!= resB.end (); iter++){
 			std::cout<<*iter<<" ";
 		}
-		std::cout<<(resB.begin() == resB.end()?"-":".")<<"\n";
+		std::cout<< (resB.begin () == resB.end ()?"-":".")<<"\n";
 	}
 
 	///
 	/// \brief The most important macros are those defining the outgoing
-	///   interface list (or "olist") for the relevant state.
-	///   immediate_olist(S,G) = pim_nbrs (-) prunes(S,G) (+) ( pim_include(*,G) (-) pim_exclude(S,G) ) (+)
-	///                           pim_include(S,G) (-) lost_assert(S,G) (-) boundary(G)
+	///  interface list (or "olist") for the relevant state.
+	///  immediate_olist (S,G) = pim_nbrs (-) prunes (S,G) (+) ( pim_include (*,G) (-) pim_exclude (S,G) ) (+)
+	///              pim_include (S,G) (-) lost_assert (S,G) (-) boundary (G)
 	/// \param source Source IPv4 address
 	/// \param group Multicast group IPv4 address
 	///
-	std::set<uint32_t> immediate_olist(Ipv4Address source, Ipv4Address group) {
+	std::set<uint32_t> immediate_olist (Ipv4Address source, Ipv4Address group) {
 
 		std::set<uint32_t> resA;
 		/// The set pim_nbrs is the set of all interfaces on which the router has at least one active PIM neighbor.
-		std::set<uint32_t> pim_nbrz = pim_nbrs();
-		GetPrinterList("pim_nbrz",pim_nbrz);
-		/// prunes(S,G) = {all interfaces I such that DownstreamPState(S,G,I) is in Pruned state}
-		std::set<uint32_t> prunez = prunes(source, group);
-		GetPrinterList("prunez",prunez);
-		/// pim_nbrs *(-)* prunes(S,G)
-		std::set_difference(pim_nbrz.begin(), pim_nbrz.end(), prunez.begin(), prunez.end(),
-				 std::inserter(resA, resA.end()));
-		GetPrinterList("pim_nbrs *(-)* prunes(S,G)",resA);
+		std::set<uint32_t> pim_nbrz = pim_nbrs ();
+		GetPrinterList ("pim_nbrz",pim_nbrz);
+		/// prunes (S,G) = {all interfaces I such that DownstreamPState (S,G,I) is in Pruned state}
+		std::set<uint32_t> prunez = prunes (source, group);
+		GetPrinterList ("prunez",prunez);
+		/// pim_nbrs * (-)* prunes (S,G)
+		std::set_difference (pim_nbrz.begin (), pim_nbrz.end (), prunez.begin (), prunez.end (),
+				 std::inserter (resA, resA.end ()));
+		GetPrinterList ("pim_nbrs * (-)* prunes (S,G)",resA);
 		std::set<uint32_t> resB;
-		/// pim_include(*,G) = {all interfaces I such that: local_receiver_include(*,G,I)}
-		std::set<uint32_t> inc = pim_include(Ipv4Address::GetAny(), group);
-		GetPrinterList("pim_include (*,G)",inc);
-		/// pim_exclude(S,G) = {all interfaces I such that: local_receiver_exclude(S,G,I)}
-		std::set<uint32_t> exc = pim_exclude(source, group);
-		GetPrinterList("pim_exclude (S,G)",exc);
-		/// pim_include(*,G) *(-)* pim_exclude(S,G)
-		std::set_difference(inc.begin(), inc.end(), exc.begin(), exc.end(), std::inserter(resB, resB.end()));
-		GetPrinterList("pim_include(*,G) *(-)* pim_exclude(S,G)",resB);
+		/// pim_include (*,G) = {all interfaces I such that: local_receiver_include (*,G,I)}
+		std::set<uint32_t> inc = pim_include (Ipv4Address::GetAny (), group);
+		GetPrinterList ("pim_include (*,G)",inc);
+		/// pim_exclude (S,G) = {all interfaces I such that: local_receiver_exclude (S,G,I)}
+		std::set<uint32_t> exc = pim_exclude (source, group);
+		GetPrinterList ("pim_exclude (S,G)",exc);
+		/// pim_include (*,G) * (-)* pim_exclude (S,G)
+		std::set_difference (inc.begin (), inc.end (), exc.begin (), exc.end (), std::inserter (resB, resB.end ()));
+		GetPrinterList ("pim_include (*,G) * (-)* pim_exclude (S,G)",resB);
 		std::set<uint32_t> result;
-		/// pim_nbrs (-) prunes(S,G) *(+)* (pim_include(*,G) (-) pim_exclude(S,G) )
-		std::set_union(resA.begin(), resA.end(), resB.begin(), resB.end(), std::inserter(result, result.end()));
-		GetPrinterList("pim_nbrs (-) prunes(S,G) *(+)* (pim_include(*,G) (-) pim_exclude(S,G))",result);
-		/// pim_include(S,G) = {all interfaces I such that: local_receiver_include(S,G,I)}
-		std::set<uint32_t> incC = pim_include(source, group);
-		GetPrinterList("pim_include(S,G)",incC);
-		/// pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) *(+)* pim_include(S,G)
-		std::set_union(result.begin(), result.end(), incC.begin(), incC.end(), std::inserter(resA, resA.end()));
-		GetPrinterList("pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) *(+)* pim_include(S,G)",resA);
+		/// pim_nbrs (-) prunes (S,G) * (+)* (pim_include (*,G) (-) pim_exclude (S,G) )
+		std::set_union (resA.begin (), resA.end (), resB.begin (), resB.end (), std::inserter (result, result.end ()));
+		GetPrinterList ("pim_nbrs (-) prunes (S,G) * (+)* (pim_include (*,G) (-) pim_exclude (S,G))",result);
+		/// pim_include (S,G) = {all interfaces I such that: local_receiver_include (S,G,I)}
+		std::set<uint32_t> incC = pim_include (source, group);
+		GetPrinterList ("pim_include (S,G)",incC);
+		/// pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) * (+)* pim_include (S,G)
+		std::set_union (result.begin (), result.end (), incC.begin (), incC.end (), std::inserter (resA, resA.end ()));
+		GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) * (+)* pim_include (S,G)",resA);
 
-		std::set<uint32_t> lostC = lost_assert(source, group);
-		GetPrinterList("lost_assert",lostC);
-		/// pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) (+) pim_include(S,G) *(-)* lost_assert(S,G)
-		std::set_difference(resA.begin(), resA.end(), lostC.begin(), lostC.end(),std::inserter(resB, resB.end()));
-		GetPrinterList("pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) (+) pim_include(S,G) *(-)* lost_assert(S,G)",resB);
-		std::set<uint32_t> boundC = boundary(group);
-		GetPrinterList("boundary",boundC);
+		std::set<uint32_t> lostC = lost_assert (source, group);
+		GetPrinterList ("lost_assert",lostC);
+		/// pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) * (-)* lost_assert (S,G)
+		std::set_difference (resA.begin (), resA.end (), lostC.begin (), lostC.end (),std::inserter (resB, resB.end ()));
+		GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) * (-)* lost_assert (S,G)",resB);
+		std::set<uint32_t> boundC = boundary (group);
+		GetPrinterList ("boundary",boundC);
 		std::set<uint32_t> resC;
-		/// pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) (+) pim_include(S,G) (-) lost_assert(S,G) *(-)* boundary(G)
-		std::set_difference(resB.begin(), resB.end(), boundC.begin(), boundC.end(),std::inserter(resC, resC.end()));
-		GetPrinterList("pim_nbrs (-) prunes(S,G) (+) (pim_include(*,G) (-) pim_exclude(S,G) ) (+) pim_include(S,G) (-) lost_assert(S,G) *(-)* boundary(G)",resC);
+		/// pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) (-) lost_assert (S,G) * (-)* boundary (G)
+		std::set_difference (resB.begin (), resB.end (), boundC.begin (), boundC.end (),std::inserter (resC, resC.end ()));
+		GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) (-) lost_assert (S,G) * (-)* boundary (G)",resC);
 		return resC;
 	}
 
-	void SourceDirectlyConnected(SourceGroupPair &sgp);
-	void SourceNoDirectlyConnected(SourceGroupPair &sgp);
+	void SourceDirectlyConnected (SourceGroupPair &sgp);
+	void SourceNoDirectlyConnected (SourceGroupPair &sgp);
 	/// Basically RPF' is the RPF neighbor toward a source
 	/// unless a PIM-DM Assert has overridden the normal choice of neighbor.
 
-	void RPF_primeChanges(SourceGroupPair &sgp);
+	void RPF_primeChanges (SourceGroupPair &sgp);
 
-	void RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterface, uint32_t newInterface);
+	void RPF_Changes (SourceGroupPair &sgp, uint32_t oldInterface, uint32_t newInterface);
 
-	void RPFCheck(SourceGroupPair sgp, uint32_t interface);
+	void RPFCheck (SourceGroupPair sgp, uint32_t interface);
 
-	void olistCheck(SourceGroupPair &sgp, std::set<uint32_t> list);
-	void olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> list);
-	void olistFull(SourceGroupPair &sgp, std::set<uint32_t> list);
+	void olistCheck (SourceGroupPair &sgp, std::set<uint32_t> list);
+	void olistEmpty (SourceGroupPair &sgp, std::set<uint32_t> list);
+	void olistFull (SourceGroupPair &sgp, std::set<uint32_t> list);
 
 	/// \brief The outgoing interfaces except the RPF_interface.
 	///
 	/// \param source Source IPv4 address
 	/// \param group Multicast group IPv4 address
-	std::set<uint32_t> olist(Ipv4Address source, Ipv4Address group) {
-		std::set<uint32_t> _olist = immediate_olist(source, group);
-		GetPrinterList("olist", _olist);
-		_olist.erase(RPF_interface(source));
-		GetPrinterList("olist-RPF interface",_olist);
+	std::set<uint32_t> olist (Ipv4Address source, Ipv4Address group) {
+		std::set<uint32_t> _olist = immediate_olist (source, group);
+		GetPrinterList ("olist", _olist);
+		_olist.erase (RPF_interface (source));
+		GetPrinterList ("olist-RPF interface",_olist);
 		return _olist;
 	}
 
-	uint32_t UpstreamInterface(Ipv4Address source) {
-		return RPF_interface(source);
+	uint32_t UpstreamInterface (Ipv4Address source) {
+		return RPF_interface (source);
 	}
 
-	std::set<uint32_t> DowntreamInterface(Ipv4Address source) {
-		uint32_t upstream = UpstreamInterface(source);
+	std::set<uint32_t> DowntreamInterface (Ipv4Address source) {
+		uint32_t upstream = UpstreamInterface (source);
 		std::set<uint32_t> down;
-		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
-			if(IsLoopInterface(i))continue;
+		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++) {
+			if (IsLoopInterface (i))continue;
 			if (i != upstream) {
-				down.insert(i);
+				down.insert (i);
 			}
 		}
 		return down;
@@ -825,26 +831,26 @@ private:
 
 	/// \brief RPF interface towards the source S as indicated by the MRIB.
 	/// \param source Source IPv4 address
-	uint32_t RPF_interface(Ipv4Address source);
+	uint32_t RPF_interface (Ipv4Address source);
 
 	/*
-	 * The macro local_receiver_include(S,G,I) is true if the IGMP module or
+	 * The macro local_receiver_include (S,G,I) is true if the IGMP module or
 	 * other local membership mechanism has determined that there are local
 	 * members on interface I that seek to receive traffic sent specifically by S to G.
 	 */
-	bool local_receiver_include(Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		if(group==Ipv4Address::GetAny()){//no group - no way to identify members
+	bool local_receiver_include (Ipv4Address source, Ipv4Address group, uint32_t interface) {
+		if (group==Ipv4Address::GetAny ()){//no group - no way to identify members
 			return false;
 		}
-		else if(source!=Ipv4Address::GetAny() & group!=Ipv4Address::GetAny()){
-			SourceGroupPair sgp(source,group);
-			return (FindSourceGroupState(interface,sgp)==NULL?false:FindSourceGroupState(interface,sgp)->members);
+		else if (source!=Ipv4Address::GetAny () & group!=Ipv4Address::GetAny ()){
+			SourceGroupPair sgp (source,group);
+			return (FindSourceGroupState (interface,sgp)==NULL?false:FindSourceGroupState (interface,sgp)->members);
 		}else{
-			SourceGroupList *sgl = FindSourceGroupList(interface);
+			SourceGroupList *sgl = FindSourceGroupList (interface);
 			if (!sgl)
 				return false;
 			bool members = false;
-			for (SourceGroupList::iterator iter = sgl->begin(); iter != sgl->end() && !members; iter++) {
+			for (SourceGroupList::iterator iter = sgl->begin (); iter != sgl->end () && !members; iter++) {
 				members |= (iter->SGPair.groupMulticastAddr == group && iter->members);
 			}
 			return members;
@@ -854,48 +860,48 @@ private:
 
 	//
 	///The interfaces to which traffic might be forwarded because
-	//   of hosts that are local members on those interfaces.
+	//  of hosts that are local members on those interfaces.
 	//
-	//   pim_include(*,G) = {all interfaces I such that: local_receiver_include(*,G,I)}
-	//   pim_include(S,G) = {all interfaces I such that: local_receiver_include(S,G,I)}
-	std::set<uint32_t> pim_include(Ipv4Address source, Ipv4Address group) {
+	//  pim_include (*,G) = {all interfaces I such that: local_receiver_include (*,G,I)}
+	//  pim_include (S,G) = {all interfaces I such that: local_receiver_include (S,G,I)}
+	std::set<uint32_t> pim_include (Ipv4Address source, Ipv4Address group) {
 		std::set<uint32_t> include;
-		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
-			if(IsLoopInterface(i))continue;
-			if (local_receiver_include(source, group, i)) {
-				include.insert(i);
+		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++) {
+			if (IsLoopInterface (i))continue;
+			if (local_receiver_include (source, group, i)) {
+				include.insert (i);
 			}
 		}
 		return include;
 	}
 
-	bool seek_traffic_from(Ipv4Address source, Ipv4Address group,uint32_t interface) {
-		SourceGroupPair sgp(source,group);
-		return (FindSourceGroupState(interface,sgp)==NULL?true:!(FindSourceGroupState(interface,sgp)->members));
+	bool seek_traffic_from (Ipv4Address source, Ipv4Address group,uint32_t interface) {
+		SourceGroupPair sgp (source,group);
+		return (FindSourceGroupState (interface,sgp)==NULL?true:! (FindSourceGroupState (interface,sgp)->members));
 	}
 
 	// Local members for a (source,group) pair.
-	// True if local_receiver_include(*,G,I) is true
+	// True if local_receiver_include (*,G,I) is true
 	// but none of the local members seek to receive traffic from S.
-	bool local_receiver_exclude(Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		return local_receiver_include(Ipv4Address::GetAny(), group, interface)
-				&& seek_traffic_from(source,group,interface);
+	bool local_receiver_exclude (Ipv4Address source, Ipv4Address group, uint32_t interface) {
+		return local_receiver_include (Ipv4Address::GetAny (), group, interface)
+				&& seek_traffic_from (source,group,interface);
 	}
 
 	/// The interfaces to which traffic might not be forwarded because of hosts that are not local members on those interfaces.
-	///   pim_exclude(S,G) = {all interfaces I such that: local_receiver_exclude(S,G,I)}
-	std::set<uint32_t> pim_exclude(Ipv4Address source, Ipv4Address group) {
+	///  pim_exclude (S,G) = {all interfaces I such that: local_receiver_exclude (S,G,I)}
+	std::set<uint32_t> pim_exclude (Ipv4Address source, Ipv4Address group) {
 		std::set<uint32_t> exclude;
-		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
-			if(IsLoopInterface(i))continue;
-			if (local_receiver_exclude(source, group, i)) {
-				exclude.insert(i);
+		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++) {
+			if (IsLoopInterface (i))continue;
+			if (local_receiver_exclude (source, group, i)) {
+				exclude.insert (i);
 			}
 		}
 		return exclude;
 	}
 
-	bool IsLoopInterface(uint32_t interface){
+	bool IsLoopInterface (uint32_t interface){
 		Ipv4Address loopback ("127.0.0.1");
 		Ipv4Address addr = m_ipv4->GetAddress (interface, 0).GetLocal ();
 		return (addr==loopback);
@@ -904,46 +910,46 @@ private:
 	/*
 	 * All interfaces on which the router has at least one active PIM neighbor.
 	 */
-	std::set<uint32_t> pim_nbrs(void) {
+	std::set<uint32_t> pim_nbrs (void) {
 		std::set<uint32_t> pimNbrs;
-		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
-			if(IsLoopInterface(i))continue;
-			if (m_IfaceNeighbors.find(i)->second.neighbors.size() > 0)
-				pimNbrs.insert(i);
+		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++) {
+			if (IsLoopInterface (i))continue;
+			if (m_IfaceNeighbors.find (i)->second.neighbors.size () > 0)
+				pimNbrs.insert (i);
 		}
 		return pimNbrs;
 	}
 
 	/*
-	 * The set of all interfaces on which the router has received Prune(S,G) messages:
-	 *      prunes(S,G) = {all interfaces I such that DownstreamPState(S,G,I) is in Pruned state}
+	 * The set of all interfaces on which the router has received Prune (S,G) messages:
+	 *   prunes (S,G) = {all interfaces I such that DownstreamPState (S,G,I) is in Pruned state}
 	 */
-	std::set<uint32_t> prunes(Ipv4Address source, Ipv4Address group) {
+	std::set<uint32_t> prunes (Ipv4Address source, Ipv4Address group) {
 		std::set<uint32_t> prune;
-		SourceGroupPair sgp(source,group);
-		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
-			if(IsLoopInterface(i))continue;
-			SourceGroupState *sgState = FindSourceGroupState(i, sgp);
-			if(!sgState) continue;
-			if (i!=RPF_interface(source) && sgState->PruneState == Prune_Pruned) {
-				prune.insert(i);
+		SourceGroupPair sgp (source,group);
+		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++) {
+			if (IsLoopInterface (i))continue;
+			SourceGroupState *sgState = FindSourceGroupState (i, sgp);
+			if (!sgState) continue;
+			if (i!=RPF_interface (source) && sgState->PruneState == Prune_Pruned) {
+				prune.insert (i);
 			}
 		}
 		return prune;
 	}
 
-	/*  The set lost_assert(S,G) is the set of all interfaces on which the
-	 *    router has lost an (S,G) Assert.
-	 *    lost_assert(S,G) = {all interfaces I such that
-	 *                        lost_assert(S,G,I) == TRUE}
+	/* The set lost_assert (S,G) is the set of all interfaces on which the
+	 *  router has lost an (S,G) Assert.
+	 *  lost_assert (S,G) = {all interfaces I such that
+	 *            lost_assert (S,G,I) == TRUE}
 	 *
 	 */
-	std::set<uint32_t> lost_assert(Ipv4Address source, Ipv4Address group) {
+	std::set<uint32_t> lost_assert (Ipv4Address source, Ipv4Address group) {
 		std::set<uint32_t> set;
-		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
-			if(IsLoopInterface(i))continue;
-			if (lost_assert(source, group, i))
-				set.insert(i);
+		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++) {
+			if (IsLoopInterface (i))continue;
+			if (lost_assert (source, group, i))
+				set.insert (i);
 		}
 		return set;
 	}
@@ -951,107 +957,107 @@ private:
 	/*
 	 * True if the node has lost an (S,G) Assert on that interface.
 	 */
-	bool lost_assert(Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		if (RPF_interface(source) == interface) {
+	bool lost_assert (Ipv4Address source, Ipv4Address group, uint32_t interface) {
+		if (RPF_interface (source) == interface) {
 			return false;
 		} else {
-			return (AssertWinner(source, group, interface)!=Ipv4Address::GetAny() && AssertWinner(source, group, interface)  != GetLocalAddress(interface)
-					&& (AssertWinnerMetric(source, group, interface) > spt_assert_metric(source, interface)));
+			return (AssertWinner (source, group, interface)!=Ipv4Address::GetAny () && AssertWinner (source, group, interface) != GetLocalAddress (interface)
+					&& (AssertWinnerMetric (source, group, interface) > spt_assert_metric (source, interface)));
 		}
 	}
 
-	bool boundary(uint32_t interface, Ipv4Address group){
+	bool boundary (uint32_t interface, Ipv4Address group){
 		//TODO administratively scoped boundary
 		return false;
 	}
 
 	/*
-	 * boundary(G) = {all interfaces I with an administratively scoped boundary for group G}
+	 * boundary (G) = {all interfaces I with an administratively scoped boundary for group G}
 	 */
-	std::set<uint32_t> boundary(Ipv4Address G) {
+	std::set<uint32_t> boundary (Ipv4Address G) {
 		std::set<uint32_t> bound;
-		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
-			if(IsLoopInterface(i))continue;
-			if(boundary(i,G)) //administratively scoped boundary
-			bound.insert(i);
+		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++) {
+			if (IsLoopInterface (i))continue;
+			if (boundary (i,G)) //administratively scoped boundary
+			bound.insert (i);
 		}
 		return bound;
 	}
 
-	//The macro I_Am_Assert_loser(S, G, I) is true if the Assert state
-	//   machine (in Section 4.6) for (S,G) on interface I is in the "I am
-	//   Assert Loser" state.
-	Ipv4Address RPF_prime(Ipv4Address source, Ipv4Address group) {
-		if (I_Am_Assert_loser(source, group, RPF_interface(source))) {
-			return AssertWinner(source, group, RPF_interface(source));
+	//The macro I_Am_Assert_loser (S, G, I) is true if the Assert state
+	//  machine (in Section 4.6) for (S,G) on interface I is in the "I am
+	//  Assert Loser" state.
+	Ipv4Address RPF_prime (Ipv4Address source, Ipv4Address group) {
+		if (I_Am_Assert_loser (source, group, RPF_interface (source))) {
+			return AssertWinner (source, group, RPF_interface (source));
 		} else {
-			return GetNextHop(source);
+			return GetNextHop (source);
 		}
 	}
 
-	Ipv4Address RPF_prime(SourceGroupPair sgp) {
-		return RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
+	Ipv4Address RPF_prime (SourceGroupPair sgp) {
+		return RPF_prime (sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
 	}
 
-	Ipv4Address RPF_prime(Ipv4Address source) {
-		return GetNextHop(source);
+	Ipv4Address RPF_prime (Ipv4Address source) {
+		return GetNextHop (source);
 	}
 
-	bool I_Am_Assert_loser(Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		SourceGroupState *sgState = FindSourceGroupState(RPF_interface(source),source,group);
+	bool I_Am_Assert_loser (Ipv4Address source, Ipv4Address group, uint32_t interface) {
+		SourceGroupState *sgState = FindSourceGroupState (RPF_interface (source),source,group);
 		return sgState->AssertState == Assert_Loser;
 	}
 
-	struct AssertMetric AssertWinnerMetric(Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		SourceGroupState *sgState = FindSourceGroupState(RPF_interface(source),source,group);
-		return (sgState && sgState->AssertState == Assert_NoInfo) ? infinite_assert_metric() : sgState->AssertWinner;
+	struct AssertMetric AssertWinnerMetric (Ipv4Address source, Ipv4Address group, uint32_t interface) {
+		SourceGroupState *sgState = FindSourceGroupState (RPF_interface (source),source,group);
+		return (sgState && sgState->AssertState == Assert_NoInfo) ? infinite_assert_metric () : sgState->AssertWinner;
 	}
 
 	void CouldAssertCheck (Ipv4Address source, Ipv4Address group, uint32_t interface, bool couldAssert);
 
 	bool CouldAssert (Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		bool ret = RPF_interface(source) != interface;
-		CouldAssertCheck(source,group,interface,ret);
+		bool ret = RPF_interface (source) != interface;
+		CouldAssertCheck (source,group,interface,ret);
 		return ret;
 	}
 
-	struct AssertMetric spt_assert_metric(Ipv4Address source, uint32_t interface) {
-		struct AssertMetric assertMetric (GetMetricPreference(interface),
-				GetRouteMetric(interface), GetLocalAddress(interface));
+	struct AssertMetric spt_assert_metric (Ipv4Address source, uint32_t interface) {
+		struct AssertMetric assertMetric (GetMetricPreference (interface),
+				GetRouteMetric (interface), GetLocalAddress (interface));
 		return assertMetric;
 	}
 
-	struct AssertMetric infinite_assert_metric(){
-		struct AssertMetric assertMetric(0xFFFFFFFF, 0xFFFFFFFF, Ipv4Address("255.255.255.255"));
+	struct AssertMetric infinite_assert_metric (){
+		struct AssertMetric assertMetric (0xFFFFFFFF, 0xFFFFFFFF, Ipv4Address ("255.255.255.255"));
 		return assertMetric;
 	}
 
 	struct AssertMetric my_assert_metric (Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		if (CouldAssert(source,group,interface)) {
-			return spt_assert_metric(source, interface);
+		if (CouldAssert (source,group,interface)) {
+			return spt_assert_metric (source, interface);
 		} else {
-			return infinite_assert_metric();
+			return infinite_assert_metric ();
 		}
 	}
 
-	//AssertWinner(S,G,I) defaults to NULL -> ANY
-	Ipv4Address AssertWinner(Ipv4Address source, Ipv4Address group,uint32_t interface) {
-		SourceGroupState *sgState = FindSourceGroupState(interface, source, group);
-		return (!sgState) ? Ipv4Address::GetAny() : sgState->SGAW;
+	//AssertWinner (S,G,I) defaults to NULL -> ANY
+	Ipv4Address AssertWinner (Ipv4Address source, Ipv4Address group,uint32_t interface) {
+		SourceGroupState *sgState = FindSourceGroupState (interface, source, group);
+		return (!sgState) ? Ipv4Address::GetAny () : sgState->SGAW;
 	}
 
-	//StateRefreshRateLimit(S,G) is TRUE if the time elapsed since the last received StateRefresh(S,G)
+	//StateRefreshRateLimit (S,G) is TRUE if the time elapsed since the last received StateRefresh (S,G)
 	//	is less than the configured RefreshLimitInterval.
-	bool StateRefreshRateLimit(Ipv4Address source, Ipv4Address group){
-		return FindSourceGroupState(RPF_interface(source),source,group)->lastStateRefresh.GetSeconds() < RefreshInterval;
+	bool StateRefreshRateLimit (Ipv4Address source, Ipv4Address group){
+		return FindSourceGroupState (RPF_interface (source),source,group)->lastStateRefresh.GetSeconds () < RefreshInterval;
 	}
 
-	bool StateRefreshCapable(uint32_t interface){
-		return FindNeighborhoodStatus(interface)->stateRefreshCapable;
+	bool StateRefreshCapable (uint32_t interface){
+		return FindNeighborhoodStatus (interface)->stateRefreshCapable;
 	}
 
-	void SetPruneState(uint32_t interface, SourceGroupPair sgp, PruneState state){
-		SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
+	void SetPruneState (uint32_t interface, SourceGroupPair sgp, PruneState state){
+		SourceGroupState *sgState = FindSourceGroupState (interface,sgp);
 		sgState->PruneState = state;
 	}
 };
