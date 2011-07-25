@@ -2051,8 +2051,15 @@ MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupP
 void
 MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupPair &sgp){
 	NS_LOG_FUNCTION(this);
-	//	uint32_t interface = GetReceiveingInterface(destination);
-	//TODO
+	PIMHeader msg;
+	ForgePruneMessage(msg,destination);
+	PIMHeader::MulticastGroupEntry mge;
+	CreateMulticastGroupEntry(mge,ForgeEncodedGroup(sgp.groupMulticastAddr));
+	AddMulticastGroupSourcePrune(mge,ForgeEncodedSource(sgp.sourceIfaceAddr));
+	AddMulticastGroupEntry(msg,mge);
+	msg.Print(std::cout);
+	Ptr<Packet> packet = Create<Packet> ();
+	SendPacketUnicast(packet,msg,destination);
 }
 
 void
