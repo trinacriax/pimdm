@@ -938,16 +938,17 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket){
 		SourceGroupPair sgp (senderIfaceAddr,receiverIfaceAddr);
 		RPFCheck(sgp, interface);
 	}
-	//TODO NS_ASSERT (senderIfacePort == PIM_PORT_NUMBER);
-	//Within PIM-DM, route and state information associated with an (S,G) entry MUST be maintained as long as any
+	NS_ASSERT (senderIfacePort != PIM_PORT_NUMBER);
+	//Unlike PIM-SM, PIM-DM does not maintain a keepalive timer associated with each (S,G) route.
+	//  Within PIM-DM, route and state information associated with an (S,G) entry MUST be maintained as long as any
 	//	timer associated with that (S,G) entry is active.  When no timer associated with an (S,G) entry is active,
 	//	all information concerning that (S,G) route may be discarded.
 	PIMHeader pimdmPacket;
 	receivedPacket->RemoveHeader(pimdmPacket);
-	if(pimdmPacket.GetType()!=PIM_HELLO && !IsValidSG(GetReceivingInterface(receiverIfaceAddr), senderIfaceAddr, receiverIfaceAddr)){
-			NS_LOG_DEBUG ("PIM-DM No running timer: discarded");
-			return;
-	}
+//	if(pimdmPacket.GetType()!=PIM_HELLO && !IsValidSG(GetReceivingInterface(receiverIfaceAddr), senderIfaceAddr, group)){
+//			NS_LOG_DEBUG ("PIM-DM No running timer: discarded");
+//			return;
+//	}
 	switch (pimdmPacket.GetType()){
 	case PIM_HELLO:{
 		m_rxPacketTrace (pimdmPacket);
