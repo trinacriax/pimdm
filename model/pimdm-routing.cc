@@ -879,7 +879,7 @@ MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination,SourceGroupP
 }
 
 void
-MulticastRoutingProtocol::ForgePruneMessage (PIMHeader &msg, Ipv4Address const upstreamNeighbor)
+MulticastRoutingProtocol::ForgeJoinPruneMessage (PIMHeader &msg, Ipv4Address const upstreamNeighbor)
 {
 	NS_LOG_FUNCTION(this);
 	ForgeHeaderMessage(PIM_JP, msg);
@@ -950,6 +950,15 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair
 	refresh.m_reserved = 0;
 	refresh.m_interval = RefreshInterval;
 }
+
+void
+MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgp)
+{
+	NS_LOG_FUNCTION(this);
+//	uint32_t interface = GetReceiveingInterface(destination);
+	//TODO
+}
+
 
 Ipv4Address
 MulticastRoutingProtocol::GetNextHop(Ipv4Address destination)
@@ -2042,16 +2051,6 @@ MulticastRoutingProtocol::SATTimerExpire (SourceGroupPair &sgp)
 	}
 	}
 }
-
-
-void
-MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgp)
-{
-	NS_LOG_FUNCTION(this);
-//	uint32_t interface = GetReceiveingInterface(destination);
-	//TODO
-}
-
 
 void
 MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupPair &sgp)
