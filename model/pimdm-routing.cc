@@ -745,7 +745,7 @@ MulticastRoutingProtocol::ForgeAssertMessage (uint32_t interface, PIMHeader &msg
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 	ForgeHeaderMessage(PIM_JP, msg);
-	PIMHeader::AssertMessage assertMessage = msg.GetAssertMessage();
+	PIMHeader::AssertMessage &assertMessage = msg.GetAssertMessage();
 	assertMessage.m_sourceAddr =  ForgeEncodedUnicast(sgp.sourceIfaceAddr);
 	assertMessage.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);
 	assertMessage.m_R = 0;
@@ -768,7 +768,7 @@ MulticastRoutingProtocol::ForgeAssertCancelMessage (uint32_t interface, PIMHeade
 	//message, as it is simply an Assert message from the current winner
 	NS_LOG_FUNCTION(this);
 	ForgeHeaderMessage(PIM_JP, msg);
-	PIMHeader::AssertMessage assertMessage = msg.GetAssertMessage();
+	PIMHeader::AssertMessage &assertMessage = msg.GetAssertMessage();
 	assertMessage.m_sourceAddr =  ForgeEncodedUnicast(sgp.sourceIfaceAddr);
 	assertMessage.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);
 	assertMessage.m_R = 0;
@@ -781,7 +781,7 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 	ForgeHeaderMessage(PIM_STATE_REF, msg);
-	PIMHeader::StateRefreshMessage refresh = msg.GetStateRefreshMessage();
+	PIMHeader::StateRefreshMessage &refresh = msg.GetStateRefreshMessage();
 	refresh.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);//TODO check whether params are correct or not.
 	refresh.m_sourceAddr = ForgeEncodedUnicast(sgp.sourceIfaceAddr);
 	Ipv4Address nextHop = GetNextHop(sgp.sourceIfaceAddr);
@@ -800,7 +800,7 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair
 
 void
 MulticastRoutingProtocol::ForgeHelloMessageHoldTime (uint32_t interface, PIMHeader &msg){
-	PIMHeader::HelloMessage helloMessage = msg.GetHelloMessage();//TODO holdtime for the corresponding interface
+	PIMHeader::HelloMessage &helloMessage = msg.GetHelloMessage();//TODO holdtime for the corresponding interface
 	PIMHeader::HelloMessage::HelloEntry holdtime = {PIMHeader::HelloMessage::HelloHoldTime, PIM_DM_HELLO_HOLDTIME};
 	holdtime.m_optionValue.holdTime.m_holdTime = Seconds(m_helloHoldTime);
 	msg.GetHelloMessage().m_optionList.push_back(holdtime);
@@ -1819,7 +1819,7 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp){
 
 
 void
-MulticastRoutingProtocol::PPTTimerExpire(SourceGroupPair &sgp){
+MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp){
 	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 	switch (sgState->PruneState) {
@@ -1868,7 +1868,7 @@ MulticastRoutingProtocol::PPTTimerExpire(SourceGroupPair &sgp){
 
 
 void
-MulticastRoutingProtocol::PTTimerExpire(SourceGroupPair &sgp){
+MulticastRoutingProtocol::PTTimerExpire (SourceGroupPair &sgp){
 	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
 	switch (sgState->PruneState) {
@@ -3398,7 +3398,7 @@ MulticastRoutingProtocol::UsesNonPimDmOutgoingInterface (const Ipv4RoutingTableE
 	return (ci != m_interfaceExclusions.end ());
 }
 
-void MulticastRoutingProtocol::InsertNeighborState(uint32_t interface, const NeighborState &ns) {
+void MulticastRoutingProtocol::InsertNeighborState(uint32_t interface, const NeighborState ns) {
 	if (!FindNeighborState(interface, ns)) {
 		FindNeighborhoodStatus(interface)->neighbors.push_back(ns);
 		NeighborState *neighbor = FindNeighborState(interface, ns);
