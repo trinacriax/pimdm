@@ -28,7 +28,7 @@
 #define __PIM_DM_ROUTING_H__
 
 /// Timer Name: Hello Timer (HT). Periodic interval for hello messages.
-#define Hello_Period 30 // TODO is 30s, I set 2 just for testing
+#define Hello_Period 30
 /// Timer Name: Hello Timer (HT). Random interval for initial Hello message on bootup or triggered Hello message to a rebooting neighbor.
 #define Triggered_Hello_Delay 5
 /// The Hold Time in the Hello Message should be set to a value that can
@@ -848,7 +848,7 @@ private:
 				members |= (iter->SGPair.groupMulticastAddr == group && iter->members);
 			}
 			return members;
-			//TODO need some local membership indicator: workaround a flag in the SG-state.
+			//TODO need some local membership indicator: workaround - a flag in the SG-state.
 		}
 	}
 
@@ -879,7 +879,7 @@ private:
 	// but none of the local members seek to receive traffic from S.
 	bool local_receiver_exclude(Ipv4Address source, Ipv4Address group, uint32_t interface) {
 		return local_receiver_include(Ipv4Address::GetAny(), group, interface)
-				&& seek_traffic_from(source,group,interface); // TODO
+				&& seek_traffic_from(source,group,interface);
 	}
 
 	/// The interfaces to which traffic might not be forwarded because of hosts that are not local members on those interfaces.
@@ -972,7 +972,7 @@ private:
 		std::set<uint32_t> bound;
 		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
 			if(IsLoopInterface(i))continue;
-			if(boundary(i,G)) //TODO administratively scoped boundary
+			if(boundary(i,G)) //administratively scoped boundary
 			bound.insert(i);
 		}
 		return bound;
@@ -1001,7 +1001,7 @@ private:
 		SourceGroupState *sgState = FindSourceGroupState(RPF_interface(source),source,group);
 		return sgState->AssertState == Assert_Loser;
 	}
-	//TODO and AssertWinnerMetric(S,G,I) defaults to Infinity when in the NoInfo state.
+
 	struct AssertMetric AssertWinnerMetric(Ipv4Address source, Ipv4Address group, uint32_t interface) {
 		SourceGroupState *sgState = FindSourceGroupState(RPF_interface(source),source,group);
 		return (sgState && sgState->AssertState == Assert_NoInfo) ? infinite_assert_metric() : sgState->AssertWinner;
@@ -1017,7 +1017,7 @@ private:
 
 	struct AssertMetric spt_assert_metric(Ipv4Address source, uint32_t interface) {
 		struct AssertMetric assertMetric (GetMetricPreference(interface),
-				GetRouteMetric(interface), GetLocalAddress(interface)); //TODO local node address on that interface?
+				GetRouteMetric(interface), GetLocalAddress(interface));
 		return assertMetric;
 	}
 
@@ -1034,7 +1034,7 @@ private:
 		}
 	}
 
-	//TODO AssertWinner(S,G,I) defaults to NULL,
+	//AssertWinner(S,G,I) defaults to NULL -> ANY
 	Ipv4Address AssertWinner(Ipv4Address source, Ipv4Address group,uint32_t interface) {
 		SourceGroupState *sgState = FindSourceGroupState(interface, source, group);
 		return (!sgState) ? Ipv4Address::GetAny() : sgState->SGAW;
