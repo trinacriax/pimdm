@@ -150,8 +150,8 @@ main (int argc, char *argv[])
 	Config::Set("NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup));
 
 	NS_LOG_INFO ("Create Source");
-	Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
 	InetSocketAddress dst = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
+	Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
 	OnOffHelper onoff = OnOffHelper ("ns3::UdpSocketFactory", dst);
 	onoff.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
 	onoff.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0.0)));
