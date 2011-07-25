@@ -1786,32 +1786,31 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp)
 {
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(sgp.sourceIfaceAddr),sgp);
-		switch (sgState->upstream->GraftPrune){
-			case GP_Forwarding:{
-				//The OverrideTimer (OT(S,G)) expires.  The router MUST send a Join(S,G) to RPF'(S) to override a previously detected prune.
-				//	The Upstream(S,G) state machine remains in the Forwarding (F) state.
-				if(sgp.sourceIfaceAddr != GetNextHop(sgp.sourceIfaceAddr)){
-					Ipv4Address nextHop = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
-					SendJoinUnicast(nextHop, sgp); //broadcast
-				}
-				break;
-			}
-			case GP_Pruned:{
-				break;
-			}
-			case GP_AckPending:{
-				//The OverrideTimer (OT(S,G)) expires.  The router MUST send a Join(S,G) to RPF'(S).
-				//	The Upstream(S,G) state machine remains in the AckPending (AP) state.
+	switch (sgState->upstream->GraftPrune){
+		case GP_Forwarding:{
+			//The OverrideTimer (OT(S,G)) expires.  The router MUST send a Join(S,G) to RPF'(S) to override a previously detected prune.
+			//	The Upstream(S,G) state machine remains in the Forwarding (F) state.
+			if(sgp.sourceIfaceAddr != GetNextHop(sgp.sourceIfaceAddr)){
 				Ipv4Address nextHop = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
 				SendJoinUnicast(nextHop, sgp); //broadcast
-				break;
 			}
-			default:{
-				NS_LOG_ERROR("OT_Timer: state not valid"<<sgState->upstream->GraftPrune);
-				break;
-			}
+			break;
+		}
+		case GP_Pruned:{
+			break;
+		}
+		case GP_AckPending:{
+			//The OverrideTimer (OT(S,G)) expires.  The router MUST send a Join(S,G) to RPF'(S).
+			//	The Upstream(S,G) state machine remains in the AckPending (AP) state.
+			Ipv4Address nextHop = RPF_prime(sgp.sourceIfaceAddr,sgp.groupMulticastAddr);
+			SendJoinUnicast(nextHop, sgp); //broadcast
+			break;
+		}
+		default:{
+			NS_LOG_ERROR("OT_Timer: state not valid"<<sgState->upstream->GraftPrune);
+			break;
+		}
 	}
-//	sgState->upstream->SG_OT.Schedule();
 	sgState->upstream->SG_OT.Cancel();
 }
 
