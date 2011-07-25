@@ -594,20 +594,19 @@ private:
 	}
 
 
-	SourceGroupState* InsertSourceGroupState(uint32_t interface, SourceGroupPair sgp) {
+	void InsertSourceGroupState(uint32_t interface, SourceGroupPair sgp) {
 		SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 			if (sgState == NULL) {
-				SourceGroupState sgs;
-				sgs.SGPair.sourceIfaceAddr = sgp.sourceIfaceAddr;
-				sgs.SGPair.groupMulticastAddr = sgp.groupMulticastAddr;
+				SourceGroupState sgs(sgp);
 				sgs.LocalMembership = Local_NoInfo;
 				sgs.PruneState = Prune_NoInfo;
 				sgs.AssertState = Assert_NoInfo;
 				sgs.upstream = NULL;
 				m_IfaceSourceGroup.find(interface)->second.push_back(sgs);
 				sgState = FindSourceGroupState(interface, sgp);
-				if(RPF_interface(sgs.SGPair.sourceIfaceAddr) == interface){
-					sgState->upstream= new UpstreamState;
+				uint32_t rpf_i = RPF_interface(sgs.SGPair.sourceIfaceAddr);
+				if(rpf_i== interface){
+					sgState->upstream = new UpstreamState;
 				}
 				//	  		sgs->SG_PPT.Cancel();
 				//	  		sgs->SG_PPT.SetDelay(status->overrideInterval+status->propagationDelay);
@@ -627,7 +626,6 @@ private:
 				//	  		sgs->SG_SRT.SetDelay(Seconds(60));
 				//	  		///sgs->SG_SRT.SetFunction (&MulticastRoutingProtocol::???, this);
 				}
-			return sgState;
 		}
 
 
