@@ -2410,6 +2410,7 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 			//	When the timer expires, a Join(S,G) message is sent on the upstream interface.  This timer
 			//	is normally set to t_override (see 4.8).
 			std::set<uint32_t> pruneList = olist(iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress);
+			GetPrinterList("pruneList",pruneList);
 			for(std::set<uint32_t>::const_iterator iterList = pruneList.begin(); iterList != pruneList.end(); iterList++){
 				uint32_t out_interface = *iterList;
 				SourceGroupPair sgp (iterPrune->m_sourceAddress,iter->m_multicastGroupAddr.m_groupAddress);
@@ -2510,7 +2511,8 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp,Ipv4
 void //TOCHECK
 MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group){
 	SourceGroupPair sgp(source.m_sourceAddress, group.m_groupAddress);
-	SourceGroupState *sgState = FindSourceGroupState(interface,sgp);
+	uint32_t sourceIface = RPF_interface(source.m_sourceAddress);
+	SourceGroupState *sgState = FindSourceGroupState(sourceIface,sgp);
 	Ipv4Address current = GetLocalAddress(interface);
 	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
@@ -2524,6 +2526,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,I
 				NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
 				Time JP_Override_Interval= nstatus->overrideInterval+nstatus->propagationDelay;
 				sgState->PruneState = Prune_PrunePending;
+				NS_LOG_DEBUG("Neighbor size "<< nstatus->neighbors.size());
 				if(nstatus->neighbors.size() == 1){
 					sgState->SG_PPT.SetDelay(Seconds(0));
 				}
@@ -2531,6 +2534,8 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,I
 					sgState->SG_PPT.SetDelay(JP_Override_Interval);
 				}
 				if(!sgState->SG_PPT.IsRunning()){
+					sgState->SG_PPT.SetFunction(&MulticastRoutingProtocol::PPTTimerExpire,this);
+					sgState->SG_PPT.SetArguments(sgp);
 					sgState->SG_PPT.Schedule();
 				}
 			}
@@ -3435,3 +3440,7 @@ void MulticastRoutingProtocol::InsertNeighborState(uint32_t interface, const Nei
 //		RPF'(S).  Graft Ack messages MUST be unicast to the sender of the Graft.
 //* When a PIM router takes an interface down or changes IP address, a Hello message with a zero Hold Time SHOULD be
 //		sent immediately (with the old IP address if the IP address is changed) to cause any PIM neighbors to remove the old information immediately.
+//* Unlike PIM-SM, PIM-DM does not maintain a keepalive timer associated with each (S,G) route.
+//  	Within PIM-DM, route and state information associated with an (S,G) entry MUST be maintained as long as any
+//		timer associated with that (S,G) entry is active.  When no timer associated with an (S,G) entry is active,
+//		all information concerning that (S,G) route may be discarded.

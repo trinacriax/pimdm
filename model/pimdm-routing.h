@@ -657,13 +657,13 @@ private:
 	NeighborhoodStatus* FindNeighborhoodStatus(uint32_t interface) {
 		std::map<uint32_t, NeighborhoodStatus>::iterator iter =
 				m_IfaceNeighbors.find(interface);
-		return (iter == m_IfaceNeighbors.end() ? NULL : &iter->second);
+		return (iter == m_IfaceNeighbors.end() ? NULL : &(iter->second));
 	}
 
 	void InsertNeighborhoodStatus(const uint32_t interface) {
 		if (!FindNeighborhoodStatus(interface)) {
-			NeighborhoodStatus is;
-			m_IfaceNeighbors.insert(std::pair<uint32_t, NeighborhoodStatus>(interface, is));
+			NeighborhoodStatus *is = new NeighborhoodStatus;
+			m_IfaceNeighbors.insert(std::pair<uint32_t, NeighborhoodStatus>(interface, *is));
 		}
 	}
 
@@ -671,19 +671,20 @@ private:
 		m_IfaceNeighbors.erase(interface);
 	}
 
-	NeighborState* FindNeighborState(uint32_t interface,const NeighborState &ns) {
+	NeighborState* FindNeighborState(uint32_t interface, const NeighborState ns) {
 		NeighborhoodStatus *status = FindNeighborhoodStatus(interface);
 		if (!status)
 			return NULL;
 		NeighborList *list = &status->neighbors;
 		for (NeighborList::iterator iter = list->begin(); iter != list->end(); iter++) {
-			if (*iter == ns)
+			NeighborState *no = &(*iter);
+			if (*iter == ns)//non li confronta
 				return &(*iter);
 		}
 		return NULL;
 	}
 
-	void InsertNeighborState(uint32_t interface, const NeighborState &ns);
+	void InsertNeighborState(uint32_t interface, const NeighborState ns);
 
 	void EraseNeighborState(uint32_t interface, const NeighborState &ns) {
 		FindNeighborhoodStatus(interface)->neighbors.remove(ns);
