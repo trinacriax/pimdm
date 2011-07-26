@@ -476,7 +476,7 @@ private:
 	void SendPacketPIMRouters (Ptr<Packet> packet, const PIMHeader &message);
 	void SendPacketPIMRouters (Ptr<Packet> packet, const PIMHeader &message, uint32_t interface);
 	//end
-	void NeighborRestart (uint32_t interface);
+	void NeighborRestart (uint32_t interface, Ipv4Address neighbor);
 
 	void RecvPimDm (Ptr<Socket> socket);
 

@@ -1564,9 +1564,47 @@ MulticastRoutingProtocol::RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ip
 }
 
 void
-MulticastRoutingProtocol::NeighborRestart (uint32_t interface)
+MulticastRoutingProtocol::NeighborRestart (uint32_t interface, Ipv4Address neighbor)
 {
-//TODO
+//   If a Hello message is received from an active neighbor with a
+//   different Generation ID (GenID), the neighbor has restarted and may
+//   not contain the correct (S,G) state.  A Hello message SHOULD be sent
+//   after a random delay between 0 and Triggered_Hello_Delay (see 4.8)
+//   before any other messages are sent.
+	Time delay = Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay));
+	Simulator::Schedule (Seconds(0), &MulticastRoutingProtocol::SetStopTx, this);
+	Simulator::Schedule (Seconds(delay.GetMicroSeconds()-1), &MulticastRoutingProtocol::UnsetStopTx, this);
+	Simulator::Schedule (delay, &MulticastRoutingProtocol::SendHelloReply, this, interface, neighbor);
+	delay = Seconds(delay.GetSeconds()+0.1);
+//   If the neighbor is downstream, the router MAY replay the last State Refresh message for any (S,G)
+//   pairs for which it is the Assert Winner indicating Prune and Assert status to the downstream router.
+//	 These State Refresh messages SHOULD be sent out immediately after the Hello message.
+	SourceGroupList sgList = m_IfaceSourceGroup.find(interface)->second;
+	for(std::list<SourceGroupState>::iterator sgState = sgList.begin(); sgState!=sgList.end(); sgState++){
+		if(IsDownstream(interface,sgState->SGPair) && sgState->AssertState == Assert_Winner){
+		Simulator::Schedule (Seconds(delay.GetMicroSeconds()+1), &MulticastRoutingProtocol::SendStateRefreshPair, this, interface, neighbor, sgState->SGPair);
+		break;
+		}
+		// If the neighbor is the upstream neighbor for an (S,G) entry, the router MAY cancel its
+		//     Prune Limit Timer to permit sending a prune and reestablishing a Pruned state in the upstream router.
+		else if (IsUpstream(interface,sgState->SGPair) && sgState->PruneState == Prune_Pruned){
+			sgState->SG_PT.Cancel();
+			sgState->SG_PT.SetDelay(Seconds(2*RefreshInterval));//TODO I am not sure of that: I have to understand the prune better
+			sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire,this);
+			sgState->SG_PT.SetArguments(sgState->SGPair);
+			sgState->SG_PT.Schedule();
+			Simulator::Schedule (Seconds(0), &MulticastRoutingProtocol::SendPruneBroadcast, this, interface, sgState->SGPair);
+		}
+	}
+//   TODO: Upon startup, a router MAY use any State Refresh messages received
+//   within Hello_Period of its first Hello message on an interface to
+//   establish state information.  The State Refresh source will be the
+//   RPF'(S), and Prune status for all interfaces will be set according to
+//   the Prune Indicator bit in the State Refresh message.  If the Prune
+//   Indicator is set, the router SHOULD set the PruneLimitTimer to
+//   Prune_Holdtime and set the PruneTimer on all downstream interfaces to
+//   the State Refresh's Interval times two.  The router SHOULD then
+//   propagate the State Refresh as described in Section 4.5.1.
 }
 
 Ipv4Header
@@ -3358,37 +3396,9 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 				else if(ns->neighborGenerationID != hello.m_optionList[entry].m_optionValue.generationID.m_generatioID){///< Sec. 4.3.4.
 					// Generation ID changed The Generation ID is regenerated whenever PIM
 					//   forwarding is started or restarted on the interface.
-					// TODO: NeighborRestart
 					EraseNeighborState(interface,*ns);
 					InsertNeighborState(interface,tmp);
-					// When a new or rebooting neighbor is detected, a responding Hello is sent
-					//   within rand(0,Triggered_Hello_Delay).
-					Time delay = Seconds(UniformVariable().GetValue(0,Triggered_Hello_Delay));
-					//  A Hello message SHOULD be sent after a random delay between 0 and Triggered_Hello_Delay (see 4.8) before any other messages are sent.
-					Simulator::Schedule (Seconds(0), &MulticastRoutingProtocol::SetStopTx, this);
-					Simulator::Schedule (Seconds(delay.GetMicroSeconds()-1), &MulticastRoutingProtocol::UnsetStopTx, this);
-					Simulator::Schedule (delay, &MulticastRoutingProtocol::SendHelloReply, this,interface,sender);
-					delay = Seconds(delay.GetSeconds()+0.1);
-					SourceGroupList sgList = m_IfaceSourceGroup.find(interface)->second;
-					for(std::list<SourceGroupState>::iterator sgElement = sgList.begin(); sgElement!=sgList.end(); sgElement++){
-//						for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++){
-							// if the neighbor is downstream, the router MAY replay the last State Refresh message for any (S,G)
-							//   pairs for which it is the Assert Winner indicating Prune and Assert status to the downstream router.
-							if(IsDownstream(interface,sgElement->SGPair) && sgElement->AssertState == Assert_Winner){
-								//   These State Refresh messages SHOULD be sent out immediately after the Hello message.
-								Simulator::Schedule (Seconds(delay.GetMicroSeconds()+1), &MulticastRoutingProtocol::SendStateRefreshPair, this, interface, sender, sgElement->SGPair);
-								break;
-							}
-							// If the neighbor is the upstream neighbor for an (S,G) entry, the router MAY cancel its
-							//     Prune Limit Timer to permit sending a prune and reestablishing a Pruned state in the upstream router.
-							else if (IsUpstream(interface,sgElement->SGPair) && sgElement->PruneState == Prune_Pruned){
-								sgElement->SG_PT.Cancel();
-								sgElement->SG_PT.SetDelay(Seconds(2*RefreshInterval));//TODO I am not sure of that: I have to understand the prune better
-								Simulator::Schedule (Seconds(0), &MulticastRoutingProtocol::SendPruneBroadcast, this, interface, sgElement->SGPair);
-							}
-//							else NS_LOG_ERROR("Interface "<< i << " skipped\n");
-//						}
-					}
+					NeighborRestart(interface,sender);
 				}
 				break;
 			}
