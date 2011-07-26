@@ -2529,14 +2529,12 @@ MulticastRoutingProtocol::RecvPrune (PIMHeader::JoinPruneMessage &jp, Ipv4Addres
 	NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
 	nstatus->pruneHoldtime = Time(jp.m_joinPruneMessage.m_holdTime);
 	// The node is not directly connected to S.
-//	if(m_mrib.find(source.m_sourceAddress)->second.nextAddr != source.m_sourceAddress){ // TODO: is the condition just for Forwarding or even for the others?
 	if(RPF_interface(source.m_sourceAddress)==interface){
 		RecvPruneUpstream(jp, sender, receiver, interface, source, group);
 	}
 	else {
 		RecvPruneDownstream(jp, sender, receiver, interface, source, group);
 	}
-//	}
 }
 
 //4.4.  PIM-DM Prune, Join, and Graft Messages
@@ -2545,7 +2543,7 @@ MulticastRoutingProtocol::RecvPrune (PIMHeader::JoinPruneMessage &jp, Ipv4Addres
 //	In the case of downstream routers A and B, where A wishes to continue receiving data and B does not, A will send
 //	a Join in response to B's Prune to override the Prune.  This is the only situation in PIM-DM in which a Join message is used.
 //	Finally, a Graft message is used to re-join a previously pruned branch to the delivery tree.
-void //TODO: CHECK
+void
 MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group)
 {
 	NS_LOG_FUNCTION(this);
@@ -2603,7 +2601,7 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 //	}
 }
 
-void //TOCHECK
+void
 MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group)
 {
 	SourceGroupPair sgp(source.m_sourceAddress, group.m_groupAddress);
@@ -2697,7 +2695,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 	}
 }
 
-void // TOCHECK
+void
 MulticastRoutingProtocol::RecvJoin(PIMHeader::JoinPruneMessage &jp, Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group)
 {
 	NS_LOG_FUNCTION(this);
@@ -2709,7 +2707,7 @@ MulticastRoutingProtocol::RecvJoin(PIMHeader::JoinPruneMessage &jp, Ipv4Address 
 	}
 }
 
-void // TOCHECK
+void
 MulticastRoutingProtocol::RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp, Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group)
 {
 	SourceGroupState *sgState = FindSourceGroupState(interface, source.m_sourceAddress, group.m_groupAddress);
@@ -2879,7 +2877,6 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 						PIMHeader prune;
 						ForgeJoinPruneMessage(prune, sender) ;
 						CreateMulticastGroupEntry(mge, ForgeEncodedGroup(assert.m_multicastGroupAddr.m_groupAddress));
-//						prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = sender;
 						prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 						AddMulticastGroupEntry(prune, mge);
 						Ptr<Packet> packet = Create<Packet> ();
@@ -2938,7 +2935,6 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					PIMHeader msg;
 					ForgeJoinPruneMessage(msg, sender);
 					CreateMulticastGroupEntry(mge, ForgeEncodedGroup(assert.m_multicastGroupAddr.m_groupAddress));
-//					msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = sender;//TODO check
 					msg.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 					AddMulticastGroupEntry(msg, mge);
 					Ptr<Packet> packet = Create<Packet> ();
@@ -2990,7 +2986,6 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 						PIMHeader prune;
 						ForgeJoinPruneMessage(prune, sender);
 						CreateMulticastGroupEntry(mge, ForgeEncodedGroup(assert.m_multicastGroupAddr.m_groupAddress));
-//						prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = sender;//TODO check
 						prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 						AddMulticastGroupEntry(prune, mge);
 						Ptr<Packet> packet = Create<Packet> ();
@@ -3056,7 +3051,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			//The Upstream(S, G) state machine remains in an AckPending state.
 			//   The router must override the upstream router's Prune state after a short random interval.
 			//   If OT(S, G) is not running and the Prune Indicator bit equals one, the router MUST set OT(S, G) to t_override seconds.
-				if(refresh.m_P){//TODO CHECK the Schedule 4.4.1.3.
+				if(refresh.m_P){
 					Simulator::Schedule (Seconds(UniformVariable().GetValue(0, t_shorter)), &MulticastRoutingProtocol::SetPruneState, this, interface, sgp, Prune_Pruned);
 					if(!sgState->upstream->SG_OT.IsRunning()){
 						sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
@@ -3076,7 +3071,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				break;
 			}
 	}
-	//TODO: Upon startup, a router MAY use any State Refresh messages received  within Hello_Period of its first Hello message on an interface to establish state information.
+	//TODO: Upon startup, a router MAY use any State Refresh messages received within Hello_Period of its first Hello message on an interface to establish state information.
 	for(uint32_t i = 0; i < m_ipv4->GetNInterfaces();i++){
 		SourceGroupState *sgStateB = FindSourceGroupState(i, sgp);
 		//	The State Refresh source will be the RPF'(S), and Prune status for all interfaces will be set according to the Prune Indicator bit in the State Refresh message.
@@ -3146,7 +3141,6 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 						PIMHeader msg;
 						ForgeJoinPruneMessage(msg, refresh.m_originatorAddr.m_unicastAddress);
 						CreateMulticastGroupEntry(mge, ForgeEncodedGroup(refresh.m_multicastGroupAddr.m_groupAddress));
-//						msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = refresh.m_originatorAddr.m_unicastAddress;
 						msg.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 						AddMulticastGroupEntry(msg, mge);
 						Ptr<Packet> packet = Create<Packet> ();
@@ -3165,8 +3159,8 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			if(received < my_assert_metric(refresh.m_sourceAddr.m_unicastAddress, refresh.m_multicastGroupAddr.m_groupAddress, interface)){
 				PIMHeader assertR;
 				ForgeAssertMessage(interface, assertR, sgp);
-//				assertR.GetAssertMessage().m_metricPreference = sgState->AssertWinner.metricPreference;
-//				assertR.GetAssertMessage().m_metric = sgState->AssertWinner.routeMetric;
+				assertR.GetAssertMessage().m_metricPreference = sgState->AssertWinner.metricPreference;
+				assertR.GetAssertMessage().m_metric = sgState->AssertWinner.routeMetric;
 				Ptr<Packet> packet = Create<Packet> ();
 				SendPacketBroadcastInterface(packet, assertR, interface);
 				if(sgState->SG_AT.IsRunning())
@@ -3254,7 +3248,6 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					PIMHeader prune;
 					ForgeJoinPruneMessage(prune, refresh.m_originatorAddr.m_unicastAddress);
 					CreateMulticastGroupEntry(mge, ForgeEncodedGroup(refresh.m_multicastGroupAddr.m_groupAddress));
-//					prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = refresh.m_originatorAddr.m_unicastAddress;//TODO check
 					prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 					AddMulticastGroupEntry(prune, mge);
 					Ptr<Packet> packet = Create<Packet> ();
@@ -3339,7 +3332,6 @@ MulticastRoutingProtocol::ForwardingStateRefresh(PIMHeader::StateRefreshMessage 
 		}
 		//transmit SRMP' on I;
 		Ptr<Packet> packet;
-		//TODO send on interface
 		SendPacketBroadcastInterface(packet, refreshFRW, *i_nbrs);
 	}
 }
@@ -3379,7 +3371,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 						if(ns->neigborNLT.IsRunning()){
 							ns->neigborNLT.Cancel();
 						}
-						ns->neigborNLT.SetDelay(hello.m_optionList[entry].m_optionValue.holdTime.m_holdTime);
+						ns->neigborNLT.SetDelay(value);
 						ns->neigborNLT.SetFunction(&MulticastRoutingProtocol::NLTTimerExpire, this);
 						ns->neigborNLT.SetArguments(ns->neighborIfaceAddr, ns->receivingIfaceAddr);
 						ns->neigborNLT.Schedule();
@@ -3406,7 +3398,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 				//If all routers on a LAN support the LAN Prune Delay option, then the PIM routers on that LAN will use the values received to adjust their
 				//	J/P_Override_Interval on that interface and the interface is LAN Delay Enabled.
 				if(nStatus->LANDelayEnabled){
-				//  TODO Briefly, to avoid synchronization of Prune Override (Join) messages when multiple downstream routers share a multi-access link,
+				//  Briefly, to avoid synchronization of Prune Override (Join) messages when multiple downstream routers share a multi-access link,
 				//	sending of these messages is delayed by a small random amount of time.  The period of randomization is configurable and has a default value of 3 seconds.
 					ns->neighborT = hello.m_optionList[entry].m_optionValue.lanPruneDelay.m_T;
 					if(ns->neighborPropagationDelay != Time(hello.m_optionList[entry].m_optionValue.lanPruneDelay.m_propagationDelay)){
@@ -3421,14 +3413,12 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 						ns->neighborOverrideInterval = Time(hello.m_optionList[entry].m_optionValue.lanPruneDelay.m_overrideInterval);
 						nStatus->overrideInterval = Max(ns->neighborOverrideInterval, nStatus->overrideInterval);
 					}
-					// TODO check such values!
 				}
 				break;
 			}
 			case PIMHeader::HelloMessage::StateRefreshCapable:{
 				ns->neighborVersion = hello.m_optionList[entry].m_optionValue.stateRefreshCapable.m_version;
 				ns->neighborInterval = hello.m_optionList[entry].m_optionValue.stateRefreshCapable.m_interval;
-//				ns->neighborReserved = hello.m_optionList[entry].m_optionValue.stateRefreshCapable.m_reserved;
 				break;
 			}
 			default:{
@@ -3440,7 +3430,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 		};
 		entry++;
  	}
-	NeighborTimeout(interface);//TODO just one interface or all?
+	NeighborTimeout(interface);//just on this interface
 }
 
 
@@ -3455,7 +3445,7 @@ struct IsExpired
 void
 MulticastRoutingProtocol::NeighborTimeout(uint32_t interface)
 {
-//	NS_LOG_FUNCTION(this);
+	NS_LOG_FUNCTION(this);
 	NeighborhoodStatus *nl = FindNeighborhoodStatus(interface);
 	uint32_t size = nl->neighbors.size();
 	IsExpired pred;
@@ -3468,7 +3458,7 @@ MulticastRoutingProtocol::SetInterfaceExclusions (std::set<uint32_t> exceptions)
 {
 	NS_LOG_FUNCTION(this);
 	m_interfaceExclusions = exceptions;
-	}
+}
 
 bool
 MulticastRoutingProtocol::UsesNonPimDmOutgoingInterface (const Ipv4RoutingTableEntry &route)
@@ -3485,9 +3475,7 @@ void MulticastRoutingProtocol::InsertNeighborState(uint32_t interface, const Nei
 		FindNeighborhoodStatus(interface)->neighbors.push_back(ns);
 		NeighborState *neighbor = FindNeighborState(interface, ns);
 		neighbor->neigborNLT.Cancel();
-//		neighbor->neigborNLT.SetFunction(&MulticastRoutingProtocol::NLTTimerExpire, this);
 		neighbor->neighborCreation = Simulator::Now();
-		//TODO Neighbor timeout disabled
 		//neighbor->neighborTimeout = Simulator::Now() + Seconds(Hello_Period+Propagation_Delay);
 		//neighbor->neighborTimeoutB = true;
 	}
