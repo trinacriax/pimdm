@@ -3376,6 +3376,8 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 						ns->neigborNLT.SetArguments(ns->neighborIfaceAddr, ns->receivingIfaceAddr);
 						ns->neigborNLT.Schedule();
 						ns->neigborNLT.SetArguments(sender, receiver);
+						if(ns->neighborTimeoutB)
+							ns->neighborTimeout += Seconds(value.GetSeconds());
 					}
 				break;
 				}
@@ -3476,8 +3478,8 @@ void MulticastRoutingProtocol::InsertNeighborState(uint32_t interface, const Nei
 		NeighborState *neighbor = FindNeighborState(interface, ns);
 		neighbor->neigborNLT.Cancel();
 		neighbor->neighborCreation = Simulator::Now();
-		//neighbor->neighborTimeout = Simulator::Now() + Seconds(Hello_Period+Propagation_Delay);
-		//neighbor->neighborTimeoutB = true;
+		neighbor->neighborTimeout = neighbor->neighborCreation;
+		neighbor->neighborTimeoutB = true;
 	}
 }
 
