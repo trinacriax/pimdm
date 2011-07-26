@@ -1806,6 +1806,7 @@ MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp)
 	sgState->upstream->SG_PLT.Schedule();
 }
 
+
 void
 MulticastRoutingProtocol::NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr)
 {
@@ -1820,7 +1821,7 @@ MulticastRoutingProtocol::NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Add
 				case Assert_Winner:{
 					break;
 					}
-				case Assert_Loser:{//TODO: Probably the assertWinner might be a pointer to the winner neighbor
+				case Assert_Loser:{
 					//Current Assert Winner's NeighborLiveness Timer Expires
 					//	The current Assert winner's NeighborLiveness Timer (NLT(N,I)) has
 					//	expired.  The Assert state machine MUST transition to the NoInfo
@@ -1941,7 +1942,6 @@ MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp)
 			//	multicast by the upstream router to a LAN, with itself as the Upstream Neighbor.
 				PIMHeader msg;
 				ForgeJoinPruneMessage(msg,GetLocalAddress(interface));
-//				msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = GetLocalAddress(interface);
 				Ptr<Packet> packet = Create<Packet> ();
 				SendPacketBroadcast(packet,msg);
 			//	Its purpose is to add additional reliability so that if a Join that should have
@@ -1992,6 +1992,11 @@ MulticastRoutingProtocol::PTTimerExpire (SourceGroupPair &sgp)
 	}
 }
 
+//This timer controls when State Refresh messages are generated.
+//     The timer is initially set when that Origination(S,G) state
+//     machine transitions to the O state.  It is cancelled when the
+//     Origination(S,G) state machine transitions to the NO state.  This
+//     timer is normally set to StateRefreshInterval (see 4.8).
 void
 MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp)
 {
@@ -2006,10 +2011,10 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp)
 		case Originator:{
 		//SRT(S,G) Expires.
 		//	The router remains in the Originator (O) state and MUST reset
-		//	SRT(S,G) to StateRefreshInterval.  The router MUST also generate
+		//	SRT(S,G) to StateRefreshInterval. The router MUST also generate
 		//	State Refresh messages for transmission, as described in the
-		//	State Refresh Forwarding rules (Section 4.5.1), except for the
-		//	TTL.  If the TTL of data packets from S to G are being recorded,
+		//	State Refresh Forwarding rules (Section 4.5.1), except for the TTL.
+		//	If the TTL of data packets from S to G are being recorded,
 		//	then the TTL of each State Refresh message is set to the highest
 		//	recorded TTL.  Otherwise, the TTL is set to the configured State
 		//	Refresh TTL.  Let I denote the interface over which a State
