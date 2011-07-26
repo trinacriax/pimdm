@@ -451,7 +451,7 @@ PIMHeader::HelloMessage::Deserialize (Buffer::Iterator start, uint32_t messageSi
       switch (he.m_optionType){
 		  case HelloHoldTime:{
 			  NS_ASSERT (he.m_optionLength  == PIM_DM_HELLO_HOLDTIME);
-			  he.m_optionValue.holdTime.m_holdTime = Time(Seconds(i.ReadNtohU16()));//TODO read the lenght instead of the size we already know
+			  he.m_optionValue.holdTime.m_holdTime = Seconds(i.ReadNtohU16());
 			  helloSizeLeft-=PIM_DM_HELLO_HOLDTIME;
 			  break;
 		  }
@@ -459,8 +459,8 @@ PIMHeader::HelloMessage::Deserialize (Buffer::Iterator start, uint32_t messageSi
 			  NS_ASSERT (he.m_optionLength == PIM_DM_HELLO_LANPRUNDELAY);
 			  uint16_t tmp = i.ReadNtohU16();
 			  he.m_optionValue.lanPruneDelay.m_T = (uint8_t)((tmp & 0x8000)>>15);
-			  he.m_optionValue.lanPruneDelay.m_propagationDelay = Time(MilliSeconds(tmp & 0x7fff));
-			  he.m_optionValue.lanPruneDelay.m_overrideInterval = Time(MilliSeconds(i.ReadNtohU16()));
+			  he.m_optionValue.lanPruneDelay.m_propagationDelay = MilliSeconds(tmp & 0x7fff);
+			  he.m_optionValue.lanPruneDelay.m_overrideInterval = MilliSeconds(i.ReadNtohU16());
 			  helloSizeLeft-=PIM_DM_HELLO_LANPRUNDELAY;
 			  break;
 		  }
