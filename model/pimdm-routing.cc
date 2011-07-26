@@ -699,6 +699,14 @@ MulticastRoutingProtocol::GetRoute(Ipv4Address destination) {
 	return m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif, err);
 }
 
+Ipv4Address
+MulticastRoutingProtocol::GetNextHop(Ipv4Address destination)
+{
+	Ipv4Address gateway = GetRoute(destination)->GetGateway();
+	if(gateway==Ipv4Address::GetAny())
+		return destination;
+	return gateway;
+}
 
 void
 MulticastRoutingProtocol::CreateMulticastGroupEntry (PIMHeader::MulticastGroupEntry &m_entry,  PIMHeader::EncodedGroup group)
@@ -1064,21 +1072,6 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 			break;
 		}
 	}
-}
-
-Ipv4Address
-MulticastRoutingProtocol::GetNextHop(Ipv4Address destination)
-{
-	Ptr<Ipv4Route> route = 0;
-	Ptr<Packet> receivedPacket;
-	Ipv4Header hdr;
-	hdr.SetDestination(destination);
-	Ptr<NetDevice> oif (0);
-	Socket::SocketErrno err = Socket::ERROR_NOTERROR;
-	route = m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket,hdr, oif, err);
-	if(route->GetGateway()==Ipv4Address::GetAny())
-		return destination;
-	return route->GetGateway();
 }
 
 void
@@ -1542,7 +1535,6 @@ MulticastRoutingProtocol::RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ip
 			pair.sourceIfaceAddr.Print(std::cout);
 			pair.groupMulticastAddr.Print(std::cout);
 			if(interface == RPF_interface(sender)){
-				sgState->upstream->SG_GRT.Cancel(); //TODO check!
 				switch (sgState->upstream->GraftPrune){
 				//The Upstream(S,G) state machine MUST transition to the Pruned (P)
 				// state, send a Prune(S,G) to RPF'(S), and set PLT(S,G) to t_limit seconds.
@@ -1609,7 +1601,7 @@ MulticastRoutingProtocol::SendPacketBroadcast (Ptr<Packet> packet, const PIMHead
   NS_LOG_FUNCTION(this);
   packet->AddHeader(message);
     // Trace it
-  //  m_txPacketTrace (packet, message);
+   m_txPacketTrace (message);
 
   // Send it
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
@@ -1651,7 +1643,7 @@ MulticastRoutingProtocol::SendPacketPIMRouters(Ptr<Packet> packet, const PIMHead
   if(m_stopTx) return;
   packet->AddHeader(message);
   // Trace it
-  //  m_txPacketTrace (message);
+  m_txPacketTrace (message);
   // Send
   for(int i = 0; i <m_ipv4->GetNInterfaces();i++){
 	 if(IsLoopInterface(i)) continue;
@@ -1688,14 +1680,8 @@ MulticastRoutingProtocol::SendPacketBroadcastInterface (Ptr<Packet> packet, cons
 {
   packet->AddHeader(message);
   // Trace it
-  //  m_txPacketTrace (packet, message);
+  m_txPacketTrace (message);
   // Send it
-  SendPacketBroadcastInterface(packet,interface);
-}
-
-void
-MulticastRoutingProtocol::SendPacketBroadcastInterface (Ptr<Packet> packet, uint32_t interface)
-{
   NS_LOG_DEBUG("SRC: "<< GetLocalAddress(interface)<< ", PPP: "<< PIM_IP_PROTOCOL_NUM
   		  <<", RT: " << GetRoute(GetLocalAddress(interface)));
   // Send it
@@ -1755,7 +1741,7 @@ MulticastRoutingProtocol::IsValidSG(uint32_t interface, const Ipv4Address & sour
 		valid = valid || sgState->SG_PPT.IsRunning();
 		valid = valid || sgState->SG_PT.IsRunning();
 		valid = valid || sgState->SG_AT.IsRunning();
-				///     Upstream interface-specific
+		///     Upstream interface-specific
 		if(RPF_interface(source) == interface){
 			valid = valid || sgState->upstream->SG_GRT.IsRunning();
 			valid = valid || sgState->upstream->SG_OT.IsRunning();
@@ -1767,6 +1753,10 @@ MulticastRoutingProtocol::IsValidSG(uint32_t interface, const Ipv4Address & sour
 	return valid;
 }
 
+//This timer is used to rate-limit Prunes on a LAN.
+//       It is only used when the Upstream(S,G) state machine is in the Pruned state.
+//       A Prune cannot be sent if this timer is running.
+//       This timer is normally set to t_limit (see 4.8).
 void
 MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp)
 {
