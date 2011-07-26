@@ -292,7 +292,7 @@ typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 		}
 		/// Interface address of the neighbor node.
 		Ipv4Address neighborIfaceAddr;
-		/// Interface address of the local node to the neighbor. //TODO can be removed.
+		/// Interface address of the local node to the neighbor
 		Ipv4Address receivingIfaceAddr;
 		/// Creation time of the current neighbor.
 		Time neighborCreation;
