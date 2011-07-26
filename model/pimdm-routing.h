@@ -373,7 +373,7 @@ private:
 		return interface;
 	}
 
-	/// Threshold (I) returns the minimum TTL that a packet must have before it can be transmitted on interface I. TODO what is it?
+	/// Threshold (I) returns the minimum TTL that a packet must have before it can be transmitted on interface I.
 	uint32_t getThreshold (uint32_t interface){
 		return 2; //TODO check what is it
 	}
@@ -849,10 +849,9 @@ private:
 				return false;
 			bool members = false;
 			for (SourceGroupList::iterator iter = sgl->begin (); iter != sgl->end () && !members; iter++) {
-				members |= (iter->SGPair.groupMulticastAddr == group && iter->members);
+				members |= (iter->SGPair.groupMulticastAddr == group && m_multicastGroup.find(group) != m_multicastGroup.end());
 			}
 			return members;
-			//TODO need some local membership indicator: workaround - a flag in the SG-state.
 		}
 	}
 
