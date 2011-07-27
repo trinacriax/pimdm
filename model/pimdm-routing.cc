@@ -136,7 +136,7 @@ void MulticastRoutingProtocol::register_member (std::string SGI){
 		m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<uint32_t> >(sgp,iface));
 		NS_LOG_DEBUG("Adding ("<<source<<","<<group<<") to the map");
 	}
-	if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end()){
+	if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface<m_ipv4->GetNInterfaces()){
 		m_LocalReceiver.find(sgp)->second.insert(interface);
 		NS_LOG_DEBUG("Adding " << interface<< " to ("<<source<<","<<group<<")");
 	}
