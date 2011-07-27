@@ -86,6 +86,10 @@ MulticastRoutingProtocol::GetTypeId (void)
 					Ipv4AddressValue("0.0.0.0"),
 					MakeIpv4AddressAccessor(&MulticastRoutingProtocol::AddMulticastGroup),
 					MakeIpv4AddressChecker())
+	.AddAttribute ("RegisterMember", "Register a new member to the group of interest",
+					StringValue("0,0,0"),
+					MakeStringAccessor(&MulticastRoutingProtocol::register_member),
+					MakeStringChecker())
 	.AddTraceSource ("Rx", "Receive PIM packet.",
 					 MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxPacketTrace))
 	.AddTraceSource ("Tx", "Send PIM packet.",
@@ -111,6 +115,29 @@ MulticastRoutingProtocol::GetMetricPreference(uint32_t interface)
 {
 	//TODO 	/// The preference value assigned to the unicast routing protocol that provided the route to the source
 	return 1;
+}
+
+void MulticastRoutingProtocol::register_member (std::string SGI){
+	NS_LOG_FUNCTION(this);
+	uint16_t p = SGI.find_first_of(",",0);
+	uint16_t l = 1 + SGI.find_first_of(",",p);
+	std::string sourceS = SGI.substr(0,p);
+	std::string groupS = SGI.substr(p+1,l);
+	std::string ifaceS = SGI.substr(p+l+2,SGI.length());
+	Ipv4Address source = Ipv4Address(sourceS.c_str());
+	Ipv4Address group = Ipv4Address(groupS.c_str());
+	uint32_t interface = atoi(ifaceS.c_str());
+	NS_LOG_DEBUG("Member for ("<<source<<","<<group<<") over interface "<< interface);
+	SourceGroupPair sgp (source,group);
+	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){
+		std::set<uint32_t> iface;
+		m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<uint32_t> >(sgp,iface));
+		NS_LOG_DEBUG("Adding ("<<source<<","<<group<<") to the map");
+	}
+	if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end()){
+		m_LocalReceiver.find(sgp)->second.insert(interface);
+		NS_LOG_DEBUG("Adding " << interface<< " to ("<<source<<","<<group<<")");
+	}
 }
 
 /// //TODO implement a test where data are sent to the node itself, using "recvData"
@@ -1218,7 +1245,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			//The Upstream(S, G) state machine MUST transition to the Pruned (P)
 			// state, send a Prune(S, G) to RPF'(S), and set PLT(S, G) to t_limit seconds.
 			case GP_Forwarding:{
-				if(olist(sender, group).size() == 0 && GetNextHop(sender) != sender){
+				if(olist(sender, group).size() == 0 && GetNextHop(sender) != sender && !GetMulticastGroup(group)){//TODO fix with the interface towards nodes
 					sgState->upstream->GraftPrune = GP_Pruned;
 					Ipv4Address destination = RPF_prime(sgp);
 					SendPruneUnicast(destination, sgp);

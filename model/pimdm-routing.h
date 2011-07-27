@@ -105,6 +105,7 @@
 #include "ns3/ipv4-static-routing.h"
 #include "ns3/ipv4-list-routing.h"
 #include "ns3/ipv4-l3-protocol.h"
+#include "ns3/string.h"
 
 #include <vector>
 #include <map>
@@ -152,6 +153,8 @@ private:
 	std::map<uint32_t, NeighborhoodStatus> m_IfaceNeighbors; ///< Information on interface and neighbors (RFC 3973, section 4.1.1).
 	///TIB - Tree Information Base
 	std::map<uint32_t, SourceGroupList> m_IfaceSourceGroup; ///< List of (S,G) pair state (RFC 3973, section 4.1.2).
+
+	std::map<SourceGroupPair, std::set<uint32_t> > m_LocalReceiver;
 
 	///pim ENABLED INTERFACES
 	std::map<uint32_t, bool> m_IfacePimEnabled; //TODO, right now all interfaces are pim enabled.
@@ -224,16 +227,7 @@ public:
 	 **/
 	std::vector<RoutingMulticastTable> GetRoutingTableEntries () const;
 
-	void register_member (Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		SourceGroupPair sgp (source,group);
-		SourceGroupState *sgState = FindSourceGroupState (interface,sgp);
-		if (sgState==NULL){
-			InsertSourceGroupState (interface,*sgState);
-		}
-		sgState = FindSourceGroupState (interface,sgp);
-		sgState->members = true;
-		//no local member registered
-	}
+	void register_member (std::string SGI);
 
 	void UpdateMRIB (){
 //		Ptr<Packet> receivedPacket;
@@ -831,28 +825,40 @@ private:
 	/// \param source Source IPv4 address
 	uint32_t RPF_interface (Ipv4Address source);
 
+
+//	void add_local_receiver_include (Ipv4Address source, Ipv4Address group, uint32_t interface){
+//		if (source==Ipv4Address::GetAny () || group==Ipv4Address::GetAny () || interface <0)
+//			return;
+//		SourceGroupList *sgl = FindSourceGroupList (interface);
+//		for (SourceGroupList::iterator iter = sgl->begin (); iter != sgl->end () ; iter++) {
+//			if(iter->SGPair.sourceIfaceAddr == source && iter->SGPair.groupMulticastAddr == group)
+//				members |= (iter->SGPair.groupMulticastAddr == group && m_multicastGroup.find(group) != m_multicastGroup.end());
+//		}
+//	}
+
 	/*
 	 * The macro local_receiver_include (S,G,I) is true if the IGMP module or
 	 * other local membership mechanism has determined that there are local
 	 * members on interface I that seek to receive traffic sent specifically by S to G.
 	 */
 	bool local_receiver_include (Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		if (group==Ipv4Address::GetAny ()){//no group - no way to identify members
+		if (group==Ipv4Address::GetAny () || source == Ipv4Address::GetAny()){//no group - no way to identify members
 			return false;
 		}
-		else if (source!=Ipv4Address::GetAny () & group!=Ipv4Address::GetAny ()){
-			SourceGroupPair sgp (source,group);
-			return (FindSourceGroupState (interface,sgp)==NULL?false:FindSourceGroupState (interface,sgp)->members);
-		}else{
-			SourceGroupList *sgl = FindSourceGroupList (interface);
-			if (!sgl)
-				return false;
-			bool members = false;
-			for (SourceGroupList::iterator iter = sgl->begin (); iter != sgl->end () && !members; iter++) {
-				members |= (iter->SGPair.groupMulticastAddr == group && m_multicastGroup.find(group) != m_multicastGroup.end());
-			}
-			return members;
-		}
+		SourceGroupPair sgp (source,group);
+		return (m_LocalReceiver.find(sgp) != m_LocalReceiver.end()
+				&& m_LocalReceiver.find(sgp)->second.find(interface) != m_LocalReceiver.find(sgp)->second.end());
+//		}else{
+//			SourceGroupList *sgl = FindSourceGroupList (interface);
+//			if (!sgl)
+//				return false;
+//			bool members = false;
+//			for (SourceGroupList::iterator iter = sgl->begin (); iter != sgl->end () && !members; iter++) {
+//				members |= (iter->SGPair.groupMulticastAddr == group && m_multicastGroup.find(group) != m_multicastGroup.end());
+//			}
+//			return members;
+//			//TODO need some local membership indicator: workaround - a flag in the SG-state.
+//		}
 	}
 
 	//

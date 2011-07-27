@@ -106,6 +106,12 @@ operator == (const SourceGroupPair &a, const SourceGroupPair &b){
 			(a.groupMulticastAddr == b.groupMulticastAddr);
 }
 
+static inline bool
+operator < (const SourceGroupPair &a, const SourceGroupPair &b){
+	return (a.groupMulticastAddr < b.groupMulticastAddr) ||
+			((a.groupMulticastAddr == b.groupMulticastAddr) && (a.sourceIfaceAddr < b.sourceIfaceAddr));
+}
+
 static inline std::ostream&
 operator << (std::ostream &os, const SourceGroupPair &a){
 	os << "SourceGroupPair( SourceAddress = "<< a.sourceIfaceAddr<< ", GroupAddress = " << a.groupMulticastAddr<<")";
@@ -170,7 +176,7 @@ struct SourceGroupState{
 	struct UpstreamState *upstream;
 
 	/// local members on interface I that seek to receive all traffic sent to G.
-	bool members;
+	bool members;//todo remove
 	/// Time of the last received StateRefresh(S,G)
 	Time lastStateRefresh;
 	/// Assert winner's IP Address.
@@ -243,8 +249,6 @@ struct UpstreamState{
 //			", OT = " << a.SGOT << ", SGPLT = "<< a.SGSAT << ", SGSRT = "<< a.SGSRT<<");";
 //	return os;
 //}
-
-
 
 typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 
