@@ -361,8 +361,10 @@ private:
 		uint32_t interface = -1;
 		if (!addr.IsMulticast ()){
 			Ptr<Ipv4Route> route = GetRoute (addr);
-			Ptr<NetDevice> dev = route->GetOutputDevice ();
-			interface = m_ipv4->GetInterfaceForDevice (dev);
+			if(route){
+				Ptr<NetDevice> dev = route->GetOutputDevice ();
+				interface = m_ipv4->GetInterfaceForDevice (dev);
+			}
 		}
 		return interface;
 	}
@@ -603,9 +605,7 @@ private:
 				m_IfaceSourceGroup.find (interface)->second.push_back (sgs);
 				sgState = FindSourceGroupState (interface, sgp);
 				uint32_t rpf_i = RPF_interface (sgs.SGPair.sourceIfaceAddr);
-				if (rpf_i== interface){
-					sgState->upstream = new UpstreamState;
-				}
+				sgState->upstream = new UpstreamState;
 				//	 		sgs->SG_PPT.Cancel ();
 				//	 		sgs->SG_PPT.SetDelay (status->overrideInterval+status->propagationDelay);
 				//	 		///sgs->SG_PPT.SetFunction (&MulticastRoutingProtocol::???, this);
