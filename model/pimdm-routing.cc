@@ -59,6 +59,11 @@ MulticastRoutingProtocol::MulticastRoutingProtocol() :
 		m_routingTableAssociation(0), m_ipv4 (0), m_lo(0)
 {
 	m_RoutingTable = Create<Ipv4StaticRouting> ();
+	m_multicastGroup.clear();
+	m_IfaceNeighbors.clear();
+	m_IfacePimEnabled.clear();
+	m_IfaceSourceGroup.clear();
+	m_LocalReceiver.clear();
 }
 
 MulticastRoutingProtocol::~MulticastRoutingProtocol()
