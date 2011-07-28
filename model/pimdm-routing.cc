@@ -1247,9 +1247,9 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		interface = m_ipv4->GetInterfaceForDevice(socket->GetBoundNetDevice());
 	else if (rpf_route)
 		interface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
-	else
+	/*else
 		interface = GetInterfaceFromAddress(sender);
-
+	*/
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
 	Ipv4Address gateway = GetNextHop(sender);
 	NS_LOG_DEBUG("SRC: "<< sender<<" GRP: "<<group<<" IFC: "<<interface<<" GW: "<<gateway<<" LOCAL: "<<GetLocalAddress(interface));
