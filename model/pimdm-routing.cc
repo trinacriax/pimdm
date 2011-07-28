@@ -247,7 +247,7 @@ MulticastRoutingProtocol::RemoveEntry (Ipv4Address const &group)
 /// \param groupEntry	RouteEntry for the multicast group.
 
 bool
-MulticastRoutingProtocol::Lookup (Ipv4Address const &group, RoutingMulticastTable &groupEntry) const {
+MulticastRoutingProtocol::Lookup (Ipv4Address const group, RoutingMulticastTable &groupEntry) const {
 	NS_LOG_FUNCTION(this << group);
 	// Get the iterator at "dest" position
 	std::map<Ipv4Address, RoutingMulticastTable>::const_iterator it = m_mrib.find (group);
@@ -270,7 +270,7 @@ MulticastRoutingProtocol::Lookup (Ipv4Address const &group, RoutingMulticastTabl
 /// \param ifaceEntry			InterfaceSpecific Entry for the multicast group.
 
 bool
-MulticastRoutingProtocol::Lookup (Ipv4Address const &group, uint32_t const interface, RoutingMulticastTable &groupEntry, MulticastEntry &ifaceEntry) const {
+MulticastRoutingProtocol::Lookup (Ipv4Address const group, uint32_t const interface, RoutingMulticastTable &groupEntry, MulticastEntry &ifaceEntry) const {
 	NS_LOG_FUNCTION(this << group<< interface);
 	// Get the iterator at "dest" position
 	std::map<Ipv4Address, RoutingMulticastTable>::const_iterator it = m_mrib.find (group);
@@ -293,14 +293,15 @@ MulticastRoutingProtocol::Lookup (Ipv4Address const &group, uint32_t const inter
 /// \param next			new next hop towards the source.
 ///
 bool
-MulticastRoutingProtocol::UpdateEntry (Ipv4Address const &group, uint32_t const interface, Ipv4Address const &source, Ipv4Address const &next) {
+MulticastRoutingProtocol::UpdateEntry (Ipv4Address const group, uint32_t const interface, Ipv4Address const source, Ipv4Address const next) {
 	NS_LOG_FUNCTION(this << group<< interface);
 	// Get the iterator at "dest" position
 	// If there is no route to "dest", return NULL
+	MulticastEntry *mentry = &m_mrib[group].mgroup[interface];
 	if (m_mrib.find (group) == m_mrib.end ())
 		return false;
-	m_mrib.find (group)->second.mgroup.find(interface)->second.sourceAddr = source;
-	m_mrib.find (group)->second.mgroup.find(interface)->second.nextAddr = next;
+	m_mrib[group].mgroup[interface].nextAddr = Ipv4Address(next);
+	m_mrib[group].mgroup[interface].sourceAddr = Ipv4Address(source);
 	return true;
 }
 
@@ -315,7 +316,7 @@ MulticastRoutingProtocol::UpdateEntry (Ipv4Address const &group, uint32_t const 
 /// \param dist		distance to the destination node.
 ///
 void
-MulticastRoutingProtocol::AddEntry (Ipv4Address const &source, Ipv4Address const &group, Ipv4Address const &next, uint32_t interface)
+MulticastRoutingProtocol::AddEntry (Ipv4Address const source, Ipv4Address const group, Ipv4Address const next, uint32_t interface)
 {
   NS_LOG_FUNCTION (this << "SRC:"<< source << " DST:"<< group <<" NXT:"<< next << " IFC:"<< interface << " MIF:"<< m_mainAddress);
 
@@ -323,10 +324,10 @@ MulticastRoutingProtocol::AddEntry (Ipv4Address const &source, Ipv4Address const
   RoutingMulticastTable &entry = m_mrib[group];//DEBUG
   m_mrib[group].groupAddr = group;
   //  entry.groupAddr = group;
-  MulticastEntry &me = m_mrib[group].mgroup[interface];//DEBUG
-  entry.mgroup[interface].interface = interface;
-  entry.mgroup[interface].sourceAddr = source;
-  entry.mgroup[interface].nextAddr = next;
+  MulticastEntry *me = &m_mrib[group].mgroup[interface];//DEBUG
+  m_mrib[group].mgroup[interface].interface = interface;
+  m_mrib[group].mgroup[interface].sourceAddr = source;
+  m_mrib[group].mgroup[interface].nextAddr = next;
 }
 
 
@@ -1259,14 +1260,15 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		RoutingMulticastTable entry;
 		MulticastEntry mentry;
 		if(!Lookup(group, entry)){
-			AddEntry(sender, group, rpf_route->GetGateway(), interface);
+			AddEntry(sender, group, gateway, interface);
 			NS_LOG_DEBUG("Add Entry "<<entry.mgroup[interface].sourceAddr<<", "<<entry.groupAddr<<", "<<entry.mgroup[interface].nextAddr<<", "<<entry.mgroup[interface].interface);
 			if(entry.mgroup[interface].nextAddr == entry.mgroup[interface].sourceAddr){
 				//Nodes is directly connected to source
 			}
 		}
+		Lookup(group,interface,entry,mentry);
 		if(mentry.nextAddr == Ipv4Address::GetAny() && mentry.sourceAddr == Ipv4Address::GetAny()){
-			UpdateEntry(group, interface, sender, rpf_route->GetGateway());
+			UpdateEntry(group, interface, sender, gateway);
 		}
 	}
 	RPFCheck(sgp, interface);
