@@ -157,7 +157,7 @@ void MulticastRoutingProtocol::register_member (std::string SGI){
 void
 MulticastRoutingProtocol::AddMulticastSource(Ipv4Address group)
 {
-	if(m_multicastSource.find(group)==m_multicastSource.end()){
+	if(!GetMulticastSource(group)){
 		m_multicastSource.insert(group);
 	}
 }
@@ -765,10 +765,8 @@ MulticastRoutingProtocol::GetRoute(Ipv4Address destination) {
 Ipv4Address
 MulticastRoutingProtocol::GetNextHop(Ipv4Address destination)
 {
-	Ipv4Address gateway = GetRoute(destination)->GetGateway();
-	if(gateway==Ipv4Address::GetAny())
-		return destination;
-	return gateway;
+	Ptr<Ipv4Route> route = GetRoute(destination);
+	return (route?route->GetGateway():Ipv4Address::GetAny());
 }
 
 void
@@ -1063,7 +1061,7 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair
 	refresh.m_ttl = (sgState->SG_DATA_TTL>0 ? sgState->SG_DATA_TTL : sgState->SG_SR_TTL);
 	refresh.m_P = (sgState->PruneState==Prune_Pruned?1:0);
 	refresh.m_N = 0;
-	refresh.m_O = (!sgState->SG_AT.IsRunning() && (m_ipv4->GetInterfaceForDevice(GetRoute(sgp.sourceIfaceAddr)->GetOutputDevice())==RPF_interface(sgp.sourceIfaceAddr))?1:0);
+	refresh.m_O = (!sgState->SG_AT.IsRunning() && GetRoute(sgp.sourceIfaceAddr) && (m_ipv4->GetInterfaceForDevice(GetRoute(sgp.sourceIfaceAddr)->GetOutputDevice())==RPF_interface(sgp.sourceIfaceAddr)))?1:0;
 	refresh.m_reserved = 0;
 	refresh.m_interval = RefreshInterval;
 }
@@ -1178,9 +1176,8 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
 	Ipv4Header ipv4header;
 	receivedPacket->RemoveHeader(ipv4header);
 	Ipv4Address group = ipv4header.GetDestination();
-	if(route)
-		NS_LOG_DEBUG("Socket = " << socket<< ", Sender "<< senderIfaceAddr<<", Group " << group << ", Destination "<< receiverIfaceAddr<< " ("<< route->GetSource()<< " <--> "
-			<<route->GetGateway() <<" <--> "<<senderIfaceAddr <<" vs " <<interface<<")");
+	NS_LOG_DEBUG("Socket = " << socket<< ", Sender "<< senderIfaceAddr<<", Group " << group << ", Destination "<< receiverIfaceAddr);
+	if(route) NS_LOG_DEBUG(route->GetSource()<< " <-> " <<route->GetGateway() <<"<->"<<senderIfaceAddr <<" via interface " <<interface);
 	if(ipv4header.GetDestination().IsMulticast() && ipv4header.GetDestination() != Ipv4Address(ALL_PIM_ROUTERS4)) {
 		NS_LOG_ERROR("Received "<< ipv4header.GetDestination() <<" it should be captured by another callback.");
 		SourceGroupPair sgp (senderIfaceAddr, receiverIfaceAddr);
@@ -1243,11 +1240,17 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
 	Ipv4Address group = m_socketAddresses[socket].GetLocal ();
 	NS_ASSERT (group != Ipv4Address ());
-	uint32_t interface = m_ipv4->GetInterfaceForDevice(socket->GetBoundNetDevice());
-	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
 	SourceGroupPair sgp(sender, group);
 	Ptr<Ipv4Route> rpf_route = GetRoute(sender);
-	NS_LOG_DEBUG("SRC: "<< sender<<" GRP: "<<group<<" IFC: "<<interface<<" RPF: "<<rpf_route->GetGateway());
+	uint32_t interface = -1;
+	if(socket->GetBoundNetDevice())
+		interface = m_ipv4->GetInterfaceForDevice(socket->GetBoundNetDevice());
+	else if (rpf_route)
+		interface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
+	else
+		interface = GetInterfaceFromAddress(sender);
+
+	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	if(!sgState){
 		InsertSourceGroupState(interface, sgp);
@@ -1724,6 +1727,7 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, const PIMHeader 
   m_txPacketTrace (message);
   // Send
   Ptr<Ipv4Route> route = GetRoute(destination);
+  if(!route) return;//no route to destination
   uint32_t interface = m_ipv4->GetInterfaceForDevice(route->GetOutputDevice());
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
         m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
