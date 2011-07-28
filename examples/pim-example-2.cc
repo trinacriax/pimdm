@@ -69,20 +69,20 @@ main (int argc, char *argv[])
 	//	LogComponentEnable ("SimpleGlobalRoutingExample", LOG_LEVEL_INFO);
 	//	LogComponentEnable ("MacLow", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	//	LogComponentEnable ("YansWifiChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PacketSink", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("OlsrRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("OlsrRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("CsmaNetDevice", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("CsmaChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("CsmaHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Node", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4EndPointDemux", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Ipv4EndPointDemux", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("UdpL4Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Packet", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 
@@ -107,15 +107,16 @@ main (int argc, char *argv[])
 	NS_LOG_INFO ("Create nodes.");
 	NodeContainer routers;
 	routers.Create (4);
-	NodeContainer n0n2 = NodeContainer (routers.Get (0), routers.Get (1));
+	NodeContainer n0n1 = NodeContainer (routers.Get (0), routers.Get (1));
 	NodeContainer n0n3 = NodeContainer (routers.Get (0), routers.Get (3));
 	NodeContainer n1n2 = NodeContainer (routers.Get (1), routers.Get (2));
 	NodeContainer n2n3 = NodeContainer (routers.Get (2), routers.Get (3));
 	NodeContainer client;
-	client.Create (3);
+	client.Create (4);
 	NodeContainer c1 = NodeContainer (client.Get (0), routers.Get(1));
 	NodeContainer c2 = NodeContainer (client.Get (1), routers.Get(2));
 	NodeContainer c3 = NodeContainer (client.Get (2), routers.Get(3));
+	NodeContainer c4 = NodeContainer (client.Get (3), routers.Get(0));
 
 
 	// connect all our nodes to a shared channel.
@@ -124,7 +125,7 @@ main (int argc, char *argv[])
 	csma.SetChannelAttribute ("DataRate", DataRateValue (DataRate (5000000)));
 	csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
 	csma.SetDeviceAttribute ("EncapsulationMode", StringValue ("Llc"));
-	NetDeviceContainer d0d2 = csma.Install (n0n2);
+	NetDeviceContainer d0d1 = csma.Install (n0n1);
 	NetDeviceContainer d0d3 = csma.Install (n0n3);
 	NetDeviceContainer d1d2 = csma.Install (n1n2);
 	NetDeviceContainer d2d3 = csma.Install (n2n3);
@@ -132,6 +133,7 @@ main (int argc, char *argv[])
 	NetDeviceContainer d1c1 = csma.Install (c1);
 	NetDeviceContainer d2c2 = csma.Install (c2);
 	NetDeviceContainer d3c3 = csma.Install (c3);
+	NetDeviceContainer d0c4 = csma.Install (c4);
 
 	// Enable OLSR
 	NS_LOG_INFO ("Enabling OLSR Routing.");
@@ -160,7 +162,7 @@ main (int argc, char *argv[])
 	NS_LOG_INFO ("Assign IP Addresses.");
 	Ipv4AddressHelper ipv4;
 	ipv4.SetBase ("10.0.2.0", "255.255.255.0");
-	Ipv4InterfaceContainer i0i2 = ipv4.Assign (d0d2);
+	Ipv4InterfaceContainer i0i2 = ipv4.Assign (d0d1);
 
 	ipv4.SetBase ("10.0.3.0", "255.255.255.0");
 	Ipv4InterfaceContainer i0i3 = ipv4.Assign (d0d3);
@@ -181,10 +183,18 @@ main (int argc, char *argv[])
 	ipv4.SetBase ("10.3.3.0", "255.255.255.0");
 	Ipv4InterfaceContainer i3i3 = ipv4.Assign (d3c3);
 
-	NS_LOG_INFO ("Configure multicasting.");
+	ipv4.SetBase ("10.4.4.0", "255.255.255.0");
+	Ipv4InterfaceContainer i4i4 = ipv4.Assign (d0c4);
 
-	Ipv4Address multicastSource ("10.0.1.1");
+	NS_LOG_INFO ("Configure multicasting.");
+	Ipv4Address multicastSource ("10.4.4.1");
+	Ipv4Address multicastSourceR ("10.4.4.2");
 	Ipv4Address multicastGroup ("225.1.2.4");
+
+	Ptr<Ipv4> ipv4A = client.Get(3)->GetObject<Ipv4> ();
+	Ptr<Ipv4StaticRouting> staticRoutingA = staticRouting.GetStaticRouting (ipv4A);
+	staticRoutingA->AddHostRouteTo (multicastGroup, multicastSourceR, 1);
+
 	Config::Set("NodeList/0/$ns3::pimdm::MulticastRoutingProtocol/MulticastSource", Ipv4AddressValue(multicastGroup));
 	Config::Set("NodeList/[0-3]/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup));
 	std::stringstream ss;
@@ -202,7 +212,7 @@ main (int argc, char *argv[])
 	onoff.SetAttribute ("DataRate", DataRateValue (DataRate (15000)));
 	onoff.SetAttribute ("PacketSize", UintegerValue (1200));
 
-	ApplicationContainer apps = onoff.Install (routers.Get (0));
+	ApplicationContainer apps = onoff.Install (client.Get (3));
 	apps.Start (Seconds (6.0));
 	apps.Stop (Seconds (28.0));
 
@@ -213,9 +223,9 @@ main (int argc, char *argv[])
 	apps.Start (Seconds (4.0));
 	apps.Stop (Seconds (30.0));
 
-	AsciiTraceHelper ascii;
-	csma.EnableAsciiAll (ascii.CreateFileStream ("simple-global-routing.tr"));
-	csma.EnablePcapAll ("link12", false);
+//	AsciiTraceHelper ascii;
+//	csma.EnableAsciiAll (ascii.CreateFileStream ("simple-global-routing.tr"));
+//	csma.EnablePcapAll ("link12", false);
 
 	//	  // Flow Monitor
 	//	  Ptr<FlowMonitor> flowmon;
