@@ -1129,7 +1129,7 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("RecvData: Assert State not valid"<<sgState->AssertState);
+			NS_LOG_ERROR("SendStateRefreshPair: Assert State not valid"<<sgState->AssertState);
 			break;
 		}
 	}
@@ -1149,10 +1149,9 @@ MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, uint32_t interface)
 				RPF_Changes(sgp, entry.mgroup[mg->second.interface].interface, interface);
 				entry.mgroup[mg->second.interface].interface = interface;
 			}
-			Ipv4Address next = GetRoute(sgp.sourceIfaceAddr)->GetGateway();
-			if(mg->second.nextAddr != next ){
+			if(mg->second.nextAddr != GetNextHop(sgp.sourceIfaceAddr)){
 				RPF_primeChanges(sgp);
-				entry.mgroup[mg->second.interface].nextAddr = next;
+				entry.mgroup[mg->second.interface].nextAddr = GetNextHop(sgp.sourceIfaceAddr);
 			}
 		}
 	}
@@ -1251,6 +1250,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		interface = GetInterfaceFromAddress(sender);
 
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
+	Ipv4Address gateway = GetNextHop(sender);
+	NS_LOG_DEBUG("SRC: "<< sender<<" GRP: "<<group<<" IFC: "<<interface<<" GW: "<<gateway<<" LOCAL: "<<GetLocalAddress(interface));
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	if(!sgState){
 		InsertSourceGroupState(interface, sgp);
@@ -1787,8 +1788,7 @@ MulticastRoutingProtocol::SendPacketBroadcastInterface (Ptr<Packet> packet, cons
   // Trace it
   m_txPacketTrace (message);
   // Send it
-  NS_LOG_DEBUG("SRC: "<< GetLocalAddress(interface)<< ", PPP: "<< PIM_IP_PROTOCOL_NUM
-  		  <<", RT: " << GetRoute(GetLocalAddress(interface)));
+  NS_LOG_DEBUG("SRC: "<< GetLocalAddress(interface)<< ", PPP: "<< PIM_IP_PROTOCOL_NUM);
   // Send it
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
       m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
@@ -1807,8 +1807,7 @@ MulticastRoutingProtocol::SendPacketBroadcastInterface (Ptr<Packet> packet, cons
 void
 MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv4Header &ipv4Header, uint32_t interface)
 {
-  NS_LOG_DEBUG("SRC: "<< GetLocalAddress(interface)<< ", PPP: "<< PIM_IP_PROTOCOL_NUM
-  		  <<", RT: " << GetRoute(GetLocalAddress(interface)));
+  NS_LOG_DEBUG("SRC: "<< GetLocalAddress(interface)<< ", PPP: "<< PIM_IP_PROTOCOL_NUM);
   // Send it
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
       m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
