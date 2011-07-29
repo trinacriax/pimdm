@@ -20,13 +20,18 @@
 //
 // Network topology
 //
-//   n0
-//     \ 5 Mb/s, 2ms
-//      \          1.5Mb/s, 10ms        1.5Mb/s, 10ms
-//       n2 -------------------------n3---------n4
-//      /
-//     / 5 Mb/s, 2ms
-//   n1
+//           7
+//           |
+//           0
+//          / \
+//         /   \
+//  4 --- 1     3 --- 6
+//         \   /
+//          \ /
+//           2
+//           |
+//           5
+//
 //
 // - all links are point-to-point links with indicated one-way BW/delay
 // - CBR/UDP flows from n0 to n4, and from n3 to n1
@@ -106,13 +111,13 @@ main (int argc, char *argv[])
 	// topologies, we could configure a node factory.
 	NS_LOG_INFO ("Create nodes.");
 	NodeContainer routers;
-	routers.Create (4);
+	routers.Create (4);// here routes from node 0 to 3
 	NodeContainer n0n1 = NodeContainer (routers.Get (0), routers.Get (1));
 	NodeContainer n0n3 = NodeContainer (routers.Get (0), routers.Get (3));
 	NodeContainer n1n2 = NodeContainer (routers.Get (1), routers.Get (2));
 	NodeContainer n2n3 = NodeContainer (routers.Get (2), routers.Get (3));
 	NodeContainer client;
-	client.Create (4);
+	client.Create (4);// here clients from node 4 to 7, 7 is the source
 	NodeContainer c1 = NodeContainer (client.Get (0), routers.Get(1));
 	NodeContainer c2 = NodeContainer (client.Get (1), routers.Get(2));
 	NodeContainer c3 = NodeContainer (client.Get (2), routers.Get(3));
@@ -193,7 +198,7 @@ main (int argc, char *argv[])
 
 	Ptr<Ipv4> ipv4A = client.Get(3)->GetObject<Ipv4> ();
 	Ptr<Ipv4StaticRouting> staticRoutingA = staticRouting.GetStaticRouting (ipv4A);
-	staticRoutingA->AddHostRouteTo (multicastGroup, multicastSourceR, 1);
+	staticRoutingA->AddHostRouteTo (multicastGroup, multicastSourceR, 1);//just one entry to set first hop from the source
 
 	Config::Set("NodeList/0/$ns3::pimdm::MulticastRoutingProtocol/MulticastSource", Ipv4AddressValue(multicastGroup));
 	Config::Set("NodeList/[0-3]/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup));
@@ -201,7 +206,6 @@ main (int argc, char *argv[])
 	// source,group,interface
 	ss<< multicastSource<< "," << multicastGroup << "," << "3";
 	Config::Set("NodeList/[1-3]/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
-
 
 	NS_LOG_INFO ("Create Source");
 	InetSocketAddress dst = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
