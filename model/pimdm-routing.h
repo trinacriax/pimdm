@@ -180,8 +180,6 @@ private:
 	std::map<Ipv4Address, RoutingMulticastTable> m_mrib; ///< Multicast Routing Information Base (MRIB)
 
 
-	/// multicast groups for which the node is a source
-	std::set<Ipv4Address> m_multicastSource;
 	/// multicast groups on which the node is interested in
 	std::set<Ipv4Address> m_multicastGroup;
 
@@ -264,6 +262,25 @@ private:
 	bool Lookup (Ipv4Address const group, uint32_t const interface, RoutingMulticastTable &outEntry, MulticastEntry &me) const;
 	bool UpdateEntry (Ipv4Address const group, uint32_t const interface, Ipv4Address const source, Ipv4Address const next) ;
 
+	void EnablePimInterface(uint32_t interface){
+		if(m_IfacePimEnabled.find(interface) == m_IfacePimEnabled.end())
+			m_IfacePimEnabled.insert(std::pair<uint32_t,bool>(interface,true));
+		else m_IfacePimEnabled.find(interface)->second = true;
+	}
+
+	void DisablePimInterface(uint32_t interface){
+		if(m_IfacePimEnabled.find(interface) == m_IfacePimEnabled.end())
+			m_IfacePimEnabled.insert(std::pair<uint32_t,bool>(interface,false));
+		else m_IfacePimEnabled.find(interface)->second = false;
+	}
+
+	bool GetPimInterface(uint32_t interface){
+		if(m_IfacePimEnabled.find(interface) == m_IfacePimEnabled.end())
+			return false;
+		else
+			return m_IfacePimEnabled.find(interface)->second;
+	}
+
 	Ipv4Address GetLocalAddress (uint32_t interface);
 
 	// From Ipv4RoutingProtocol
@@ -315,16 +332,6 @@ private:
 	}
 
 	void AddMulticastRoute (Ipv4Address source, Ipv4Address group, uint32_t inputInterface, std::vector<uint32_t> outputInterfaces);
-
-	void AddMulticastSource (Ipv4Address group);
-	bool GetMulticastSource (Ipv4Address group){
-		return (group.IsMulticast () && m_multicastSource.find (group)!=m_multicastSource.end ());
-	}
-	void DelMulticastSource (Ipv4Address group){
-		if (group.IsMulticast () && GetMulticastGroup (group)){
-			m_multicastSource.erase (group);
-		}
-	}
 
 	void AddMulticastGroup (Ipv4Address group);
 	bool GetMulticastGroup (Ipv4Address group){
@@ -836,29 +843,32 @@ private:
 //		}
 //	}
 
+	/// \brief There are receivers for the given SourceGroup pair.
+	/// \param sgp source-group pair.
+	/// \return True if there are receivers interested in, false otherwise.
+	bool GetLocalReceiver(SourceGroupPair sgp){
+		return m_LocalReceiver.find(sgp) != m_LocalReceiver.end();
+	}
+
+	/// \brief There are receivers for the given SourceGroup pair on that interface.
+	/// \param sgp source-group pair.
+	/// \param interface node interface
+	/// \return True if there are receivers on the particular interface that are interested in, false otherwise.
+	bool GetLocalReceiverInterface(SourceGroupPair sgp, uint32_t interface){
+		return GetLocalReceiver(sgp) && m_LocalReceiver.find(sgp)->second.find(interface) != m_LocalReceiver.find(sgp)->second.end();
+	}
+
 	/*
 	 * The macro local_receiver_include (S,G,I) is true if the IGMP module or
 	 * other local membership mechanism has determined that there are local
 	 * members on interface I that seek to receive traffic sent specifically by S to G.
 	 */
 	bool local_receiver_include (Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		if (group==Ipv4Address::GetAny () || source == Ipv4Address::GetAny()){//no group - no way to identify members
+		if (group==Ipv4Address::GetAny () || source == Ipv4Address::GetAny()){//no group or no source: no way to identify members
 			return false;
 		}
 		SourceGroupPair sgp (source,group);
-		return (m_LocalReceiver.find(sgp) != m_LocalReceiver.end()
-				&& m_LocalReceiver.find(sgp)->second.find(interface) != m_LocalReceiver.find(sgp)->second.end());
-//		}else{
-//			SourceGroupList *sgl = FindSourceGroupList (interface);
-//			if (!sgl)
-//				return false;
-//			bool members = false;
-//			for (SourceGroupList::iterator iter = sgl->begin (); iter != sgl->end () && !members; iter++) {
-//				members |= (iter->SGPair.groupMulticastAddr == group && m_multicastGroup.find(group) != m_multicastGroup.end());
-//			}
-//			return members;
-//			//TODO need some local membership indicator: workaround - a flag in the SG-state.
-//		}
+		return (GetLocalReceiver(sgp) && GetLocalReceiverInterface(sgp, interface));
 	}
 
 	//
@@ -1007,8 +1017,8 @@ private:
 	}
 
 	bool I_Am_Assert_loser (Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		SourceGroupState *sgState = FindSourceGroupState (RPF_interface (source),source,group);
-		return sgState->AssertState == Assert_Loser;
+		SourceGroupState *sgState = FindSourceGroupState (interface ,source,group);
+		return (sgState != NULL?sgState->AssertState == Assert_Loser: false);
 	}
 
 	struct AssertMetric AssertWinnerMetric (Ipv4Address source, Ipv4Address group, uint32_t interface) {
