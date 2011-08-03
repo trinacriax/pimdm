@@ -114,16 +114,10 @@ MulticastRoutingProtocol::GetMetricPreference(uint32_t interface)
 void MulticastRoutingProtocol::register_member (std::string SGI){
 	NS_LOG_FUNCTION(this);
 	// Just to get the IP info
-	size_t p = SGI.find(",");
-	size_t l = SGI.find(",",p+1);
-	size_t m = SGI.length() ;
-	std::string sourceS = SGI.substr(0,p);
-	std::string groupS = SGI.substr(p+1,l-p-1);
-	std::string ifaceS = SGI.substr(l+1,m);
-	Ipv4Address source = Ipv4Address(sourceS.c_str());
-	Ipv4Address group = Ipv4Address(groupS.c_str());
-	uint32_t interface = atoi(ifaceS.c_str());
-	if(source == group && interface == 0)return;
+	Ipv4Address group, source;
+	uint32_t interface;
+	ParseSourceGroupInterface(SGI, group, source, interface);
+	if(source == group && interface == 0)return;//skip initialization
 	NS_LOG_DEBUG("Member for ("<<source<<","<<group<<") over interface "<< interface);
 	SourceGroupPair sgp (source,group);
 	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){
