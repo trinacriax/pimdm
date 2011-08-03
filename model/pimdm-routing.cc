@@ -119,8 +119,9 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
 	  if (DynamicCast<olsr::RoutingProtocol> (temp))
 		{
 		  olsr_Gw = DynamicCast<olsr::RoutingProtocol> (temp);
-		  for(std::vector<olsr::RoutingTableEntry>::const_iterator iter = olsr_Gw->GetRoutingTableEntries().begin(); iter!= olsr_Gw->GetRoutingTableEntries().end(); iter++){
-			  if(iter->destAddr == source)return iter->distance;
+		  std::vector<olsr::RoutingTableEntry> olsr_table = olsr_Gw->GetRoutingTableEntries();
+		  for(std::vector<olsr::RoutingTableEntry>::const_iterator iter = olsr_table.begin(); iter!=olsr_table.end(); iter++){
+			  if(iter->destAddr!=Ipv4Address::GetAny() && iter->destAddr == source)return iter->distance;
 		  }
 		}
 //	  else if (DynamicCast<aodv::RoutingProtocol> (temp))
@@ -693,7 +694,7 @@ bool
 MulticastRoutingProtocol::IsDownstream (uint32_t interface, SourceGroupPair sgpair)
 {
 	uint32_t rpfInterface = RPF_interface(sgpair.sourceIfaceAddr);
-	return (rpfInterface<m_ipv4->GetNInterfaces() && interface != rpfInterface);
+	return (rpfInterface>=0 && rpfInterface<m_ipv4->GetNInterfaces() && interface != rpfInterface);
 }
 bool
 MulticastRoutingProtocol::IsUpstream (uint32_t interface, SourceGroupPair sgpair)
@@ -1160,7 +1161,6 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
 //	}
 	switch (pimdmPacket.GetType()){
 	case PIM_HELLO:{
-		m_rxPacketTrace (pimdmPacket);
 		RecvHello(pimdmPacket.GetHelloMessage(), senderIfaceAddr, receiverIfaceAddr);
 		break;
 		}
@@ -1189,13 +1189,14 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
 		break;
 		}
 	}
+	m_rxPacketTrace (pimdmPacket);
 }
 
 
 void
 MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 {
-	NS_LOG_FUNCTION(this);
+	NS_LOG_FUNCTION(this<< socket->GetBoundNetDevice());
 	Ptr<Packet> receivedPacket;
 	Address sourceAddress;
 	receivedPacket = socket->RecvFrom (sourceAddress);
@@ -1215,7 +1216,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);//DEFAULT interface
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
 	Ipv4Address gateway = GetNextHop(sender);
-	NS_LOG_DEBUG("SRC: "<< sender<< " Metric: "<< GetRouteMetric(interface,sender) <<" GRP: "<<group<<" IFC: "<<interface<<" GW: "<<gateway<<" LOCAL: "<<GetLocalAddress(interface));
+	NS_LOG_DEBUG("LOCAL: "<<GetLocalAddress(interface)<<" GRP: "<<group<<" SRC: "<< sender<< " Metric: "<< GetRouteMetric(interface,sender) <<" IFC: "<<interface<<" GW: "<<gateway<< " PacketSize "<<receivedPacket->GetSize());
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	if(!sgState){
 		InsertSourceGroupState(interface, sgp);
@@ -1291,7 +1292,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			//   store its own address and metric as the Assert Winner, and set
 			//   the Assert_Timer (AT(S, G, I) to Assert_Time, thereby initiating
 			//   the Assert negotiation for (S, G).
-				if(!IsDownstream(interface, sgp) || !rpf_route) break;
+				if(!IsDownstream(interface, sgp)) break;
 				sgState->AssertState = Assert_Winner;
 				PIMHeader msg;
 				ForgeAssertMessage(interface, msg, sgp);
@@ -1415,23 +1416,15 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		NS_LOG_DEBUG("RPF_Interface not found "<<RPF_interface(sender));
 		return;
 	}
-	if(interface == RPF_interface(sender)){
-		if(sgState->PruneState != Prune_Pruned ){
-			/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
-			/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
-			oiflist = olist(sender, group);
-			GetPrinterList("olist", oiflist);
-			oiflist.erase(interface);
-			GetPrinterList("olist - RPF_interface", oiflist);
-		}
+	if(interface == RPF_interface(sender) && sgState->PruneState != Prune_Pruned ){
+		/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
+		/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
+		oiflist = olist(sender, group);
+		GetPrinterList("olist", oiflist);
+		oiflist.erase(interface);
+		GetPrinterList("olist - RPF_interface", oiflist);
 	}
-	else{
-		///   Packets that fail the RPF check MUST NOT be forwarded, and the router will conduct an assert process for the (S, G) pair specified in the packet.
-		PIMHeader assert;
-		ForgeAssertMessage(interface, assert, sgp);
-		Ptr<Packet> packetAssert = Create<Packet> ();
-		SendPacketBroadcastInterface(packetAssert, assert, interface);
-	}
+	else return;
 	NS_LOG_DEBUG("Data forwarding towards > "<< oiflist.size()<<" < interfaces");
 	GetPrinterList("oiflist", oiflist);
 	if(oiflist.size()){
@@ -1442,11 +1435,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		}
 	}
 	else {
-		//  If the list is empty, then the router will conduct a prune process for the (S, G) pair specified in the packet.
-//		for(int i = 0; i < m_ipv4->GetNInterfaces();i++){
-//			if(IsLoopInterface(i))continue;
-			SendPruneBroadcast(interface, sgp);
-//		}
+		SendPruneBroadcast(interface, sgp);
 	}
 }
 
@@ -1772,7 +1761,7 @@ MulticastRoutingProtocol::SendPacketBroadcastInterface (Ptr<Packet> packet, cons
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
       m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
     {
-	  NS_LOG_DEBUG(i->second.GetLocal()<<i->second.GetBroadcast()<<i->second.GetMask()<<i->second.IsSecondary());
+	  NS_LOG_DEBUG("Local " << i->second.GetLocal()<<" Dest "<<i->second.GetBroadcast()<< " Mask "<< i->second.GetMask()<<" Secondary "<<i->second.IsSecondary());
 	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
 		  Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), bcast, PIM_IP_PROTOCOL_NUM, packet->GetSize(), 1, false);
@@ -1811,7 +1800,6 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
 		  udpHeader.SetSourcePort(PIM_PORT_NUMBER);
 		  udpHeader.SetDestinationPort(PIM_PORT_NUMBER);
 
-		  packet->AddHeader (udpHeader);
 		  packet->AddHeader(udpHeader);
 		  packet->AddHeader(ipv4Header);
 
