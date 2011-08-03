@@ -182,6 +182,15 @@ MulticastRoutingProtocol::RemoveEntry (Ipv4Address const &group)
 	m_mrib.erase (group);
 }
 
+void
+MulticastRoutingProtocol::RemoveEntry (const Ipv4Address &group, const Ipv4Address &source)
+{
+	NS_LOG_FUNCTION(this);
+	if(m_mrib.find (group) != m_mrib.end() &&
+			m_mrib.find (group)->second.mgroup.find(source) != m_mrib.find (group)->second.mgroup.end())
+		m_mrib.find (group)->second.mgroup.erase(source);
+}
+
 ///
 /// \brief Lookup for a multicast group entry.
 ///
@@ -192,14 +201,15 @@ MulticastRoutingProtocol::RemoveEntry (Ipv4Address const &group)
 /// \param groupEntry	RouteEntry for the multicast group.
 
 bool
-MulticastRoutingProtocol::Lookup (Ipv4Address const group, RoutingMulticastTable &groupEntry) const {
+MulticastRoutingProtocol::Lookup (const Ipv4Address group, RoutingMulticastTable &outEntry) const
+{
 	NS_LOG_FUNCTION(this << group);
 	// Get the iterator at "dest" position
 	std::map<Ipv4Address, RoutingMulticastTable>::const_iterator it = m_mrib.find (group);
 	// If there is no route to "dest", return NULL
 	if (it == m_mrib.end ())
 		return false;
-	groupEntry = it->second;
+	outEntry = it->second;
 	return true;
 }
 
@@ -215,15 +225,18 @@ MulticastRoutingProtocol::Lookup (Ipv4Address const group, RoutingMulticastTable
 /// \param ifaceEntry			InterfaceSpecific Entry for the multicast group.
 
 bool
-MulticastRoutingProtocol::Lookup (Ipv4Address const group, uint32_t const interface, RoutingMulticastTable &groupEntry, MulticastEntry &ifaceEntry) const {
-	NS_LOG_FUNCTION(this << group<< interface);
+MulticastRoutingProtocol::Lookup (const Ipv4Address group, const Ipv4Address source, RoutingMulticastTable &outEntry, MulticastEntry &me) const
+{
+	NS_LOG_FUNCTION(this << group<< source);
 	// Get the iterator at "dest" position
-	std::map<Ipv4Address, RoutingMulticastTable>::const_iterator it = m_mrib.find (group);
+	std::map<Ipv4Address, RoutingMulticastTable>::const_iterator gg = m_mrib.find (group);
 	// If there is no route to "dest", return NULL
-	if (it == m_mrib.end ())
+	if (gg == m_mrib.end ())
 		return false;
-	groupEntry = it->second;
-	ifaceEntry = groupEntry.mgroup.find(interface)->second;
+	std::map<Ipv4Address, MulticastEntry>::const_iterator gs = gg->second.mgroup.find(source);
+	if (gs == gg->second.mgroup.end())
+		return false;
+	me = gs->second;
 	return true;
 }
 
@@ -238,15 +251,17 @@ MulticastRoutingProtocol::Lookup (Ipv4Address const group, uint32_t const interf
 /// \param next			new next hop towards the source.
 ///
 bool
-MulticastRoutingProtocol::UpdateEntry (Ipv4Address const group, uint32_t const interface, Ipv4Address const source, Ipv4Address const next) {
+MulticastRoutingProtocol::UpdateEntry(Ipv4Address const group, Ipv4Address const source, Ipv4Address const next, uint32_t const interface)
+{
 	NS_LOG_FUNCTION(this << group<< interface);
 	// Get the iterator at "dest" position
 	// If there is no route to "dest", return NULL
-	MulticastEntry *mentry = &m_mrib[group].mgroup[interface];
+	MulticastEntry *mentry = &m_mrib[group].mgroup[source];
 	if (m_mrib.find (group) == m_mrib.end ())
 		return false;
-	m_mrib[group].mgroup[interface].nextAddr = Ipv4Address(next);
-	m_mrib[group].mgroup[interface].sourceAddr = Ipv4Address(source);
+	m_mrib[group].mgroup[source].sourceAddr = source;
+	m_mrib[group].mgroup[source].nextAddr = next;
+	m_mrib[group].mgroup[source].interface = interface;
 	return true;
 }
 
@@ -261,18 +276,18 @@ MulticastRoutingProtocol::UpdateEntry (Ipv4Address const group, uint32_t const i
 /// \param dist		distance to the destination node.
 ///
 void
-MulticastRoutingProtocol::AddEntry (Ipv4Address const source, Ipv4Address const group, Ipv4Address const next, uint32_t interface)
+MulticastRoutingProtocol::AddEntry (const Ipv4Address group, const Ipv4Address source, const Ipv4Address next, const uint32_t interface)
 {
-  NS_LOG_FUNCTION (this << "SRC:"<< source << " DST:"<< group <<" NXT:"<< next << " IFC:"<< interface << " MIF:"<< m_mainAddress);
+  NS_LOG_FUNCTION (this << "Group: "<< group << " Source: "<< source <<" Next: "<< next << " RPF_I: "<< interface << " MainAddress: "<< m_mainAddress);
 
   // Creates a new rt entry with specified values
   RoutingMulticastTable &entry = m_mrib[group];//DEBUG
   m_mrib[group].groupAddr = group;
   //  entry.groupAddr = group;
-  MulticastEntry *me = &m_mrib[group].mgroup[interface];//DEBUG
-  m_mrib[group].mgroup[interface].interface = interface;
-  m_mrib[group].mgroup[interface].sourceAddr = source;
-  m_mrib[group].mgroup[interface].nextAddr = next;
+  MulticastEntry *me = &m_mrib[group].mgroup[source];//DEBUG
+  m_mrib[group].mgroup[source].sourceAddr = source;
+  m_mrib[group].mgroup[source].interface = interface;
+  m_mrib[group].mgroup[source].nextAddr = next;
 }
 
 
@@ -311,7 +326,7 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 		else if(IsMyOwnAddress(header.GetSource()))//since we deal with multicast packet, and the interface is null...this might be the source
 			interfaceIdx = m_ipv4->GetInterfaceForAddress(header.GetSource());
 		else if(Lookup(header.GetDestination(), entry1))//we don't know anything :( looking for the first entry for this group;
-			interfaceIdx = entry1.mgroup.begin()->first;
+			interfaceIdx = entry1.mgroup.begin()->second.interface;
 		else if(m_multicastGroup.find(header.GetDestination()) != m_multicastGroup.end())//Interested in the multicast, and queried with empty source...I am the source!
 			interfaceIdx = m_ipv4->GetInterfaceForAddress(m_mainAddress);
 		if (oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx)){
@@ -343,9 +358,10 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 		}
 		rtentry->SetSource (ifAddr.GetLocal ());
 		rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
-		rtentry->SetGateway(entry1.mgroup[interfaceIdx].nextAddr);
-		//	  Ipv4Address bcast = m_ipv4->GetAddress (interfaceIdx, 0).GetLocal().GetSubnetDirectedBroadcast ( m_ipv4->GetAddress (interfaceIdx, 0).GetMask());
-		//	  rtentry->SetGateway(bcast);
+//		rtentry->SetGateway(entry1.mgroup[interfaceIdx].nextAddr);
+
+		Ipv4Address bcast = m_ipv4->GetAddress (interfaceIdx, 0).GetLocal().GetSubnetDirectedBroadcast ( m_ipv4->GetAddress (interfaceIdx, 0).GetMask());
+		rtentry->SetGateway(bcast);
 		//m_ipv4->GetAddress (interfaceIdx, 0).GetLocal().GetBroadcast());//*** Problem with GW
 		sockerr = Socket::ERROR_NOTERROR;
 		NS_LOG_DEBUG ("PIM-DM Routing: Src = " << rtentry->GetSource() << ", Dest = " << rtentry->GetDestination()<< ", GW = "<< rtentry->GetGateway () << ", interface = " << interfaceIdx<<" device = "<<rtentry->GetOutputDevice()->GetMulticast(rtentry->GetDestination()));
@@ -519,12 +535,13 @@ MulticastRoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) co
     iter != m_mrib.end (); iter++)
     {
       *os << iter->first << "\t\n";
-      for(std::map <uint32_t, MulticastEntry>::const_iterator iface = iter->second.mgroup.begin();
+      for(std::map <Ipv4Address, MulticastEntry>::const_iterator iface = iter->second.mgroup.begin();
     		  iface != iter->second.mgroup.end() ; iface++)
       {
     	  *os << "\t"<< iface->first << "\t\t";
-    	  *os << "\t"<< iface->second.sourceAddr<< "\t\t";
+//    	  *os << "\t"<< iface->second.sourceAddr<< "\t\t";
     	  *os << "\t"<< iface->second.nextAddr<< "\t\n";
+    	  *os << "\t"<< iface->second.interface<< "\t\t";
       }
     }
 	*os << "\nStatic Routing Table:\n";
@@ -1086,25 +1103,23 @@ MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, uint32_t interface)
 	NS_LOG_DEBUG("("<<sgp.sourceIfaceAddr<<", "<<sgp.groupMulticastAddr<<") I="<<interface);
 	Ptr<Ipv4Route> rpf_route = GetRoute(sgp.sourceIfaceAddr);
 	RoutingMulticastTable entry;
-	if(Lookup(sgp.groupMulticastAddr, entry) && rpf_route != NULL){
-		for(std::map <uint32_t, MulticastEntry>::iterator mg = entry.mgroup.begin();
-				mg!=entry.mgroup.end(); mg++){
-			MulticastEntry &me = mg->second;
-			if(mg->second.sourceAddr != sgp.sourceIfaceAddr) continue;
-			uint32_t interfaceN = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
-			Ipv4Address gatewayN = rpf_route->GetGateway();
-			if(mg->second.nextAddr == Ipv4Address::GetAny()){
-				entry.mgroup[mg->second.interface].nextAddr = gatewayN;
-			}
-			if(mg->second.interface != interfaceN){
-				RPF_Changes(sgp, entry.mgroup[mg->second.interface].interface, interfaceN);
-				entry.mgroup[mg->second.interface].interface = interfaceN;
-			}
-			if(mg->second.nextAddr != gatewayN){
-				RPF_primeChanges(sgp);
-				entry.mgroup[mg->second.interface].nextAddr = gatewayN;
-			}
+	if(Lookup(sgp.groupMulticastAddr, entry) && rpf_route != NULL && entry.mgroup.find(sgp.sourceIfaceAddr) != entry.mgroup.end()) {
+		MulticastEntry &me = entry.mgroup[sgp.sourceIfaceAddr];
+		uint32_t interfaceN = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
+		Ipv4Address gatewayN = rpf_route->GetGateway();
+		if(me.nextAddr == Ipv4Address::GetAny()){//now we now the RPF!
+			entry.mgroup[sgp.sourceIfaceAddr].nextAddr = gatewayN;
+			entry.mgroup[sgp.sourceIfaceAddr].interface = interfaceN;
 		}
+		if(me.interface != interfaceN){
+			RPF_Changes(sgp, entry.mgroup[sgp.sourceIfaceAddr].interface, interfaceN);
+			entry.mgroup[sgp.sourceIfaceAddr].interface = interfaceN;
+		}
+		if(me.nextAddr != gatewayN){
+			RPF_primeChanges(sgp);
+			entry.mgroup[sgp.sourceIfaceAddr].nextAddr = gatewayN;
+		}
+
 	}
 }
 
@@ -1209,15 +1224,15 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		RoutingMulticastTable entry;
 		MulticastEntry mentry;
 		if(!Lookup(group, entry)){
-			AddEntry(sender, group, gateway, interface);
-			NS_LOG_DEBUG("Add Entry "<<entry.mgroup[interface].sourceAddr<<", "<<entry.groupAddr<<", "<<entry.mgroup[interface].nextAddr<<", "<<entry.mgroup[interface].interface);
-			if(entry.mgroup[interface].nextAddr == entry.mgroup[interface].sourceAddr){
+			AddEntry(group, sender, gateway, interface);
+			NS_LOG_DEBUG("Add Entry "<<entry.mgroup[sender].sourceAddr<<", "<<entry.groupAddr<<", "<<entry.mgroup[sender].nextAddr<<", "<<entry.mgroup[sender].interface);
+			if(entry.mgroup[sender].nextAddr == entry.mgroup[sender].sourceAddr){
 				//Nodes is directly connected to source
 			}
 		}
-		Lookup(group,interface,entry,mentry);
+		Lookup(group,sender,entry,mentry);
 		if(mentry.nextAddr == Ipv4Address::GetAny() && mentry.sourceAddr == Ipv4Address::GetAny()){
-			UpdateEntry(group, interface, sender, gateway);
+			UpdateEntry(group, sender, gateway, interface);
 		}
 	}
 	RPFCheck(sgp, interface);

@@ -128,7 +128,7 @@ struct MulticastEntry {
 
 struct RoutingMulticastTable {
 	Ipv4Address groupAddr; ///< multicast group address
-	std::map <uint32_t,MulticastEntry> mgroup; ///< source destination
+	std::map <Ipv4Address,MulticastEntry> mgroup; ///< source destination
 	RoutingMulticastTable () : // default values
 		groupAddr () {
 	}
@@ -255,12 +255,12 @@ private:
 		return m_mrib.size ();
 	}
 
-	void RemoveEntry (const Ipv4Address &dest);
-	void AddEntry (const Ipv4Address dest, const Ipv4Address next,uint32_t interface, uint32_t distance);
-	void AddEntry (const Ipv4Address dest, const Ipv4Address next,const Ipv4Address interfaceAddress, uint32_t distance);
-	bool Lookup (const Ipv4Address dest, RoutingMulticastTable &outEntry) const;
-	bool Lookup (Ipv4Address const group, uint32_t const interface, RoutingMulticastTable &outEntry, MulticastEntry &me) const;
-	bool UpdateEntry (Ipv4Address const group, uint32_t const interface, Ipv4Address const source, Ipv4Address const next) ;
+	void RemoveEntry (const Ipv4Address &group);
+	void RemoveEntry (const Ipv4Address &group, const Ipv4Address &source);
+	void AddEntry (const Ipv4Address group, const Ipv4Address source, const Ipv4Address next, const uint32_t interface);
+	bool Lookup (const Ipv4Address group, RoutingMulticastTable &outEntry) const;
+	bool Lookup (const Ipv4Address group, const Ipv4Address source, RoutingMulticastTable &outEntry, MulticastEntry &me) const;
+	bool UpdateEntry (const Ipv4Address group, const Ipv4Address source, const Ipv4Address next, const uint32_t interface) ;
 
 	void EnablePimInterface(uint32_t interface){
 		if(m_IfacePimEnabled.find(interface) == m_IfacePimEnabled.end())
