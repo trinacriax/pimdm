@@ -554,7 +554,7 @@ void MulticastRoutingProtocol::DoStart ()
 		InetSocketAddress inetAddrP (ALL_PIM_ROUTERS4, PIM_PORT_NUMBER);
 		socketP->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm, this));
 		// Add ALL_PIM_ROUTERS4 multicast group, where the source is the node it self.
-		AddEntry(addr , ALL_PIM_ROUTERS4, Ipv4Address::GetAny(), i);
+		AddEntry(ALL_PIM_ROUTERS4, addr, Ipv4Address::GetAny(), i);
 		if (socketP->Bind (inetAddrP)){
 			NS_FATAL_ERROR ("Failed to bind() PIMDM socket");
 		}
@@ -600,28 +600,24 @@ void MulticastRoutingProtocol::DoStart ()
 		NS_LOG_DEBUG ("Generating SG List("<<i<<") HT="<<m_helloTime.GetSeconds()<<"s, Starting "<< rndHello.GetSeconds()<<"s");
 
 		for(std::map<Ipv4Address, RoutingMulticastTable>::iterator group = m_mrib.begin(); group!=m_mrib.end(); group++){
-			NS_LOG_DEBUG("D("<<i<<") = " << m_ipv4->GetNetDevice (i)<<", Addr = "<<  m_ipv4->GetAddress (i, 0).GetLocal ()<< ", Group "<<group->first);
-//			RoutingMulticastTable entry1;
-			// Check if the node has already registered that mgroup
-//			if(!Lookup(*groupz, entry1)){
-				// if the node is a source for this group, put itself as Source in the entry
-				AddEntry(Ipv4Address::GetAny(), group->first , Ipv4Address::GetAny(), i);
-				///Registering endpoint for that address... by creating a socket to listen only on this interface
-//				Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), UdpSocketFactory::GetTypeId());
-				Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
-				socket->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
-				socket->SetAttribute("IpHeaderInclude", BooleanValue(true));
-				socket->SetAllowBroadcast (true);
-				InetSocketAddress inetAddr (group->first, PIM_PORT_NUMBER);
-				socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvData, this));
-				if (socket->Bind (inetAddr)){
-					NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<group->first);
-				}
-				socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
-//				m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
-				Ipv4InterfaceAddress mgroup(group->first, Ipv4Mask::GetZero()); //todo change it
-				m_socketAddresses[socket] = mgroup;
-				NS_LOG_DEBUG("Registering Socket = "<<socket<< " Device = "<<socket->GetBoundNetDevice()<<" Destination = "<<  group->first<< ", LocalAddr = "<<addr<<", I = "<<i);
+			Ipv4Address groupIP = group->second.groupAddr;
+			NS_LOG_DEBUG("D("<<i<<") = " << m_ipv4->GetNetDevice (i)<<", LocalAddr = "<<  addr<< ", Group "<<groupIP<<", #Source: "<< group->second.mgroup.size());
+			///Registering endpoint for that address... by creating a socket to listen only on this interface
+//			Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), UdpSocketFactory::GetTypeId());
+			Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
+			socket->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
+			socket->SetAttribute("IpHeaderInclude", BooleanValue(true));
+			socket->SetAllowBroadcast (true);
+			InetSocketAddress inetAddr (groupIP, PIM_PORT_NUMBER);
+			socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvData, this));
+			if (socket->Bind (inetAddr)){
+				NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<groupIP);
+			}
+			socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
+//			m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
+			Ipv4InterfaceAddress mgroup(groupIP, Ipv4Mask::GetZero());
+			m_socketAddresses[socket] = mgroup;
+			NS_LOG_DEBUG("Registering Socket = "<<socket<< " Device = "<<socket->GetBoundNetDevice()<<" Destination = "<<  groupIP<< ", LocalAddr = "<<addr<<", I = "<<i);
 		}
 	}
 }
@@ -1171,7 +1167,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	Ipv4Address sender = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
 	Ipv4Address group = m_socketAddresses[socket].GetLocal ();
-	NS_ASSERT (group != Ipv4Address ());
+	NS_ASSERT (group != Ipv4Address ()|| group != Ipv4Address::GetAny());
 	SourceGroupPair sgp(sender, group);
 	Ptr<Ipv4Route> rpf_route = GetRoute(sender);
 	uint32_t interface = -1;
@@ -1198,7 +1194,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			}
 		}
 		Lookup(group,sender,entry,mentry);
-		if(mentry.nextAddr == Ipv4Address::GetAny() && mentry.sourceAddr == Ipv4Address::GetAny()){
+		if(mentry.nextAddr == Ipv4Address::GetAny() && mentry.interface <0){
 			UpdateEntry(group, sender, gateway, interface);
 		}
 	}
