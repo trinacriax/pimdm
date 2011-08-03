@@ -120,7 +120,7 @@ void MulticastRoutingProtocol::register_member (std::string SGI){
 	if(source == group && interface == 0)return;//skip initialization
 	NS_LOG_DEBUG("Member for ("<<source<<","<<group<<") over interface "<< interface);
 	SourceGroupPair sgp (source,group);
-	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){
+	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){//add a new receiver on a specific (source,group) on a given interface
 		std::set<uint32_t> iface;
 		m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<uint32_t> >(sgp,iface));
 //		NS_LOG_DEBUG("Adding Source-Group ("<<source<<","<<group<<") to the map");
@@ -129,6 +129,7 @@ void MulticastRoutingProtocol::register_member (std::string SGI){
 		m_LocalReceiver.find(sgp)->second.insert(interface);
 		NS_LOG_DEBUG("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
 	}
+	AddEntry(group,source,Ipv4Address::GetAny(),-1);//We got an entry from IGMP for this source-group
 }
 
 ///
