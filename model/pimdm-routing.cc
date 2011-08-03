@@ -1222,13 +1222,14 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		sgState = FindSourceGroupState(interface, sgp);
 		RoutingMulticastTable entry;
 		MulticastEntry mentry;
-		if(!Lookup(group, entry)){
-			AddEntry(group, sender, gateway, interface);
-			NS_LOG_DEBUG("Add Entry "<<entry.mgroup[sender].sourceAddr<<", "<<entry.groupAddr<<", "<<entry.mgroup[sender].nextAddr<<", "<<entry.mgroup[sender].interface);
-			if(entry.mgroup[sender].nextAddr == entry.mgroup[sender].sourceAddr){
-				//Nodes is directly connected to source
-			}
-		}
+		NS_ASSERT(Lookup(group, entry));
+//		if(!Lookup(group, entry)){
+//			AddEntry(group, sender, gateway, interface);
+//			NS_LOG_DEBUG("Add Entry "<<entry.mgroup[sender].sourceAddr<<", "<<entry.groupAddr<<", "<<entry.mgroup[sender].nextAddr<<", "<<entry.mgroup[sender].interface);
+//			if(entry.mgroup[sender].nextAddr == entry.mgroup[sender].sourceAddr){
+//				//Nodes is directly connected to source
+//			}
+//		}
 		Lookup(group,sender,entry,mentry);
 		if(mentry.nextAddr == Ipv4Address::GetAny() && mentry.interface <0){
 			UpdateEntry(group, sender, gateway, interface);
