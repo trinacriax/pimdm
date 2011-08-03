@@ -48,7 +48,11 @@
 #include "ns3/ipv4-routing-table-entry.h"
 #include "ns3/udp-header.h"
 #include "ns3/udp-l4-protocol.h"
-
+#include "ns3/aodv-rtable.h"
+#include "ns3/aodv-routing-protocol.h"
+#include "ns3/olsr-routing-protocol.h"
+#include "ns3/dsdv-rtable.h"
+#include "ns3/dsdv-routing-protocol.h"
 namespace ns3{
 namespace pimdm{
 NS_LOG_COMPONENT_DEFINE ("PIMDMMulticastRouting");
@@ -100,9 +104,41 @@ MulticastRoutingProtocol::GetTypeId (void)
 
 
 uint16_t
-MulticastRoutingProtocol::GetRouteMetric(uint32_t interface)
+MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
 {//TODO: The cost metric of the unicast route to the source.  The metric is in units applicable to the unicast routing protocol used.
-	return 1;
+  Ptr<Ipv4RoutingProtocol> rp_Gw = (m_ipv4->GetRoutingProtocol ());
+  Ptr<Ipv4ListRouting> lrp_Gw = DynamicCast<Ipv4ListRouting> (rp_Gw);
+  Ptr<olsr::RoutingProtocol> olsr_Gw;
+//  Ptr<aodv::RoutingProtocol> aodv_Gw;
+//  Ptr<dsdv::RoutingProtocol> dsdv_Gw;
+
+  for (uint32_t i = 0; i < lrp_Gw->GetNRoutingProtocols ();  i++)
+	{
+	  int16_t priority;
+	  Ptr<Ipv4RoutingProtocol> temp = lrp_Gw->GetRoutingProtocol (i, priority);
+	  if (DynamicCast<olsr::RoutingProtocol> (temp))
+		{
+		  olsr_Gw = DynamicCast<olsr::RoutingProtocol> (temp);
+		  for(std::vector<olsr::RoutingTableEntry>::const_iterator iter = olsr_Gw->GetRoutingTableEntries().begin(); iter!= olsr_Gw->GetRoutingTableEntries().end(); iter++){
+			  if(iter->destAddr == source)return iter->distance;
+		  }
+		}
+//	  else if (DynamicCast<aodv::RoutingProtocol> (temp))
+//	  		{
+//	  		  aodv_Gw = DynamicCast<aodv::RoutingProtocol> (temp);
+//	  		  aodv::RoutingTableEntry aodv_rte;
+//	  		  aodv_Gw->m_routingTable.LookupRoute(source,aodv_rte);
+//	  		  return aodv_rte.GetHop();
+//	  		}
+//	  else if (DynamicCast<dsdv::RoutingProtocol> (temp))
+//	  		{
+//		  	  dsdv_Gw = DynamicCast<dsdv::RoutingProtocol> (temp);
+//		  	  dsdv::RoutingTableEntry dsdv_rte;
+//			  dsdv_Gw->m_routingTable.LookupRoute(source,dsdv_rte);
+//			  return dsdv_rte.GetHop();
+//	  		}
+	}
+  return 1;
 }
 
 uint16_t
@@ -875,7 +911,7 @@ MulticastRoutingProtocol::ForgeAssertMessage (uint32_t interface, PIMHeader &msg
 	assertMessage.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);
 	assertMessage.m_R = 0;
 	assertMessage.m_metricPreference = (sgState==NULL) ? GetMetricPreference(GetReceivingInterface(sgp.sourceIfaceAddr)):sgState->AssertWinner.metricPreference;
-	assertMessage.m_metric = (sgState==NULL) ? GetRouteMetric(GetReceivingInterface(sgp.sourceIfaceAddr)): sgState->AssertWinner.routeMetric;
+	assertMessage.m_metric = (sgState==NULL) ? GetRouteMetric(GetReceivingInterface(sgp.sourceIfaceAddr),sgp.sourceIfaceAddr): sgState->AssertWinner.routeMetric;
 }
 
 void
@@ -981,7 +1017,7 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair
 	refresh.m_originatorAddr = ForgeEncodedUnicast(Ipv4Address(GetLocalAddress(interface)));
 	refresh.m_R = 0;
 	refresh.m_metricPreference = GetMetricPreference(GetReceivingInterface(sgp.sourceIfaceAddr));
-	refresh.m_metric = GetRouteMetric(GetReceivingInterface(sgp.sourceIfaceAddr));
+	refresh.m_metric = GetRouteMetric(GetReceivingInterface(sgp.sourceIfaceAddr),sgp.sourceIfaceAddr);
 	refresh.m_maskLength = IPV4_ADDRESS_SIZE;
 	refresh.m_ttl = (sgState->SG_DATA_TTL>0 ? sgState->SG_DATA_TTL : sgState->SG_SR_TTL);
 	refresh.m_P = (sgState->PruneState==Prune_Pruned?1:0);
@@ -1179,7 +1215,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);//DEFAULT interface
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
 	Ipv4Address gateway = GetNextHop(sender);
-	NS_LOG_DEBUG("SRC: "<< sender<<" GRP: "<<group<<" IFC: "<<interface<<" GW: "<<gateway<<" LOCAL: "<<GetLocalAddress(interface));
+	NS_LOG_DEBUG("SRC: "<< sender<< " Metric: "<< GetRouteMetric(interface,sender) <<" GRP: "<<group<<" IFC: "<<interface<<" GW: "<<gateway<<" LOCAL: "<<GetLocalAddress(interface));
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	if(!sgState){
 		InsertSourceGroupState(interface, sgp);
@@ -1278,7 +1314,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 				PIMHeader assert;
 				ForgeAssertMessage(interface, assert, sgp);
 				sgState->AssertWinner.metricPreference = GetMetricPreference(interface);
-				sgState->AssertWinner.routeMetric = GetRouteMetric(interface);
+				sgState->AssertWinner.routeMetric = GetRouteMetric(interface,sgp.sourceIfaceAddr);
 				sgState->AssertWinner.IPAddress = GetLocalAddress(interface);
 				Ptr<Packet> packetA = Create<Packet> ();
 				SendPacketBroadcastInterface(packetA, assert, interface);

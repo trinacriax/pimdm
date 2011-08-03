@@ -347,7 +347,7 @@ private:
 	void SetMetricPreference (uint32_t interface, uint16_t metric){}
 
 	/// The cost metric of the unicast route to the source. The metric is in units applicable to the unicast routing protocol used.
-	uint16_t GetRouteMetric (uint32_t interface);
+	uint16_t GetRouteMetric (uint32_t interface, Ipv4Address source);
 
 	void SetRouteMetric (uint32_t interface, uint16_t metric){}
 
@@ -494,7 +494,7 @@ private:
 
 	void UpdateAssertWinner (SourceGroupState *sgState, Ipv4Address source){
 		sgState->AssertWinner.metricPreference = GetMetricPreference (GetReceivingInterface (source));
-		sgState->AssertWinner.routeMetric = GetRouteMetric (GetReceivingInterface (source));
+		sgState->AssertWinner.routeMetric = GetRouteMetric (GetReceivingInterface (source),source);
 		sgState->AssertWinner.IPAddress = GetLocalAddress (GetReceivingInterface (source));
 	}
 
@@ -1034,7 +1034,7 @@ private:
 
 	struct AssertMetric spt_assert_metric (Ipv4Address source, uint32_t interface) {
 		struct AssertMetric assertMetric (GetMetricPreference (interface),
-				GetRouteMetric (interface), GetLocalAddress (interface));
+				GetRouteMetric (interface,source), GetLocalAddress (interface));
 		return assertMetric;
 	}
 
