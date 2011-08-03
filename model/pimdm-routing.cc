@@ -83,7 +83,7 @@ MulticastRoutingProtocol::GetTypeId (void)
 			 	 	UintegerValue (Hold_Time_Default),
 			        MakeUintegerAccessor (&MulticastRoutingProtocol::SetHelloHoldTime),
 			        MakeUintegerChecker<uint16_t> ())
-	.AddAttribute ("RegisterMember", "Register a new member to the group of interest",
+	.AddAttribute ("RegisterMember", "Register a new member triple (group, source, interface) like a new IGMP entry",
 					StringValue("0,0,0"),
 					MakeStringAccessor(&MulticastRoutingProtocol::register_member),
 					MakeStringChecker())
