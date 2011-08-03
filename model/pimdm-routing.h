@@ -378,6 +378,18 @@ private:
 		return 2; //TODO check what is it
 	}
 
+	void ParseSourceGroupInterface(std::string SGI, Ipv4Address &source, Ipv4Address &group, uint32_t &interface){
+		// Just to get the IP info
+		size_t p = SGI.find(",");
+		size_t l = SGI.find(",",p+1);
+		size_t m = SGI.length() ;
+		std::string groupS = SGI.substr(0,p);
+		std::string sourceS = SGI.substr(p+1,l-p-1);
+		std::string ifaceS = SGI.substr(l+1,m);
+		group = Ipv4Address(groupS.c_str());
+		source = Ipv4Address(sourceS.c_str());
+		interface = atoi(ifaceS.c_str());
+	}
 
 	Ipv4Header BuildHeader (Ipv4Address source, Ipv4Address destination, uint8_t protocol, uint16_t payloadSize, uint8_t ttl, bool mayFragment);
 
