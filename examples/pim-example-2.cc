@@ -200,11 +200,10 @@ main (int argc, char *argv[])
 	Ptr<Ipv4StaticRouting> staticRoutingA = staticRouting.GetStaticRouting (ipv4A);
 	staticRoutingA->AddHostRouteTo (multicastGroup, multicastSourceR, 1);//just one entry to set first hop from the source
 
-	Config::Set("NodeList/[0-3]/$ns3::pimdm::MulticastRoutingProtocol/MulticastGroup", Ipv4AddressValue(multicastGroup));
 	std::stringstream ss;
 	// source,group,interface
 	ss<< multicastSource<< "," << multicastGroup << "," << "3";
-	Config::Set("NodeList/[1-3]/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
+	Config::Set("NodeList/[0-3]/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
 
 	NS_LOG_INFO ("Create Source");
 	InetSocketAddress dst = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
