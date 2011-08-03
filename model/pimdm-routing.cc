@@ -59,11 +59,11 @@ MulticastRoutingProtocol::MulticastRoutingProtocol() :
 		m_routingTableAssociation(0), m_ipv4 (0), m_lo(0)
 {
 	m_RoutingTable = Create<Ipv4StaticRouting> ();
-	m_multicastGroup.clear();
 	m_IfaceNeighbors.clear();
 	m_IfacePimEnabled.clear();
 	m_IfaceSourceGroup.clear();
 	m_LocalReceiver.clear();
+	m_mrib.clear();
 }
 
 MulticastRoutingProtocol::~MulticastRoutingProtocol()
@@ -83,10 +83,6 @@ MulticastRoutingProtocol::GetTypeId (void)
 			 	 	UintegerValue (Hold_Time_Default),
 			        MakeUintegerAccessor (&MulticastRoutingProtocol::SetHelloHoldTime),
 			        MakeUintegerChecker<uint16_t> ())
-	.AddAttribute ("MulticastGroup", "Multicast group of interest",
-					Ipv4AddressValue("0.0.0.0"),
-					MakeIpv4AddressAccessor(&MulticastRoutingProtocol::AddMulticastGroup),
-					MakeIpv4AddressChecker())
 	.AddAttribute ("RegisterMember", "Register a new member to the group of interest",
 					StringValue("0,0,0"),
 					MakeStringAccessor(&MulticastRoutingProtocol::register_member),
@@ -105,17 +101,13 @@ MulticastRoutingProtocol::GetTypeId (void)
 
 uint16_t
 MulticastRoutingProtocol::GetRouteMetric(uint32_t interface)
-{
-//	uint16_t routeMetric = m_ipv4->GetMetric(interface);
-//	NS_LOG_DEBUG("Route Metric "<< routeMetric);
-//	return routeMetric;
+{//TODO: The cost metric of the unicast route to the source.  The metric is in units applicable to the unicast routing protocol used.
 	return 1;
 }
 
 uint16_t
 MulticastRoutingProtocol::GetMetricPreference(uint32_t interface)
-{
-	//TODO 	/// The preference value assigned to the unicast routing protocol that provided the route to the source
+{//TODO: The preference value assigned to the unicast routing protocol that provided the route to the source
 	return 1;
 }
 
@@ -142,22 +134,6 @@ void MulticastRoutingProtocol::register_member (std::string SGI){
 	if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface<m_ipv4->GetNInterfaces()){
 		m_LocalReceiver.find(sgp)->second.insert(interface);
 		NS_LOG_DEBUG("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
-	}
-}
-
-///
-/// \brief Add a subscription for a multicast group to which the node is interested in.
-///
-/// Add a new multicast group entry.
-///
-/// \param group		multicast group address. to subscribe.
-
-void
-MulticastRoutingProtocol::AddMulticastGroup(Ipv4Address group)
-{
-	if(group.IsMulticast() && !GetMulticastGroup(group)){//multicast address and group not already registered
-		NS_LOG_DEBUG("Adding subscription for multicast group \""<< group<<"\"");
-		m_multicastGroup.insert(group);
 	}
 }
 
@@ -327,8 +303,6 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 			interfaceIdx = m_ipv4->GetInterfaceForAddress(header.GetSource());
 		else if(Lookup(header.GetDestination(), entry1))//we don't know anything :( looking for the first entry for this group;
 			interfaceIdx = entry1.mgroup.begin()->second.interface;
-		else if(m_multicastGroup.find(header.GetDestination()) != m_multicastGroup.end())//Interested in the multicast, and queried with empty source...I am the source!
-			interfaceIdx = m_ipv4->GetInterfaceForAddress(m_mainAddress);
 		if (oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx)){
 		  // We do not attempt to perform a constrained routing search
 		  // if the caller specifies the oif; we just enforce
@@ -519,9 +493,7 @@ void MulticastRoutingProtocol::DoDispose ()
 	m_IfaceNeighbors.clear();
 	m_IfacePimEnabled.clear();
 	m_IfaceSourceGroup.clear();
-	m_multicastGroup.clear();
-//	m_multicastSource.clear();
-
+	m_mrib.clear();
 	Ipv4RoutingProtocol::DoDispose ();
 	}
 
@@ -632,29 +604,29 @@ void MulticastRoutingProtocol::DoStart ()
 		ns->hello_timer.SetDelay(m_helloTime);
 		NS_LOG_DEBUG ("Generating SG List("<<i<<") HT="<<m_helloTime.GetSeconds()<<"s, Starting "<< rndHello.GetSeconds()<<"s");
 
-		for(std::set<Ipv4Address>::iterator groupz = m_multicastGroup.begin(); groupz!=m_multicastGroup.end(); groupz++){
-			NS_LOG_DEBUG("D("<<i<<") = " << m_ipv4->GetNetDevice (i)<<", Addr = "<<  m_ipv4->GetAddress (i, 0).GetLocal ()<< ", Group "<<*groupz);
-			RoutingMulticastTable entry1;
+		for(std::map<Ipv4Address, RoutingMulticastTable>::iterator group = m_mrib.begin(); group!=m_mrib.end(); group++){
+			NS_LOG_DEBUG("D("<<i<<") = " << m_ipv4->GetNetDevice (i)<<", Addr = "<<  m_ipv4->GetAddress (i, 0).GetLocal ()<< ", Group "<<group->first);
+//			RoutingMulticastTable entry1;
 			// Check if the node has already registered that mgroup
 //			if(!Lookup(*groupz, entry1)){
 				// if the node is a source for this group, put itself as Source in the entry
-				AddEntry(Ipv4Address::GetAny(), *groupz, Ipv4Address::GetAny(), i);
+				AddEntry(Ipv4Address::GetAny(), group->first , Ipv4Address::GetAny(), i);
 				///Registering endpoint for that address... by creating a socket to listen only on this interface
 //				Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), UdpSocketFactory::GetTypeId());
 				Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
 				socket->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
 				socket->SetAttribute("IpHeaderInclude", BooleanValue(true));
 				socket->SetAllowBroadcast (true);
-				InetSocketAddress inetAddr (*groupz, PIM_PORT_NUMBER);
+				InetSocketAddress inetAddr (group->first, PIM_PORT_NUMBER);
 				socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvData, this));
 				if (socket->Bind (inetAddr)){
-					NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<*groupz);
+					NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<group->first);
 				}
 				socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
-//				m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);;
-				Ipv4InterfaceAddress mgroup(*groupz, Ipv4Mask::GetZero());
+//				m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
+				Ipv4InterfaceAddress mgroup(group->first, Ipv4Mask::GetZero()); //todo change it
 				m_socketAddresses[socket] = mgroup;
-				NS_LOG_DEBUG("Registering Socket = "<<socket<< " Device = "<<socket->GetBoundNetDevice()<<" Destination = "<<  *groupz<< ", LocalAddr = "<<addr<<", I = "<<i);
+				NS_LOG_DEBUG("Registering Socket = "<<socket<< " Device = "<<socket->GetBoundNetDevice()<<" Destination = "<<  group->first<< ", LocalAddr = "<<addr<<", I = "<<i);
 		}
 	}
 }

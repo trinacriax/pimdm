@@ -179,10 +179,6 @@ private:
 	 */
 	std::map<Ipv4Address, RoutingMulticastTable> m_mrib; ///< Multicast Routing Information Base (MRIB)
 
-
-	/// multicast groups on which the node is interested in
-	std::set<Ipv4Address> m_multicastGroup;
-
 	/// IP protocol
 	Ptr<Ipv4> m_ipv4;
 	uint32_t m_identification;
@@ -335,12 +331,13 @@ private:
 
 	void AddMulticastGroup (Ipv4Address group);
 	bool GetMulticastGroup (Ipv4Address group){
-		return (group.IsMulticast () && m_multicastGroup.find (group)!=m_multicastGroup.end ());
+		return (group.IsMulticast () && m_mrib.find (group)!=m_mrib.end ());
 	}
 
 	void DelMulticastGroup (Ipv4Address group){
 		if (group.IsMulticast () && GetMulticastGroup (group)){
-			m_multicastGroup.erase (group);
+			m_mrib.find(group)->second.mgroup.clear();
+			m_mrib.erase (group);
 		}
 	}
 
@@ -831,17 +828,6 @@ private:
 	/// \brief RPF interface towards the source S as indicated by the MRIB.
 	/// \param source Source IPv4 address
 	uint32_t RPF_interface (Ipv4Address source);
-
-
-//	void add_local_receiver_include (Ipv4Address source, Ipv4Address group, uint32_t interface){
-//		if (source==Ipv4Address::GetAny () || group==Ipv4Address::GetAny () || interface <0)
-//			return;
-//		SourceGroupList *sgl = FindSourceGroupList (interface);
-//		for (SourceGroupList::iterator iter = sgl->begin (); iter != sgl->end () ; iter++) {
-//			if(iter->SGPair.sourceIfaceAddr == source && iter->SGPair.groupMulticastAddr == group)
-//				members |= (iter->SGPair.groupMulticastAddr == group && m_multicastGroup.find(group) != m_multicastGroup.end());
-//		}
-//	}
 
 	/// \brief There are receivers for the given SourceGroup pair.
 	/// \param sgp source-group pair.
