@@ -574,7 +574,7 @@ void MulticastRoutingProtocol::DoStart ()
 		}
 		socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
 		m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
-		NS_LOG_DEBUG("Registering Local Socket = "<<socket << " Device = "<<m_ipv4->GetNetDevice (i)<< ", LocalAddr = "<<m_ipv4->GetAddress (i, 0).GetLocal()<<" Destination = "<<  m_ipv4->GetAddress (i, 0).GetLocal ().GetSubnetDirectedBroadcast (m_ipv4->GetAddress (i, 0).GetMask ())<<", I = "<<i);
+		NS_LOG_DEBUG("Registering Local Socket = "<<socket << " Device = "<<m_ipv4->GetNetDevice (i)<< ", LocalAddr = "<<addr<<" Destination = "<<  m_ipv4->GetAddress (i, 0).GetLocal ().GetSubnetDirectedBroadcast (m_ipv4->GetAddress (i, 0).GetMask ())<<", I = "<<i);
 
 		NS_LOG_DEBUG ("PIMDM up on " << addr << ", Generation Id = "<< m_generationID<<", Starting @ "<<m_startTime);
 		NeighborhoodStatus *ns = FindNeighborhoodStatus(i);
