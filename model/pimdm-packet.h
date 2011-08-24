@@ -449,6 +449,13 @@ struct HelloMessage{
 //	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 struct MulticastGroupEntry {
+	MulticastGroupEntry():
+		m_numberJoinedSources(0),
+		m_numberPrunedSources(0)
+	{
+		m_joinedSourceAddrs.clear();
+		m_prunedSourceAddrs.clear();
+	}
 		/// Multicast Group Address 1
 		EncodedGroup m_multicastGroupAddr;
 
