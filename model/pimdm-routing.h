@@ -590,23 +590,6 @@ private:
 //				sgs->upstream->GraftPrune = GP_NoInfo;
 				sgs->upstream;
 			}
-			//	 		sgs->SG_PPT.Cancel ();
-			//	 		sgs->SG_PPT.SetDelay (status->overrideInterval+status->propagationDelay);
-			//	 		///sgs->SG_PPT.SetFunction (&MulticastRoutingProtocol::???, this);
-			//	 		sgs->SG_PT.Cancel ();
-			//	 		///sgs->SG_PT.SetFunction (&MulticastRoutingProtocol::???, this);
-			//	 		sgs->SG_AT.Cancel ();
-			//	 		sgs->SG_AT.SetDelay (Time (Seconds (180)));
-			//	 		///sgs->SG_AT.SetFunction (&MulticastRoutingProtocol::???, this);
-			//	 		sgs->SG_PLT.Cancel ();
-			//	 		sgs->SG_PLT.SetDelay (Seconds (210));
-			//	 		///sgs->SG_PLT.SetFunction (&MulticastRoutingProtocol::???, this);
-			//	 		sgs->SG_SAT.Cancel ();
-			//	 		sgs->SG_SAT.SetDelay (Seconds (210));
-			//	 		///sgs->SG_SAT.SetFunction (&MulticastRoutingProtocol::???, this);
-			//	 		sgs->SG_SRT.Cancel ();
-			//	 		sgs->SG_SRT.SetDelay (Seconds (60));
-			//	 		///sgs->SG_SRT.SetFunction (&MulticastRoutingProtocol::???, this);
 		}
 	}
 
@@ -623,23 +606,6 @@ private:
 				sgState = FindSourceGroupState (interface, sgp);
 				uint32_t rpf_i = RPF_interface (sgs.SGPair.sourceIfaceAddr);
 				sgState->upstream = new UpstreamState;
-				//	 		sgs->SG_PPT.Cancel ();
-				//	 		sgs->SG_PPT.SetDelay (status->overrideInterval+status->propagationDelay);
-				//	 		///sgs->SG_PPT.SetFunction (&MulticastRoutingProtocol::???, this);
-				//	 		sgs->SG_PT.Cancel ();
-				//	 		///sgs->SG_PT.SetFunction (&MulticastRoutingProtocol::???, this);
-				//	 		sgs->SG_AT.Cancel ();
-				//	 		sgs->SG_AT.SetDelay (Time (Seconds (180)));
-				//	 		///sgs->SG_AT.SetFunction (&MulticastRoutingProtocol::???, this);
-				//	 		sgs->SG_PLT.Cancel ();
-				//	 		sgs->SG_PLT.SetDelay (Seconds (210));
-				//	 		///sgs->SG_PLT.SetFunction (&MulticastRoutingProtocol::???, this);
-				//	 		sgs->SG_SAT.Cancel ();
-				//	 		sgs->SG_SAT.SetDelay (Seconds (210));
-				//	 		///sgs->SG_SAT.SetFunction (&MulticastRoutingProtocol::???, this);
-				//	 		sgs->SG_SRT.Cancel ();
-				//	 		sgs->SG_SRT.SetDelay (Seconds (60));
-				//	 		///sgs->SG_SRT.SetFunction (&MulticastRoutingProtocol::???, this);
 				}
 		}
 
