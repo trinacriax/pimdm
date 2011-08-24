@@ -1878,7 +1878,6 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, uint32_t interfac
 	sgState->upstream->SG_OT.Cancel();
 }
 
-
 void
 MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, uint32_t interface)
 {
@@ -1918,7 +1917,6 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 		}
 	}
 }
-
 
 void
 MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, uint32_t interface)
@@ -1966,8 +1964,6 @@ MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 			break;
 	}
 }
-
-
 
 void
 MulticastRoutingProtocol::PTTimerExpire (SourceGroupPair &sgp, uint32_t interface)
