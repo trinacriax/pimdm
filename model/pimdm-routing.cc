@@ -1015,7 +1015,7 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	ForgeHeaderMessage(PIM_STATE_REF, msg);
 	PIMHeader::StateRefreshMessage &refresh = msg.GetStateRefreshMessage();
-	refresh.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);//TODO check whether params are correct or not.
+	refresh.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);
 	refresh.m_sourceAddr = ForgeEncodedUnicast(sgp.sourceIfaceAddr);
 	Ipv4Address nextHop = GetNextHop(sgp.sourceIfaceAddr);
 	refresh.m_originatorAddr = ForgeEncodedUnicast(Ipv4Address(GetLocalAddress(interface)));
@@ -1227,13 +1227,6 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		RoutingMulticastTable entry;
 		MulticastEntry mentry;
 		NS_ASSERT(Lookup(group, entry));
-//		if(!Lookup(group, entry)){
-//			AddEntry(group, sender, gateway, interface);
-//			NS_LOG_DEBUG("Add Entry "<<entry.mgroup[sender].sourceAddr<<", "<<entry.groupAddr<<", "<<entry.mgroup[sender].nextAddr<<", "<<entry.mgroup[sender].interface);
-//			if(entry.mgroup[sender].nextAddr == entry.mgroup[sender].sourceAddr){
-//				//Nodes is directly connected to source
-//			}
-//		}
 		Lookup(group,sender,entry,mentry);
 		if(mentry.nextAddr == Ipv4Address::GetAny() && mentry.interface < 0){
 			UpdateEntry(group, sender, gateway, interface);
@@ -1320,11 +1313,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 				PIMHeader assert;
 				ForgeAssertMessage(interface, assert, sgp);
 				UpdateAssertWinner(sgState, interface);
-//				sgState->AssertWinner.metricPreference = GetMetricPreference(interface);
-//				sgState->AssertWinner.routeMetric = GetRouteMetric(interface,sgp.sourceIfaceAddr);
-//				sgState->AssertWinner.IPAddress = GetLocalAddress(interface);
 				Ptr<Packet> packetA = Create<Packet> ();
-//				SendPacketBroadcastInterface(packetA, assert, interface);
 				SendPacketPIMRouters(packetA, assert, interface);
 				//The Assert winner for (S, G) must act as the local forwarder for
 				//  (S, G) on behalf of all downstream members.
@@ -1738,50 +1727,12 @@ MulticastRoutingProtocol::SendPacketBroadcast (Ptr<Packet> packet, const PIMHead
 {
   NS_LOG_FUNCTION(this);
   SendPacketPIMRouters(packet,message);
-//  packet->AddHeader(message);
-//    // Trace it
-//   m_txPacketTrace (message);
-//
-//  // Send it
-//  for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
-//      m_socketAddresses.begin (); i != m_socketAddresses.end (); i++) {
-//      Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-//      Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), bcast, PIM_IP_PROTOCOL_NUM, packet->GetSize(), 1, false);
-//      packet->AddHeader(ipv4Header);
-//      NS_LOG_DEBUG ("...sending Broadcast: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface = "<< m_ipv4->GetInterfaceForDevice(i->first->GetBoundNetDevice()) <<", Socket = "<<i->first);
-//      i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
-//    }
 }
 
 void
 MulticastRoutingProtocol::SendPacketBroadcastInterface (Ptr<Packet> packet, const PIMHeader &message, uint32_t interface)
 {
   SendPacketPIMRouters(packet,message,interface);
-
-//  packet->AddHeader(message);
-//  // Trace it
-//  m_txPacketTrace (message);
-//  // Send it
-//  NS_LOG_DEBUG("SRC: "<< GetLocalAddress(interface)<< ", PPP: "<< PIM_IP_PROTOCOL_NUM);
-//  if(!GetPimInterface(interface)) {
-//	  NS_LOG_DEBUG("Interface "<<interface<<" is PIM-DISABLED");
-//	  return;
-//  }
-//  Ipv4Address addrIface = m_ipv4->GetAddress(interface, 0).GetLocal();
-//  // Send it
-//  for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
-//      m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
-//    {
-//	  NS_LOG_DEBUG(i->first<<": Local " << i->second.GetLocal()<<" Dest "<<i->second.GetBroadcast()<< " Mask "<< i->second.GetMask()<<" Secondary "<<i->second.IsSecondary()<<" Broad "<<i->first->GetAllowBroadcast());
-//	  if( addrIface == i->second.GetLocal ()){
-//		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-//		  Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), bcast, PIM_IP_PROTOCOL_NUM, packet->GetSize(), 1, false);
-//		  packet->AddHeader(ipv4Header);
-//		  int ret = i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
-//		  NS_LOG_DEBUG ("...sending Destination: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<< ", Socket "<< i->first<< " Bytes "<<ret);
-////		  break;
-//	  }
-//  }
 }
 
 
@@ -2207,7 +2158,6 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> li
 			Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
 			ForgeJoinPruneMessage(msg, destination);
 			CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
-//			msg.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = destination;
 			AddMulticastGroupEntry(msg, mge);
 			Ptr<Packet> packet = Create<Packet> ();
 			SendPacketBroadcastInterface(packet, msg, GetReceivingInterface(destination));
