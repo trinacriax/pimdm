@@ -518,16 +518,16 @@ private:
 
 	void SendPacket (Ptr<Packet> packet, const PIMMessageList &containedMessages);
 
-	void HelloTimerExpire (uint32_t i);
-	void OTTimerExpire (SourceGroupPair &sg);
-	void GRTTimerExpire (SourceGroupPair &sgp);
-	void PLTTimerExpire (SourceGroupPair &sgp);
-	void ATTimerExpire (SourceGroupPair &sgp);
-	void PPTTimerExpire (SourceGroupPair &sgp);
-	void PTTimerExpire (SourceGroupPair &sgp);
+	void HelloTimerExpire (uint32_t interface);
+	void OTTimerExpire (SourceGroupPair &sgp, uint32_t interface);
+	void GRTTimerExpire (SourceGroupPair &sgp, uint32_t interface);
+	void PLTTimerExpire (SourceGroupPair &sgp, uint32_t interface);
+	void ATTimerExpire (SourceGroupPair &sgp, uint32_t interface);
+	void PPTTimerExpire (SourceGroupPair &sgp, uint32_t interface);
+	void PTTimerExpire (SourceGroupPair &sgp, uint32_t interface);
 	void NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr);
-	void SRTTimerExpire (SourceGroupPair &sgp);
-	void SATTimerExpire (SourceGroupPair &sgp);
+	void SRTTimerExpire (SourceGroupPair &sgp, uint32_t interface);
+	void SATTimerExpire (SourceGroupPair &sgp, uint32_t interface);
 
 	SourceGroupList* FindSourceGroupList (uint32_t interface) {
 		std::map<uint32_t, SourceGroupList>::iterator iter =
