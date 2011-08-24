@@ -492,11 +492,11 @@ private:
 
 	void RecvPimDm (Ptr<Socket> socket);
 
-	void UpdateAssertWinner (SourceGroupState *sgState, Ipv4Address source){
-		sgState->AssertWinner.metricPreference = GetMetricPreference (GetReceivingInterface (source));
-		sgState->AssertWinner.routeMetric = GetRouteMetric (GetReceivingInterface (source),source);
-		sgState->AssertWinner.IPAddress = GetLocalAddress (GetReceivingInterface (source));
-	}
+	void UpdateAssertWinner (SourceGroupState *sgState, uint32_t interface){
+			sgState->AssertWinner.metricPreference = GetMetricPreference (interface);
+			sgState->AssertWinner.routeMetric = GetRouteMetric (interface,sgState->SGPair.sourceIfaceAddr);
+			sgState->AssertWinner.IPAddress = GetLocalAddress (interface);
+		}
 
 	void UpdateAssertWinner (SourceGroupState *sgState, uint32_t metricP, uint32_t routeP, Ipv4Address winner){
 			sgState->AssertWinner.metricPreference = metricP;
