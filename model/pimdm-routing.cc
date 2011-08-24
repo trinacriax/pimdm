@@ -111,7 +111,6 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
   Ptr<olsr::RoutingProtocol> olsr_Gw;
 //  Ptr<aodv::RoutingProtocol> aodv_Gw;
 //  Ptr<dsdv::RoutingProtocol> dsdv_Gw;
-
   for (uint32_t i = 0; i < lrp_Gw->GetNRoutingProtocols ();  i++)
 	{
 	  int16_t priority;
@@ -148,7 +147,10 @@ MulticastRoutingProtocol::GetMetricPreference(uint32_t interface)
 	return 1;
 }
 
-void MulticastRoutingProtocol::register_member (std::string SGI){
+
+void
+MulticastRoutingProtocol::register_member (std::string SGI){
+	///////////////////////// TODO: TO REMOVE WITH IGMP
 	NS_LOG_FUNCTION(this);
 	// Just to get the IP info
 	Ipv4Address group, source;
@@ -160,7 +162,7 @@ void MulticastRoutingProtocol::register_member (std::string SGI){
 	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){//add a new receiver on a specific (source,group) on a given interface
 		std::set<uint32_t> iface;
 		m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<uint32_t> >(sgp,iface));
-//		NS_LOG_DEBUG("Adding Source-Group ("<<source<<","<<group<<") to the map");
+		NS_LOG_DEBUG("Adding Source-Group ("<<source<<","<<group<<") to the map");
 	}
 	if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface<m_ipv4->GetNInterfaces()){
 		m_LocalReceiver.find(sgp)->second.insert(interface);
@@ -207,7 +209,6 @@ MulticastRoutingProtocol::RemoveEntry (const Ipv4Address &group, const Ipv4Addre
 /// \param group		multicast group address.
 /// \param interface	interface for that group.
 /// \param groupEntry	RouteEntry for the multicast group.
-
 bool
 MulticastRoutingProtocol::Lookup (const Ipv4Address group, RoutingMulticastTable &outEntry) const
 {
@@ -231,7 +232,6 @@ MulticastRoutingProtocol::Lookup (const Ipv4Address group, RoutingMulticastTable
 /// \param interface	interface for that group.
 /// \param groupEntry		RouteEntry for the multicast group.
 /// \param ifaceEntry			InterfaceSpecific Entry for the multicast group.
-
 bool
 MulticastRoutingProtocol::Lookup (const Ipv4Address group, const Ipv4Address source, RoutingMulticastTable &outEntry, MulticastEntry &me) const
 {
@@ -309,7 +309,6 @@ MulticastRoutingProtocol::AddEntry (const Ipv4Address group, const Ipv4Address s
 /// \param oif		outbound interface designated.
 /// \param sockerr	error type.
 ///
-
 Ptr<Ipv4Route>
 MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 		Ptr<NetDevice> oif, Socket::SocketErrno &sockerr)
@@ -360,7 +359,7 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 		if (numOifAddresses == 1) {
 		  ifAddr = m_ipv4->GetAddress (interfaceIdx, 0);
 		} else {
-		  NS_FATAL_ERROR ("XXX Not implemented yet:  IP aliasing");
+		  NS_FATAL_ERROR ("TODO Not implemented yet:  IP aliasing");
 		}
 		rtentry->SetSource (ifAddr.GetLocal ());
 		rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
@@ -455,7 +454,6 @@ bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
 ///
 /// \param address	IP address to check.
 ///
-
 bool
 MulticastRoutingProtocol::IsMyOwnAddress (const Ipv4Address & address) const
 {
@@ -501,7 +499,6 @@ MulticastRoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
 Ipv4Address
 MulticastRoutingProtocol::GetLocalAddress (uint32_t interface)
 {
-//  NS_LOG_DEBUG ("Get Local Address "<<interface);
   if(interface<m_ipv4->GetNInterfaces ()){
   	return  m_ipv4->GetAddress (interface, 0).GetLocal ();
   }else{
@@ -533,7 +530,7 @@ void
 MulticastRoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const
 {
   std::ostream* os = stream->GetStream ();
-  *os << "Group\tInterface\t\tSource\tNextHop\n";
+  *os << "Group\t Source\t NextHop\t Interface\n";
 
   for (std::map<Ipv4Address, RoutingMulticastTable>::const_iterator iter = m_mrib.begin ();
     iter != m_mrib.end (); iter++)
@@ -543,7 +540,7 @@ MulticastRoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) co
     		  iface != iter->second.mgroup.end() ; iface++)
       {
     	  *os << "\t"<< iface->first << "\t\t";
-//    	  *os << "\t"<< iface->second.sourceAddr<< "\t\t";
+		  *os << "\t"<< iface->second.sourceAddr<< "\t\n";
     	  *os << "\t"<< iface->second.nextAddr<< "\t\n";
     	  *os << "\t"<< iface->second.interface<< "\t\t";
       }
@@ -583,7 +580,6 @@ void MulticastRoutingProtocol::DoStart ()
 		Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 		if (addr == loopback)
 			continue;
-
 		// Create socket to listen on ALL_PIM_ROUTERS4 group
 		Ptr<Socket> socketP = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
 		socketP->SetAttribute("Protocol", UintegerValue(PIM_IP_PROTOCOL_NUM));
@@ -643,7 +639,6 @@ void MulticastRoutingProtocol::DoStart ()
 			if(groupIP == ALL_PIM_ROUTERS4) continue;
 			NS_LOG_DEBUG("D("<<i<<") = " << m_ipv4->GetNetDevice (i)<<", LocalAddr = "<<  addr<< ", Group "<<groupIP<<", #Source: "<< group->second.mgroup.size());
 			///Registering endpoint for that address... by creating a socket to listen only on this interface
-//			Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), UdpSocketFactory::GetTypeId());
 			Ptr<Socket> socketG = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
 			socketG->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
 			socketG->SetAttribute("IpHeaderInclude", BooleanValue(true));
@@ -654,7 +649,7 @@ void MulticastRoutingProtocol::DoStart ()
 				NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<groupIP);
 			}
 			socketG->BindToNetDevice (m_ipv4->GetNetDevice (i));
-//			m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
+//			m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0); //PROBLEM; does not broadcast onlocal IP, takes the other group-interface
 			Ipv4InterfaceAddress mgroup(groupIP, Ipv4Mask::GetOnes());
 			m_socketAddresses[socketG] = mgroup;
 			NS_LOG_DEBUG("Registering Group Socket = "<<socketG<< " Device = "<<socketG->GetBoundNetDevice()<< ", LocalAddr = "<<mgroup.GetLocal()<<" Destination = "<<  groupIP<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
@@ -675,7 +670,6 @@ void MulticastRoutingProtocol::DoStart ()
 //	   Hello_Period.  A single Hello timer MAY be used to trigger sending
 //	   Hello messages on all active interfaces.  The Hello Timer SHOULD NOT
 //	   be reset except when it expires.
-
 void
 MulticastRoutingProtocol::HelloTimerExpire (uint32_t i)
 {
@@ -1234,9 +1228,6 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	}
 	RPFCheck(sgp, interface);
 	gateway = GetNextHop(sender);
-	///////////////////////// TODO: TO REMOVE WITH IGMP
-//	if(GetMulticastGroup(group))
-//		sgState->members = true;
 	/////////////////////////
 	if(sgState->upstream->SG_SAT.IsRunning()){
 		sgState->upstream->SG_SAT.Cancel();
@@ -2050,7 +2041,6 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 void
 MulticastRoutingProtocol::ATTimerExpire (SourceGroupPair &sgp, uint32_t interface)
 {
-//	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	switch (sgState->AssertState){
 		case  Assert_NoInfo:{
@@ -2085,7 +2075,6 @@ MulticastRoutingProtocol::ATTimerExpire (SourceGroupPair &sgp, uint32_t interfac
 void
 MulticastRoutingProtocol::SATTimerExpire (SourceGroupPair &sgp, uint32_t interface)
 {
-//	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	if(sgState->upstream){
 	switch (sgState->upstream->origination) {
@@ -2182,7 +2171,7 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> li
 
 void
 MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp, std::set<uint32_t> list)
-{//todo check!
+{
 	NS_LOG_FUNCTION(this);
 	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
