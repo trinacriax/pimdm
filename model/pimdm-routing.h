@@ -1027,9 +1027,8 @@ private:
 	void CouldAssertCheck (Ipv4Address source, Ipv4Address group, uint32_t interface, bool couldAssert);
 
 	bool CouldAssert (Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		bool ret = RPF_interface (source) != interface;
-		CouldAssertCheck (source,group,interface,ret);
-		return ret;
+		bool couldAssert = RPF_interface (source) != interface;
+		return couldAssert;
 	}
 
 	struct AssertMetric spt_assert_metric (Ipv4Address source, uint32_t interface) {
