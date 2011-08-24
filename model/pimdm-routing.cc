@@ -1491,6 +1491,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 				SendGraftAckUnicast(sgp, sender);
 				sgState->SG_PPT.Cancel();
 			}
+			UpstreamStateMachine(sgp);
 			break;
 		}
 		default:{
@@ -1832,6 +1833,7 @@ MulticastRoutingProtocol::NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Add
 					//	TODO: evaluate any possible transitions to its Upstream(S, G) state machine.
 					sgState->AssertState = Assert_NoInfo;
 					UpdateAssertWinner(&*sgState, 0xffffffff, 0xffffffff, Ipv4Address("255.255.255.255"));
+					UpstreamStateMachine(sgState->SGPair);
 					break;
 				}
 				default:{
@@ -1951,6 +1953,7 @@ MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 			//	and trigger a new Join message.
 			//	TODO: A PruneEcho(S, G) is OPTIONAL on an interface with only one PIM neighbor.
 			//	TODO: In addition, the router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
+			UpstreamStateMachine(sgp);
 			}
 			break;
 		}
@@ -1986,6 +1989,7 @@ MulticastRoutingProtocol::PTTimerExpire (SourceGroupPair &sgp, uint32_t interfac
 		//	The Prune(S, G) Downstream state machine on interface I MUST transition to the NoInfo (NI) state.
 		//	TODO: The router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
 			sgState->PruneState = Prune_NoInfo;
+			UpstreamStateMachine(sgp);
 			break;
 		}
 		default:
@@ -2071,6 +2075,7 @@ MulticastRoutingProtocol::ATTimerExpire (SourceGroupPair &sgp, uint32_t interfac
 			sgState->AssertState = Assert_NoInfo;
 			UpdateAssertWinner(sgState, 0xffffffff, 0xffffffff, Ipv4Address("255.255.255.255"));
 			//TODO: If CouldAssert == TRUE, the router MUST evaluate any possible transitions to its Upstream(S, G) state machine.
+			UpstreamStateMachine(sgp);
 			// if(CouldAssert(sgp.sourceIfaceAddr, sgp.groupMulticastAddr, interface)){}
 			break;
 		}
@@ -2106,6 +2111,12 @@ MulticastRoutingProtocol::SATTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 		}
 	}
 	}
+}
+
+void MulticastRoutingProtocol::UpstreamStateMachine(SourceGroupPair &sgp){
+	std::set<uint32_t> list = olist(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
+	GetPrinterList("Checking olist", list);
+	olistCheck(sgp, list);
 }
 
 void
@@ -2786,6 +2797,7 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp, Ip
 					sgState->PruneState = Prune_NoInfo;
 					sgState->SG_PPT.Cancel();
 				}
+				UpstreamStateMachine(sgp);
 				break;
 			}
 			default:{
@@ -2894,6 +2906,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 					Ptr<Packet> packet = Create<Packet> ();
 					SendPacketUnicast(packet, prune, sender);
+					UpstreamStateMachine(sgp);
 				}
 			}
 			break;
@@ -2947,6 +2960,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 				Ptr<Packet> packet = Create<Packet> ();
 				SendPacketUnicast(packet, prune, sender);
+				UpstreamStateMachine(sgp);
 				}
 			break;
 		}
@@ -2966,6 +2980,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				if(sgState->SG_AT.IsRunning())
 					sgState->SG_AT.Cancel();
 				UpdateAssertWinner(sgState, 0XFFFFFFFF, 0XFFFFFFFF, Ipv4Address("255.255.255.255"));
+				UpstreamStateMachine(sgp);
 			}
 			else if(received > sgState->AssertWinner) {
 				//Receive Preferred Assert or State Refresh
@@ -3153,6 +3168,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 						AddMulticastGroupEntry(msg, mge);
 						Ptr<Packet> packet = Create<Packet> ();
 						SendPacketUnicast(packet, msg, refresh.m_originatorAddr.m_unicastAddress);
+						UpstreamStateMachine(sgp);
 					}
 				}
 				break;
@@ -3210,6 +3226,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				AddMulticastGroupEntry(prune, mge);
 				Ptr<Packet> packet = Create<Packet> ();
 				SendPacketUnicast(packet, prune, refresh.m_originatorAddr.m_unicastAddress);
+				UpstreamStateMachine(sgp);
 			}
 			break;
 			}
@@ -3229,6 +3246,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				if(sgState->SG_AT.IsRunning())
 					sgState->SG_AT.Cancel();
 				UpdateAssertWinner(sgState, 0XFFFFFFFF, 0XFFFFFFFF, Ipv4Address("255.255.255.255"));
+				UpstreamStateMachine(sgp);
 			}
 			else{
 			//Receive Preferred Assert or State Refresh.

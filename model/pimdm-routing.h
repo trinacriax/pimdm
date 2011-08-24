@@ -529,6 +529,8 @@ private:
 	void SRTTimerExpire (SourceGroupPair &sgp, uint32_t interface);
 	void SATTimerExpire (SourceGroupPair &sgp, uint32_t interface);
 
+	void UpstreamStateMachine(SourceGroupPair &sgp);
+
 	SourceGroupList* FindSourceGroupList (uint32_t interface) {
 		std::map<uint32_t, SourceGroupList>::iterator iter =
 				m_IfaceSourceGroup.find (interface);
