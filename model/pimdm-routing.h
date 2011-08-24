@@ -585,10 +585,7 @@ private:
 			sgs->PruneState = Prune_NoInfo;
 			sgs->AssertState = Assert_NoInfo;
 			if (RPF_interface (ns.SGPair.sourceIfaceAddr) == interface){
-				UpstreamState us;
-				sgs->upstream=&us;
-//				sgs->upstream->GraftPrune = GP_NoInfo;
-				sgs->upstream;
+				sgs->upstream = new UpstreamState;
 			}
 		}
 	}
