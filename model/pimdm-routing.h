@@ -569,9 +569,10 @@ private:
 		}
 		return NULL;
 	}
+
 	SourceGroupState* FindSourceGroupState (uint32_t interface, const Ipv4Address source, const Ipv4Address group) {
 		SourceGroupPair sgp (source,group);
-		return FindSourceGroupState (RPF_interface (source),sgp);
+		return FindSourceGroupState (interface, sgp);
 	}
 
 	void InsertSourceGroupState (uint32_t interface, SourceGroupState ns) {
