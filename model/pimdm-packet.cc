@@ -574,7 +574,9 @@ PIMHeader::MulticastGroupEntry::Serialize (Buffer::Iterator start) const
   this->m_multicastGroupAddr.Serialize(i);
   i.Next(this->m_multicastGroupAddr.GetSerializedSize());
   i.WriteHtonU16(this->m_numberJoinedSources);
+  NS_ASSERT(this->m_numberJoinedSources == this->m_joinedSourceAddrs.size());
   i.WriteHtonU16(this->m_numberPrunedSources);
+  NS_ASSERT(this->m_numberPrunedSources == this->m_prunedSourceAddrs.size());
   for(std::vector<EncodedSource>::const_iterator iter = this->m_joinedSourceAddrs.begin();
   			  iter != this->m_joinedSourceAddrs.end(); iter++){
 	  	  iter->Serialize(i);
