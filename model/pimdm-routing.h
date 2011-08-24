@@ -1053,8 +1053,10 @@ private:
 
 	//AssertWinner (S,G,I) defaults to NULL -> ANY
 	Ipv4Address AssertWinner (Ipv4Address source, Ipv4Address group,uint32_t interface) {
-		SourceGroupState *sgState = FindSourceGroupState (interface, source, group);
-		return (!sgState) ? Ipv4Address::GetAny () : sgState->SGAW;
+		SourceGroupPair sgp (source, group);
+		SourceGroupState *sgState = FindSourceGroupState (interface, sgp);
+		sgState = FindSourceGroupState (interface, source, group);
+		return (sgState==NULL) ? Ipv4Address::GetAny () : sgState->AssertWinner.IPAddress;
 	}
 
 	//StateRefreshRateLimit (S,G) is TRUE if the time elapsed since the last received StateRefresh (S,G)

@@ -74,10 +74,10 @@ operator == (const AssertMetric &a, const AssertMetric &b){
 //  sourced the Assert message is used as a tie-breaker, with the highest IP address winning.
 static inline bool
 operator > (const AssertMetric &a, const AssertMetric &b){
-	return (a.metricPreference < b.metricPreference) ||
-			((a.metricPreference == b.metricPreference) && (a.routeMetric < b.routeMetric))||
-			((a.metricPreference == b.metricPreference) && (a.routeMetric == b.routeMetric) &&
-					!(a.IPAddress < b.IPAddress));
+	bool result = (a.metricPreference < b.metricPreference);
+	result = result || ((a.metricPreference == b.metricPreference) && (a.routeMetric < b.routeMetric));
+	result = result || ((a.metricPreference == b.metricPreference) && (a.routeMetric == b.routeMetric) && !(a.IPAddress < b.IPAddress));
+	return result;
 }
 
 static inline bool
@@ -129,7 +129,7 @@ struct SourceGroupState{
 		PruneState(Prune_NoInfo),
 		SG_PT(Timer::CANCEL_ON_DESTROY),
 		SG_PPT(Timer::CANCEL_ON_DESTROY),
-		SGAW("0.0.0.0"),
+//		SGAW("0.0.0.0"),
 		SGAM(0),
 		SG_SR_TTL(0),
 		SG_DATA_TTL(0)
@@ -145,7 +145,7 @@ struct SourceGroupState{
 		PruneState(Prune_NoInfo),
 		SG_PT(Timer::CANCEL_ON_DESTROY),
 		SG_PPT(Timer::CANCEL_ON_DESTROY),
-		SGAW("0.0.0.0"),
+//		SGAW("0.0.0.0"),
 		SGAM(0),
 		SG_SR_TTL(0),
 		SG_DATA_TTL(0)
@@ -180,7 +180,7 @@ struct SourceGroupState{
 	/// Time of the last received StateRefresh(S,G)
 	Time lastStateRefresh;
 	/// Assert winner's IP Address.
-	Ipv4Address SGAW;
+//	Ipv4Address SGAW;
 	/// Assert winner's Assert Metric.
 	uint32_t SGAM;
 	/// TTL of the packet for use in State Refresh messages.
