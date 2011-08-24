@@ -559,7 +559,7 @@ private:
 		return NULL;
 	}
 
-	SourceGroupState* FindSourceGroupState (uint32_t interface,const SourceGroupPair &sgp) {
+	SourceGroupState* FindSourceGroupState (uint32_t interface, const SourceGroupPair &sgp) {
 		SourceGroupList *sgl = FindSourceGroupList (interface);
 		if (!sgl)
 			return NULL;
