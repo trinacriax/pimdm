@@ -958,7 +958,7 @@ private:
 	std::set<uint32_t> lost_assert (Ipv4Address source, Ipv4Address group) {
 		std::set<uint32_t> set;
 		for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++) {
-			if (IsLoopInterface (i))continue;
+			if (IsLoopInterface (i) || RPF_interface (source) == i)continue;
 			if (lost_assert (source, group, i))
 				set.insert (i);
 		}
@@ -969,12 +969,11 @@ private:
 	 * True if the node has lost an (S,G) Assert on that interface.
 	 */
 	bool lost_assert (Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		if (RPF_interface (source) == interface) {
-			return false;
-		} else {
-			return (AssertWinner (source, group, interface)!=Ipv4Address::GetAny () && AssertWinner (source, group, interface) != GetLocalAddress (interface)
-					&& (AssertWinnerMetric (source, group, interface) > spt_assert_metric (source, interface)));
-		}
+		Ipv4Address assertWinner = AssertWinner (source, group, interface);
+		bool result = assertWinner != Ipv4Address::GetAny ();
+		result = result && assertWinner != GetLocalAddress (interface);
+		result = result && AssertWinnerMetric (source, group, interface) > spt_assert_metric (source, interface);
+		return result;
 	}
 
 	bool boundary (uint32_t interface, Ipv4Address group){
@@ -1020,8 +1019,8 @@ private:
 	}
 
 	struct AssertMetric AssertWinnerMetric (Ipv4Address source, Ipv4Address group, uint32_t interface) {
-		SourceGroupState *sgState = FindSourceGroupState (RPF_interface (source),source,group);
-		return (sgState && sgState->AssertState == Assert_NoInfo) ? infinite_assert_metric () : sgState->AssertWinner;
+		SourceGroupState *sgState = FindSourceGroupState (interface, source, group);
+		return (sgState == NULL || sgState->AssertState == Assert_NoInfo) ? infinite_assert_metric () : sgState->AssertWinner;
 	}
 
 	void CouldAssertCheck (Ipv4Address source, Ipv4Address group, uint32_t interface, bool couldAssert);
