@@ -771,9 +771,9 @@ private:
 
 	void RPFCheck (SourceGroupPair sgp, uint32_t interface);
 
-	void olistCheck (SourceGroupPair &sgp, std::set<uint32_t> list);
-	void olistEmpty (SourceGroupPair &sgp, std::set<uint32_t> list);
-	void olistFull (SourceGroupPair &sgp, std::set<uint32_t> list);
+	void olistCheck (SourceGroupPair &sgp);
+	void olistEmpty (SourceGroupPair &sgp);
+	void olistFull (SourceGroupPair &sgp);
 
 	/// \brief The outgoing interfaces except the RPF_interface.
 	///

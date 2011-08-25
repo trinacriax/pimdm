@@ -2105,17 +2105,18 @@ void MulticastRoutingProtocol::UpstreamStateMachine(SourceGroupPair &sgp){
 }
 
 void
-MulticastRoutingProtocol::olistCheck(SourceGroupPair &sgp, std::set<uint32_t> list)
+MulticastRoutingProtocol::olistCheck(SourceGroupPair &sgp)
 {
 	NS_LOG_FUNCTION(this);
+	std::set<uint32_t> list = olist(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
 	if(list.size() == 0)
-		olistEmpty(sgp, list);
+		olistEmpty(sgp);
 	else
-		olistFull(sgp, list);
+		olistFull(sgp);
 	}
 
 void
-MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> list)
+MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp)
 {
 	NS_LOG_FUNCTION(this);
 	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
@@ -2170,7 +2171,7 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp, std::set<uint32_t> li
 	}
 
 void
-MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp, std::set<uint32_t> list)
+MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp)
 {
 	NS_LOG_FUNCTION(this);
 	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
