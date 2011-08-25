@@ -278,26 +278,23 @@ MulticastRoutingProtocol::UpdateEntry(Ipv4Address const group, Ipv4Address const
 ///
 /// If an entry for the given destination existed, it is deleted and freed.
 ///
-/// \param dest		address of the destination node.
+/// \param dest		address of the group address.
+/// \param dist		distance to the source node.
 /// \param next		address of the next hop node.
 /// \param iface	address of the local interface.
-/// \param dist		distance to the destination node.
 ///
 void
 MulticastRoutingProtocol::AddEntry (const Ipv4Address group, const Ipv4Address source, const Ipv4Address next, const uint32_t interface)
 {
   NS_LOG_FUNCTION (this << "Group: "<< group << " Source: "<< source <<" Next: "<< next << " RPF_I: "<< interface << " MainAddress: "<< m_mainAddress);
-
   // Creates a new rt entry with specified values
   RoutingMulticastTable &entry = m_mrib[group];//DEBUG
   m_mrib[group].groupAddr = group;
-  //  entry.groupAddr = group;
   MulticastEntry *me = &m_mrib[group].mgroup[source];//DEBUG
   m_mrib[group].mgroup[source].sourceAddr = source;
   m_mrib[group].mgroup[source].interface = interface;
   m_mrib[group].mgroup[source].nextAddr = next;
 }
-
 
 ///
 /// \brief Query routing cache for an existing route, for an outbound packet.
@@ -1104,15 +1101,15 @@ MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, uint32_t interface)
 		MulticastEntry &me = entry.mgroup[sgp.sourceIfaceAddr];
 		uint32_t interfaceN = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
 		Ipv4Address gatewayN = rpf_route->GetGateway();
-		if(me.nextAddr == Ipv4Address::GetAny()){//now we now the RPF!
+		if(me.nextAddr == Ipv4Address::GetAny()){//now we now the RPF for the first time, just update it!
 			entry.mgroup[sgp.sourceIfaceAddr].nextAddr = gatewayN;
 			entry.mgroup[sgp.sourceIfaceAddr].interface = interfaceN;
 		}
-		if(me.interface != interfaceN){
+		if(me.interface != interfaceN){//RPF interface has changed
 			RPF_Changes(sgp, entry.mgroup[sgp.sourceIfaceAddr].interface, interfaceN);
 			entry.mgroup[sgp.sourceIfaceAddr].interface = interfaceN;
 		}
-		if(me.nextAddr != gatewayN){
+		if(me.nextAddr != gatewayN){//RPF neighbor has changed
 			RPF_primeChanges(sgp);
 			entry.mgroup[sgp.sourceIfaceAddr].nextAddr = gatewayN;
 		}
