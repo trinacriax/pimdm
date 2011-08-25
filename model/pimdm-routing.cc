@@ -1196,11 +1196,15 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	Ptr<Packet> receivedPacket;
 	Address sourceAddress;
 	receivedPacket = socket->RecvFrom (sourceAddress);
+	NS_LOG_DEBUG("Packet Size "<<receivedPacket->GetSize());
 	Ptr<Packet> copy = receivedPacket->Copy();
+	NS_LOG_DEBUG("Packet Size "<<copy->GetSize());
 	Ipv4Header ipv4Header;
 	copy->RemoveHeader(ipv4Header);
+	NS_LOG_DEBUG("Packet Size "<<copy->GetSize());
 	UdpHeader udpHeader;
 	copy->RemoveHeader(udpHeader);
+	NS_LOG_DEBUG("Packet Size "<<copy->GetSize());
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address sender = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
@@ -1423,6 +1427,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	if(oiflist.size()){
 		// Forward packet on all interfaces in oiflist.
 		for(std::set<uint32_t>::iterator out = oiflist.begin(); out!=oiflist.end(); out++){
+			NS_LOG_DEBUG("Packet Size "<<copy->GetSize());
 			ipv4Header = BuildHeader(sender, group, UdpL4Protocol::PROT_NUMBER, receivedPacket->GetSize(), 1, false);
 			SendPacketHBroadcastInterface(copy, ipv4Header, *out);
 		}
@@ -1750,8 +1755,10 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
     {
 	  NS_LOG_DEBUG(i->second.GetLocal()<<", "<<i->second.GetBroadcast()<<", "<<i->second.GetMask()<<", "<<i->second.IsSecondary());
 	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
+		  NS_LOG_DEBUG("Packet Size "<<packet->GetSize());
 	      SocketAddressTag tag;
 	      packet->RemovePacketTag(tag);
+	      NS_LOG_DEBUG("Packet Size "<<packet->GetSize());
 		  UdpHeader udpHeader;
 		  if(Node::ChecksumEnabled ())
 		    {
@@ -1762,7 +1769,9 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
 		  udpHeader.SetDestinationPort(PIM_PORT_NUMBER);
 
 		  packet->AddHeader(udpHeader);
+		  NS_LOG_DEBUG("Packet Size "<<packet->GetSize());
 		  packet->AddHeader(ipv4Header);
+		  NS_LOG_DEBUG("Packet Size "<<packet->GetSize());
 
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
 		  NS_LOG_DEBUG ("...sending Destination: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
