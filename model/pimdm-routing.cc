@@ -819,6 +819,7 @@ void
 MulticastRoutingProtocol::SendHello (uint32_t interface)
 {///< Sec. 4.3.1. RFC 3973
 	NS_LOG_FUNCTION(this);
+	NS_LOG_DEBUG("Sender = "<<GetLocalAddress(interface)<< ", Interface "<<interface);
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
 	ForgeHelloMessage(interface, msg);
@@ -829,6 +830,7 @@ void
 MulticastRoutingProtocol::SendHelloReply (uint32_t interface, Ipv4Address destination)
 {///< Sec. 4.3.1. RFC 3973
 	NS_LOG_FUNCTION(this);
+	NS_LOG_DEBUG("Sender = "<<GetLocalAddress(interface)<<", Destination = "<<destination<<", Interface "<<interface);
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
 	ForgeHelloMessage(interface, msg);
@@ -1135,8 +1137,8 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
 	Ipv4Header ipv4header;
 	receivedPacket->RemoveHeader(ipv4header);
 	Ipv4Address group = ipv4header.GetDestination();
-	NS_LOG_DEBUG("Socket = " << socket<< ", Sender "<< senderIfaceAddr<<", Group " << group << ", Destination "<< receiverIfaceAddr);
-	if(route) NS_LOG_DEBUG(route->GetSource()<< " <-> " <<route->GetGateway() <<"<->"<<senderIfaceAddr <<" via interface " <<interface);
+	NS_LOG_DEBUG("Sender = "<< senderIfaceAddr<<", Group = " << group << ", Destination = "<< receiverIfaceAddr<< ", Socket = " << socket);
+	if(route) NS_LOG_DEBUG("\t Route = "<<route->GetSource()<< " <"<<interface<<"> " <<route->GetGateway() <<" <...> "<<senderIfaceAddr);
 	if(ipv4header.GetDestination().IsMulticast() && ipv4header.GetDestination() != Ipv4Address(ALL_PIM_ROUTERS4)) {
 		NS_LOG_ERROR("Received "<< ipv4header.GetDestination() <<" it should be captured by another callback.");
 		SourceGroupPair sgp (senderIfaceAddr, receiverIfaceAddr);
@@ -1226,12 +1228,12 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	RPFCheck(sgp, interface);
 	gateway = GetNextHop(sender);
 	/////////////////////////
-	if(sgState->upstream->SG_SAT.IsRunning()){
-		sgState->upstream->SG_SAT.Cancel();
-		sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
-		sgState->upstream->SG_SAT.SetArguments(sgp, interface);
-		sgState->upstream->SG_SAT.Schedule();
-	}
+//	if(sgState->upstream->SG_SAT.IsRunning()){
+//		sgState->upstream->SG_SAT.Cancel();
+//		sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
+//		sgState->upstream->SG_SAT.SetArguments(sgp, interface);
+//		sgState->upstream->SG_SAT.Schedule();
+//	}
 	if(RPF_interface(sender) == interface){
 		switch (sgState->upstream->GraftPrune){
 			//The Upstream(S, G) state machine MUST transition to the Pruned (P)
@@ -1406,7 +1408,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
 		oiflist = olist(sender, group);
 		olistCheck(sgp);
-		GetPrinterList("olist", oiflist);
+//		GetPrinterList("olist", oiflist);
 		oiflist.erase(interface);
 		GetPrinterList("olist - RPF_interface", oiflist);
 	}
@@ -3351,7 +3353,7 @@ MulticastRoutingProtocol::ForwardingStateRefresh(PIMHeader::StateRefreshMessage 
 void
 MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address sender, Ipv4Address receiver)
 {
-	NS_LOG_DEBUG("Sender "<< sender<< " Receiver "<< receiver);
+	NS_LOG_DEBUG("Sender = "<< sender<< ", Receiver = "<< receiver);
 	uint16_t entry = 0;
 	NeighborState tmp(sender, receiver);
 	uint32_t interface = GetReceivingInterface(sender);
@@ -3360,12 +3362,11 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 		InsertNeighborState(interface, tmp);
 		ns = FindNeighborState(interface, tmp);
 		NeighborhoodStatus *nst = FindNeighborhoodStatus(interface);
-		NS_LOG_DEBUG("Sender "<< sender<< " Neigh size "<< nst->neighbors.size());
 		// If a Hello message is received from a new neighbor, the receiving router SHOULD send its own Hello message
 		//    after a random delay between 0 and Triggered_Hello_Delay.
 		Time delay = Seconds(UniformVariable().GetValue(0, Triggered_Hello_Delay));
 		Simulator::Schedule (delay, &MulticastRoutingProtocol::SendHelloReply, this, interface, sender);
-		NS_LOG_DEBUG(sender<< " first Hello, reply at "<<(Simulator::Now()+delay).GetSeconds());
+		NS_LOG_DEBUG("Neighbors = "<< nst->neighbors.size() << ", reply at "<<(Simulator::Now()+delay).GetSeconds());
 	}
 	while(entry < hello.m_optionList.size()){
 		switch (hello.m_optionList[entry].m_optionType){
