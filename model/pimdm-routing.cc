@@ -2296,7 +2296,7 @@ MulticastRoutingProtocol::SourceNoDirectlyConnected(SourceGroupPair &sgp)
 
 void
 MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterface, uint32_t newInterface)
-{//todo check!
+{
 	bool couldAssert = CouldAssert(sgp.sourceIfaceAddr, sgp.groupMulticastAddr, oldInterface);
 	CouldAssertCheck(sgp.sourceIfaceAddr, sgp.groupMulticastAddr, newInterface, couldAssert);
 	ChangeSourceGroupState(oldInterface, newInterface, *FindSourceGroupState(oldInterface, sgp));
@@ -2395,7 +2395,7 @@ void
 MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp)
 {
 	std::set<uint32_t> outlist = olist(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
-	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);//todo how to keep old SGP interface?
+	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
