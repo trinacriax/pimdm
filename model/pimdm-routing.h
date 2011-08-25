@@ -718,46 +718,46 @@ private:
 		std::set<uint32_t> resA;
 		/// The set pim_nbrs is the set of all interfaces on which the router has at least one active PIM neighbor.
 		std::set<uint32_t> pim_nbrz = pim_nbrs ();
-		GetPrinterList ("pim_nbrz",pim_nbrz);
+//		GetPrinterList ("pim_nbrz",pim_nbrz);
 		/// prunes (S,G) = {all interfaces I such that DownstreamPState (S,G,I) is in Pruned state}
 		std::set<uint32_t> prunez = prunes (source, group);
-		GetPrinterList ("prunez",prunez);
+//		GetPrinterList ("prunez",prunez);
 		/// pim_nbrs * (-)* prunes (S,G)
 		std::set_difference (pim_nbrz.begin (), pim_nbrz.end (), prunez.begin (), prunez.end (),
 				 std::inserter (resA, resA.end ()));
-		GetPrinterList ("pim_nbrs * (-)* prunes (S,G)",resA);
+//		GetPrinterList ("pim_nbrs * (-)* prunes (S,G)",resA);
 		std::set<uint32_t> resB;
 		/// pim_include (*,G) = {all interfaces I such that: local_receiver_include (*,G,I)}
 		std::set<uint32_t> inc = pim_include (Ipv4Address::GetAny (), group);
-		GetPrinterList ("pim_include (*,G)",inc);
+//		GetPrinterList ("pim_include (*,G)",inc);
 		/// pim_exclude (S,G) = {all interfaces I such that: local_receiver_exclude (S,G,I)}
 		std::set<uint32_t> exc = pim_exclude (source, group);
-		GetPrinterList ("pim_exclude (S,G)",exc);
+//		GetPrinterList ("pim_exclude (S,G)",exc);
 		/// pim_include (*,G) * (-)* pim_exclude (S,G)
 		std::set_difference (inc.begin (), inc.end (), exc.begin (), exc.end (), std::inserter (resB, resB.end ()));
-		GetPrinterList ("pim_include (*,G) * (-)* pim_exclude (S,G)",resB);
+//		GetPrinterList ("pim_include (*,G) * (-)* pim_exclude (S,G)",resB);
 		std::set<uint32_t> result;
 		/// pim_nbrs (-) prunes (S,G) * (+)* (pim_include (*,G) (-) pim_exclude (S,G) )
 		std::set_union (resA.begin (), resA.end (), resB.begin (), resB.end (), std::inserter (result, result.end ()));
-		GetPrinterList ("pim_nbrs (-) prunes (S,G) * (+)* (pim_include (*,G) (-) pim_exclude (S,G))",result);
+//		GetPrinterList ("pim_nbrs (-) prunes (S,G) * (+)* (pim_include (*,G) (-) pim_exclude (S,G))",result);
 		/// pim_include (S,G) = {all interfaces I such that: local_receiver_include (S,G,I)}
 		std::set<uint32_t> incC = pim_include (source, group);
-		GetPrinterList ("pim_include (S,G)",incC);
+//		GetPrinterList ("pim_include (S,G)",incC);
 		/// pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) * (+)* pim_include (S,G)
 		std::set_union (result.begin (), result.end (), incC.begin (), incC.end (), std::inserter (resA, resA.end ()));
-		GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) * (+)* pim_include (S,G)",resA);
+//		GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) * (+)* pim_include (S,G)",resA);
 
 		std::set<uint32_t> lostC = lost_assert (source, group);
-		GetPrinterList ("lost_assert",lostC);
+//		GetPrinterList ("lost_assert",lostC);
 		/// pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) * (-)* lost_assert (S,G)
 		std::set_difference (resA.begin (), resA.end (), lostC.begin (), lostC.end (),std::inserter (resB, resB.end ()));
-		GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) * (-)* lost_assert (S,G)",resB);
+//		GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) * (-)* lost_assert (S,G)",resB);
 		std::set<uint32_t> boundC = boundary (group);
-		GetPrinterList ("boundary",boundC);
+//		GetPrinterList ("boundary",boundC);
 		std::set<uint32_t> resC;
 		/// pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) (-) lost_assert (S,G) * (-)* boundary (G)
 		std::set_difference (resB.begin (), resB.end (), boundC.begin (), boundC.end (),std::inserter (resC, resC.end ()));
-		GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) (-) lost_assert (S,G) * (-)* boundary (G)",resC);
+//		GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) (-) lost_assert (S,G) * (-)* boundary (G)",resC);
 		return resC;
 	}
 
@@ -782,9 +782,9 @@ private:
 	/// \param group Multicast group IPv4 address
 	std::set<uint32_t> olist (Ipv4Address source, Ipv4Address group) {
 		std::set<uint32_t> _olist = immediate_olist (source, group);
-		GetPrinterList ("olist", _olist);
+//		GetPrinterList ("olist", _olist);
 		_olist.erase (RPF_interface (source));
-		GetPrinterList ("olist-RPF interface",_olist);
+//		GetPrinterList ("olist-RPF interface",_olist);
 		return _olist;
 	}
 
