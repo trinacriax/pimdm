@@ -1238,6 +1238,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			// state, send a Prune(S, G) to RPF'(S), and set PLT(S, G) to t_limit seconds.
 			case GP_Forwarding:{
 				if(olist(sender, group).size() == 0 && gateway != sender && !GetMulticastGroup(group)){//TODO fix with the interface towards nodes
+					olistCheck(sgp);//CHECK: olist is null and S not directly connected
 					sgState->upstream->GraftPrune = GP_Pruned;
 					Ipv4Address destination = RPF_prime(sgp);
 					SendPruneUnicast(destination, sgp);
@@ -1404,6 +1405,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
 		/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
 		oiflist = olist(sender, group);
+		olistCheck(sgp);
 		GetPrinterList("olist", oiflist);
 		oiflist.erase(interface);
 		GetPrinterList("olist - RPF_interface", oiflist);
@@ -2097,9 +2099,7 @@ MulticastRoutingProtocol::SATTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 }
 
 void MulticastRoutingProtocol::UpstreamStateMachine(SourceGroupPair &sgp){
-	std::set<uint32_t> list = olist(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
-	GetPrinterList("Checking olist", list);
-	olistCheck(sgp, list);
+	olistCheck(sgp);
 }
 
 void
