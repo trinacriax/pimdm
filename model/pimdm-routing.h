@@ -604,7 +604,8 @@ private:
 				m_IfaceSourceGroup.find (interface)->second.push_back (sgs);
 				sgState = FindSourceGroupState (interface, sgp);
 				uint32_t rpf_i = RPF_interface (sgs.SGPair.sourceIfaceAddr);
-				sgState->upstream = new UpstreamState;
+				if(interface == rpf_i)
+					sgState->upstream = new UpstreamState;
 				}
 		}
 
