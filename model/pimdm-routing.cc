@@ -1748,10 +1748,9 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
     {
 	  NS_LOG_DEBUG(i->second.GetLocal()<<", "<<i->second.GetBroadcast()<<", "<<i->second.GetMask()<<", "<<i->second.IsSecondary());
 	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
-		  NS_LOG_DEBUG("Packet Size "<<packet->GetSize());
+		  Ptr<Packet> copy = packet->Copy();
 	      SocketAddressTag tag;
-	      packet->RemovePacketTag(tag);
-	      NS_LOG_DEBUG("Packet Size "<<packet->GetSize());
+	      copy->RemovePacketTag(tag);
 		  UdpHeader udpHeader;
 		  if(Node::ChecksumEnabled ())
 		    {
@@ -1760,15 +1759,11 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
 		    }
 		  udpHeader.SetSourcePort(PIM_PORT_NUMBER);
 		  udpHeader.SetDestinationPort(PIM_PORT_NUMBER);
-
-		  packet->AddHeader(udpHeader);
-		  NS_LOG_DEBUG("Packet Size "<<packet->GetSize());
-		  packet->AddHeader(ipv4Header);
-		  NS_LOG_DEBUG("Packet Size "<<packet->GetSize());
-
+		  copy->AddHeader(udpHeader);
+		  copy->AddHeader(ipv4Header);
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
 		  NS_LOG_DEBUG ("...sending Destination: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
-		  i->first->SendTo (packet, 0, InetSocketAddress (ipv4Header.GetDestination(), PIM_PORT_NUMBER));
+		  i->first->SendTo (copy, 0, InetSocketAddress (ipv4Header.GetDestination(), PIM_PORT_NUMBER));
 		  break;
 	  }
   }
