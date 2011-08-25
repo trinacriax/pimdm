@@ -1353,7 +1353,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 				sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
 				sgState->upstream->SG_SRT.SetArguments(sgp, interface);
 				sgState->upstream->SG_SRT.Schedule();
-				sgState->SG_DATA_TTL = 1; //TODO fix it with IP TTL -> actually it is always 1 for pimdm
+				sgState->SG_DATA_TTL = ipv4Header.GetTtl(); //TODO fix it with IP TTL -> actually it is always 1 for pimdm
 			}
 			break;
 		}
@@ -1371,13 +1371,10 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
 			sgState->upstream->SG_SAT.SetArguments(sgp, interface);
 			sgState->upstream->SG_SAT.Schedule();
-//			Ipv4Header ipv4h; // TODO TTL computation
-//			receivedPacket->RemoveHeader(ipv4h);
-//			double sample = UniformVariable().GetValue();
-//			if(sample < TTL_SAMPLE && ipv4h.GetTtl() > sgState->SG_DATA_TTL){//TODO: increase means +1 or equal to packet's TTL?
-//				sgState->SG_DATA_TTL = ipv4h.GetTtl();
-				sgState->SG_DATA_TTL = 1;
-//			}
+			double sample = UniformVariable().GetValue();
+			if(sample < TTL_SAMPLE && ipv4Header.GetTtl() > sgState->SG_DATA_TTL){//TODO: increase means +1 or equal to packet's TTL?
+				sgState->SG_DATA_TTL += 1;
+			}
 			break;
 		}
 		default:{
