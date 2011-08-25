@@ -1154,34 +1154,34 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
 //			return;
 //	}
 	switch (pimdmPacket.GetType()){
-	case PIM_HELLO:{
-		RecvHello(pimdmPacket.GetHelloMessage(), senderIfaceAddr, receiverIfaceAddr);
-		break;
-		}
-	case PIM_JP:{
-		RecvJP(pimdmPacket.GetJoinPruneMessage(), senderIfaceAddr, receiverIfaceAddr);
-		break;
-		}
-	case PIM_ASSERT:{
-		RecvAssert(pimdmPacket.GetAssertMessage(), senderIfaceAddr, receiverIfaceAddr);
-		break;
-		}
-	case PIM_GRAFT:{
-		RecvGraft(pimdmPacket.GetGraftMessage(), senderIfaceAddr, receiverIfaceAddr);
-		break;
-		}
-	case PIM_GRAFT_ACK:{
-		RecvGraftAck(pimdmPacket.GetGraftAckMessage(), senderIfaceAddr, receiverIfaceAddr);
-		break;
-		}
-	case PIM_STATE_REF:{
-		RecvStateRefresh(pimdmPacket.GetStateRefreshMessage(), senderIfaceAddr, receiverIfaceAddr);
-		break;
-		}
-	default:{
-		NS_LOG_ERROR("Packet unrecognized.... "<< receivedPacket<<"Sender "<< senderIfaceAddr<<", Destination "<< receiverIfaceAddr);
-		break;
-		}
+		case PIM_HELLO:{
+			RecvHello(pimdmPacket.GetHelloMessage(), senderIfaceAddr, receiverIfaceAddr);
+			break;
+			}
+		case PIM_JP:{
+			RecvJP(pimdmPacket.GetJoinPruneMessage(), senderIfaceAddr, receiverIfaceAddr);
+			break;
+			}
+		case PIM_ASSERT:{
+			RecvAssert(pimdmPacket.GetAssertMessage(), senderIfaceAddr, receiverIfaceAddr);
+			break;
+			}
+		case PIM_GRAFT:{
+			RecvGraft(pimdmPacket.GetGraftMessage(), senderIfaceAddr, receiverIfaceAddr);
+			break;
+			}
+		case PIM_GRAFT_ACK:{
+			RecvGraftAck(pimdmPacket.GetGraftAckMessage(), senderIfaceAddr, receiverIfaceAddr);
+			break;
+			}
+		case PIM_STATE_REF:{
+			RecvStateRefresh(pimdmPacket.GetStateRefreshMessage(), senderIfaceAddr, receiverIfaceAddr);
+			break;
+			}
+		default:{
+			NS_LOG_ERROR("Packet unrecognized.... "<< receivedPacket<<"Sender "<< senderIfaceAddr<<", Destination "<< receiverIfaceAddr);
+			break;
+			}
 	}
 	m_rxPacketTrace (pimdmPacket);
 }
