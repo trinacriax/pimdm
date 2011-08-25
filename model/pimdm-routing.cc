@@ -1196,6 +1196,11 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	Ptr<Packet> receivedPacket;
 	Address sourceAddress;
 	receivedPacket = socket->RecvFrom (sourceAddress);
+	Ptr<Packet> copy = receivedPacket->Copy();
+	Ipv4Header ipv4Header;
+	copy->RemoveHeader(ipv4Header);
+	UdpHeader udpHeader;
+	copy->RemoveHeader(udpHeader);
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address sender = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
@@ -1418,8 +1423,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	if(oiflist.size()){
 		// Forward packet on all interfaces in oiflist.
 		for(std::set<uint32_t>::iterator out = oiflist.begin(); out!=oiflist.end(); out++){
-			Ipv4Header ipv4Header = BuildHeader(sender, group, UdpL4Protocol::PROT_NUMBER, receivedPacket->GetSize(), 1, false);
-			SendPacketHBroadcastInterface(receivedPacket, ipv4Header, *out);
+			ipv4Header = BuildHeader(sender, group, UdpL4Protocol::PROT_NUMBER, receivedPacket->GetSize(), 1, false);
+			SendPacketHBroadcastInterface(copy, ipv4Header, *out);
 		}
 	}
 	else {
