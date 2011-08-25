@@ -1196,15 +1196,11 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	Ptr<Packet> receivedPacket;
 	Address sourceAddress;
 	receivedPacket = socket->RecvFrom (sourceAddress);
-	NS_LOG_DEBUG("Packet Size "<<receivedPacket->GetSize());
 	Ptr<Packet> copy = receivedPacket->Copy();
-	NS_LOG_DEBUG("Packet Size "<<copy->GetSize());
 	Ipv4Header ipv4Header;
 	copy->RemoveHeader(ipv4Header);
-	NS_LOG_DEBUG("Packet Size "<<copy->GetSize());
 	UdpHeader udpHeader;
 	copy->RemoveHeader(udpHeader);
-	NS_LOG_DEBUG("Packet Size "<<copy->GetSize());
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address sender = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
