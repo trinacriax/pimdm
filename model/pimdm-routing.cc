@@ -1251,7 +1251,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 					sgState->upstream->SG_PLT.Schedule();
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
 					sgState->upstream->SG_PLT.SetArguments(sgp, interface);
-					SendPruneBroadcast(GetReceivingInterface(RPF_prime(sgp.sourceIfaceAddr)), sgp);
+					uint32_t interface_prime = GetReceivingInterface(RPF_prime(sgp.sourceIfaceAddr));
+					SendPruneBroadcast(interface_prime, sgp);
 					}
 					break;
 				}
