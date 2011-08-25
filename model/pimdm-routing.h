@@ -621,14 +621,14 @@ private:
 	}
 
 	void ChangeSourceGroupState (uint32_t oldinterface, uint32_t newinterface, const SourceGroupState &ns) {
-		SourceGroupList *sgl = FindSourceGroupList (oldinterface);
+		SourceGroupList *sgl_old = FindSourceGroupList (oldinterface);
 		SourceGroupList *sgl_new = FindSourceGroupList (newinterface);
-		if (!sgl || !sgl_new)
+		if (!sgl_old || !sgl_new)
 			return;
-		for (SourceGroupList::iterator iter = sgl->begin (); iter != sgl->end (); iter++) {
+		for (SourceGroupList::iterator iter = sgl_old->begin (); iter != sgl_old->end (); iter++) {
 			if (*iter == ns) {
 				sgl_new->push_back (*iter);
-				sgl->erase (iter++);
+				sgl_old->erase (iter++);
 			}
 		}
 	}
