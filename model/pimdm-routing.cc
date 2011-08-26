@@ -1197,10 +1197,13 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	Address sourceAddress;
 	receivedPacket = socket->RecvFrom (sourceAddress);
 	Ptr<Packet> copy = receivedPacket->Copy();
+	// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
 	Ipv4Header ipv4Header;
 	copy->RemoveHeader(ipv4Header);
-	UdpHeader udpHeader;
-	copy->RemoveHeader(udpHeader);
+//	UdpHeader udpHeader;
+//	copy->RemoveHeader(udpHeader);
+	SocketAddressTag tag;
+	copy->RemovePacketTag(tag); // LOOK: it must be removed because will be added again by socket.
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address sender = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
@@ -1420,8 +1423,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	if(oiflist.size()){
 		// Forward packet on all interfaces in oiflist.
 		for(std::set<uint32_t>::iterator out = oiflist.begin(); out!=oiflist.end(); out++){
-			ipv4Header = BuildHeader(sender, group, UdpL4Protocol::PROT_NUMBER, receivedPacket->GetSize(), 1, false);
-			SendPacketHBroadcastInterface(copy, ipv4Header, *out);
+			Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
+			SendPacketHBroadcastInterface(fwdPacket, ipv4Header, *out);
 		}
 	}
 	else {
@@ -1735,38 +1738,26 @@ MulticastRoutingProtocol::SendPacketBroadcastInterface (Ptr<Packet> packet, cons
 void
 MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv4Header &ipv4Header, uint32_t interface)
 {
-//  NS_LOG_DEBUG("SRC: "<< GetLocalAddress(interface)<< ", PPP: "<< PIM_IP_PROTOCOL_NUM);
-  // Trace it
-  // Send it
-  if(!GetPimInterface(interface)) {
+	NS_LOG_FUNCTION(this);
+	// Trace it
+	// Send it
+	if(!GetPimInterface(interface)) {
 	  NS_LOG_DEBUG("Interface "<<interface<<" is PIM-DISABLED");
 	  return;
-  }
-  for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
-      m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
-    {
-	  NS_LOG_DEBUG("Local "<<i->second.GetLocal()<<", Broad "<<i->second.GetBroadcast()<<", Mask "<<i->second.GetMask());
+	}
+	for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
+	  m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
+	{
+//	  NS_LOG_DEBUG("Local "<<i->second.GetLocal()<<", Broad "<<i->second.GetBroadcast()<<", Mask "<<i->second.GetMask());
 	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
-		  Ptr<Packet> copy = packet->Copy();
-	      SocketAddressTag tag;
-	      copy->RemovePacketTag(tag);
-		  UdpHeader udpHeader;
-		  if(Node::ChecksumEnabled ())
-		    {
-		      udpHeader.EnableChecksums ();
-		      udpHeader.InitializeChecksum(ipv4Header.GetSource(), ipv4Header.GetDestination(), UdpL4Protocol::PROT_NUMBER);
-		    }
-		  udpHeader.SetSourcePort(PIM_PORT_NUMBER);
-		  udpHeader.SetDestinationPort(PIM_PORT_NUMBER);
-		  copy->AddHeader(udpHeader);
-		  copy->AddHeader(ipv4Header);
+		  packet->AddHeader(ipv4Header);
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
 //		  NS_LOG_DEBUG ("...sending Destination: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
-		  NS_LOG_DEBUG ("DataFwd: Node " << GetObject<Node> ()->GetId() << ", Dest "<< bcast <<", Ifc "<< interface<< ", Pid "<< copy->GetUid() <<", Psize "<<packet->GetSize());
-		  i->first->SendTo (copy, 0, InetSocketAddress (ipv4Header.GetDestination(), PIM_PORT_NUMBER));
-		  break;
+		  NS_LOG_DEBUG ("DataFwd: Node " << GetObject<Node> ()->GetId() << ", Dest "<< bcast <<", Ifc "<< interface<< ", Pid "<< packet->GetUid() <<", Psize "<<packet->GetSize());
+		  i->first->SendTo (packet, 0, InetSocketAddress (ipv4Header.GetDestination(), PIM_PORT_NUMBER));
+		  break; // Just to speedup and avoid the complete loop over all sockets.
 	  }
-  }
+	}
 }
 
 bool
