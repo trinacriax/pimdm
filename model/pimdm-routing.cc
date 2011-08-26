@@ -1285,7 +1285,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			//   store its own address and metric as the Assert Winner, and set
 			//   the Assert_Timer (AT(S, G, I) to Assert_Time, thereby initiating
 			//   the Assert negotiation for (S, G).
-				if(!IsDownstream(interface, sgp)) break;
+				if(!IsDownstream(interface, sgp)) NS_LOG_ERROR("Packet received on Upstream interface! Assert_NoInfo");
 				sgState->AssertState = Assert_Winner;
 				UpdateAssertWinner(sgState, interface);
 				PIMHeader msg;
