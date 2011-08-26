@@ -1217,7 +1217,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);//DEFAULT interface
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
 	Ipv4Address gateway = GetNextHop(sender);
-	NS_LOG_DEBUG("LOCAL: "<<GetLocalAddress(interface)<<" GRP: "<<group<<" SRC: "<< sender<< " Metric: "<< GetRouteMetric(interface,sender) <<" IFC: "<<interface<<" GW: "<<gateway<< " PacketSize "<<receivedPacket->GetSize());
+	NS_LOG_DEBUG("LOCAL: "<<GetLocalAddress(interface)<<" GRP: "<<group<<" SRC: "<< sender<< " Metric: "<< GetRouteMetric(interface,sender) <<" IFC: "<<interface<<" GW: "<<gateway<< " PacketSize "<<copy->GetSize());
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	if(!sgState){
 		InsertSourceGroupState(interface, sgp);
@@ -1412,15 +1412,14 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		olistCheck(sgp);
 //		GetPrinterList("olist", oiflist);
 		oiflist.erase(interface);
-		GetPrinterList("olist - RPF_interface", oiflist);
+//		GetPrinterList("olist - RPF_interface", oiflist);
 	}
 	else return;
-	NS_LOG_DEBUG("Data forwarding towards > "<< oiflist.size()<<" < interfaces");
-	GetPrinterList("oiflist", oiflist);
+//	NS_LOG_DEBUG("Data forwarding towards > "<< oiflist.size()<<" < interfaces");
+//	GetPrinterList("oiflist", oiflist);
 	if(oiflist.size()){
 		// Forward packet on all interfaces in oiflist.
 		for(std::set<uint32_t>::iterator out = oiflist.begin(); out!=oiflist.end(); out++){
-			NS_LOG_DEBUG("Packet Size "<<copy->GetSize());
 			ipv4Header = BuildHeader(sender, group, UdpL4Protocol::PROT_NUMBER, receivedPacket->GetSize(), 1, false);
 			SendPacketHBroadcastInterface(copy, ipv4Header, *out);
 		}
@@ -1736,7 +1735,7 @@ MulticastRoutingProtocol::SendPacketBroadcastInterface (Ptr<Packet> packet, cons
 void
 MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv4Header &ipv4Header, uint32_t interface)
 {
-  NS_LOG_DEBUG("SRC: "<< GetLocalAddress(interface)<< ", PPP: "<< PIM_IP_PROTOCOL_NUM);
+//  NS_LOG_DEBUG("SRC: "<< GetLocalAddress(interface)<< ", PPP: "<< PIM_IP_PROTOCOL_NUM);
   // Trace it
   // Send it
   if(!GetPimInterface(interface)) {
@@ -1746,7 +1745,7 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
       m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
     {
-	  NS_LOG_DEBUG(i->second.GetLocal()<<", "<<i->second.GetBroadcast()<<", "<<i->second.GetMask()<<", "<<i->second.IsSecondary());
+	  NS_LOG_DEBUG("Local "<<i->second.GetLocal()<<", Broad "<<i->second.GetBroadcast()<<", Mask "<<i->second.GetMask());
 	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
 		  Ptr<Packet> copy = packet->Copy();
 	      SocketAddressTag tag;
@@ -1762,7 +1761,8 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
 		  copy->AddHeader(udpHeader);
 		  copy->AddHeader(ipv4Header);
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-		  NS_LOG_DEBUG ("...sending Destination: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
+//		  NS_LOG_DEBUG ("...sending Destination: " << bcast << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
+		  NS_LOG_DEBUG ("DataFwd: Node " << GetObject<Node> ()->GetId() << ", Dest "<< bcast <<", Ifc "<< interface<< ", Pid "<< copy->GetUid() <<", Psize "<<packet->GetSize());
 		  i->first->SendTo (copy, 0, InetSocketAddress (ipv4Header.GetDestination(), PIM_PORT_NUMBER));
 		  break;
 	  }
