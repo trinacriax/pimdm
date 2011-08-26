@@ -76,7 +76,7 @@ static inline bool
 operator > (const AssertMetric &a, const AssertMetric &b){
 	bool result = (a.metricPreference < b.metricPreference);
 	result = result || ((a.metricPreference == b.metricPreference) && (a.routeMetric < b.routeMetric));
-	result = result || ((a.metricPreference == b.metricPreference) && (a.routeMetric == b.routeMetric) && !(a.IPAddress < b.IPAddress));
+	result = result || ((a.metricPreference == b.metricPreference) && (a.routeMetric == b.routeMetric) && (a.IPAddress != b.IPAddress) && !(a.IPAddress < b.IPAddress));
 	return result;
 }
 
