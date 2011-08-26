@@ -11,4 +11,7 @@ def build(bld):
     obj = bld.create_ns3_program('pim-example-3',
 			['point-to-point', 'internet', 'olsr', 'pimdm', 'applications', 'wifi'])
     obj.source = 'pim-example-3.cc'
+    obj = bld.create_ns3_program('pim-example-4',
+			['point-to-point', 'internet', 'olsr', 'pimdm', 'applications', 'wifi'])
+    obj.source = 'pim-example-4.cc'
 

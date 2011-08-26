@@ -19,9 +19,9 @@
 //
 // Network topology
 //
-//           s0    c4
+//           s0    c5
 //           |     |
-//           0 --- 5     c6
+//           0 --- 5     c7
 //          / \   /     /
 //         /   \ /     /
 // c1 --- 1     3 --- 7
@@ -29,8 +29,8 @@
 //          \ /   \     \
 //           2 --- 4 --- 6
 //           |     |     |
-//           c2    c3    c5
-//
+//        c2-|    c4    c6
+//        c3-|
 //
 // - all links are point-to-point links with indicated one-way BW/delay
 // - CBR/UDP flows from n0 to n4, and from n3 to n1
@@ -89,8 +89,7 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("UdpL4Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Packet", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-
-	//	LogComponentEnable ("DefaultSimulatorImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("DefaultSimulatorImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 #endif
 
 	// Set up some default values for the simulation.  Use the
@@ -122,16 +121,19 @@ main (int argc, char *argv[])
 	NodeContainer n3n7 = NodeContainer (routers.Get (3), routers.Get (7));
 	NodeContainer n4n6 = NodeContainer (routers.Get (4), routers.Get (6));
 	NodeContainer n6n7 = NodeContainer (routers.Get (6), routers.Get (7));
-	NodeContainer client;
-	client.Create (7);// here clients from node 4 to 7, 7 is the source
-	NodeContainer s0 = NodeContainer (client.Get (0), routers.Get(0));
-	NodeContainer c1 = NodeContainer (client.Get (1), routers.Get(1));
-	NodeContainer c2 = NodeContainer (client.Get (2), routers.Get(2));
-	NodeContainer c4 = NodeContainer (client.Get (3), routers.Get(4));
-	NodeContainer c5 = NodeContainer (client.Get (4), routers.Get(5));
-	NodeContainer c6 = NodeContainer (client.Get (5), routers.Get(6));
-	NodeContainer c7 = NodeContainer (client.Get (6), routers.Get(7));
 
+	NodeContainer client;
+	client.Create (7);// here clients: 8 - 14
+	NodeContainer c1 = NodeContainer (routers.Get(1), client.Get (0));
+	NodeContainer c2 = NodeContainer (routers.Get(2), client.Get (1), client.Get (2));
+	NodeContainer c4 = NodeContainer (routers.Get(4), client.Get (3));
+	NodeContainer c5 = NodeContainer (routers.Get(5), client.Get (4));
+	NodeContainer c6 = NodeContainer (routers.Get(6), client.Get (5));
+	NodeContainer c7 = NodeContainer (routers.Get(7), client.Get (6));
+
+	NodeContainer source;
+	source.Create(1);
+	NodeContainer s0 = NodeContainer (source.Get (0),routers.Get(0));
 
 	// connect all our nodes to a shared channel.
 	NS_LOG_INFO ("Build Topology.");
@@ -143,11 +145,22 @@ main (int argc, char *argv[])
 	NetDeviceContainer d0d3 = csma.Install (n0n3);
 	NetDeviceContainer d1d2 = csma.Install (n1n2);
 	NetDeviceContainer d2d3 = csma.Install (n2n3);
+	NetDeviceContainer d0d5 = csma.Install (n0n5);
+	NetDeviceContainer d3d5 = csma.Install (n3n5);
+	NetDeviceContainer d2d4 = csma.Install (n2n4);
+	NetDeviceContainer d3d4 = csma.Install (n3n4);
+	NetDeviceContainer d3d7 = csma.Install (n3n7);
+	NetDeviceContainer d4d6 = csma.Install (n4n6);
+	NetDeviceContainer d6d7 = csma.Install (n6n7);
 
 	NetDeviceContainer d1c1 = csma.Install (c1);
 	NetDeviceContainer d2c2 = csma.Install (c2);
-	NetDeviceContainer d3c3 = csma.Install (c3);
-	NetDeviceContainer d0c4 = csma.Install (c4);
+	NetDeviceContainer d4c4 = csma.Install (c4);
+	NetDeviceContainer d5c5 = csma.Install (c5);
+	NetDeviceContainer d6c6 = csma.Install (c6);
+	NetDeviceContainer d7c7 = csma.Install (c7);
+
+	NetDeviceContainer d0s0 = csma.Install (s0);
 
 	// Enable OLSR
 	NS_LOG_INFO ("Enabling OLSR Routing.");
@@ -168,25 +181,49 @@ main (int argc, char *argv[])
 	Ipv4ListRoutingHelper list2;
 	list2.Add (staticRouting, 0);
 	list2.Add (olsr, 10);
+
 	InternetStackHelper internet2;
 	internet2.SetRoutingHelper (list2);
 	internet2.Install (client);
+	internet2.Install (source);
 
 	// Later, we add IP addresses.
 	NS_LOG_INFO ("Assign IP Addresses.");
 	Ipv4AddressHelper ipv4;
-	ipv4.SetBase ("10.0.2.0", "255.255.255.0");
+	ipv4.SetBase ("10.0.1.0", "255.255.255.0");
 	Ipv4InterfaceContainer i0i2 = ipv4.Assign (d0d1);
 
-	ipv4.SetBase ("10.0.3.0", "255.255.255.0");
+	ipv4.SetBase ("10.0.2.0", "255.255.255.0");
 	Ipv4InterfaceContainer i0i3 = ipv4.Assign (d0d3);
 
-	ipv4.SetBase ("10.1.2.0", "255.255.255.0");
+	ipv4.SetBase ("10.0.3.0", "255.255.255.0");
 	Ipv4InterfaceContainer i1i2 = ipv4.Assign (d1d2);
 
-	ipv4.SetBase ("10.2.3.0", "255.255.255.0");
+	ipv4.SetBase ("10.0.4.0", "255.255.255.0");
 	Ipv4InterfaceContainer i2i3 = ipv4.Assign (d2d3);
 
+	ipv4.SetBase ("10.0.5.0", "255.255.255.0");
+	Ipv4InterfaceContainer i0i5 = ipv4.Assign (d0d5);
+
+	ipv4.SetBase ("10.0.6.0", "255.255.255.0");
+	Ipv4InterfaceContainer i3i5 = ipv4.Assign (d3d5);
+
+	ipv4.SetBase ("10.0.7.0", "255.255.255.0");
+	Ipv4InterfaceContainer i2i4 = ipv4.Assign (d2d4);
+
+	ipv4.SetBase ("10.0.8.0", "255.255.255.0");
+	Ipv4InterfaceContainer i3i4 = ipv4.Assign (d3d4);
+
+	ipv4.SetBase ("10.0.9.0", "255.255.255.0");
+	Ipv4InterfaceContainer i3i7 = ipv4.Assign (d3d7);
+
+	ipv4.SetBase ("10.0.10.0", "255.255.255.0");
+	Ipv4InterfaceContainer i4i6 = ipv4.Assign (d4d6);
+
+	ipv4.SetBase ("10.0.11.0", "255.255.255.0");
+	Ipv4InterfaceContainer i6i7 = ipv4.Assign (d6d7);
+
+	///clients
 
 	ipv4.SetBase ("10.1.1.0", "255.255.255.0");
 	Ipv4InterfaceContainer i1i1 = ipv4.Assign (d1c1);
@@ -194,25 +231,48 @@ main (int argc, char *argv[])
 	ipv4.SetBase ("10.2.2.0", "255.255.255.0");
 	Ipv4InterfaceContainer i2i2 = ipv4.Assign (d2c2);
 
-	ipv4.SetBase ("10.3.3.0", "255.255.255.0");
-	Ipv4InterfaceContainer i3i3 = ipv4.Assign (d3c3);
-
 	ipv4.SetBase ("10.4.4.0", "255.255.255.0");
-	Ipv4InterfaceContainer i4i4 = ipv4.Assign (d0c4);
+	Ipv4InterfaceContainer i4i4 = ipv4.Assign (d4c4);
+
+	ipv4.SetBase ("10.5.5.0", "255.255.255.0");
+	Ipv4InterfaceContainer i5i5 = ipv4.Assign (d5c5);
+
+	ipv4.SetBase ("10.6.6.0", "255.255.255.0");
+	Ipv4InterfaceContainer i6i6 = ipv4.Assign (d6c6);
+
+	ipv4.SetBase ("10.7.7.0", "255.255.255.0");
+	Ipv4InterfaceContainer i7i7 = ipv4.Assign (d7c7);
+
+	// source
+
+	ipv4.SetBase ("10.0.0.0", "255.255.255.0");
+	Ipv4InterfaceContainer i0i0 = ipv4.Assign (d0s0);
 
 	NS_LOG_INFO ("Configure multicasting.");
-	Ipv4Address multicastSource ("10.4.4.1");
-	Ipv4Address multicastSourceR ("10.4.4.2");
+	Ipv4Address multicastSource ("10.0.0.1");
+	Ipv4Address multicastSourceR ("10.0.0.2");
 	Ipv4Address multicastGroup ("225.1.2.4");
 
-	Ptr<Ipv4> ipv4A = client.Get(3)->GetObject<Ipv4> ();
+	Ptr<Ipv4> ipv4A = source.Get(0)->GetObject<Ipv4> ();
 	Ptr<Ipv4StaticRouting> staticRoutingA = staticRouting.GetStaticRouting (ipv4A);
 	staticRoutingA->AddHostRouteTo (multicastGroup, multicastSourceR, 1);//just one entry to set first hop from the source
 
 	std::stringstream ss;
 	// source,group,interface
 	ss<< multicastSource<< "," << multicastGroup << "," << "3";
-	Config::Set("NodeList/[0-3]/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
+	Config::Set("NodeList/1/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
+	Config::Set("NodeList/5/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
+	Config::Set("NodeList/6/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
+//	Config::Set("NodeList/7/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
+	ss.str("");
+	ss<< multicastSource<< "," << multicastGroup << "," << "4";
+	Config::Set("NodeList/0/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
+	Config::Set("NodeList/2/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
+	Config::Set("NodeList/4/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
+	ss.str("");
+	ss<< multicastSource<< "," << multicastGroup << "," << "5";
+	Config::Set("NodeList/3/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
+	ss.str("");
 
 	NS_LOG_INFO ("Create Source");
 	InetSocketAddress dst = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
@@ -223,7 +283,7 @@ main (int argc, char *argv[])
 	onoff.SetAttribute ("DataRate", DataRateValue (DataRate (15000)));
 	onoff.SetAttribute ("PacketSize", UintegerValue (1200));
 
-	ApplicationContainer apps = onoff.Install (client.Get (3));
+	ApplicationContainer apps = onoff.Install (source.Get (0));
 	apps.Start (Seconds (12.0));
 	apps.Stop (Seconds (28.0));
 
@@ -232,7 +292,7 @@ main (int argc, char *argv[])
 	apps = sink.Install (client);
 	apps.Start (Seconds (4.0));
 	apps.Stop (Seconds (30.0));
-	Config::ConnectWithoutContext ("/NodeList/[4-6]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&SinkRx));
+	Config::ConnectWithoutContext ("/NodeList/[8-14]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&SinkRx));
 
 //	AsciiTraceHelper ascii;
 //	csma.EnableAsciiAll (ascii.CreateFileStream ("simple-global-routing.tr"));
