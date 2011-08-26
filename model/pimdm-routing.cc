@@ -1235,13 +1235,6 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	}
 	RPFCheck(sgp, interface);
 	gateway = GetNextHop(sender);
-	/////////////////////////
-//	if(sgState->upstream->SG_SAT.IsRunning()){
-//		sgState->upstream->SG_SAT.Cancel();
-//		sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
-//		sgState->upstream->SG_SAT.SetArguments(sgp, interface);
-//		sgState->upstream->SG_SAT.Schedule();
-//	}
 	if(RPF_interface(sender) == interface){
 		switch (sgState->upstream->GraftPrune){
 			//The Upstream(S, G) state machine MUST transition to the Pruned (P)
@@ -1294,7 +1287,6 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 				PIMHeader msg;
 				ForgeAssertMessage(interface, msg, sgp);
 				Ptr<Packet> packetA = Create<Packet> ();
-//				SendPacketBroadcastInterface(packetA, msg, interface);
 				SendPacketPIMRouters(packetA, msg, interface);
 				if(sgState->SG_AT.IsRunning())
 					sgState->SG_AT.Cancel();
