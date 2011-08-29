@@ -609,12 +609,23 @@ private:
 		SourceGroupList *sgl_new = FindSourceGroupList (newinterface);
 		if (!sgl_old || !sgl_new)
 			return;
+		SourceGroupState *sg1,*sg2;
+		sg1=FindSourceGroupState(oldinterface,ns.SGPair);
+		sg2=FindSourceGroupState(newinterface,ns.SGPair);
 		for (SourceGroupList::iterator iter = sgl_old->begin (); iter != sgl_old->end (); iter++) {
-			if (*iter == ns) {
-				sgl_new->push_back (*iter);
+			if (iter->SGPair == ns.SGPair) {
+				InsertSourceGroupState(newinterface,ns.SGPair);
+				uint32_t rpf_i = RPF_interface (ns.SGPair.sourceIfaceAddr);
+				if(newinterface == rpf_i){
+					sg2=FindSourceGroupState(newinterface,ns.SGPair);
+					sg2->upstream = new UpstreamState;
+				}
 				sgl_old->erase (iter++);
 			}
 		}
+		sg1=FindSourceGroupState(oldinterface,ns.SGPair);
+		sg2=FindSourceGroupState(newinterface,ns.SGPair);
+		sg1=sg2;
 	}
 
 	NeighborhoodStatus* FindNeighborhoodStatus (uint32_t interface) {
