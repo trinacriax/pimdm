@@ -109,7 +109,7 @@ main (int argc, char *argv[])
 	// topologies, we could configure a node factory.
 	NS_LOG_INFO ("Create nodes.");
 	NodeContainer routers;
-	routers.Create (8);// here routes from node 0 to 3
+	routers.Create (8);// here routes from node 0 to 7
 	NodeContainer n0n1 = NodeContainer (routers.Get (0), routers.Get (1));
 	NodeContainer n0n3 = NodeContainer (routers.Get (0), routers.Get (3));
 	NodeContainer n1n2 = NodeContainer (routers.Get (1), routers.Get (2));
@@ -132,7 +132,7 @@ main (int argc, char *argv[])
 	NodeContainer c7 = NodeContainer (routers.Get(7), client.Get (6));
 
 	NodeContainer source;
-	source.Create(1);
+	source.Create(1);// source # 15
 	NodeContainer s0 = NodeContainer (source.Get (0),routers.Get(0));
 
 	// connect all our nodes to a shared channel.
