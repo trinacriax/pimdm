@@ -976,11 +976,11 @@ MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination, SourceGroup
 }
 
 void
-MulticastRoutingProtocol::ForgeGraftAckMessage (uint32_t interface, PIMHeader &msg, SourceGroupPair &sgp, Ipv4Address upstreamNeighbor)
+MulticastRoutingProtocol::ForgeGraftAckMessage (PIMHeader &msg, Ipv4Address upstreamNeighbor)
 {
 	NS_LOG_FUNCTION(this);
 	ForgeHeaderMessage(PIM_GRAFT_ACK, msg);
-	PIMHeader::JoinPruneMessage &jpMessage = msg.GetJoinPruneMessage();
+	PIMHeader::GraftAckMessage &jpMessage = msg.GetGraftAckMessage();
 	jpMessage.m_joinPruneMessage.m_upstreamNeighborAddr = ForgeEncodedUnicast(upstreamNeighbor);
 	jpMessage.m_joinPruneMessage.m_reserved = 0;
 	jpMessage.m_joinPruneMessage.m_numGroups = 0;
@@ -992,12 +992,12 @@ MulticastRoutingProtocol::SendGraftAckUnicast(SourceGroupPair &sgp, const Ipv4Ad
 {
 	NS_LOG_FUNCTION(this);
 	Ptr<Packet> packet = Create<Packet> ();
-	PIMHeader msg;
-	// Create the graft packet
-	ForgeGraftMessage(PIM_GRAFT_ACK, msg, sgp, destination);
 	PIMHeader::MulticastGroupEntry mge;
 	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
-	AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceIfaceAddr));
+	AddMulticastGroupSourceJoin(mge, ForgeEncodedSource(sgp.sourceIfaceAddr));
+	PIMHeader msg;
+	// Create the graft packet
+	ForgeGraftAckMessage(msg, destination);
 	AddMulticastGroupEntry(msg, mge);
 	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
 	// Send the packet toward the RPF(S)
