@@ -241,6 +241,7 @@ MulticastRoutingProtocol::Lookup (const Ipv4Address group, const Ipv4Address sou
 	// If there is no route to "dest", return NULL
 	if (gg == m_mrib.end ())
 		return false;
+	outEntry = gg->second;
 	std::map<Ipv4Address, MulticastEntry>::const_iterator gs = gg->second.mgroup.find(source);
 	if (gs == gg->second.mgroup.end())
 		return false;
