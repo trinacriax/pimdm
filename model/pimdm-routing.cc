@@ -973,18 +973,12 @@ MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination, SourceGroup
 	ForgeGraftMessage(PIM_GRAFT, msg, sgp, destination);
 	PIMHeader::MulticastGroupEntry mge;
 	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
-	AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceIfaceAddr));
+	AddMulticastGroupSourceJoin(mge, ForgeEncodedSource(sgp.sourceIfaceAddr));
 	AddMulticastGroupEntry(msg, mge);
 	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
 	// Send the packet toward the RPF(S)
 	uint32_t interface = GetReceivingInterface(destination);
-	SendPacketUnicast(packet, msg, sgp.sourceIfaceAddr);
-
-	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
-	sgState->upstream->SG_GRT.Cancel();//remove old events
-	sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::SendGraftUnicast, this);//re-schedule transmission
-	sgState->upstream->SG_GRT.SetArguments(sgp, interface);
-	sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));//set the timer
+	SendPacketUnicast(packet, msg, destination);
 }
 
 void
