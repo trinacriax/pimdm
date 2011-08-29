@@ -1758,7 +1758,6 @@ MulticastRoutingProtocol::SendPacketBroadcastInterface (Ptr<Packet> packet, cons
   SendPacketPIMRouters(packet,message,interface);
 }
 
-
 void
 MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv4Header &ipv4Header, uint32_t interface)
 {
@@ -2012,7 +2011,6 @@ MulticastRoutingProtocol::PTTimerExpire (SourceGroupPair &sgp, uint32_t interfac
 void
 MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp, uint32_t interface)
 {
-//	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	if(sgState->upstream->origination){
 	switch (sgState->upstream->origination) {
