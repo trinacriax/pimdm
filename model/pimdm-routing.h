@@ -118,7 +118,7 @@ namespace pimdm {
 struct MulticastEntry {
 	Ipv4Address sourceAddr; ///< source destination
 	Ipv4Address nextAddr; ///< source destination
-	uint32_t interface; ///< interface to source
+	int32_t interface; ///< interface to source
 	MulticastEntry () : // default values
 		sourceAddr (), nextAddr (), interface (0) {
 	}
