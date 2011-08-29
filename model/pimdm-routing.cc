@@ -1005,10 +1005,9 @@ MulticastRoutingProtocol::SendGraftAckUnicast(SourceGroupPair &sgp, const Ipv4Ad
 	// Create the graft packet
 	ForgeGraftAckMessage(msg, destination);
 	AddMulticastGroupEntry(msg, mge);
-	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
+	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\" Interface "<<GetReceivingInterface(destination));
 	// Send the packet toward the RPF(S)
-	uint32_t interface = GetReceivingInterface(destination);
-	SendPacketUnicast(packet, msg, sgp.sourceIfaceAddr);
+	SendPacketUnicast(packet, msg, destination);
 }
 
 void
