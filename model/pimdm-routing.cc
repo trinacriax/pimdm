@@ -1127,8 +1127,11 @@ MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, uint32_t interface)
 	NS_LOG_DEBUG("("<<sgp.sourceIfaceAddr<<", "<<sgp.groupMulticastAddr<<") I="<<interface);
 	Ptr<Ipv4Route> rpf_route = GetRoute(sgp.sourceIfaceAddr);
 	RoutingMulticastTable entry;
-	if(Lookup(sgp.groupMulticastAddr, entry) && rpf_route != NULL && entry.mgroup.find(sgp.sourceIfaceAddr) != entry.mgroup.end()) {
-		MulticastEntry &me = entry.mgroup[sgp.sourceIfaceAddr];
+	MulticastEntry me;
+	bool ret = Lookup(sgp.groupMulticastAddr,sgp.sourceIfaceAddr, entry, me) ;
+	ret = ret && rpf_route != NULL ;
+	ret = ret && entry.mgroup.find(sgp.sourceIfaceAddr) != entry.mgroup.end();
+	if(ret) {
 		uint32_t interfaceN = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
 		Ipv4Address gatewayN = rpf_route->GetGateway();
 		if(me.nextAddr == Ipv4Address::GetAny()){//now we now the RPF for the first time, just update it!
