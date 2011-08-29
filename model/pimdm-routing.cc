@@ -1390,7 +1390,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		//	is larger than the previously recorded TTL.  A router MAY record
 		//	the TTL based on an implementation specific sampling policy to
 		//	avoid examining the TTL of every multicast packet it handles.
-			if(sgState->upstream->SG_SRT.IsRunning())
+			if(sgState->upstream->SG_SAT.IsRunning())
 				sgState->upstream->SG_SAT.Cancel();
 			sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
 			sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
