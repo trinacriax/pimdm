@@ -956,11 +956,11 @@ MulticastRoutingProtocol::ForgeGraftMessage (uint32_t interface, PIMHeader &msg,
 {
 	NS_LOG_FUNCTION(this);
 	ForgeHeaderMessage(PIM_GRAFT, msg);
-	PIMHeader::JoinPruneMessage &jpMessage = msg.GetJoinPruneMessage();
-	jpMessage.m_joinPruneMessage.m_upstreamNeighborAddr = ForgeEncodedUnicast(upstreamNeighbor);
-	jpMessage.m_joinPruneMessage.m_reserved = 0;
-	jpMessage.m_joinPruneMessage.m_numGroups = 0;
-	jpMessage.m_joinPruneMessage.m_holdTime = Seconds(Hold_Time_Default);
+	PIMHeader::GraftMessage &graft = msg.GetGraftMessage();
+	graft.m_joinPruneMessage.m_upstreamNeighborAddr = ForgeEncodedUnicast(upstreamNeighbor);
+	graft.m_joinPruneMessage.m_reserved = 0;
+	graft.m_joinPruneMessage.m_numGroups = 0;
+	graft.m_joinPruneMessage.m_holdTime = Seconds(Hold_Time_Default);
 }
 
 void
