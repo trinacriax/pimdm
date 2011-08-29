@@ -19,18 +19,18 @@
 //
 // Network topology
 //
-//           s0    c5
-//           |     |
-//           0 --- 5     c7
-//          / \   /     /
-//         /   \ /     /
-// c1 --- 1     3 --- 7
-//         \   / \     \
-//          \ /   \     \
-//           2 --- 4 --- 6
-//           |     |     |
-//        c2-|    c4    c6
-//        c3-|
+//           s0    c5						 //	          s0    c5
+//           |     |						 //	          |     |
+//           0 --- 5     c7					 //	          0 --- 5     c7
+//          / \   /     /	 				 //          x \   /     /
+//         /   \ /     /					 //         x   \ /     /
+// c1 --- 1     3 --- 7		--> Link 0-1---> // c1 --- 1     3 --- 7
+//         \   / \     \	 	disabled	 //         \   / \     \
+//          \ /   \     \					 //          \ /   \     \
+//           2 --- 4 --- 6					 //           2 --- 4 --- 6
+//           |     |     |					 //           |     |     |
+//        c2-|    c4    c6				 	 //        c2-|    c4    c6
+//        c3-|								 //        c3-|
 //
 // - all links are point-to-point links with indicated one-way BW/delay
 // - CBR/UDP flows from n0 to n4, and from n3 to n1
