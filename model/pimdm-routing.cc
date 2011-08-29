@@ -569,6 +569,10 @@ void MulticastRoutingProtocol::DoStart ()
 	if(m_generationID==0)
 		m_generationID = UniformVariable().GetInteger(1, INT_MAX);///force value > 0
 	m_startTime = Simulator::Now();
+	m_rpfChecker.Cancel();
+	m_rpfChecker.SetDelay(Seconds(5));
+	m_rpfChecker.SetFunction(&MulticastRoutingProtocol::RPFCheckAll,this);
+	m_rpfChecker.Schedule();
 
 	NS_LOG_DEBUG ("Starting PIM_DM on node " << m_mainAddress);
 
@@ -1091,6 +1095,25 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 			break;
 		}
 	}
+}
+
+
+void
+MulticastRoutingProtocol::RPFCheckAll()
+{
+	NS_LOG_FUNCTION(this);
+	for(std::map<uint32_t, SourceGroupList>::iterator sgList = m_IfaceSourceGroup.begin();
+			sgList != m_IfaceSourceGroup.end();  sgList++){
+		uint32_t interface = sgList->first;
+		NS_LOG_DEBUG("Interface "<<interface<<" SGPairs: "<<sgList->second.size());
+		for(std::list<SourceGroupState>::iterator sgState = sgList->second.begin();
+				sgState != sgList->second.end(); sgState++){
+//				RPFCheck(sgState->SGPair, interface);
+			NS_ASSERT(interface < m_ipv4->GetNInterfaces());
+				Simulator::Schedule(Seconds(0),&MulticastRoutingProtocol::RPFCheck, this,sgState->SGPair, interface);
+		}
+		}
+	m_rpfChecker.Schedule();
 }
 
 void

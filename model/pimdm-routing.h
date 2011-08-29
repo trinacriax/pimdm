@@ -194,6 +194,8 @@ private:
 	pimdm::PIMHeader m_queuedMessages;
 	Timer m_queuedMessagesTimer; // timer for throttling outgoing messages
 
+	Timer m_rpfChecker;
+
 	TracedCallback <const PIMHeader &> m_rxPacketTrace;
 	TracedCallback <const PIMHeader &> m_txPacketTrace;
 
@@ -771,6 +773,7 @@ private:
 	void RPF_Changes (SourceGroupPair &sgp, uint32_t oldInterface, uint32_t newInterface);
 
 	void RPFCheck (SourceGroupPair sgp, uint32_t interface);
+	void RPFCheckAll ();
 
 	void olistCheck (SourceGroupPair &sgp);
 	void olistEmpty (SourceGroupPair &sgp);
