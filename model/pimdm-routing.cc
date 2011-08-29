@@ -1035,7 +1035,7 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair
 }
 
 void
-MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address target, SourceGroupPair &sgp)
+MulticastRoutingProtocol::SendStateRefreshMessage (uint32_t interface, Ipv4Address target, SourceGroupPair &sgp)
 {
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
@@ -1043,7 +1043,7 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 	PIMHeader msg;
 	ForgeStateRefresh(interface, sgp, msg);
 	NeighborhoodStatus *ns = FindNeighborhoodStatus(interface);
-	NS_ASSERT_MSG(ns!=NULL, "SendStateRefreshPair, invalid NeighborhoodStatus on "<< interface);
+	NS_ASSERT_MSG(ns!=NULL, "SendStateRefreshMessage, invalid NeighborhoodStatus on "<< interface);
 	Time tmp = ns->stateRefreshInterval;
 	msg.GetStateRefreshMessage().m_metricPreference = sgState->AssertWinner.metricPreference;
 	msg.GetStateRefreshMessage().m_metric = sgState->AssertWinner.routeMetric;
@@ -1072,7 +1072,7 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 			break;
 		}
 		default:
-			NS_LOG_ERROR("SendStateRefreshPair : Prune state not valid"<<sgState->PruneState);
+			NS_LOG_ERROR("SendStateRefreshMessage : Prune state not valid"<<sgState->PruneState);
 			break;
 	}
 	switch (sgState->AssertState){
@@ -1097,7 +1097,7 @@ MulticastRoutingProtocol::SendStateRefreshPair (uint32_t interface, Ipv4Address 
 			break;
 		}
 		default:{
-			NS_LOG_ERROR("SendStateRefreshPair: Assert State not valid"<<sgState->AssertState);
+			NS_LOG_ERROR("SendStateRefreshMessage: Assert State not valid"<<sgState->AssertState);
 			break;
 		}
 	}
@@ -1622,7 +1622,7 @@ MulticastRoutingProtocol::NeighborRestart (uint32_t interface, Ipv4Address neigh
 	SourceGroupList sgList = m_IfaceSourceGroup.find(interface)->second;
 	for(std::list<SourceGroupState>::iterator sgState = sgList.begin(); sgState!=sgList.end(); sgState++){
 		if(IsDownstream(interface, sgState->SGPair) && sgState->AssertState == Assert_Winner){
-		Simulator::Schedule (Seconds(delay.GetMicroSeconds()+1), &MulticastRoutingProtocol::SendStateRefreshPair, this, interface, neighbor, sgState->SGPair);
+		Simulator::Schedule (Seconds(delay.GetMicroSeconds()+1), &MulticastRoutingProtocol::SendStateRefreshMessage, this, interface, neighbor, sgState->SGPair);
 		break;
 		}
 		// If the neighbor is the upstream neighbor for an (S, G) entry, the router MAY cancel its
