@@ -741,8 +741,20 @@ void
 MulticastRoutingProtocol::AddMulticastGroupEntry (PIMHeader &msg, PIMHeader::MulticastGroupEntry &entry)
 {
 	NS_LOG_FUNCTION(this);
-	msg.GetJoinPruneMessage().m_joinPruneMessage.m_numGroups = 1 + msg.GetJoinPruneMessage().m_joinPruneMessage.m_numGroups;
-	msg.GetJoinPruneMessage().m_multicastGroups.push_back(entry);
+	switch(msg.GetType()){
+		case PIM_JP:
+			msg.GetJoinPruneMessage().m_joinPruneMessage.m_numGroups = 1 + msg.GetJoinPruneMessage().m_joinPruneMessage.m_numGroups;
+			msg.GetJoinPruneMessage().m_multicastGroups.push_back(entry);
+			break;
+		case PIM_GRAFT:
+			msg.GetGraftMessage().m_joinPruneMessage.m_numGroups = 1 + msg.GetGraftMessage().m_joinPruneMessage.m_numGroups;
+			msg.GetGraftMessage().m_multicastGroups.push_back(entry);
+			break;
+		case PIM_GRAFT_ACK:
+			msg.GetGraftAckMessage().m_joinPruneMessage.m_numGroups = 1 + msg.GetGraftAckMessage().m_joinPruneMessage.m_numGroups;
+			msg.GetGraftAckMessage().m_multicastGroups.push_back(entry);
+			break;
+	}
 }
 void
 MulticastRoutingProtocol::AddMulticastGroupSourceJoin (PIMHeader::MulticastGroupEntry &m_entry, PIMHeader::EncodedSource source)
