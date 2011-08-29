@@ -2039,11 +2039,12 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 			sgState->upstream->SG_SRT.SetArguments(sgp, interface);
 			sgState->upstream->SG_SRT.Schedule();
 			for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++){
+				if(IsLoopInterface(i)|| IsUpstream(i,sgp))continue;//skip loopback and upstream interface
 				PIMHeader refresh;//TODO Check to which interfaces should be sent
 				ForgeStateRefresh(i, sgp, refresh);
 				refresh.GetStateRefreshMessage().m_P = (IsDownstream(i, sgp) ? 1 : 0);
 				Ptr<Packet> packet = Create<Packet> ();
-				SendPacketBroadcast(packet, refresh);
+				SendPacketBroadcastInterface(packet, refresh, interface);
 			}
 			break;
 		}
