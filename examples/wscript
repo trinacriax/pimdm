@@ -17,3 +17,6 @@ def build(bld):
     obj = bld.create_ns3_program('pim-example-2-mobility',
 			['point-to-point', 'internet', 'olsr', 'pimdm', 'applications', 'wifi'])
     obj.source = 'pim-example-2-mobility.cc'
+    obj = bld.create_ns3_program('pim-example-graft',
+		['point-to-point', 'internet', 'olsr', 'pimdm', 'applications', 'wifi'])
+    obj.source = 'pim-example-graft.cc'
