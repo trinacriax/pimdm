@@ -225,26 +225,7 @@ public:
 
 	void register_member (std::string SGI);
 
-	void UpdateMRIB (){
-//		Ptr<Packet> receivedPacket;
-//		Address sourceAddress;
-//		InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
-//		Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4 ();
-//		Ipv4Address receiverIfaceAddr = m_socketAddresses[socket].GetLocal ();
-//		NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
-//		Ptr<Ipv4Route> route = 0;
-//		Ipv4Header hdr;
-//		hdr.SetDestination (senderIfaceAddr);
-//		Ptr<NetDevice> oif (0);
-//		Socket::SocketErrno err = Socket::ERROR_NOTERROR;
-//
-//		route = m_ipv4->GetRoutingProtocol ()->RouteOutput (receivedPacket,hdr, oif,err);
-//
-//		NS_LOG_DEBUG ("Sender "<< senderIfaceAddr<<", Destination "<< receiverIfaceAddr);
-//		if (route)
-//		NS_LOG_DEBUG (" (SRC: "<< route->GetSource ()<< ", GW: "<<route->GetGateway ()
-//				<<",DevID: "<< route->GetOutputDevice ()->GetIfIndex ()<<")");
-	}
+	void UpdateMRIB (){}
 
 
 private:

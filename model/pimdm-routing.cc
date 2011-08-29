@@ -1127,18 +1127,16 @@ MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, uint32_t interface)
 		uint32_t interfaceN = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
 		Ipv4Address gatewayN = rpf_route->GetGateway();
 		if(me.nextAddr == Ipv4Address::GetAny()){//now we now the RPF for the first time, just update it!
-			entry.mgroup[sgp.sourceIfaceAddr].nextAddr = gatewayN;
-			entry.mgroup[sgp.sourceIfaceAddr].interface = interfaceN;
+			UpdateEntry(sgp.groupMulticastAddr,sgp.sourceIfaceAddr,gatewayN,interfaceN);
 		}
 		if(me.interface != interfaceN){//RPF interface has changed
 			RPF_Changes(sgp, entry.mgroup[sgp.sourceIfaceAddr].interface, interfaceN);
-			entry.mgroup[sgp.sourceIfaceAddr].interface = interfaceN;
+			UpdateEntry(sgp.groupMulticastAddr,sgp.sourceIfaceAddr,me.nextAddr,interfaceN);
 		}
 		if(me.nextAddr != gatewayN){//RPF neighbor has changed
 			RPF_primeChanges(sgp);
-			entry.mgroup[sgp.sourceIfaceAddr].nextAddr = gatewayN;
+			UpdateEntry(sgp.groupMulticastAddr,sgp.sourceIfaceAddr,gatewayN,interfaceN);
 		}
-
 	}
 }
 
@@ -1371,7 +1369,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 				sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
 				sgState->upstream->SG_SRT.SetArguments(sgp, interface);
 				sgState->upstream->SG_SRT.Schedule();
-				sgState->SG_DATA_TTL = ipv4Header.GetTtl(); //TODO fix it with IP TTL -> actually it is always 1 for pimdm
+				sgState->SG_DATA_TTL = ipv4Header.GetTtl();
 			}
 			break;
 		}
@@ -1456,7 +1454,8 @@ MulticastRoutingProtocol::RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address
 			mgroup!=graft.m_multicastGroups.end(); mgroup++){
 		for(std::vector<PIMHeader::EncodedSource>::iterator msource = mgroup->m_joinedSourceAddrs.begin();
 					msource != mgroup->m_joinedSourceAddrs.end(); msource++){
-			if(interface == RPF_interface(msource->m_sourceAddress)){
+			uint32_t rpf_i = RPF_interface(msource->m_sourceAddress);
+			if(interface != RPF_interface(msource->m_sourceAddress)){
 				RecvGraftDownstream (graft, sender, receiver, *msource, mgroup->m_multicastGroupAddr);
 			}
 		}
@@ -1558,14 +1557,14 @@ MulticastRoutingProtocol::RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ip
 	if(GetLocalAddress(interface) != graftAck.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress) return;
 	for(std::vector<struct PIMHeader::MulticastGroupEntry>::iterator groups = graftAck.m_multicastGroups.begin();
 			groups != graftAck.m_multicastGroups.end(); groups++){
-		graftAck.Print(std::cout);
+//		graftAck.Print(std::cout);
 		for(std::vector<PIMHeader::EncodedSource>::const_iterator iterSource = groups->m_joinedSourceAddrs.begin();
 				iterSource!=groups->m_joinedSourceAddrs.end(); iterSource++){
 			SourceGroupPair sgp (iterSource->m_sourceAddress, groups->m_multicastGroupAddr.m_groupAddress);
 			SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
-			NS_LOG_DEBUG("Removing Timer GRAFT " << sgState->upstream->SG_GRT.GetDelayLeft().GetMilliSeconds());
-			sgp.sourceIfaceAddr.Print(std::cout);
-			sgp.groupMulticastAddr.Print(std::cout);
+			NS_LOG_DEBUG("Removing Timer GRAFT " << sgState->upstream->SG_GRT.GetDelayLeft().GetMilliSeconds()<<" ms");
+//			sgp.sourceIfaceAddr.Print(std::cout);
+//			sgp.groupMulticastAddr.Print(std::cout);
 			if(interface == RPF_interface(sender)){
 				switch (sgState->upstream->GraftPrune){
 				//The Upstream(S, G) state machine MUST transition to the Pruned (P)
@@ -1727,11 +1726,12 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, const PIMHeader 
         m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
       {
   	  if(route->GetSource() == i->second.GetLocal () ){
-  		  Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, packet->GetSize(), 1, false);
-  		  packet->AddHeader(ipv4Header);
-  		  NS_LOG_DEBUG ("...sending Node " << route->GetSource()<< " is sending packet "<<packet << " to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
-  		  i->first->SendTo (packet, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
-  		  break;//packet->RemoveHeader(ipv4Header);
+  		  Ptr<Packet> copy = packet->Copy();
+  		  Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, copy->GetSize(), 1, false);
+  		  copy->AddHeader(ipv4Header);
+  		  NS_LOG_DEBUG ("...sending Node " << route->GetSource()<< " is sending packet "<<copy << " to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
+  		  i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
+  		  break;
   	  }
 	}
 }
@@ -2308,9 +2308,10 @@ void
 MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, uint32_t oldInterface, uint32_t newInterface)
 {
 	bool couldAssert = CouldAssert(sgp.sourceIfaceAddr, sgp.groupMulticastAddr, oldInterface);
-	CouldAssertCheck(sgp.sourceIfaceAddr, sgp.groupMulticastAddr, newInterface, couldAssert);
-	ChangeSourceGroupState(oldInterface, newInterface, *FindSourceGroupState(oldInterface, sgp));
-	SourceGroupState *sgState = FindSourceGroupState(newInterface, sgp);
+	CouldAssertCheck(sgp.sourceIfaceAddr, sgp.groupMulticastAddr, oldInterface, couldAssert);
+	SourceGroupState *sgState = FindSourceGroupState(oldInterface, sgp);
+	ChangeSourceGroupState(oldInterface, newInterface, *sgState);
+	sgState = FindSourceGroupState(newInterface, sgp);
 	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
 			// nothing
@@ -2423,7 +2424,8 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp)
 				sgState->upstream->GraftPrune = GP_AckPending;
 				Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
 				SendGraftUnicast(destination, sgp);
-				sgState->upstream->SG_GRT.Cancel();
+				if(sgState->upstream->SG_GRT.IsRunning())
+					sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
 				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
 				sgState->upstream->SG_GRT.SetArguments(sgp, interface);
