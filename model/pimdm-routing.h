@@ -775,7 +775,11 @@ private:
 	std::set<uint32_t> olist (Ipv4Address source, Ipv4Address group) {
 		std::set<uint32_t> _olist = immediate_olist (source, group);
 //		GetPrinterList ("olist", _olist);
-		_olist.erase (RPF_interface (source));
+		int32_t nIface = m_ipv4->GetNInterfaces();
+//		std::cout<< "Interfaces "<<nIface<<"\n";
+		if(nIface > 2){
+			_olist.erase (RPF_interface (source));
+		}
 //		GetPrinterList ("olist-RPF interface",_olist);
 		return _olist;
 	}
