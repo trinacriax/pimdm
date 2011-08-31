@@ -891,9 +891,9 @@ MulticastRoutingProtocol::SendPruneBroadcast (uint32_t interface, SourceGroupPai
 	NS_LOG_FUNCTION(this);
 	PIMHeader::MulticastGroupEntry mge;
 	PIMHeader msg;
-	Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
-	if(target == Ipv4Address::GetAny()) return;
-	ForgeJoinPruneMessage(msg, target);
+	Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
+	if(destination == Ipv4Address::GetAny()) return;
+	ForgeJoinPruneMessage(msg, destination);
 	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
 	AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceIfaceAddr));
 	AddMulticastGroupEntry(msg, mge);
