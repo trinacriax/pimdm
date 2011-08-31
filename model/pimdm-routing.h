@@ -463,13 +463,10 @@ private:
 	void SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgpair);
 
 	void RecvData (Ptr<Socket> socket);
-	void SendPacketBroadcast (Ptr<Packet> packet, const PIMHeader &message);
 	void SendPacketUnicast (Ptr<Packet> packet, const PIMHeader &message, Ipv4Address destination);
-	void SendPacketBroadcastInterface (Ptr<Packet> packet, const PIMHeader &message, uint32_t interface);
-	void SendPacketBroadcastInterface (Ptr<Packet> packet, uint32_t interface);
 	void SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv4Header &ipv4Header, uint32_t interface);
 	void SendPacketPIMRouters (Ptr<Packet> packet, const PIMHeader &message);
-	void SendPacketPIMRouters (Ptr<Packet> packet, const PIMHeader &message, uint32_t interface);
+	void SendPacketPIMRoutersInterface (Ptr<Packet> packet, const PIMHeader &message, uint32_t interface);
 	//end
 	void NeighborRestart (uint32_t interface, Ipv4Address neighbor);
 

@@ -840,7 +840,8 @@ MulticastRoutingProtocol::SendHello (uint32_t interface)
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
 	ForgeHelloMessage(interface, msg);
-	SendPacketPIMRouters(packet, msg, interface);
+	//	SendPacketPIMRouters(packet, msg, interface);
+	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, interface);
 }
 
 void
@@ -852,7 +853,8 @@ MulticastRoutingProtocol::SendHelloReply (uint32_t interface, Ipv4Address destin
 	PIMHeader msg;
 	ForgeHelloMessage(interface, msg);
 	NS_LOG_DEBUG("Send Hello Reply to "<< destination);
-	SendPacketUnicast(packet, msg, destination);
+	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
+//	SendPacketUnicast(packet, msg, destination);
 }
 
 void
@@ -879,7 +881,8 @@ MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupP
 	AddMulticastGroupEntry(msg, mge);
 	msg.Print(std::cout);
 	Ptr<Packet> packet = Create<Packet> ();
-	SendPacketUnicast(packet, msg, destination);
+	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
+//	SendPacketUnicast(packet, msg, destination);
 }
 
 void
@@ -895,8 +898,9 @@ MulticastRoutingProtocol::SendPruneBroadcast (uint32_t interface, SourceGroupPai
 	AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceIfaceAddr));
 	AddMulticastGroupEntry(msg, mge);
 	Ptr<Packet> packet = Create<Packet> ();
-	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< target<<"\"");
-	SendPacketUnicast(packet, msg, target);
+	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
+	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
+//	SendPacketUnicast(packet, msg, target);
 }
 
 void
@@ -911,7 +915,8 @@ MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupP
 	AddMulticastGroupEntry(msg, mge);
 	msg.Print(std::cout);
 	Ptr<Packet> packet = Create<Packet> ();
-	SendPacketUnicast(packet, msg, destination);
+	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
+//	SendPacketUnicast(packet, msg, destination);
 }
 
 void
@@ -978,8 +983,8 @@ MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination, SourceGroup
 	AddMulticastGroupEntry(msg, mge);
 	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
 	// Send the packet toward the RPF(S)
-	uint32_t interface = GetReceivingInterface(destination);
-	SendPacketUnicast(packet, msg, destination);
+	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
+//	SendPacketUnicast(packet, msg, destination);
 }
 
 void
@@ -1006,9 +1011,10 @@ MulticastRoutingProtocol::SendGraftAckUnicast(SourceGroupPair &sgp, const Ipv4Ad
 	// Create the graft packet
 	ForgeGraftAckMessage(msg, destination);
 	AddMulticastGroupEntry(msg, mge);
-	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\" Interface "<<GetReceivingInterface(destination));
+	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination);
 	// Send the packet toward the RPF(S)
-	SendPacketUnicast(packet, msg, destination);
+	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
+//	SendPacketUnicast(packet, msg, destination);
 }
 
 void
@@ -1049,7 +1055,8 @@ MulticastRoutingProtocol::SendStateRefreshMessage (uint32_t interface, Ipv4Addre
 	msg.GetStateRefreshMessage().m_metric = sgState->AssertWinner.routeMetric;
 	msg.GetStateRefreshMessage().m_interval = (uint8_t)(tmp.GetSeconds());
 
-	SendPacketUnicast(packet, msg, target);
+//	SendPacketUnicast(packet, msg, target);
+	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, target);
 	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
 			// nothing
@@ -1317,7 +1324,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 				PIMHeader msg;
 				ForgeAssertMessage(interface, msg, sgp);
 				Ptr<Packet> packetA = Create<Packet> ();
-				SendPacketPIMRouters(packetA, msg, interface);
+//				SendPacketPIMRouters(packetA, msg, interface);
+				Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packetA, msg, interface);
 				if(sgState->SG_AT.IsRunning())
 					sgState->SG_AT.Cancel();
 				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
@@ -1336,7 +1344,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 				ForgeAssertMessage(interface, assert, sgp);
 				UpdateAssertWinner(sgState, interface);
 				Ptr<Packet> packetA = Create<Packet> ();
-				SendPacketPIMRouters(packetA, assert, interface);
+//				SendPacketPIMRouters(packetA, assert, interface);
+				Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packetA, assert, interface);
 				//The Assert winner for (S, G) must act as the local forwarder for
 				//  (S, G) on behalf of all downstream members.
 				if(sgState->SG_AT.IsRunning())
@@ -1436,8 +1445,6 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		oiflist = olist(sender, group);
 		olistCheck(sgp);
 //		GetPrinterList("olist", oiflist);
-		oiflist.erase(interface);
-//		GetPrinterList("olist - RPF_interface", oiflist);
 	}
 	else return;
 //	NS_LOG_DEBUG("Data forwarding towards > "<< oiflist.size()<<" < interfaces");
@@ -1446,7 +1453,9 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		// Forward packet on all interfaces in oiflist.
 		for(std::set<uint32_t>::iterator out = oiflist.begin(); out!=oiflist.end(); out++){
 			Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
-			SendPacketHBroadcastInterface(fwdPacket, ipv4Header, *out);
+//			SendPacketHBroadcastInterface(fwdPacket, ipv4Header, *out);
+			double delayMS = UniformVariable().GetValue()/1000.0;
+			Simulator::Schedule(Seconds(delayMS),&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, ipv4Header, *out);
 		}
 	}
 	else {
@@ -1539,7 +1548,8 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 				PIMHeader assertR;
 				ForgeAssertMessage(interface, assertR, sgp);
 				Ptr<Packet> packet = Create<Packet> ();
-				SendPacketBroadcastInterface(packet, assertR, interface);
+//				SendPacketPIMRoutersInterface(packet, assertR, interface);
+				Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, assertR, interface);
 				SendGraftAckUnicast(sgp, sender);
 			}
 			//An Assert loser that receives a Prune(S, G), Join(S, G), or
@@ -1680,7 +1690,8 @@ MulticastRoutingProtocol::SendPacketPIMRouters(Ptr<Packet> packet, const PIMHead
   // Send
   for(int i = 0; i <m_ipv4->GetNInterfaces();i++){
 	 if(IsLoopInterface(i) || !GetPimInterface(i)) continue;
-	 SendPacketPIMRouters(packet, message, i);
+	 //	 SendPacketPIMRoutersInterface(packet, message, i);
+	 Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, message, i);
   }
 }
 
@@ -1740,19 +1751,6 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, const PIMHeader 
   		  break;
   	  }
 	}
-}
-
-void
-MulticastRoutingProtocol::SendPacketBroadcast (Ptr<Packet> packet, const PIMHeader &message)
-{
-  NS_LOG_FUNCTION(this);
-  SendPacketPIMRouters(packet,message);
-}
-
-void
-MulticastRoutingProtocol::SendPacketBroadcastInterface (Ptr<Packet> packet, const PIMHeader &message, uint32_t interface)
-{
-  SendPacketPIMRouters(packet,message,interface);
 }
 
 void
@@ -1950,7 +1948,7 @@ MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 				PIMHeader msg;
 				ForgeJoinPruneMessage(msg, GetLocalAddress(interface));
 				Ptr<Packet> packet = Create<Packet> ();
-				SendPacketBroadcast(packet, msg);
+				SendPacketPIMRouters(packet, msg);
 			//	Its purpose is to add additional reliability so that if a Join that should have
 			//	overridden the Prune is lost locally on the LAN, the PruneEcho(S, G) may be received
 			//	and trigger a new Join message.
@@ -2040,7 +2038,8 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 				ForgeStateRefresh(i, sgp, refresh);
 				refresh.GetStateRefreshMessage().m_P = (IsDownstream(i, sgp) ? 1 : 0);
 				Ptr<Packet> packet = Create<Packet> ();
-				SendPacketBroadcastInterface(packet, refresh, interface);
+//				SendPacketPIMRoutersInterface(packet, refresh, interface);
+				Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, refresh, interface);
 			}
 			break;
 		}
@@ -2169,7 +2168,8 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp)
 			CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
 			AddMulticastGroupEntry(msg, mge);
 			Ptr<Packet> packet = Create<Packet> ();
-			SendPacketBroadcastInterface(packet, msg, GetReceivingInterface(destination));
+//			SendPacketPIMRoutersInterface(packet, msg, GetReceivingInterface(destination));
+			Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, GetReceivingInterface(destination));
 			sgState->upstream->SG_GRT.Cancel();
 			sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 
@@ -2364,7 +2364,8 @@ MulticastRoutingProtocol::CouldAssertCheck (Ipv4Address source, Ipv4Address grou
 			PIMHeader assertR;
 			ForgeAssertCancelMessage(interface, assertR, sgp);
 			Ptr<Packet> packet = Create<Packet> ();
-			SendPacketBroadcastInterface(packet, assertR, interface);
+//			SendPacketPIMRoutersInterface(packet, assertR, interface);
+			Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, assertR, interface);
 			//  cancel the Assert Timer (AT(S, G, I)),
 			if(sgState->SG_AT.IsRunning())
 				sgState->SG_AT.Cancel();
@@ -2700,7 +2701,8 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 				SourceGroupPair sgp(source.m_sourceAddress, group.m_groupAddress);
 				ForgeAssertMessage(interface, assertR, sgp);
 				Ptr<Packet> packet = Create<Packet> ();
-				SendPacketBroadcastInterface(packet, assertR, interface);
+//				SendPacketPIMRoutersInterface(packet, assertR, interface);
+				Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, assertR, interface);
 			}
 			//An Assert loser that receives a Prune(S, G), Join(S, G), or
 			//  Graft(S, G) directed to it initiates a new Assert negotiation so
@@ -2826,7 +2828,8 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp, Ip
 					SourceGroupPair sgp(source.m_sourceAddress, group.m_groupAddress);
 					ForgeAssertMessage(interface, assertR, sgp);
 					Ptr<Packet> packet = Create<Packet> ();
-					SendPacketBroadcastInterface(packet, assertR, interface);
+//					SendPacketPIMRoutersInterface(packet, assertR, interface);
+					Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, assertR, interface);
 				}
 				//An Assert loser that receives a Prune(S, G), Join(S, G), or
 				//  Graft(S, G) directed to it initiates a new Assert negotiation so
@@ -2864,7 +2867,8 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				PIMHeader assertR;
 				ForgeAssertMessage(interface, assertR, sgp);
 				Ptr<Packet> packet = Create<Packet> ();
-				SendPacketBroadcastInterface(packet, assertR, interface);
+//				SendPacketPIMRoutersInterface(packet, assertR, interface);
+				Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, assertR, interface);
 				if(sgState->SG_AT.IsRunning())
 					sgState->SG_AT.Cancel();
 				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
@@ -2903,7 +2907,8 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					AddMulticastGroupEntry(prune, mge);
 					prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 					Ptr<Packet> packet = Create<Packet> ();
-					SendPacketUnicast(packet, prune, sender);
+//					SendPacketUnicast(packet, prune, sender);
+					Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, prune, sender);
 					UpstreamStateMachine(sgp);
 				}
 			}
@@ -2921,7 +2926,8 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				assertR.GetAssertMessage().m_metricPreference = sgState->AssertWinner.metricPreference;
 				assertR.GetAssertMessage().m_metric = sgState->AssertWinner.routeMetric;
 				Ptr<Packet> packet = Create<Packet> ();
-				SendPacketBroadcastInterface(packet, assertR, interface);
+//				SendPacketPIMRoutersInterface(packet, assertR, interface);
+				Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, assertR, interface);
 				if(sgState->SG_AT.IsRunning())
 					sgState->SG_AT.Cancel();
 				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
@@ -2957,7 +2963,8 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				AddMulticastGroupEntry(prune, mge);
 				prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 				Ptr<Packet> packet = Create<Packet> ();
-				SendPacketUnicast(packet, prune, sender);
+				Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, prune, sender);
+//				SendPacketUnicast(packet, prune, sender);
 				UpstreamStateMachine(sgp);
 				}
 			break;
@@ -3010,7 +3017,8 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					AddMulticastGroupEntry(prune, mge);
 					prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 					Ptr<Packet> packet = Create<Packet> ();
-					SendPacketUnicast(packet, prune, sender);
+					Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, prune, sender);
+//					SendPacketUnicast(packet, prune, sender);
 				}
 			}
 			break;
@@ -3125,7 +3133,8 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					PIMHeader assertR;
 					ForgeAssertMessage(interface, assertR, sgp);
 					Ptr<Packet> packet = Create<Packet> ();
-					SendPacketBroadcastInterface(packet, assertR, interface);
+//					SendPacketPIMRoutersInterface(packet, assertR, interface);
+					Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, assertR, interface);
 					if(sgState->SG_AT.IsRunning())
 						sgState->SG_AT.Cancel();
 					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
@@ -3164,7 +3173,8 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 						msg.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 						AddMulticastGroupEntry(msg, mge);
 						Ptr<Packet> packet = Create<Packet> ();
-						SendPacketUnicast(packet, msg, refresh.m_originatorAddr.m_unicastAddress);
+						Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, refresh.m_originatorAddr.m_unicastAddress);
+//						SendPacketUnicast(packet, msg, refresh.m_originatorAddr.m_unicastAddress);
 						UpstreamStateMachine(sgp);
 					}
 				}
@@ -3183,7 +3193,8 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				assertR.GetAssertMessage().m_metricPreference = sgState->AssertWinner.metricPreference;
 				assertR.GetAssertMessage().m_metric = sgState->AssertWinner.routeMetric;
 				Ptr<Packet> packet = Create<Packet> ();
-				SendPacketBroadcastInterface(packet, assertR, interface);
+//				SendPacketPIMRoutersInterface(packet, assertR, interface);
+				Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, assertR, interface);
 				if(sgState->SG_AT.IsRunning())
 					sgState->SG_AT.Cancel();
 				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
@@ -3222,7 +3233,8 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 				AddMulticastGroupEntry(prune, mge);
 				Ptr<Packet> packet = Create<Packet> ();
-				SendPacketUnicast(packet, prune, refresh.m_originatorAddr.m_unicastAddress);
+				Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, prune, refresh.m_originatorAddr.m_unicastAddress);
+//				SendPacketUnicast(packet, prune, refresh.m_originatorAddr.m_unicastAddress);
 				UpstreamStateMachine(sgp);
 			}
 			break;
@@ -3274,7 +3286,8 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 					AddMulticastGroupEntry(prune, mge);
 					Ptr<Packet> packet = Create<Packet> ();
-					SendPacketUnicast(packet, prune, refresh.m_originatorAddr.m_unicastAddress);
+					Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, prune, refresh.m_originatorAddr.m_unicastAddress);
+//					SendPacketUnicast(packet, prune, refresh.m_originatorAddr.m_unicastAddress);
 				}
 			}
 			break;
@@ -3357,7 +3370,8 @@ MulticastRoutingProtocol::ForwardingStateRefresh(PIMHeader::StateRefreshMessage 
 		}
 		//transmit SRMP' on I;
 		Ptr<Packet> packet;
-		SendPacketBroadcastInterface(packet, refreshFRW, *i_nbrs);
+//		SendPacketPIMRoutersInterface(packet, refreshFRW, *i_nbrs);
+		Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, refreshFRW, *i_nbrs);
 	}
 }
 
