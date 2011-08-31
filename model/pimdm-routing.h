@@ -429,14 +429,14 @@ private:
 
 	void SendHello (uint32_t interface);
 	void SendHelloReply (uint32_t interface, Ipv4Address destination);
-	void RecvHello (pimdm::PIMHeader::HelloMessage &hello, Ipv4Address sender, Ipv4Address receiver);
+	void RecvHello (pimdm::PIMHeader::HelloMessage &hello, Ipv4Address sender, Ipv4Address receiver, int32_t interface);
 
  	void ForgeStateRefresh (uint32_t interface, SourceGroupPair &sgp, PIMHeader &msg);
 	void SendStateRefreshMessage (uint32_t interface, Ipv4Address target,SourceGroupPair &sgpair);
-	void RecvStateRefresh (PIMHeader::StateRefreshMessage &refresh,Ipv4Address sender, Ipv4Address receiver);
+	void RecvStateRefresh (PIMHeader::StateRefreshMessage &refresh,Ipv4Address sender, Ipv4Address receiver, int32_t interface);
 	void ForwardingStateRefresh (PIMHeader::StateRefreshMessage &refresh,Ipv4Address sender, Ipv4Address receiver);
 
-	void RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address sender,Ipv4Address receiver);
+	void RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address sender,Ipv4Address receiver, int32_t interface);
 
 	void RecvJoin (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
 	void RecvJoinUpstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
@@ -446,16 +446,16 @@ private:
 	void RecvPruneUpstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
 	void RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
 
-	void RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Address sender,Ipv4Address receiver);
+	void RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Address sender,Ipv4Address receiver, int32_t interface);
 
 	void SendGraftUnicast (Ipv4Address destination,SourceGroupPair pair);
 
-	void RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver);
-	void RecvGraftDownstream (PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group);
+	void RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver, int32_t interface);
+	void RecvGraftDownstream (PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group, int32_t interface);
 
 	void ForgeGraftAckMessage (PIMHeader &msg, Ipv4Address upstreamNeighbor);
 	void SendGraftAckUnicast (SourceGroupPair &pair, const Ipv4Address receiver);
-	void RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ipv4Address sender,Ipv4Address receiver);
+	void RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ipv4Address sender,Ipv4Address receiver, int32_t interface);
 
 	void SendPruneBroadcast (uint32_t interface, SourceGroupPair &sgpair);
 	void SendPruneUnicast (Ipv4Address destination, SourceGroupPair &sgpair);
@@ -508,7 +508,7 @@ private:
 	void ATTimerExpire (SourceGroupPair &sgp, uint32_t interface);
 	void PPTTimerExpire (SourceGroupPair &sgp, uint32_t interface);
 	void PTTimerExpire (SourceGroupPair &sgp, uint32_t interface);
-	void NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr);
+	void NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr, int32_t interface);
 	void SRTTimerExpire (SourceGroupPair &sgp, uint32_t interface);
 	void SATTimerExpire (SourceGroupPair &sgp, uint32_t interface);
 
