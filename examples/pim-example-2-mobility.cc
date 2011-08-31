@@ -16,7 +16,6 @@
 */
 
 //
-// Simple example of OLSR routing over some point-to-point links
 //
 // Network topology
 //
@@ -32,13 +31,6 @@
 //           |
 //           5
 //
-//
-// - all links are point-to-point links with indicated one-way BW/delay
-// - CBR/UDP flows from n0 to n4, and from n3 to n1
-// - UDP packet size of 210 bytes, with per-packet interval 0.00375 sec.
-//   (i.e., DataRate of 448,000 bps)
-// - DropTail queues
-// - Tracing of queues and packet receptions to file "simple-point-to-point-olsr.tr"
 
 #include <iostream>
 #include <fstream>
@@ -50,7 +42,7 @@
 #include "ns3/internet-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/wifi-module.h"
-#include "ns3/olsr-helper.h"
+#include "ns3/aodv-helper.h"
 #include "ns3/pimdm-helper.h"
 #include "ns3/pimdm-routing.h"
 #include "ns3/mobility-module.h"
@@ -74,14 +66,14 @@ main (int argc, char *argv[])
 #if 1
 //	LogComponentEnable ("SimpleGlobalRoutingExample", LOG_LEVEL_INFO);
 	LogComponentEnable ("PimExample2Mob", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("MacLow", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("MacLow", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("YansWifiPhy", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("InterferenceHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("YansWifiChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("OlsrRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("AodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
@@ -155,16 +147,16 @@ main (int argc, char *argv[])
 
 	NetDeviceContainer allNetDev = wifi.Install(wifiPhy, wifiMac, all);
 
-	// Enable OLSR
-	NS_LOG_INFO ("Enabling OLSR Routing.");
-	OlsrHelper olsr;
+	// Enable AODV
+	NS_LOG_INFO ("Enabling AODV Routing.");
+	AodvHelper aodv;
 	NS_LOG_INFO ("Enabling PIM-DM Routing.");
 	PimDmHelper pimdm;
 
 	Ipv4StaticRoutingHelper staticRouting;
 	Ipv4ListRoutingHelper list;
 	list.Add (staticRouting, 0);
-	list.Add (olsr, 10);
+	list.Add (aodv, 10);
 	list.Add (pimdm, 11);
 
 	InternetStackHelper internet;
@@ -173,12 +165,19 @@ main (int argc, char *argv[])
 
 	Ipv4ListRoutingHelper list2;
 	list2.Add (staticRouting, 0);
-	list2.Add (olsr, 10);
+	list2.Add (aodv, 10);
 
 	InternetStackHelper internet2;
 	internet2.SetRoutingHelper (list2);
 	internet2.Install (client);
-	internet2.Install (source);
+
+	Ipv4ListRoutingHelper list3;
+	list3.Add (staticRouting, 0);
+	list3.Add (aodv, 10);
+
+	InternetStackHelper internet3;
+	internet3.SetRoutingHelper (list3);
+	internet3.Install (source);
 
 	// Later, we add IP addresses.
 	NS_LOG_INFO ("Assign IP Addresses.");
@@ -193,7 +192,7 @@ main (int argc, char *argv[])
 
 	Ptr<Ipv4> ipv4A = source.Get(0)->GetObject<Ipv4> ();
 	Ptr<Ipv4StaticRouting> staticRoutingA = staticRouting.GetStaticRouting (ipv4A);
-	staticRoutingA->AddHostRouteTo (multicastGroup, multicastSourceR, 1);//just one entry to set first hop from the source
+	staticRoutingA->AddHostRouteTo (multicastGroup, multicastSourceR, 1, 1);//just one entry to set first hop from the source
 
 	std::stringstream ss;
 	// source,group,interface
