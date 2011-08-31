@@ -91,15 +91,6 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("Packet", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("DefaultSimulatorImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 #endif
-
-	// Set up some default values for the simulation.  Use the
-	Config::SetDefault ("ns3::OnOffApplication::PacketSize", UintegerValue (210));
-	Config::SetDefault ("ns3::OnOffApplication::DataRate", StringValue ("448kb/s"));
-
-	//DefaultValue::Bind ("DropTailQueue::m_maxPackets", 30);
-
-	// Allow the user to override any of the defaults and the above
-	// DefaultValue::Bind ()s at run-time, via command-line arguments
 	CommandLine cmd;
 	bool enableFlowMonitor = false;
 	cmd.AddValue ("EnableMonitor", "Enable Flow Monitor", enableFlowMonitor);
