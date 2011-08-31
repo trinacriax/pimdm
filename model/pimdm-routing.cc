@@ -109,7 +109,7 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
   Ptr<Ipv4RoutingProtocol> rp_Gw = (m_ipv4->GetRoutingProtocol ());
   Ptr<Ipv4ListRouting> lrp_Gw = DynamicCast<Ipv4ListRouting> (rp_Gw);
   Ptr<olsr::RoutingProtocol> olsr_Gw;
-//  Ptr<aodv::RoutingProtocol> aodv_Gw;
+  Ptr<aodv::RoutingProtocol> aodv_Gw;
 //  Ptr<dsdv::RoutingProtocol> dsdv_Gw;
   for (uint32_t i = 0; i < lrp_Gw->GetNRoutingProtocols ();  i++)
 	{
@@ -123,13 +123,13 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
 			  if(iter->destAddr!=Ipv4Address::GetAny() && iter->destAddr == source)return iter->distance;
 		  }
 		}
-//	  else if (DynamicCast<aodv::RoutingProtocol> (temp))
-//	  		{
+	  else if (DynamicCast<aodv::RoutingProtocol> (temp))
+	  		{
 //	  		  aodv_Gw = DynamicCast<aodv::RoutingProtocol> (temp);
 //	  		  aodv::RoutingTableEntry aodv_rte;
 //	  		  aodv_Gw->m_routingTable.LookupRoute(source,aodv_rte);
 //	  		  return aodv_rte.GetHop();
-//	  		}
+	  		}
 //	  else if (DynamicCast<dsdv::RoutingProtocol> (temp))
 //	  		{
 //		  	  dsdv_Gw = DynamicCast<dsdv::RoutingProtocol> (temp);
@@ -714,7 +714,7 @@ MulticastRoutingProtocol::RPF_interface(Ipv4Address source) {
 Ptr<Ipv4Route>
 MulticastRoutingProtocol::GetRoute(Ipv4Address destination) {
 	Ptr<Ipv4Route> route = 0;
-	Ptr<Packet> receivedPacket;
+	Ptr<Packet> receivedPacket = Create<Packet> (1000);
 	Ipv4Header hdr;
 	hdr.SetDestination(destination);
 	Ptr<NetDevice> oif (0);
