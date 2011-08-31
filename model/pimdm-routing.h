@@ -344,7 +344,7 @@ private:
 
 	bool UsesNonPimDmOutgoingInterface (const Ipv4RoutingTableEntry &route);
 
-	uint32_t GetReceivingInterface (Ipv4Address addr){
+	int32_t GetReceivingInterface (Ipv4Address addr){
 		uint32_t interface = -1;
 		if (!addr.IsMulticast ()){
 			Ptr<Ipv4Route> route = GetRoute (addr);
