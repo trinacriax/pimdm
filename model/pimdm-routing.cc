@@ -891,9 +891,9 @@ MulticastRoutingProtocol::SendPruneBroadcast (uint32_t interface, SourceGroupPai
 	NS_LOG_FUNCTION(this);
 	PIMHeader::MulticastGroupEntry mge;
 	PIMHeader msg;
-	Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
-	if(target == Ipv4Address::GetAny()) return;
-	ForgeJoinPruneMessage(msg, target);
+	Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
+	if(destination == Ipv4Address::GetAny()) return;
+	ForgeJoinPruneMessage(msg, destination);
 	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
 	AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceIfaceAddr));
 	AddMulticastGroupEntry(msg, mge);
@@ -929,8 +929,8 @@ MulticastRoutingProtocol::ForgeAssertMessage (uint32_t interface, PIMHeader &msg
 	assertMessage.m_sourceAddr =  ForgeEncodedUnicast(sgp.sourceIfaceAddr);
 	assertMessage.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);
 	assertMessage.m_R = 0;
-	assertMessage.m_metricPreference = (sgState==NULL) ? GetMetricPreference(GetReceivingInterface(sgp.sourceIfaceAddr)):sgState->AssertWinner.metricPreference;
-	assertMessage.m_metric = (sgState==NULL) ? GetRouteMetric(GetReceivingInterface(sgp.sourceIfaceAddr),sgp.sourceIfaceAddr): sgState->AssertWinner.routeMetric;
+	assertMessage.m_metricPreference = (sgState==NULL) ? GetMetricPreference(RPF_interface(sgp.sourceIfaceAddr)):sgState->AssertWinner.metricPreference;
+	assertMessage.m_metric = (sgState==NULL) ? GetRouteMetric(RPF_interface(sgp.sourceIfaceAddr),sgp.sourceIfaceAddr): sgState->AssertWinner.routeMetric;
 }
 
 void
@@ -1029,8 +1029,8 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair
 	Ipv4Address nextHop = GetNextHop(sgp.sourceIfaceAddr);
 	refresh.m_originatorAddr = ForgeEncodedUnicast(Ipv4Address(GetLocalAddress(interface)));
 	refresh.m_R = 0;
-	refresh.m_metricPreference = GetMetricPreference(GetReceivingInterface(sgp.sourceIfaceAddr));
-	refresh.m_metric = GetRouteMetric(GetReceivingInterface(sgp.sourceIfaceAddr),sgp.sourceIfaceAddr);
+	refresh.m_metricPreference = GetMetricPreference(RPF_interface(sgp.sourceIfaceAddr));
+	refresh.m_metric = GetRouteMetric(RPF_interface(sgp.sourceIfaceAddr),sgp.sourceIfaceAddr);
 	refresh.m_maskLength = IPV4_ADDRESS_SIZE;
 	refresh.m_ttl = (sgState->SG_DATA_TTL>0 ? sgState->SG_DATA_TTL : sgState->SG_SR_TTL);
 	refresh.m_P = (sgState->PruneState==Prune_Pruned?1:0);
@@ -1168,6 +1168,7 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
+	if(IsMyOwnAddress(senderIfaceAddr))return;
 	Ipv4Address receiverIfaceAddr = m_ipv4->GetAddress(interface, 0).GetLocal();
 	NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
     Ptr<Ipv4Route> route = GetRoute(senderIfaceAddr);
@@ -1243,6 +1244,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	copy->RemovePacketTag(tag); // LOOK: it must be removed because will be added again by socket.
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address sender = inetSourceAddr.GetIpv4 ();
+	if(IsMyOwnAddress(sender))return;
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
 	Ipv4Address group = m_socketAddresses[socket].GetLocal ();
 	NS_ASSERT (group != Ipv4Address ()|| group != Ipv4Address::GetAny());
@@ -1292,7 +1294,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 					sgState->upstream->SG_PLT.Schedule();
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
 					sgState->upstream->SG_PLT.SetArguments(sgp, interface);
-					uint32_t interface_prime = GetReceivingInterface(RPF_prime(sgp.sourceIfaceAddr));
+					uint32_t interface_prime = m_ipv4->GetInterfaceForDevice(GetRoute(RPF_prime(sgp.sourceIfaceAddr))->GetOutputDevice());
 					SendPruneBroadcast(interface_prime, sgp);
 					}
 					break;
@@ -1902,6 +1904,7 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 			Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
 			NeighborState dest(target, GetLocalAddress(GetReceivingInterface(target)));
 			NeighborState *ns = FindNeighborState(GetReceivingInterface(target), dest);
+			if(ns == NULL) break;
 			if(ns->neighborGraftRetry[0]<ns->neighborGraftRetry[1]){//increase counter retries
 				SendGraftUnicast(target, sgp);
 				sgState->upstream->SG_GRT.Cancel();
