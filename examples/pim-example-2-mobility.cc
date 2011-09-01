@@ -77,7 +77,7 @@ main (int argc, char *argv[])
 	LogComponentEnable ("AodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Node", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Ipv4EndPointDemux", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
@@ -133,21 +133,21 @@ main (int argc, char *argv[])
 	}
 
 	NS_LOG_INFO ("Build Topology.");
+	NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default();
+	wifiMac.SetType ("ns3::AdhocWifiMac");
+
 	YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default();
 	YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
 	wifiPhy.SetChannel(wifiChannel.Create());
 
 	WifiHelper wifi = WifiHelper::Default ();
 	wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
-
-	NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default();
-
-	Ssid ssid = Ssid ("russo");
-	wifiMac.SetType ("ns3::AdhocWifiMac",
-	  "Ssid", SsidValue (ssid));
+	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("OfdmRate6Mbps"), "RtsCtsThreshold", UintegerValue (0));
 
 	NetDeviceContainer allNetDev = wifi.Install(wifiPhy, wifiMac, all);
 
+
+	// INSTALL INTERNET STACK
 	// Enable AODV
 	NS_LOG_INFO ("Enabling AODV Routing.");
 	AodvHelper aodv;
@@ -155,30 +155,23 @@ main (int argc, char *argv[])
 	PimDmHelper pimdm;
 
 	Ipv4StaticRoutingHelper staticRouting;
-	Ipv4ListRoutingHelper list;
-	list.Add (staticRouting, 0);
-	list.Add (aodv, 10);
-	list.Add (pimdm, 11);
+	Ipv4ListRoutingHelper listRouters;
+	listRouters.Add (staticRouting, 0);
+	listRouters.Add (aodv, 10);
+	listRouters.Add (pimdm, 11);
 
-	InternetStackHelper internet;
-	internet.SetRoutingHelper (list);
-	internet.Install (routers);
+	InternetStackHelper internetRouters;
+	internetRouters.SetRoutingHelper (listRouters);
+	internetRouters.Install (routers);
 
-	Ipv4ListRoutingHelper list2;
-	list2.Add (staticRouting, 0);
-	list2.Add (aodv, 10);
+	Ipv4ListRoutingHelper listClients;
+	listClients.Add (aodv, 10);
+	listClients.Add (staticRouting, 11);
 
-	InternetStackHelper internet2;
-	internet2.SetRoutingHelper (list2);
-	internet2.Install (client);
-
-	Ipv4ListRoutingHelper list3;
-	list3.Add (staticRouting, 0);
-	list3.Add (aodv, 10);
-
-	InternetStackHelper internet3;
-	internet3.SetRoutingHelper (list3);
-	internet3.Install (source);
+	InternetStackHelper internetClients;
+	internetClients.SetRoutingHelper (listClients);
+	internetClients.Install (client);
+	internetClients.Install (source);
 
 	// Later, we add IP addresses.
 	NS_LOG_INFO ("Assign IP Addresses.");
@@ -230,9 +223,9 @@ main (int argc, char *argv[])
 	MobilityHelper mobilityR;
 	Ptr<ListPositionAllocator> positionAllocR = CreateObject<ListPositionAllocator> ();
 	positionAllocR->Add(Vector(250.0, 315.0, 0.0));// 0
-	positionAllocR->Add(Vector(195.0, 250.0, 0.0));// 1
+	positionAllocR->Add(Vector(190.0, 250.0, 0.0));// 1
 	positionAllocR->Add(Vector(250.0, 190.0, 0.0));// 2
-	positionAllocR->Add(Vector(305.0, 250.0, 0.0));// 3
+	positionAllocR->Add(Vector(320.0, 250.0, 0.0));// 3
 	mobilityR.SetPositionAllocator(positionAllocR);
 	mobilityR.SetMobilityModel("ns3::ConstantPositionMobilityModel");
 	mobilityR.Install(routers);
@@ -247,7 +240,7 @@ main (int argc, char *argv[])
 	MobilityHelper mobilityC;
 	Ptr<ListPositionAllocator> positionAllocC = CreateObject<ListPositionAllocator> ();
 	positionAllocC->Add(Vector(130.0, 250.0, 0.0));// 1C
-	positionAllocC->Add(Vector(250.0, 150.0, 0.0));// 2C
+	positionAllocC->Add(Vector(250.0, 120.0, 0.0));// 2C
 	positionAllocC->Add(Vector(380.0, 250.0, 0.0));// 3C
 	mobilityC.SetPositionAllocator(positionAllocC);
 	mobilityC.SetMobilityModel("ns3::ConstantPositionMobilityModel");
