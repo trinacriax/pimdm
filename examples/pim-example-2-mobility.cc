@@ -66,16 +66,17 @@ main (int argc, char *argv[])
 #if 1
 //	LogComponentEnable ("SimpleGlobalRoutingExample", LOG_LEVEL_INFO);
 	LogComponentEnable ("PimExample2Mob", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("MacLow", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("MacLow", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("MacRxMiddle", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("YansWifiPhy", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("InterferenceHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("YansWifiChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("AodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("AodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Node", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
@@ -187,12 +188,19 @@ main (int argc, char *argv[])
 
 	NS_LOG_INFO ("Configure multicasting.");
 	Ipv4Address multicastSource ("10.1.1.5");
-	Ipv4Address multicastSourceR ("10.1.1.1");
 	Ipv4Address multicastGroup ("225.1.2.4");
 
-	Ptr<Ipv4> ipv4A = source.Get(0)->GetObject<Ipv4> ();
-	Ptr<Ipv4StaticRouting> staticRoutingA = staticRouting.GetStaticRouting (ipv4A);
-	staticRoutingA->AddHostRouteTo (multicastGroup, multicastSourceR, 1, 1);//just one entry to set first hop from the source
+	// 1) Configure a (static) multicast route on ASNGW (multicastRouter)
+	Ptr<Node> multicastRouter = routers.Get (0); // The node in question
+	Ptr<NetDevice> inputIf = allNetDev.Get (0); // The input NetDevice
+
+	Ipv4StaticRoutingHelper multicast;
+	multicast.AddMulticastRoute (multicastRouter, multicastSource, multicastGroup, inputIf, allNetDev.Get(0));
+
+	// 2) Set up a default multicast route on the sender n0
+	Ptr<Node> sender = source.Get (0);
+	Ptr<NetDevice> senderIf = allNetDev.Get (4);
+	multicast.SetDefaultMulticastRoute (sender, senderIf);
 
 	std::stringstream ss;
 	// source,group,interface
