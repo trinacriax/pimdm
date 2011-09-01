@@ -393,7 +393,7 @@ bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
 	  // Consume self-originated packets
 	  if (IsMyOwnAddress (origin) == true)
 	    {
-	      return true;
+	      return false;
 	    }
 
 	  // Local delivery
