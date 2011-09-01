@@ -717,7 +717,7 @@ MulticastRoutingProtocol::GetRoute(Ipv4Address destination) {
 	Ptr<Packet> receivedPacket = Create<Packet> (1000);
 	Ipv4Header hdr;
 	hdr.SetDestination(destination);
-	Ptr<NetDevice> oif (0);
+	Ptr<NetDevice> oif = m_ipv4->GetNetDevice(1);
 	Socket::SocketErrno err = Socket::ERROR_NOTERROR;
 	return m_ipv4->GetRoutingProtocol()->RouteOutput(receivedPacket, hdr, oif, err);
 }
