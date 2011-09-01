@@ -120,7 +120,7 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
 		  olsr_Gw = DynamicCast<olsr::RoutingProtocol> (temp);
 		  std::vector<olsr::RoutingTableEntry> olsr_table = olsr_Gw->GetRoutingTableEntries();
 		  for(std::vector<olsr::RoutingTableEntry>::const_iterator iter = olsr_table.begin(); iter!=olsr_table.end(); iter++){
-			  if(iter->destAddr!=Ipv4Address::GetAny() && iter->destAddr == source)return iter->distance;
+			  if(iter->destAddr!=Ipv4Address::GetLoopback() && iter->destAddr == source)return iter->distance;
 		  }
 		}
 	  else if (DynamicCast<aodv::RoutingProtocol> (temp))
@@ -168,7 +168,7 @@ MulticastRoutingProtocol::register_member (std::string SGI){
 		m_LocalReceiver.find(sgp)->second.insert(interface);
 		NS_LOG_DEBUG("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
 	}
-	AddEntry(group,source,Ipv4Address::GetAny(),-1);//We got an entry from IGMP for this source-group
+	AddEntry(group,source,Ipv4Address::GetLoopback(),-1);//We got an entry from IGMP for this source-group
 }
 
 ///
@@ -590,7 +590,7 @@ void MulticastRoutingProtocol::DoStart ()
 		InetSocketAddress inetAddrP (ALL_PIM_ROUTERS4, PIM_PORT_NUMBER);
 		socketP->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm, this));
 		// Add ALL_PIM_ROUTERS4 multicast group, where the source is the node it self.
-		AddEntry(ALL_PIM_ROUTERS4, addr, Ipv4Address::GetAny(), i);
+		AddEntry(ALL_PIM_ROUTERS4, addr, Ipv4Address::GetLoopback(), i);
 		if (socketP->Bind (inetAddrP)){
 			NS_FATAL_ERROR ("Failed to bind() PIMDM socket");
 		}
@@ -726,7 +726,7 @@ Ipv4Address
 MulticastRoutingProtocol::GetNextHop(Ipv4Address destination)
 {
 	Ptr<Ipv4Route> route = GetRoute(destination);
-	return (route?route->GetGateway():Ipv4Address::GetAny());
+	return (route?route->GetGateway():Ipv4Address::GetLoopback());
 }
 
 void
@@ -892,7 +892,7 @@ MulticastRoutingProtocol::SendPruneBroadcast (uint32_t interface, SourceGroupPai
 	PIMHeader::MulticastGroupEntry mge;
 	PIMHeader msg;
 	Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
-	if(destination == Ipv4Address::GetAny()) return;
+	if(destination == Ipv4Address::GetLoopback()) return;
 	ForgeJoinPruneMessage(msg, destination);
 	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
 	AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceIfaceAddr));
@@ -1141,12 +1141,12 @@ MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, uint32_t interface)
 	ret = ret && entry.mgroup.find(sgp.sourceIfaceAddr) != entry.mgroup.end();
 	if(ret) {
 		uint32_t interfaceN = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
-		NS_ASSERT(interfaceN>0);
-		Ipv4Address gatewayN = rpf_route->GetGateway()==Ipv4Address::GetAny()?me.nextAddr:rpf_route->GetGateway();
-		if(me.nextAddr == Ipv4Address::GetAny()){//now we now the RPF for the first time, just update it!
+
+		Ipv4Address gatewayN = rpf_route->GetGateway()==Ipv4Address::GetLoopback()?me.nextAddr:rpf_route->GetGateway();
+		if(me.nextAddr == Ipv4Address::GetLoopback()){//now we now the RPF for the first time, just update it!
 			UpdateEntry(sgp.groupMulticastAddr,sgp.sourceIfaceAddr,gatewayN,interfaceN);
 		}
-		if(me.interface != interfaceN){//RPF interface has changed
+		if(me.nextAddr != Ipv4Address::GetLoopback() && me.interface != interfaceN){//RPF interface has changed
 			RPF_Changes(sgp, entry.mgroup[sgp.sourceIfaceAddr].interface, interfaceN);
 			UpdateEntry(sgp.groupMulticastAddr,sgp.sourceIfaceAddr,me.nextAddr,interfaceN);
 		}
@@ -1247,7 +1247,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	Ipv4Address sender = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
 	Ipv4Address group = m_socketAddresses[socket].GetLocal ();
-	NS_ASSERT (group != Ipv4Address ()|| group != Ipv4Address::GetAny());
+	NS_ASSERT (group != Ipv4Address ()|| group != Ipv4Address::GetLoopback());
 	SourceGroupPair sgp(sender, group);
 	Ptr<Ipv4Route> rpf_route = GetRoute(sender);
 	uint32_t interface = -1;
@@ -1258,7 +1258,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	else //the underlying routing protocol is not able to get the right interface for the sender address:we guess it is the main interface..
 		interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);//DEFAULT interface
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
-	Ipv4Address gateway = (rpf_route!=NULL?rpf_route->GetGateway():Ipv4Address::GetAny());
+	Ipv4Address gateway = (rpf_route!=NULL?rpf_route->GetGateway():Ipv4Address::GetLoopback());
 	NS_LOG_DEBUG("LOCAL: "<<GetLocalAddress(interface)<<" GRP: "<<group<<" SRC: "<< sender<< " Metric: "<< GetRouteMetric(interface,sender) <<" IFC: "<<interface<<" GW: "<<gateway<< " PacketSize "<<copy->GetSize());
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	if(!sgState){
@@ -1267,7 +1267,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		RoutingMulticastTable entry;
 		MulticastEntry mentry;
 		NS_ASSERT(Lookup(group,sender,entry,mentry));
-		if(mentry.nextAddr == Ipv4Address::GetAny() && mentry.interface < 0){
+		if(mentry.nextAddr == Ipv4Address::GetLoopback() && mentry.interface < 0){
 			UpdateEntry(group, sender, gateway, interface);
 		}
 	}
