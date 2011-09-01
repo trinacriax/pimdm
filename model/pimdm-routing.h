@@ -761,7 +761,7 @@ private:
 
 	void RPF_Changes (SourceGroupPair &sgp, uint32_t oldInterface, uint32_t newInterface);
 
-	void RPFCheck (SourceGroupPair sgp, uint32_t interface);
+	void RPFCheck (SourceGroupPair sgp, uint32_t interface, Ptr<Ipv4Route> rpf_route);
 	void RPFCheckAll ();
 
 	void olistCheck (SourceGroupPair &sgp);

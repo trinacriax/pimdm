@@ -1121,19 +1121,21 @@ MulticastRoutingProtocol::RPFCheckAll()
 		NS_LOG_DEBUG("Interface "<<interface<<" SGPairs: "<<sgList->second.size());
 		for(std::list<SourceGroupState>::iterator sgState = sgList->second.begin();
 				sgState != sgList->second.end(); sgState++){
+				Ptr<Ipv4Route> route;
 //				RPFCheck(sgState->SGPair, interface);
 			NS_ASSERT(interface < m_ipv4->GetNInterfaces());
-				Simulator::Schedule(Seconds(0),&MulticastRoutingProtocol::RPFCheck, this,sgState->SGPair, interface);
+				Simulator::Schedule(Seconds(0),&MulticastRoutingProtocol::RPFCheck, this,sgState->SGPair, interface, route);
 		}
 		}
 	m_rpfChecker.Schedule();
 }
 
 void
-MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, uint32_t interface)
+MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, uint32_t interface, Ptr<Ipv4Route> rpf_route)
 {
-	NS_LOG_DEBUG("("<<sgp.sourceIfaceAddr<<", "<<sgp.groupMulticastAddr<<") I="<<interface);
-	Ptr<Ipv4Route> rpf_route = GetRoute(sgp.sourceIfaceAddr);
+//	NS_LOG_DEBUG("("<<sgp.sourceIfaceAddr<<", "<<sgp.groupMulticastAddr<<") I="<<interface);
+	if(rpf_route ==NULL)
+		rpf_route = GetRoute(sgp.sourceIfaceAddr);
 	RoutingMulticastTable entry;
 	MulticastEntry me;
 	bool ret = Lookup(sgp.groupMulticastAddr,sgp.sourceIfaceAddr, entry, me) ;
@@ -1181,7 +1183,7 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
 	if(ipv4header.GetDestination().IsMulticast() && ipv4header.GetDestination() != Ipv4Address(ALL_PIM_ROUTERS4)) {
 		NS_LOG_ERROR("Received "<< ipv4header.GetDestination() <<" it should be captured by another callback.");
 		SourceGroupPair sgp (senderIfaceAddr, receiverIfaceAddr);
-		RPFCheck(sgp, interface);
+		RPFCheck(sgp, interface,route);
 	}
 	NS_ASSERT (senderIfacePort != PIM_PORT_NUMBER);
 	//Unlike PIM-SM, PIM-DM does not maintain a keepalive timer associated with each (S, G) route.
@@ -1271,7 +1273,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			UpdateEntry(group, sender, gateway, interface);
 		}
 	}
-	RPFCheck(sgp, interface);
+	RPFCheck(sgp, interface,rpf_route);
 	uint64_t packetID = receivedPacket->GetUid();
 
 	if(RPF_interface(sender) == interface){
