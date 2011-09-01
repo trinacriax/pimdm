@@ -852,7 +852,8 @@ MulticastRoutingProtocol::SendHelloReply (uint32_t interface, Ipv4Address destin
 	PIMHeader msg;
 	ForgeHelloMessage(interface, msg);
 	NS_LOG_DEBUG("Send Hello Reply to "<< destination);
-	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
+	double delayMS = UniformVariable().GetValue()/1000;
+	Simulator::Schedule(Seconds(delayMS),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
 //	SendPacketUnicast(packet, msg, destination);
 }
 
