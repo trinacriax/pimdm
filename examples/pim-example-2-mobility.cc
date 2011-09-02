@@ -36,18 +36,22 @@
 #include <fstream>
 #include <cassert>
 #include <string>
+#include <sstream>
 
 #include "ns3/core-module.h"
+#include "ns3/mbn-aodv-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/wifi-module.h"
+#include "ns3/mbn-aodv-helper.h"
 #include "ns3/aodv-helper.h"
+#include "ns3/olsr-helper.h"
 #include "ns3/pimdm-helper.h"
 #include "ns3/pimdm-routing.h"
 #include "ns3/mobility-module.h"
 #include "ns3/string.h"
-#include <sstream>
+
 
 using namespace ns3;
 
@@ -56,6 +60,12 @@ NS_LOG_COMPONENT_DEFINE ("PimExample2Mob");
 static void SinkRx (Ptr<const Packet> p, const Address &ad)
 {
 std::cout <<"Received Packet "<< p->GetSize() << " bytes from "<<InetSocketAddress::ConvertFrom (ad).GetIpv4()<< std::endl;
+}
+
+
+static void NodeStatusChanged(std::string source, Ptr<const mbn::RoutingProtocol> nodez) {
+	std::cout << "Node Status Changed: " << source << ", new status: "
+			<< nodez->GetLocalNodeStatus()<< std::endl;
 }
 
 int
@@ -72,9 +82,10 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("InterferenceHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("YansWifiChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("AodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
@@ -146,18 +157,35 @@ main (int argc, char *argv[])
 
 	NetDeviceContainer allNetDev = wifi.Install(wifiPhy, wifiMac, all);
 
+	int32_t routing = 3; //1) OLSR, 2) AODV, 3) MBN-AODV
 
 	// INSTALL INTERNET STACK
 	// Enable AODV
 	NS_LOG_INFO ("Enabling AODV Routing.");
+	OlsrHelper olsr;
 	AodvHelper aodv;
+	MbnAodvHelper mbnaodv;
+
 	NS_LOG_INFO ("Enabling PIM-DM Routing.");
 	PimDmHelper pimdm;
 
 	Ipv4StaticRoutingHelper staticRouting;
 	Ipv4ListRoutingHelper listRouters;
 	listRouters.Add (staticRouting, 0);
-	listRouters.Add (aodv, 10);
+	switch(routing){
+			case 1:{
+				listRouters.Add (olsr, 10);
+				break;
+			}
+			case 2:{
+				listRouters.Add (aodv, 10);
+				break;
+			}
+			case 3:{
+				listRouters.Add (mbnaodv, 10);
+				break;
+			}
+		}
 	listRouters.Add (pimdm, 11);
 
 	InternetStackHelper internetRouters;
@@ -165,7 +193,20 @@ main (int argc, char *argv[])
 	internetRouters.Install (routers);
 
 	Ipv4ListRoutingHelper listClients;
-	listClients.Add (aodv, 10);
+	switch(routing){
+		case 1:{
+			listClients.Add (olsr, 10);
+			break;
+		}
+		case 2:{
+			listClients.Add (aodv, 10);
+			break;
+		}
+		case 3:{
+			listClients.Add (mbnaodv, 10);
+			break;
+		}
+	}
 	listClients.Add (staticRouting, 11);
 
 	InternetStackHelper internetClients;
@@ -200,6 +241,25 @@ main (int argc, char *argv[])
 	ss<< multicastSource<< "," << multicastGroup << "," << "1";
 	Config::Set("NodeList/[0-3]/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
 
+	switch(routing){
+			case 1:{
+				break;
+			}
+			case 2:{
+				break;
+			}
+			case 3:{
+				Config::Set("/NodeList/[0-3]/$ns3::mbn::RoutingProtocol/localWeightFunction",EnumValue(mbn::W_NODE_RND));
+				Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
+				Config::Set("/NodeList/0/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(10));
+				Config::Set("/NodeList/1/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(6));
+				Config::Set("/NodeList/2/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(7));
+				Config::Set("/NodeList/3/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(7));
+				std::cout << "Starting simulation for " << totalTime << " s ...\n";
+				break;
+			}
+		}
+
 	NS_LOG_INFO ("Create Source");
 	InetSocketAddress dst = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
 	Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
@@ -222,7 +282,7 @@ main (int argc, char *argv[])
 
 	MobilityHelper mobilityR;
 	Ptr<ListPositionAllocator> positionAllocR = CreateObject<ListPositionAllocator> ();
-	positionAllocR->Add(Vector(250.0, 315.0, 0.0));// 0
+	positionAllocR->Add(Vector(250.0, 310.0, 0.0));// 0
 	positionAllocR->Add(Vector(190.0, 250.0, 0.0));// 1
 	positionAllocR->Add(Vector(250.0, 190.0, 0.0));// 2
 	positionAllocR->Add(Vector(320.0, 250.0, 0.0));// 3
