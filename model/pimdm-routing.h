@@ -649,7 +649,7 @@ private:
 		NeighborList *list = &status->neighbors;
 		for (NeighborList::iterator iter = list->begin (); iter != list->end (); iter++) {
 			NeighborState *no = & (*iter);
-			if (*iter == ns)//non li confronta
+			if (*iter == ns)
 				return & (*iter);
 		}
 		return NULL;
