@@ -177,6 +177,28 @@ MulticastRoutingProtocol::register_member (std::string SGI){
 		NS_LOG_DEBUG("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
 	}
 	AddEntry(group,source,Ipv4Address::GetLoopback(),-1);//We got an entry from IGMP for this source-group
+	int32_t sources = m_mrib.find(group)->second.mgroup.size();
+	NS_LOG_DEBUG("MainAddr = "<<  m_mainAddress << ", Group "<<group<<", #Source: "<< sources);
+	if(group == ALL_PIM_ROUTERS4 || sources>1) return;
+	for(uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++){
+		if(IsLoopInterface(i))
+			continue;
+		///Registering endpoint for that address... by creating a socket to listen only on this interface
+		Ptr<Socket> socketG = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
+		socketG->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
+		socketG->SetAttribute("IpHeaderInclude", BooleanValue(true));
+		socketG->SetAllowBroadcast (true);
+		InetSocketAddress inetAddr (group, PIM_PORT_NUMBER);
+		socketG->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvData, this));
+		if (socketG->Bind (inetAddr)){
+			NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<group);
+		}
+		socketG->BindToNetDevice (m_ipv4->GetNetDevice (i));
+	//			m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0); //PROBLEM; does not broadcast onlocal IP, takes the other group-interface
+		Ipv4InterfaceAddress mgroup(group, Ipv4Mask::GetOnes());
+		m_socketAddresses[socketG] = mgroup;
+		NS_LOG_DEBUG("Registering Group Socket = "<<socketG<< " Device = "<<socketG->GetBoundNetDevice()<< ", SocketAddr = "<<mgroup.GetLocal()<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
+	}
 }
 
 ///
@@ -547,27 +569,6 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t i, Ipv4InterfaceAddress add
 	Simulator::Schedule (rndHello, &MulticastRoutingProtocol::HelloTimerExpire, this, i);
 	ns->hello_timer.SetDelay(m_helloTime);
 	NS_LOG_DEBUG ("Generating SG List("<<i<<") HT="<<m_helloTime.GetSeconds()<<"s, Starting "<< rndHello.GetSeconds()<<"s");
-
-	for(std::map<Ipv4Address, RoutingMulticastTable>::iterator group = m_mrib.begin(); group!=m_mrib.end(); group++){
-		Ipv4Address groupIP = group->second.groupAddr;
-		if(groupIP == ALL_PIM_ROUTERS4) continue;
-		NS_LOG_DEBUG("D("<<i<<") = " << m_ipv4->GetNetDevice (i)<<", LocalAddr = "<<  addr<< ", Group "<<groupIP<<", #Source: "<< group->second.mgroup.size());
-		///Registering endpoint for that address... by creating a socket to listen only on this interface
-		Ptr<Socket> socketG = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
-		socketG->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
-		socketG->SetAttribute("IpHeaderInclude", BooleanValue(true));
-		socketG->SetAllowBroadcast (true);
-		InetSocketAddress inetAddr (groupIP, PIM_PORT_NUMBER);
-		socketG->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvData, this));
-		if (socketG->Bind (inetAddr)){
-			NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<groupIP);
-		}
-		socketG->BindToNetDevice (m_ipv4->GetNetDevice (i));
-//			m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0); //PROBLEM; does not broadcast onlocal IP, takes the other group-interface
-		Ipv4InterfaceAddress mgroup(groupIP, Ipv4Mask::GetOnes());
-		m_socketAddresses[socketG] = mgroup;
-		NS_LOG_DEBUG("Registering Group Socket = "<<socketG<< " Device = "<<socketG->GetBoundNetDevice()<< ", LocalAddr = "<<mgroup.GetLocal()<<" Destination = "<<  groupIP<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
-	}
 }
 
 void
