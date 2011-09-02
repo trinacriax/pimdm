@@ -2,20 +2,20 @@
 
 def build(bld):
     obj = bld.create_ns3_program('pim-example-1',
-			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'wifi'])
+			['point-to-point', 'internet', 'olsr', 'mbn-aodv', 'aodv', 'pimdm', 'applications', 'wifi'])
     obj.source = 'pim-example-1.cc'
     obj = bld.create_ns3_program('pim-example-2',
-			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'wifi'])
+			['point-to-point', 'internet', 'olsr', 'mbn-aodv', 'aodv', 'pimdm', 'applications', 'wifi'])
     obj.source = 'pim-example-2.cc'
     obj = bld.create_ns3_program('pim-example-3',
-			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'wifi'])
+			['point-to-point', 'internet', 'olsr', 'mbn-aodv', 'aodv', 'pimdm', 'applications', 'wifi'])
     obj.source = 'pim-example-3.cc'
     obj = bld.create_ns3_program('pim-example-4',
-			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'wifi'])
+			['point-to-point', 'internet', 'olsr', 'mbn-aodv', 'aodv', 'pimdm', 'applications', 'wifi'])
     obj.source = 'pim-example-4.cc'
     obj = bld.create_ns3_program('pim-example-2-mobility',
-			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'wifi'])
+			['point-to-point', 'internet', 'olsr', 'mbn-aodv', 'aodv', 'pimdm', 'applications', 'wifi'])
     obj.source = 'pim-example-2-mobility.cc'
     obj = bld.create_ns3_program('pim-example-graft',
-			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'wifi'])
+			['point-to-point', 'internet', 'olsr', 'mbn-aodv', 'aodv', 'pimdm', 'applications', 'wifi'])
     obj.source = 'pim-example-graft.cc'
