@@ -673,16 +673,16 @@ void MulticastRoutingProtocol::DoStart ()
 void
 MulticastRoutingProtocol::HelloTimerExpire (uint32_t i)
 {
-	Ipv4Address loopback ("127.0.0.1");
 	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
-	  if (addr == loopback)
+	  if (addr == Ipv4Address::GetLoopback())
 		  return;
-	  NS_LOG_DEBUG("Interface "<< i<< " [ E "<<m_IfaceNeighbors.find(i)->second.hello_timer.IsExpired() <<
-			  ", R " << m_IfaceNeighbors.find(i)->second.hello_timer.IsRunning()<<", S:" << m_IfaceNeighbors.find(i)->second.hello_timer.IsSuspended()<<"].");
-	  if(!m_IfaceNeighbors.find(i)->second.hello_timer.IsRunning()){
-		  m_IfaceNeighbors.find(i)->second.hello_timer.SetFunction(&MulticastRoutingProtocol::HelloTimerExpire, this);
-		  m_IfaceNeighbors.find(i)->second.hello_timer.SetArguments(i);
-		  m_IfaceNeighbors.find(i)->second.hello_timer.Schedule();
+	  Timer &nHelloTimer = m_IfaceNeighbors.find(i)->second.hello_timer;
+	  NS_LOG_DEBUG("Interface "<< i<< " [ E "<< nHelloTimer.IsExpired() <<
+			  ", R " <<nHelloTimer.IsRunning()<<", S:" << nHelloTimer.IsSuspended()<<"].");
+	  if(!nHelloTimer.IsRunning()){
+		  nHelloTimer.SetFunction(&MulticastRoutingProtocol::HelloTimerExpire, this);
+		  nHelloTimer.SetArguments(i);
+		  nHelloTimer.Schedule();
 	  }
 	  SendHello (i);
 }
