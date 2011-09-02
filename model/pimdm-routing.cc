@@ -1882,8 +1882,14 @@ MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 			//  A PruneEcho(S, G) MUST be sent on I if I has more than one PIM neighbor.
 			//	A PruneEcho(S, G) is simply a Prune(S, G) message
 			//	multicast by the upstream router to a LAN, with itself as the Upstream Neighbor.
+				uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
+				PIMHeader::MulticastGroupEntry mge;
+				AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceIfaceAddr));
 				PIMHeader msg;
+				Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
 				ForgeJoinPruneMessage(msg, GetLocalAddress(interface));
+				CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
+				AddMulticastGroupEntry(msg, mge);
 				Ptr<Packet> packet = Create<Packet> ();
 				SendPacketPIMRouters(packet, msg);
 			//	Its purpose is to add additional reliability so that if a Join that should have
@@ -1891,7 +1897,7 @@ MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 			//	and trigger a new Join message.
 			//	TODO: A PruneEcho(S, G) is OPTIONAL on an interface with only one PIM neighbor.
 			//	TODO: In addition, the router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
-			UpstreamStateMachine(sgp);
+				UpstreamStateMachine(sgp);
 			}
 			break;
 		}
