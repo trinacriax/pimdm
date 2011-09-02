@@ -2407,7 +2407,8 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp)
 			//	The Upstream(S, G) state machine MUST transition to the Pruned (P) state.
 			//	The GraftRetry Timer (GRT(S, G)) MUST be canceled.
 				sgState->upstream->GraftPrune = GP_Pruned;
-				sgState->upstream->SG_GRT.Cancel();
+				if(sgState->upstream->SG_GRT.IsRunning())
+					sgState->upstream->SG_GRT.Cancel();
 			}
 			if(outlist.size()>0 && sgp.sourceIfaceAddr != GetNextHop(sgp.sourceIfaceAddr)){
 				//RPF'(S) Changes AND olist(S, G) does not become NULL AND S NOT directly connected
@@ -2416,8 +2417,11 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp)
 				//	A Graft MUST be unicast to the new RPF'(S) and the GraftRetry Timer (GRT(S, G)) reset to Graft_Retry_Period.
 				Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
 				SendGraftUnicast(target, sgp);//TODO check
-				sgState->upstream->SG_GRT.Cancel();
+				if(sgState->upstream->SG_GRT.IsRunning())
+					sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
+				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
+				sgState->upstream->SG_GRT.SetArguments(sgp, interface, destination);
 				sgState->upstream->SG_GRT.Schedule();
 			}
 			break;
