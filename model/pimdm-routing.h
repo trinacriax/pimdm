@@ -199,6 +199,8 @@ private:
 	Time m_rpfCheck;
 	Timer m_rpfChecker;
 
+	Time m_LanDelay;
+
 	TracedCallback <const PIMHeader &> m_rxPacketTrace;
 	TracedCallback <const PIMHeader &> m_txPacketTrace;
 

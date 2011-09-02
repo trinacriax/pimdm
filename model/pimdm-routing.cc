@@ -95,6 +95,10 @@ MulticastRoutingProtocol::GetTypeId (void)
 					TimeValue (Seconds (RPF_CHECK)),
 					MakeTimeAccessor (&MulticastRoutingProtocol::m_rpfCheck),
 					MakeTimeChecker ())
+	.AddAttribute ("LanPruneDelay", "LAN prune delay set by administrator.",
+					TimeValue (Seconds (Propagation_Delay)),
+					MakeTimeAccessor (&MulticastRoutingProtocol::m_LanDelay),
+					MakeTimeChecker ())
 	.AddTraceSource ("Rx", "Receive PIM packet.",
 					 MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxPacketTrace))
 	.AddTraceSource ("Tx", "Send PIM packet.",
