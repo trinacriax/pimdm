@@ -2368,6 +2368,18 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp)
 			if(outlist.size()>0 && sgp.sourceIfaceAddr != GetNextHop(sgp.sourceIfaceAddr)){
 				sgState->upstream->GraftPrune = GP_AckPending;
 				SendGraftUnicast(destination, sgp);
+				NeighborState tmp(destination, GetLocalAddress(interface));
+				NeighborState *ns = FindNeighborState(interface, tmp);
+				if(!ns){// RPF_Prime changed with a new neighbor we didn't know before...
+					InsertNeighborState(interface, tmp);//add it and send a Hello...
+					ns = FindNeighborState(interface, tmp);
+					NeighborhoodStatus *nst = FindNeighborhoodStatus(interface);
+					// If a Hello message is received from a new neighbor, the receiving router SHOULD send its own Hello message
+					//    after a random delay between 0 and Triggered_Hello_Delay.
+					Time delay = Seconds(UniformVariable().GetValue(0, Triggered_Hello_Delay));
+					Simulator::Schedule (delay, &MulticastRoutingProtocol::SendHelloReply, this, interface, destination);
+					NS_LOG_DEBUG("Neighbors = "<< nst->neighbors.size() << ", reply at "<<(Simulator::Now()+delay).GetSeconds());
+				}
 				if(sgState->upstream->SG_GRT.IsRunning())
 					sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
