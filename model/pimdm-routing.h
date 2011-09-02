@@ -27,6 +27,8 @@
 #ifndef __PIM_DM_ROUTING_H__
 #define __PIM_DM_ROUTING_H__
 
+/// Time default value for RPF check.
+#define RPF_CHECK 5
 /// Timer Name: Hello Timer (HT). Periodic interval for hello messages.
 #define Hello_Period 30
 /// Timer Name: Hello Timer (HT). Random interval for initial Hello message on bootup or triggered Hello message to a rebooting neighbor.
@@ -194,6 +196,7 @@ private:
 	pimdm::PIMHeader m_queuedMessages;
 	Timer m_queuedMessagesTimer; // timer for throttling outgoing messages
 
+	Time m_rpfCheck;
 	Timer m_rpfChecker;
 
 	TracedCallback <const PIMHeader &> m_rxPacketTrace;

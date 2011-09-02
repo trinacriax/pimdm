@@ -91,6 +91,10 @@ MulticastRoutingProtocol::GetTypeId (void)
 					StringValue("0,0,0"),
 					MakeStringAccessor(&MulticastRoutingProtocol::register_member),
 					MakeStringChecker())
+   .AddAttribute ("RPFCheckInterval", "RPF check interval.",
+					TimeValue (Seconds (RPF_CHECK)),
+					MakeTimeAccessor (&MulticastRoutingProtocol::m_rpfCheck),
+					MakeTimeChecker ())
 	.AddTraceSource ("Rx", "Receive PIM packet.",
 					 MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxPacketTrace))
 	.AddTraceSource ("Tx", "Send PIM packet.",
@@ -565,7 +569,7 @@ void MulticastRoutingProtocol::DoStart ()
 		m_generationID = UniformVariable().GetInteger(1, INT_MAX);///force value > 0
 	m_startTime = Simulator::Now();
 	m_rpfChecker.Cancel();
-	m_rpfChecker.SetDelay(Seconds(5));
+	m_rpfChecker.SetDelay(m_rpfCheck);
 	m_rpfChecker.SetFunction(&MulticastRoutingProtocol::RPFCheckAll,this);
 	m_rpfChecker.Schedule();
 
