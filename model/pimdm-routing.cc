@@ -313,14 +313,12 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 {
 	NS_LOG_FUNCTION (this << m_ipv4->GetObject<Node> ()->GetId () << header.GetDestination () << oif);
 	Ptr<Ipv4Route> rtentry;
+	sockerr = Socket::ERROR_NOROUTETOHOST;
 	if (m_socketAddresses.empty ())
 	{
-	  sockerr = Socket::ERROR_NOROUTETOHOST;
 	  NS_LOG_LOGIC ("No PIMDM interfaces");
 	  return rtentry;
 	}
-
-	sockerr = Socket::ERROR_NOTERROR;
 	RoutingMulticastTable entry1;
 	bool found = Lookup(header.GetDestination(), entry1);
 	NS_LOG_DEBUG ("PIM-DM node " << m_mainAddress << ": RouteOutput for dest=" << header.GetDestination ());
@@ -344,7 +342,7 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 		  sockerr = Socket::ERROR_NOROUTETOHOST;
 		  return rtentry;
 		}
-
+		sockerr = Socket::ERROR_NOTERROR;
 		rtentry = Create<Ipv4Route> ();
 		rtentry->SetDestination (header.GetDestination ());
 		// the source address is the interface address that matches
@@ -361,12 +359,10 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 		}
 		rtentry->SetSource (ifAddr.GetLocal ());
 		rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
-//		rtentry->SetGateway(entry1.mgroup[interfaceIdx].nextAddr);
-
-		Ipv4Address bcast = m_ipv4->GetAddress (interfaceIdx, 0).GetLocal().GetSubnetDirectedBroadcast ( m_ipv4->GetAddress (interfaceIdx, 0).GetMask());
-		rtentry->SetGateway(bcast);
-		//m_ipv4->GetAddress (interfaceIdx, 0).GetLocal().GetBroadcast());//*** Problem with GW
-		sockerr = Socket::ERROR_NOTERROR;
+		Ipv4Address gateway = m_ipv4->GetAddress (interfaceIdx, 0).GetLocal().GetSubnetDirectedBroadcast ( m_ipv4->GetAddress (interfaceIdx, 0).GetMask());
+//		if(gateway == Ipv4Address::GetLoopback())//gateway not defined in the table entry -> get broadcast!
+//			gateway = m_ipv4->GetAddress (interfaceIdx, 0).GetLocal().GetSubnetDirectedBroadcast ( m_ipv4->GetAddress (interfaceIdx, 0).GetMask());
+		rtentry->SetGateway(gateway);
 		NS_LOG_DEBUG ("PIM-DM Routing: Src = " << rtentry->GetSource() << ", Dest = " << rtentry->GetDestination()<< ", GW = "<< rtentry->GetGateway () << ", interface = " << interfaceIdx<<" device = "<<rtentry->GetOutputDevice()->GetMulticast(rtentry->GetDestination()));
 		found = true;
 	}
@@ -375,7 +371,6 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 	  NS_LOG_DEBUG ("PIM-DM node " << m_mainAddress
 			  << ": RouteOutput for dest=" << header.GetDestination ()
 			  << " No route to host");
-	  sockerr = Socket::ERROR_NOROUTETOHOST;
 	}
 	return rtentry;
 }
