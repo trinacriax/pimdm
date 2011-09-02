@@ -500,7 +500,7 @@ private:
 
 	void HelloTimerExpire (uint32_t interface);
 	void OTTimerExpire (SourceGroupPair &sgp, uint32_t interface);
-	void GRTTimerExpire (SourceGroupPair &sgp, uint32_t interface);
+	void GRTTimerExpire (SourceGroupPair &sgp, uint32_t interface, Ipv4Address destination);
 	void PLTTimerExpire (SourceGroupPair &sgp, uint32_t interface);
 	void ATTimerExpire (SourceGroupPair &sgp, uint32_t interface);
 	void PPTTimerExpire (SourceGroupPair &sgp, uint32_t interface);

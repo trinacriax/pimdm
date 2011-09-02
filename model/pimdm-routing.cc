@@ -1893,7 +1893,7 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, uint32_t interfac
 }
 
 void
-MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, uint32_t interface)
+MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, uint32_t interface, Ipv4Address destination)
 {
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	switch (sgState->upstream->GraftPrune){
@@ -1910,15 +1910,17 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 		//	The Upstream(S, G) state machine stays in the AckPending (AP) state.
 		//	Another Graft message for (S, G) SHOULD be unicast to RPF'(S) and the GraftRetry Timer (GRT(S, G)) reset to Graft_Retry_Period.
 		//	It is RECOMMENDED that the router retry a configured number of times before ceasing retries.
-			Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
-			NeighborState dest(target, GetLocalAddress(GetReceivingInterface(target)));
-			NeighborState *ns = FindNeighborState(GetReceivingInterface(target), dest);
+			NeighborState dest(destination, GetLocalAddress(interface));
+			NeighborState *ns = FindNeighborState(interface, dest);
+			Ptr<Ipv4Route> route = GetRoute(destination);
+			if(route->GetGateway() == Ipv4Address::GetLoopback()) break; //Node lost the neighbor
 			if(ns->neighborGraftRetry[0]<ns->neighborGraftRetry[1]){//increase counter retries
-				SendGraftUnicast(target, sgp);
+				ns->neighborGraftRetry[0]++;
+				SendGraftUnicast(destination, sgp);
 				sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
 				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-				sgState->upstream->SG_GRT.SetArguments(sgp, interface);
+				sgState->upstream->SG_GRT.SetArguments(sgp, interface, destination);
 				sgState->upstream->SG_GRT.Schedule();
 			}else{
 				ns->neighborGraftRetry[0] = 0;//reset counter retries
@@ -2213,12 +2215,12 @@ MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp)
 			if(GetNextHop(sgp.sourceIfaceAddr) != sgp.sourceIfaceAddr){
 				sgState->upstream->SG_PLT.Cancel();
 				sgState->upstream->GraftPrune = GP_AckPending;
-				Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
-				SendGraftUnicast(target, sgp);
+				Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
+				SendGraftUnicast(destination, sgp);
 				sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
 				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-				sgState->upstream->SG_GRT.SetArguments(sgp, interface);
+				sgState->upstream->SG_GRT.SetArguments(sgp, interface, destination);
 				sgState->upstream->SG_GRT.Schedule();
 			}
 			break;
@@ -2445,7 +2447,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp)
 					sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
 				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-				sgState->upstream->SG_GRT.SetArguments(sgp, interface);
+				sgState->upstream->SG_GRT.SetArguments(sgp, interface,destination);
 				sgState->upstream->SG_GRT.Schedule();
 			}
 			break;
@@ -2469,7 +2471,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp)
 				sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
 				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-				sgState->upstream->SG_GRT.SetArguments(sgp, interface);
+				sgState->upstream->SG_GRT.SetArguments(sgp, interface, destination);
 				sgState->upstream->SG_GRT.Schedule();
 			}
 			break;
