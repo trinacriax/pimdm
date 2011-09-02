@@ -3046,18 +3046,26 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 	for(uint32_t i = 0; i < m_ipv4->GetNInterfaces();i++){
 		SourceGroupState *sgStateB = FindSourceGroupState(i, sgp);
 		//	The State Refresh source will be the RPF'(S), and Prune status for all interfaces will be set according to the Prune Indicator bit in the State Refresh message.
-		if (i == rpf_prime_interface){
-			//	If the Prune Indicator is set, the router SHOULD set the PruneLimitTimer to Prune_Holdtime ...
-			if (refresh.m_P){
-				sgStateB->upstream->SG_PLT.SetDelay(Seconds(PruneHoldTime));
-			}
+		//	If the Prune Indicator is set, the router SHOULD set the PruneLimitTimer to Prune_Holdtime ...
+		if (i == rpf_prime_interface && refresh.m_P){
+			if(sgStateB->upstream->SG_PLT.IsRunning())
+				sgStateB->upstream->SG_PLT.Cancel();
+			sgStateB->upstream->SG_PLT.SetDelay(Seconds(PruneHoldTime));
+			sgStateB->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
+			sgStateB->upstream->SG_PLT.SetArguments(sgp,interface);
+			sgStateB->upstream->SG_PLT.Schedule();
 			continue;
 		}
 		//	.... and set the PruneTimer on all downstream interfaces to
 		//	the State Refresh's Interval times two.  The router SHOULD then propagate the State Refresh as described in Section 4.5.1.
 		sgStateB->PruneState = (refresh.m_P ? Prune_Pruned: Prune_NoInfo);
 		if(refresh.m_P){
+			if(sgStateB->SG_PT.IsRunning())
+				sgStateB->SG_PT.Cancel();
 			sgStateB->SG_PT.SetDelay(Seconds(2 * StateRefreshInterval));
+			sgStateB->SG_PT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
+			sgStateB->SG_PT.SetArguments(sgp,interface);
+			sgStateB->SG_PT.Schedule();
 		}
 	}
 	switch (sgState->AssertState){
