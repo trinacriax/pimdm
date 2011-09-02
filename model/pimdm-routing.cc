@@ -700,10 +700,10 @@ MulticastRoutingProtocol::IsUpstream (uint32_t interface, SourceGroupPair sgpair
 	return (interface>0 && interface<m_ipv4->GetNInterfaces() && interface == rpfInterface);
 }
 
-uint32_t
+int32_t
 MulticastRoutingProtocol::RPF_interface(Ipv4Address source) {
 	Ptr<Ipv4Route> route = GetRoute(source);
-	uint32_t rpfi = (route) ? m_ipv4->GetInterfaceForDevice(route->GetOutputDevice()):-1;
+	int32_t rpfi = (route) ? m_ipv4->GetInterfaceForDevice(route->GetOutputDevice()):-1;
 	return rpfi;
 }
 

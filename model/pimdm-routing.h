@@ -805,7 +805,7 @@ private:
 
 	/// \brief RPF interface towards the source S as indicated by the MRIB.
 	/// \param source Source IPv4 address
-	uint32_t RPF_interface (Ipv4Address source);
+	int32_t RPF_interface (Ipv4Address source);
 
 	/// \brief There are receivers for the given SourceGroup pair.
 	/// \param sgp source-group pair.
