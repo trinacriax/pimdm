@@ -656,6 +656,7 @@ void MulticastRoutingProtocol::DoStart ()
 	    }
 	if(m_generationID==0)
 		m_generationID = UniformVariable().GetInteger(1, INT_MAX);///force value > 0
+	m_latestPacketID = 0;
 	m_startTime = Simulator::Now();
 	if(m_rpfChecker.IsRunning())
 		m_rpfChecker.Cancel();
@@ -1230,12 +1231,18 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	Ptr<Packet> receivedPacket;
 	Address sourceAddress;
 	receivedPacket = socket->RecvFrom (sourceAddress);
+	uint64_t pid = receivedPacket->GetUid();
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address sender = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
 	Ptr<Packet> copy = receivedPacket->Copy();// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
 	Ipv4Header ipv4Header;
 	copy->RemoveHeader(ipv4Header);
+	if(pid <= m_latestPacketID){
+		NS_LOG_DEBUG("Duplicated packet");
+		return;
+	}
+	m_latestPacketID = pid;
 	SocketAddressTag tag;
 	copy->RemovePacketTag(tag); // LOOK: it must be removed because will be added again by socket.
 	Ipv4Address group = ipv4Header.GetDestination();

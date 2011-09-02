@@ -200,6 +200,7 @@ private:
 	Timer m_rpfChecker;
 
 	Time m_LanDelay;
+	uint64_t m_latestPacketID;
 
 	TracedCallback <const PIMHeader &> m_rxPacketTrace;
 	TracedCallback <const PIMHeader &> m_txPacketTrace;
