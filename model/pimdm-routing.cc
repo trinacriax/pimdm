@@ -1040,11 +1040,10 @@ MulticastRoutingProtocol::SendStateRefreshMessage (uint32_t interface, Ipv4Addre
 	NeighborhoodStatus *ns = FindNeighborhoodStatus(interface);
 	NS_ASSERT_MSG(ns!=NULL, "SendStateRefreshMessage, invalid NeighborhoodStatus on "<< interface);
 	Time tmp = ns->stateRefreshInterval;
-	msg.GetStateRefreshMessage().m_metricPreference = sgState->AssertWinner.metricPreference;
-	msg.GetStateRefreshMessage().m_metric = sgState->AssertWinner.routeMetric;
-	msg.GetStateRefreshMessage().m_interval = (uint8_t)(tmp.GetSeconds());
-
-//	SendPacketUnicast(packet, msg, target);
+	PIMHeader::StateRefreshMessage &stateRefresh = msg.GetStateRefreshMessage();
+	stateRefresh.m_metricPreference = sgState->AssertWinner.metricPreference;
+	stateRefresh.m_metric = sgState->AssertWinner.routeMetric;
+	stateRefresh.m_interval = (uint8_t)(tmp.GetSeconds());
 	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, target);
 	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
