@@ -1137,7 +1137,7 @@ MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, uint32_t interface, Ptr<
 	ret = ret && entry.mgroup.find(sgp.sourceIfaceAddr) != entry.mgroup.end();
 	if(ret) {
 		uint32_t interfaceN = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
-		Ipv4Address gatewayN = rpf_route->GetGateway()==Ipv4Address::GetLoopback()?me.nextAddr:rpf_route->GetGateway();
+		Ipv4Address gatewayN = rpf_route->GetGateway();
 		if(me.nextAddr == Ipv4Address::GetLoopback()){//now we know the RPF for the first time, just update it!
 			UpdateEntry(sgp.groupMulticastAddr,sgp.sourceIfaceAddr,gatewayN,interfaceN);
 			Lookup(sgp.groupMulticastAddr,sgp.sourceIfaceAddr, entry, me);
@@ -1147,7 +1147,6 @@ MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, uint32_t interface, Ptr<
 			UpdateEntry(sgp.groupMulticastAddr,sgp.sourceIfaceAddr,me.nextAddr,interfaceN);
 		}
 		if(me.nextAddr != gatewayN && interfaceN>0){//RPF neighbor has change
-			rpf_route = GetRoute(sgp.sourceIfaceAddr);
 			RPF_primeChanges(sgp);
 			UpdateEntry(sgp.groupMulticastAddr,sgp.sourceIfaceAddr,gatewayN,interfaceN);
 		}
@@ -1252,13 +1251,13 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	else //the underlying routing protocol is not able to get the right interface for the sender address:we guess it is the main interface..
 		interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);//DEFAULT interface
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
-	if(rpf_route->GetGateway()==Ipv4Address::GetLoopback()){
+	Ipv4Address gateway = (rpf_route!=NULL?rpf_route->GetGateway():Ipv4Address::GetLoopback());
+	if(gateway == Ipv4Address::GetLoopback()){
 		//TODO: We don't know the next hop towards the source: first node finds it, then it relies packets.
 		SendHelloReply(m_ipv4->GetInterfaceForAddress(m_mainAddress),sender);
 		return;
 	}
-	Ipv4Address gateway = (rpf_route!=NULL?rpf_route->GetGateway():Ipv4Address::GetLoopback());
-	NS_LOG_DEBUG("LOCAL: "<<GetLocalAddress(interface)<<" GRP: "<<group<<" SRC: "<< sender<< " Metric: "<< GetRouteMetric(interface,sender) <<" IFC: "<<interface<<" GW: "<<gateway<< " PacketSize "<<copy->GetSize());
+	NS_LOG_DEBUG("LOCAL: "<<GetLocalAddress(interface)<<" GRP: "<<group<<" SRC: "<< sender<< " Metric: "<< GetRouteMetric(interface,sender) <<" IFC: "<<interface<<" GW: "<<gateway<< " PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	if(!sgState){
 		InsertSourceGroupState(interface, sgp);
@@ -1819,6 +1818,7 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, uint32_t interfac
 void
 MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, uint32_t interface, Ipv4Address destination)
 {
+	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
@@ -2353,6 +2353,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp)
 	uint32_t interface = RPF_interface(sgp.sourceIfaceAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
+	if(destination == Ipv4Address::GetLoopback() || destination == Ipv4Address::GetAny()) return;
 	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
 		//RPF'(S) Changes AND olist(S, G) is NULL
@@ -2429,6 +2430,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp)
 				//	The Upstream(S, G) state machine stays in the AckPending (AP) state.
 				//	A Graft MUST be unicast to the new RPF'(S) and the GraftRetry Timer (GRT(S, G)) reset to Graft_Retry_Period.
 				Ipv4Address target = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
+				NS_ASSERT(target!=Ipv4Address::GetLoopback());
 				SendGraftUnicast(target, sgp);//TODO check
 				if(sgState->upstream->SG_GRT.IsRunning())
 					sgState->upstream->SG_GRT.Cancel();
