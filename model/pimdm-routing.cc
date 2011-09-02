@@ -594,7 +594,7 @@ void MulticastRoutingProtocol::DoStart ()
 		}
 		socketP->BindToNetDevice (m_ipv4->GetNetDevice (i));
 		Ipv4InterfaceAddress mpim(Ipv4Address(ALL_PIM_ROUTERS4), Ipv4Mask::GetOnes());
-		m_socketAddresses[socketP] = mpim; //m_ipv4->GetAddress (i, 0);
+		m_socketAddresses[socketP] = mpim;
 		NS_LOG_DEBUG("Registering PIM Socket = "<<socketP << " Device = "<<m_ipv4->GetNetDevice (i)<< ", LocalAddr = "<<mpim.GetLocal()<<" Destination = "<<  ALL_PIM_ROUTERS4<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
 
 		// Create a socket to listen only on this interface
