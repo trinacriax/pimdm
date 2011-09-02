@@ -837,7 +837,6 @@ MulticastRoutingProtocol::SendHello (uint32_t interface)
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
 	ForgeHelloMessage(interface, msg);
-	//	SendPacketPIMRouters(packet, msg, interface);
 	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, interface);
 }
 
@@ -849,10 +848,8 @@ MulticastRoutingProtocol::SendHelloReply (uint32_t interface, Ipv4Address destin
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
 	ForgeHelloMessage(interface, msg);
-	NS_LOG_DEBUG("Send Hello Reply to "<< destination);
 	double delayMS = UniformVariable().GetValue()/1000;
 	Simulator::Schedule(Seconds(delayMS),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
-//	SendPacketUnicast(packet, msg, destination);
 }
 
 void
@@ -871,6 +868,7 @@ void
 MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupPair &sgp)
 {
 	NS_LOG_FUNCTION(this);
+	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
 	PIMHeader msg;
 	ForgeJoinPruneMessage(msg, destination);
 	PIMHeader::MulticastGroupEntry mge;
@@ -880,7 +878,6 @@ MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupP
 	msg.Print(std::cout);
 	Ptr<Packet> packet = Create<Packet> ();
 	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
-//	SendPacketUnicast(packet, msg, destination);
 }
 
 void
@@ -898,7 +895,6 @@ MulticastRoutingProtocol::SendPruneBroadcast (uint32_t interface, SourceGroupPai
 	Ptr<Packet> packet = Create<Packet> ();
 	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
 	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
-//	SendPacketUnicast(packet, msg, target);
 }
 
 void
@@ -914,7 +910,7 @@ MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupP
 	msg.Print(std::cout);
 	Ptr<Packet> packet = Create<Packet> ();
 	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
-//	SendPacketUnicast(packet, msg, destination);
+	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
 }
 
 void
@@ -972,8 +968,7 @@ MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination, SourceGroup
 {
 	NS_LOG_FUNCTION(this);
 	Ptr<Packet> packet = Create<Packet> ();
-	PIMHeader msg;
-	// Create the graft packet
+	PIMHeader msg; // Create the graft packet
 	ForgeGraftMessage(PIM_GRAFT, msg, sgp, destination);
 	PIMHeader::MulticastGroupEntry mge;
 	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
@@ -982,7 +977,6 @@ MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination, SourceGroup
 	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
 	// Send the packet toward the RPF(S)
 	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
-//	SendPacketUnicast(packet, msg, destination);
 }
 
 void
@@ -1005,15 +999,12 @@ MulticastRoutingProtocol::SendGraftAckUnicast(SourceGroupPair &sgp, const Ipv4Ad
 	PIMHeader::MulticastGroupEntry mge;
 	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
 	AddMulticastGroupSourceJoin(mge, ForgeEncodedSource(sgp.sourceIfaceAddr));
-	PIMHeader msg;
-	// Create the graft packet
+	PIMHeader msg; // Create the graft packet
 	ForgeGraftAckMessage(msg, destination);
 	AddMulticastGroupEntry(msg, mge);
 	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination);
 	// Send the packet toward the RPF(S)
-	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
-//	SendPacketUnicast(packet, msg, destination);
-}
+	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);}
 
 void
 MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, SourceGroupPair &sgp, PIMHeader &msg)
