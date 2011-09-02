@@ -1638,32 +1638,6 @@ MulticastRoutingProtocol::NeighborRestart (uint32_t interface, Ipv4Address neigh
 //   propagate the State Refresh as described in Section 4.5.1.
 }
 
-Ipv4Header
-MulticastRoutingProtocol::BuildHeader(Ipv4Address source, Ipv4Address destination, uint8_t protocol, uint16_t payloadSize, uint8_t ttl, bool mayFragment)
-{
-	NS_LOG_FUNCTION(this);
-	Ipv4Header ipv4header;
-	ipv4header.SetSource(source);
-	ipv4header.SetDestination(destination);
-	ipv4header.SetProtocol(protocol);
-	ipv4header.SetPayloadSize(payloadSize);
-	ipv4header.SetTtl(ttl);
-	if(mayFragment){
-		ipv4header.SetMayFragment();
-		ipv4header.SetIdentification(m_identification);
-		m_identification++;
-	}
-	else {
-		ipv4header.SetDontFragment ();
-		ipv4header.SetIdentification (m_identification);
-		m_identification++;
-	}
-	if (Node::ChecksumEnabled ()){
-		ipv4header.EnableChecksum ();
-	}
-	return ipv4header;
-}
-
 void
 MulticastRoutingProtocol::SendPacketPIMRouters(Ptr<Packet> packet, const PIMHeader &message)
 {
@@ -1674,7 +1648,6 @@ MulticastRoutingProtocol::SendPacketPIMRouters(Ptr<Packet> packet, const PIMHead
   // Send
   for(int i = 0; i <m_ipv4->GetNInterfaces();i++){
 	 if(IsLoopInterface(i) || !GetPimInterface(i)) continue;
-	 //	 SendPacketPIMRoutersInterface(packet, message, i);
 	 Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, message, i);
   }
 }
