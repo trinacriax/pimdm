@@ -386,7 +386,7 @@ bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
 	  Ipv4Address origin = header.GetSource ();
 
 	  // Consume self-originated packets
-	  if (IsMyOwnAddress (origin) == true)
+	  if (IsMyOwnAddress (origin) == true) //peer doesn't know that route
 	    {
 	      return false;
 	    }
@@ -420,7 +420,6 @@ bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
 	         }
 	       else
 	         {
-
 	 #ifdef NS3_LOG_ENABLE
 	           NS_LOG_DEBUG ("PIMDM node " << m_mainAddress
 	                                      << ": RouteInput for dest=" << header.GetDestination ()
@@ -429,9 +428,13 @@ bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
 	           for (std::map<Ipv4Address, RoutingMulticastTable>::const_iterator iter = m_mrib.begin ();
 	                iter != m_mrib.end (); iter++)
 	             {
-//	               NS_LOG_DEBUG ("dest=" << iter->first
-////	            		   << " --> next=" << iter->second.nextAddr
-//	                       << " via interface " << iter->second.interface);
+	        	   for (std::map <Ipv4Address,MulticastEntry>::const_iterator miter = iter->second.mgroup.begin();
+	        	   	                miter !=  iter->second.mgroup.end(); miter++)
+	        	   	             {
+								   NS_LOG_DEBUG ("Group = " << iter->first
+										   << " --> Source = " << miter->second.sourceAddr<<", Gateway = " << miter->second.nextAddr
+										   << ", Interface = " << miter->second.interface);
+	        	   	             }
 	             }
 
 	           NS_LOG_DEBUG ("** Routing table dump end.");
