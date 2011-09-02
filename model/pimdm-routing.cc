@@ -3494,23 +3494,10 @@ MulticastRoutingProtocol::UsesNonPimDmOutgoingInterface (const Ipv4RoutingTableE
 	// before reaching the end of the list of excluded interfaces
 	return (ci != m_interfaceExclusions.end ());
 }
-
-void MulticastRoutingProtocol::InsertNeighborState(uint32_t interface, const NeighborState ns) {
-	if (!FindNeighborState(interface, ns)) {
-		FindNeighborhoodStatus(interface)->neighbors.push_back(ns);
-		NeighborState *neighbor = FindNeighborState(interface, ns);
-		neighbor->neigborNLT.Cancel();
-		neighbor->neighborCreation = Simulator::Now();
-		neighbor->neighborTimeout = neighbor->neighborCreation;
-		neighbor->neighborTimeoutB = true;
-	}
-}
-
 }
 }// namespace ns3
 
 //TODO
-//* If a Hello message is received from a new neighbor, the receiving router SHOULD send its own Hello message after a random delay between 0 and Triggered_Hello_Delay.
 //* Upon startup, a router MAY use any State Refresh messages received within Hello_Period of its first Hello message on an interface to establish state information.  The State Refresh source will be the
 //		RPF'(S), and Prune status for all interfaces will be set according to the Prune Indicator bit in the State Refresh message.  If the Prune
 // 		Indicator is set, the router SHOULD set the PruneLimitTimer to Prune_Holdtime and set the PruneTimer on all downstream interfaces to

@@ -660,7 +660,20 @@ private:
 		return NULL;
 	}
 
-	void InsertNeighborState (uint32_t interface, const NeighborState ns);
+	void InsertNeighborState(uint32_t interface, const NeighborState ns) {
+		if (!FindNeighborState(interface, ns)) {
+			NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
+			NS_ASSERT(nstatus!=NULL);
+			nstatus->neighbors.push_back(ns);
+			NeighborState *neighbor = FindNeighborState(interface, ns);
+			NS_ASSERT(neighbor!=NULL);
+			if(neighbor->neigborNLT.IsRunning())
+				neighbor->neigborNLT.Cancel();
+			neighbor->neighborCreation = Simulator::Now();
+			neighbor->neighborTimeout = neighbor->neighborCreation;
+			neighbor->neighborTimeoutB = true;
+		}
+	}
 
 	void EraseNeighborState (uint32_t interface, const NeighborState &ns) {
 		FindNeighborhoodStatus (interface)->neighbors.remove (ns);
