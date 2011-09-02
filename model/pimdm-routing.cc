@@ -691,13 +691,13 @@ bool
 MulticastRoutingProtocol::IsDownstream (uint32_t interface, SourceGroupPair sgpair)
 {
 	uint32_t rpfInterface = RPF_interface(sgpair.sourceIfaceAddr);
-	return (rpfInterface>=0 && rpfInterface<m_ipv4->GetNInterfaces() && interface != rpfInterface);
+	return (interface>0 && interface<m_ipv4->GetNInterfaces() && interface != rpfInterface);
 }
 bool
 MulticastRoutingProtocol::IsUpstream (uint32_t interface, SourceGroupPair sgpair)
 {
 	uint32_t rpfInterface = RPF_interface(sgpair.sourceIfaceAddr);
-	return (rpfInterface>=0 && rpfInterface<m_ipv4->GetNInterfaces() && interface == rpfInterface);
+	return (interface>0 && interface<m_ipv4->GetNInterfaces() && interface == rpfInterface);
 }
 
 uint32_t
