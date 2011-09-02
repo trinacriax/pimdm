@@ -495,12 +495,8 @@ MulticastRoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
 Ipv4Address
 MulticastRoutingProtocol::GetLocalAddress (uint32_t interface)
 {
-  if(interface<m_ipv4->GetNInterfaces ()){
-  	return  m_ipv4->GetAddress (interface, 0).GetLocal ();
-  }else{
-	Ipv4Address loopback ("127.0.0.1");
-	return loopback;
-  }
+  NS_ASSERT(interface<m_ipv4->GetNInterfaces ());
+  return (interface>0 ? m_ipv4->GetAddress (interface, 0).GetLocal () : Ipv4Address::GetLoopback());
 }
 
 void MulticastRoutingProtocol::DoDispose ()
