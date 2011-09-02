@@ -1303,9 +1303,9 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			}
 		}
 	}
-	else if (rpf_interface!=0){
+	else {
 		switch (sgState->AssertState){
-			case  Assert_NoInfo:{
+			case  Assert_NoInfo:
 			//An (S, G) data packet arrives on downstream interface I.
 			//   An (S, G) data packet arrived on a downstream interface.  It is
 			//   optimistically assumed that this router will be the Assert winner
@@ -1314,41 +1314,23 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			//   store its own address and metric as the Assert Winner, and set
 			//   the Assert_Timer (AT(S, G, I) to Assert_Time, thereby initiating
 			//   the Assert negotiation for (S, G).
+			case Assert_Winner:{
+			//An (S, G) data packet arrives on downstream interface I.
+			//	An (S, G) data packet arrived on a downstream interface.
+			//	The Assert state machine remains in the "I am Assert Winner" state.
+			//	The router MUST send an Assert(S, G) to interface I and set the Assert Timer (AT(S, G, I) to Assert_Time.
 				if(!IsDownstream(interface, sgp)) NS_LOG_ERROR("Packet received on Upstream interface! Assert_NoInfo");
 				sgState->AssertState = Assert_Winner;
 				UpdateAssertWinner(sgState, interface);
-				PIMHeader msg;
-				ForgeAssertMessage(interface, msg, sgp);
+				PIMHeader assert;
+				ForgeAssertMessage(interface, assert, sgp);
 				Ptr<Packet> packetA = Create<Packet> ();
-//				SendPacketPIMRouters(packetA, msg, interface);
-				Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packetA, msg, interface);
+				Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packetA, assert, interface);
 				if(sgState->SG_AT.IsRunning())
 					sgState->SG_AT.Cancel();
 				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
 				sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
 				sgState->SG_AT.SetArguments(sgp, interface);
-				sgState->SG_AT.Schedule();
-				break;
-				}
-			case Assert_Winner:{
-				//An (S, G) data packet arrives on downstream interface I.
-				//	An (S, G) data packet arrived on a downstream interface.
-				//	The Assert state machine remains in the "I am Assert Winner" state.
-				//	The router MUST send an Assert(S, G) to interface I and set the Assert Timer (AT(S, G, I) to Assert_Time.
-				if(!IsDownstream(interface, sgp))break;
-				PIMHeader assert;
-				ForgeAssertMessage(interface, assert, sgp);
-				UpdateAssertWinner(sgState, interface);
-				Ptr<Packet> packetA = Create<Packet> ();
-//				SendPacketPIMRouters(packetA, assert, interface);
-				Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packetA, assert, interface);
-				//The Assert winner for (S, G) must act as the local forwarder for
-				//  (S, G) on behalf of all downstream members.
-				if(sgState->SG_AT.IsRunning())
-					sgState->SG_AT.Cancel();
-				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
-				sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
-				sgState->SG_AT.SetArguments(sgp,interface);
 				sgState->SG_AT.Schedule();
 				break;
 			}
