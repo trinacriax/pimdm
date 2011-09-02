@@ -673,6 +673,7 @@ void MulticastRoutingProtocol::DoStart ()
 void
 MulticastRoutingProtocol::HelloTimerExpire (uint32_t i)
 {
+	  NS_LOG_FUNCTION(this);
 	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	  if (addr == Ipv4Address::GetLoopback())
 		  return;
@@ -1098,7 +1099,6 @@ MulticastRoutingProtocol::SendStateRefreshMessage (uint32_t interface, Ipv4Addre
 	}
 }
 
-
 void
 MulticastRoutingProtocol::RPFCheckAll()
 {
@@ -1109,19 +1109,18 @@ MulticastRoutingProtocol::RPFCheckAll()
 		NS_LOG_DEBUG("Interface "<<interface<<" SGPairs: "<<sgList->second.size());
 		for(std::list<SourceGroupState>::iterator sgState = sgList->second.begin();
 				sgState != sgList->second.end(); sgState++){
-				Ptr<Ipv4Route> route;
-//				RPFCheck(sgState->SGPair, interface);
+			Ptr<Ipv4Route> route;
 			NS_ASSERT(interface < m_ipv4->GetNInterfaces());
-				Simulator::Schedule(Seconds(0),&MulticastRoutingProtocol::RPFCheck, this,sgState->SGPair, interface, route);
+			Simulator::Schedule(Seconds(0),&MulticastRoutingProtocol::RPFCheck, this,sgState->SGPair, interface, route);
 		}
-		}
+	}
 	m_rpfChecker.Schedule();
 }
 
 void
 MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, uint32_t interface, Ptr<Ipv4Route> rpf_route)
 {
-//	NS_LOG_DEBUG("("<<sgp.sourceIfaceAddr<<", "<<sgp.groupMulticastAddr<<") I="<<interface);
+	NS_LOG_DEBUG("("<<sgp.sourceIfaceAddr<<", "<<sgp.groupMulticastAddr<<") I="<<interface);
 	if(rpf_route ==NULL)
 		rpf_route = GetRoute(sgp.sourceIfaceAddr);
 	RoutingMulticastTable entry;
@@ -1131,7 +1130,6 @@ MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, uint32_t interface, Ptr<
 	ret = ret && entry.mgroup.find(sgp.sourceIfaceAddr) != entry.mgroup.end();
 	if(ret) {
 		uint32_t interfaceN = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
-
 		Ipv4Address gatewayN = rpf_route->GetGateway()==Ipv4Address::GetLoopback()?me.nextAddr:rpf_route->GetGateway();
 		if(me.nextAddr == Ipv4Address::GetLoopback()){//now we know the RPF for the first time, just update it!
 			UpdateEntry(sgp.groupMulticastAddr,sgp.sourceIfaceAddr,gatewayN,interfaceN);
@@ -1156,14 +1154,14 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
 	NS_LOG_FUNCTION(this);
 	Ptr<Packet> receivedPacket;
 	Address sourceAddress;
-	uint32_t interface = m_ipv4->GetInterfaceForDevice(socket->GetBoundNetDevice());
 	receivedPacket = socket->RecvFrom (sourceAddress);
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
+	Ptr<Ipv4Route> route = GetRoute(senderIfaceAddr);
+	uint32_t interface = m_ipv4->GetInterfaceForDevice(socket->GetBoundNetDevice());
 	Ipv4Address receiverIfaceAddr = m_ipv4->GetAddress(interface, 0).GetLocal();
 	NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
-    Ptr<Ipv4Route> route = GetRoute(senderIfaceAddr);
 	Ipv4Header ipv4header;
 	receivedPacket->RemoveHeader(ipv4header);
 	Ipv4Address group = ipv4header.GetDestination();
@@ -1226,31 +1224,29 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	Ptr<Packet> receivedPacket;
 	Address sourceAddress;
 	receivedPacket = socket->RecvFrom (sourceAddress);
-	Ptr<Packet> copy = receivedPacket->Copy();
-	// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
-	Ipv4Header ipv4Header;
-	copy->RemoveHeader(ipv4Header);
-//	UdpHeader udpHeader;
-//	copy->RemoveHeader(udpHeader);
-	SocketAddressTag tag;
-	copy->RemovePacketTag(tag); // LOOK: it must be removed because will be added again by socket.
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address sender = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
-	Ipv4Address group = m_socketAddresses[socket].GetLocal ();
-	NS_ASSERT (group != Ipv4Address ()|| group != Ipv4Address::GetLoopback());
+	Ptr<Packet> copy = receivedPacket->Copy();// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
+	Ipv4Header ipv4Header;
+	copy->RemoveHeader(ipv4Header);
+	SocketAddressTag tag;
+	copy->RemovePacketTag(tag); // LOOK: it must be removed because will be added again by socket.
+	Ipv4Address group = ipv4Header.GetDestination();
+	NS_ASSERT (group.IsMulticast());
 	SourceGroupPair sgp(sender, group);
 	Ptr<Ipv4Route> rpf_route = GetRoute(sender);
-	uint32_t interface = -1;
 	Ptr<NetDevice> netDevice = socket->GetBoundNetDevice();
+	uint32_t interface = -1;
 	if(netDevice)
-		interface = m_ipv4->GetInterfaceForDevice(netDevice);
+		interface = m_ipv4->GetInterfaceForDevice(netDevice);//interface of the device where the node received the packet
 	else if (rpf_route)
-		interface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
+		interface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());//interface of the device towards the sender
 	else //the underlying routing protocol is not able to get the right interface for the sender address:we guess it is the main interface..
 		interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);//DEFAULT interface
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
 	if(rpf_route->GetGateway()==Ipv4Address::GetLoopback()){
+		//TODO: We don't know the next hop towards the source: first node finds it, then it relies packets.
 		SendHelloReply(m_ipv4->GetInterfaceForAddress(m_mainAddress),sender);
 		return;
 	}
@@ -1267,7 +1263,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			UpdateEntry(group, sender, gateway, interface);
 		}
 	}
-	RPFCheck(sgp, interface,rpf_route);
+	RPFCheck(sgp, interface, rpf_route);
 	uint64_t packetID = receivedPacket->GetUid();
 	uint32_t rpf_interface = RPF_interface(sender);
 
@@ -1276,7 +1272,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			//The Upstream(S, G) state machine MUST transition to the Pruned (P)
 			// state, send a Prune(S, G) to RPF'(S), and set PLT(S, G) to t_limit seconds.
 			case GP_Forwarding:{
-				if(olist(sender, group).size() == 0 && gateway != sender && !GetMulticastGroup(group)){//TODO fix with the interface towards nodes
+				if(olist(sender, group).size() == 0 && gateway != sender && !GetMulticastGroup(group)){
 					olistCheck(sgp);//CHECK: olist is null and S not directly connected
 					sgState->upstream->GraftPrune = GP_Pruned;
 					Ipv4Address destination = RPF_prime(sgp);
@@ -1291,8 +1287,9 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 					sgState->upstream->SG_PLT.Schedule();
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
 					sgState->upstream->SG_PLT.SetArguments(sgp, interface);
-					uint32_t interface_prime = GetReceivingInterface(RPF_prime(sgp.sourceIfaceAddr));
-					SendPruneBroadcast(interface_prime, sgp);
+					Ptr<Ipv4Route> routeGateway = GetRoute(RPF_prime(sgp.sourceIfaceAddr));
+					uint32_t interfaceGateway = m_ipv4->GetInterfaceForDevice(routeGateway->GetOutputDevice());
+					SendPruneBroadcast(interfaceGateway, sgp);
 					}
 					break;
 				}
