@@ -476,15 +476,99 @@ MulticastRoutingProtocol::IsMyOwnAddress (const Ipv4Address & address) const
 
 void
 MulticastRoutingProtocol::NotifyInterfaceUp (uint32_t i)
-{NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Up: "<<i);}
+{
+	NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Up: "<<i);
+	EnablePimInterface(i);
+}
 
 void
 MulticastRoutingProtocol::NotifyInterfaceDown (uint32_t i)
-{NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Down "<<i);}
+{
+	NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Down "<<i);
+	DisablePimInterface(i);
+}
 
 void
-MulticastRoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAddress address)
-{NS_LOG_FUNCTION(this);}
+MulticastRoutingProtocol::NotifyAddAddress (uint32_t i, Ipv4InterfaceAddress address)
+{
+	NS_LOG_FUNCTION(this);
+	Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
+	if (addr == Ipv4Address::GetLoopback())
+		return;
+	// Create socket to listen on ALL_PIM_ROUTERS4 group
+	Ptr<Socket> socketP = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
+	socketP->SetAttribute("Protocol", UintegerValue(PIM_IP_PROTOCOL_NUM));
+	socketP->SetAttribute("IpHeaderInclude", BooleanValue(true));
+	socketP->SetAllowBroadcast (false);
+	InetSocketAddress inetAddrP (ALL_PIM_ROUTERS4, PIM_PORT_NUMBER);
+	socketP->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm, this));
+	// Add ALL_PIM_ROUTERS4 multicast group, where the source is the node it self.
+	AddEntry(ALL_PIM_ROUTERS4, addr, Ipv4Address::GetLoopback(), i);
+	if (socketP->Bind (inetAddrP)){
+		NS_FATAL_ERROR ("Failed to bind() PIMDM socket");
+	}
+	socketP->BindToNetDevice (m_ipv4->GetNetDevice (i));
+	Ipv4InterfaceAddress mpim(Ipv4Address(ALL_PIM_ROUTERS4), Ipv4Mask::GetOnes());
+	m_socketAddresses[socketP] = mpim;
+	NS_LOG_DEBUG("Registering PIM Socket = "<<socketP << " Device = "<<m_ipv4->GetNetDevice (i)<< ", LocalAddr = "<<mpim.GetLocal()<<" Destination = "<<  ALL_PIM_ROUTERS4<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
+
+	// Create a socket to listen only on this interface
+	Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
+	socket->SetAttribute("Protocol", UintegerValue(PIM_IP_PROTOCOL_NUM));
+	socket->SetAttribute("IpHeaderInclude", BooleanValue(true));
+	socket->SetAllowBroadcast (true);
+	InetSocketAddress inetAddr (addr , PIM_PORT_NUMBER);
+	socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm, this));
+	if (socket->Bind (inetAddr)){
+		NS_FATAL_ERROR ("Failed to bind() PIMDM socket "<< addr<<":"<<PIM_PORT_NUMBER);
+	}
+	socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
+	m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
+	NS_LOG_DEBUG("Registering Local Socket = "<<socket << " Device = "<<m_ipv4->GetNetDevice (i)<< ", LocalAddr = "<<m_ipv4->GetAddress (i, 0).GetLocal()<<" Destination = "<<  m_ipv4->GetAddress (i, 0).GetLocal ().GetSubnetDirectedBroadcast (m_ipv4->GetAddress (i, 0).GetMask ())<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
+
+	NS_LOG_DEBUG ("PIMDM up on " << m_ipv4->GetAddress (i, 0).GetLocal () << ", Generation Id = "<< m_generationID<<", Starting @ "<<m_startTime);
+	NeighborhoodStatus *ns = FindNeighborhoodStatus(i);
+	NS_ASSERT(ns == NULL);
+	InsertNeighborhoodStatus(i);
+	ns = FindNeighborhoodStatus(i);
+	ns->propagationDelay = Seconds(UniformVariable().GetValue(m_LanDelay.GetSeconds()*.3, m_LanDelay.GetSeconds()));
+	ns->overrideInterval = Seconds(UniformVariable().GetValue(Override_Interval*.3, Override_Interval));
+	ns->stateRefreshInterval = Seconds(UniformVariable().GetValue(RefreshInterval*.3, RefreshInterval));
+	ns->pruneHoldtime = Seconds(UniformVariable().GetValue(PruneHoldTime*.3, PruneHoldTime));
+	ns->LANDelayEnabled = true;
+	ns->stateRefreshCapable = true;
+	NS_LOG_DEBUG ("Generating Neighborhood ("<<i<<"): PD=" << ns->propagationDelay.GetSeconds() <<"s, OI="<< ns->overrideInterval.GetSeconds() <<
+			"s, SRI="<< ns->stateRefreshInterval.GetSeconds()<<"s, PHT="<< ns->pruneHoldtime.GetSeconds()<<"s, LDE="<<ns->LANDelayEnabled<<
+			"s, SRC="<< ns->stateRefreshCapable);
+	SourceGroupList *sgl = FindSourceGroupList(i);
+	NS_ASSERT(sgl==NULL);
+	InsertSourceGroupList(i);
+	Time rndHello = Seconds(UniformVariable().GetValue(0, Triggered_Hello_Delay));
+	Simulator::Schedule (rndHello, &MulticastRoutingProtocol::HelloTimerExpire, this, i);
+	ns->hello_timer.SetDelay(m_helloTime);
+	NS_LOG_DEBUG ("Generating SG List("<<i<<") HT="<<m_helloTime.GetSeconds()<<"s, Starting "<< rndHello.GetSeconds()<<"s");
+
+	for(std::map<Ipv4Address, RoutingMulticastTable>::iterator group = m_mrib.begin(); group!=m_mrib.end(); group++){
+		Ipv4Address groupIP = group->second.groupAddr;
+		if(groupIP == ALL_PIM_ROUTERS4) continue;
+		NS_LOG_DEBUG("D("<<i<<") = " << m_ipv4->GetNetDevice (i)<<", LocalAddr = "<<  addr<< ", Group "<<groupIP<<", #Source: "<< group->second.mgroup.size());
+		///Registering endpoint for that address... by creating a socket to listen only on this interface
+		Ptr<Socket> socketG = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
+		socketG->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
+		socketG->SetAttribute("IpHeaderInclude", BooleanValue(true));
+		socketG->SetAllowBroadcast (true);
+		InetSocketAddress inetAddr (groupIP, PIM_PORT_NUMBER);
+		socketG->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvData, this));
+		if (socketG->Bind (inetAddr)){
+			NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<groupIP);
+		}
+		socketG->BindToNetDevice (m_ipv4->GetNetDevice (i));
+//			m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0); //PROBLEM; does not broadcast onlocal IP, takes the other group-interface
+		Ipv4InterfaceAddress mgroup(groupIP, Ipv4Mask::GetOnes());
+		m_socketAddresses[socketG] = mgroup;
+		NS_LOG_DEBUG("Registering Group Socket = "<<socketG<< " Device = "<<socketG->GetBoundNetDevice()<< ", LocalAddr = "<<mgroup.GetLocal()<<" Destination = "<<  groupIP<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
+	}
+}
 
 void
 MulticastRoutingProtocol::NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress address)
@@ -572,93 +656,11 @@ void MulticastRoutingProtocol::DoStart ()
 	if(m_generationID==0)
 		m_generationID = UniformVariable().GetInteger(1, INT_MAX);///force value > 0
 	m_startTime = Simulator::Now();
-	m_rpfChecker.Cancel();
+	if(m_rpfChecker.IsRunning())
+		m_rpfChecker.Cancel();
 	m_rpfChecker.SetDelay(m_rpfCheck);
 	m_rpfChecker.SetFunction(&MulticastRoutingProtocol::RPFCheckAll,this);
 	m_rpfChecker.Schedule();
-
-	NS_LOG_DEBUG ("Starting PIM_DM on node " << m_mainAddress);
-
-	for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++)
-		{
-		Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
-		if (addr == loopback)
-			continue;
-		// Create socket to listen on ALL_PIM_ROUTERS4 group
-		Ptr<Socket> socketP = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
-		socketP->SetAttribute("Protocol", UintegerValue(PIM_IP_PROTOCOL_NUM));
-		socketP->SetAttribute("IpHeaderInclude", BooleanValue(true));
-		socketP->SetAllowBroadcast (false);
-		InetSocketAddress inetAddrP (ALL_PIM_ROUTERS4, PIM_PORT_NUMBER);
-		socketP->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm, this));
-		// Add ALL_PIM_ROUTERS4 multicast group, where the source is the node it self.
-		AddEntry(ALL_PIM_ROUTERS4, addr, Ipv4Address::GetLoopback(), i);
-		if (socketP->Bind (inetAddrP)){
-			NS_FATAL_ERROR ("Failed to bind() PIMDM socket");
-		}
-		socketP->BindToNetDevice (m_ipv4->GetNetDevice (i));
-		Ipv4InterfaceAddress mpim(Ipv4Address(ALL_PIM_ROUTERS4), Ipv4Mask::GetOnes());
-		m_socketAddresses[socketP] = mpim;
-		NS_LOG_DEBUG("Registering PIM Socket = "<<socketP << " Device = "<<m_ipv4->GetNetDevice (i)<< ", LocalAddr = "<<mpim.GetLocal()<<" Destination = "<<  ALL_PIM_ROUTERS4<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
-
-		// Create a socket to listen only on this interface
-		Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
-		socket->SetAttribute("Protocol", UintegerValue(PIM_IP_PROTOCOL_NUM));
-		socket->SetAttribute("IpHeaderInclude", BooleanValue(true));
-		socket->SetAllowBroadcast (true);
-		InetSocketAddress inetAddr (addr , PIM_PORT_NUMBER);
-		socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm, this));
-		if (socket->Bind (inetAddr)){
-			NS_FATAL_ERROR ("Failed to bind() PIMDM socket "<< addr<<":"<<PIM_PORT_NUMBER);
-		}
-		socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
-		m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
-		NS_LOG_DEBUG("Registering Local Socket = "<<socket << " Device = "<<m_ipv4->GetNetDevice (i)<< ", LocalAddr = "<<m_ipv4->GetAddress (i, 0).GetLocal()<<" Destination = "<<  m_ipv4->GetAddress (i, 0).GetLocal ().GetSubnetDirectedBroadcast (m_ipv4->GetAddress (i, 0).GetMask ())<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
-
-		NS_LOG_DEBUG ("PIMDM up on " << m_ipv4->GetAddress (i, 0).GetLocal () << ", Generation Id = "<< m_generationID<<", Starting @ "<<m_startTime);
-		NeighborhoodStatus *ns = FindNeighborhoodStatus(i);
-		NS_ASSERT(ns == NULL);
-		InsertNeighborhoodStatus(i);
-		ns = FindNeighborhoodStatus(i);
-		EnablePimInterface(i);
-		ns->propagationDelay = Seconds(UniformVariable().GetValue(Propagation_Delay*.3, Propagation_Delay));
-		ns->overrideInterval = Seconds(UniformVariable().GetValue(Override_Interval*.3, Override_Interval));
-		ns->stateRefreshInterval = Seconds(UniformVariable().GetValue(RefreshInterval*.3, RefreshInterval));
-		ns->pruneHoldtime = Seconds(UniformVariable().GetValue(PruneHoldTime*.3, PruneHoldTime));
-		ns->LANDelayEnabled = true;
-		ns->stateRefreshCapable = true;
-		NS_LOG_DEBUG ("Generating Neighborhood ("<<i<<"): PD=" << ns->propagationDelay.GetSeconds() <<"s, OI="<< ns->overrideInterval.GetSeconds() <<
-				"s, SRI="<< ns->stateRefreshInterval.GetSeconds()<<"s, PHT="<< ns->pruneHoldtime.GetSeconds()<<"s, LDE="<<ns->LANDelayEnabled<<
-				"s, SRC="<< ns->stateRefreshCapable);
-		SourceGroupList *sgl = FindSourceGroupList(i);
-		NS_ASSERT(sgl==NULL);
-		InsertSourceGroupList(i);
-		Time rndHello = Seconds(UniformVariable().GetValue(0, Triggered_Hello_Delay));
-		Simulator::Schedule (rndHello, &MulticastRoutingProtocol::HelloTimerExpire, this, i);
-		ns->hello_timer.SetDelay(m_helloTime);
-		NS_LOG_DEBUG ("Generating SG List("<<i<<") HT="<<m_helloTime.GetSeconds()<<"s, Starting "<< rndHello.GetSeconds()<<"s");
-
-		for(std::map<Ipv4Address, RoutingMulticastTable>::iterator group = m_mrib.begin(); group!=m_mrib.end(); group++){
-			Ipv4Address groupIP = group->second.groupAddr;
-			if(groupIP == ALL_PIM_ROUTERS4) continue;
-			NS_LOG_DEBUG("D("<<i<<") = " << m_ipv4->GetNetDevice (i)<<", LocalAddr = "<<  addr<< ", Group "<<groupIP<<", #Source: "<< group->second.mgroup.size());
-			///Registering endpoint for that address... by creating a socket to listen only on this interface
-			Ptr<Socket> socketG = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
-			socketG->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
-			socketG->SetAttribute("IpHeaderInclude", BooleanValue(true));
-			socketG->SetAllowBroadcast (true);
-			InetSocketAddress inetAddr (groupIP, PIM_PORT_NUMBER);
-			socketG->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvData, this));
-			if (socketG->Bind (inetAddr)){
-				NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<groupIP);
-			}
-			socketG->BindToNetDevice (m_ipv4->GetNetDevice (i));
-//			m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0); //PROBLEM; does not broadcast onlocal IP, takes the other group-interface
-			Ipv4InterfaceAddress mgroup(groupIP, Ipv4Mask::GetOnes());
-			m_socketAddresses[socketG] = mgroup;
-			NS_LOG_DEBUG("Registering Group Socket = "<<socketG<< " Device = "<<socketG->GetBoundNetDevice()<< ", LocalAddr = "<<mgroup.GetLocal()<<" Destination = "<<  groupIP<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
-		}
-	}
 }
 
 
