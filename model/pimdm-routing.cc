@@ -1238,21 +1238,28 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	receivedPacket = socket->RecvFrom (sourceAddress);
 	uint64_t pid = receivedPacket->GetUid();
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
-	Ipv4Address source = inetSourceAddr.GetIpv4 ();
+	Ipv4Address sender = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
 	Ptr<Packet> copy = receivedPacket->Copy();// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
-	Ipv4Header ipv4Header;
-	copy->RemoveHeader(ipv4Header);
-	if(pid <= m_latestPacketID){
-		NS_LOG_DEBUG("Duplicated packet");
-		return;
+	Ipv4Header senderHeader, sourceHeader;
+	copy->RemoveHeader(senderHeader);
+
+	Ipv4Address group = senderHeader.GetDestination();
+	Ipv4Address source;
+	RoutingMulticastTable rmt;
+	MulticastEntry me;
+	if(Lookup(group, sender, rmt, me)){//there is a multicast group with that source
+		source = sender;
+		sourceHeader = senderHeader;
 	}
-	m_latestPacketID = pid;
+	else {
+		copy->RemoveHeader(sourceHeader);
+		source = sourceHeader.GetSource();
+	}
 
 	SocketAddressTag tag;
 	copy->RemovePacketTag(tag); // LOOK: it must be removed because will be added again by socket.
 
-	Ipv4Address group = ipv4Header.GetDestination();
 	NS_ASSERT (group.IsMulticast());
 	SourceGroupPair sgp(source, group);
 	Ptr<Ipv4Route> rpf_route = GetRoute(source);
@@ -1266,13 +1273,12 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);//DEFAULT interface
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
 	Ipv4Address gateway = (rpf_route!=NULL?rpf_route->GetGateway():Ipv4Address::GetLoopback());
-	Ipv4Address sender = gateway;
 	if(gateway == Ipv4Address::GetLoopback()){
 		//TODO: We don't know the next hop towards the source: first node finds it, then it relies packets.
 		SendHelloReply(m_ipv4->GetInterfaceForAddress(m_mainAddress),source);
 		return;
 	}
-	NS_LOG_DEBUG("LOCAL: "<<GetLocalAddress(interface)<<" GRP: "<<group<<" SRC: "<< source<< " Metric: "<< GetRouteMetric(interface,source) <<" IFC: "<<interface<<" GW: "<<gateway<< " PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
+	NS_LOG_DEBUG("Group "<<group<<" Source "<< source<< " Rely "<< sender<<" Local "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source) <<" IFC: "<<interface<<" GW: "<<gateway<< " PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	if(!sgState){
 		InsertSourceGroupState(interface, sgp);
@@ -1289,6 +1295,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 //	int32_t rpf_interface = RPF_interface(source);
 	int32_t rpf_interface = (rpf_route) ? m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice()):-1;
 
+//	if(rpf_interface == interface){//WIRED
+	if(sender == gateway){//sender in on the RPF towards the source
 		switch (sgState->upstream->GraftPrune){
 			//The Upstream(S, G) state machine MUST transition to the Pruned (P)
 			// state, send a Prune(S, G) to RPF'(S), and set PLT(S, G) to t_limit seconds.
@@ -1339,7 +1347,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			//	An (S, G) data packet arrived on a downstream interface.
 			//	The Assert state machine remains in the "I am Assert Winner" state.
 			//	The router MUST send an Assert(S, G) to interface I and set the Assert Timer (AT(S, G, I) to Assert_Time.
-				if(!IsDownstream(interface, sgp)) NS_LOG_ERROR("Packet received on Upstream interface! Assert_NoInfo");
+				//if(!IsDownstream(interface, sgp)) NS_LOG_ERROR("Packet received on Upstream interface! Assert_NoInfo");//WIRED
 				sgState->AssertState = Assert_Winner;
 				UpdateAssertWinner(sgState, interface);
 				PIMHeader assert;
@@ -1385,7 +1393,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 				sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
 				sgState->upstream->SG_SRT.SetArguments(sgp, interface);
 				sgState->upstream->SG_SRT.Schedule();
-				sgState->SG_DATA_TTL = ipv4Header.GetTtl();
+				sgState->SG_DATA_TTL = senderHeader.GetTtl();
 			}
 			break;
 		}
@@ -1404,7 +1412,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			sgState->upstream->SG_SAT.SetArguments(sgp, interface);
 			sgState->upstream->SG_SAT.Schedule();
 			double sample = UniformVariable().GetValue();
-			if(sample < TTL_SAMPLE && ipv4Header.GetTtl() > sgState->SG_DATA_TTL){
+			if(sample < TTL_SAMPLE && senderHeader.GetTtl() > sgState->SG_DATA_TTL){
 				sgState->SG_DATA_TTL += 1;
 			}
 			break;
@@ -1434,7 +1442,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	///   Packets that fail the RPF check MUST NOT be forwarded, and the router will conduct an assert process for the (S, G) pair specified in the packet.
 	///   Packets for which a route to the source cannot be found MUST be discarded.
 	NS_ASSERT_MSG(rpf_interface>0,"RPF_Interface not found");///   Packets for which a route to the source cannot be found MUST be discarded.
-	if(interface == rpf_interface && sgState->PruneState != Prune_Pruned ){
+//	if(interface == rpf_interface && sgState->PruneState != Prune_Pruned ){//WIRED
+	if(sender == gateway && sgState->PruneState != Prune_Pruned ){
 		/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
 		/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
 		oiflist = olist(source, group);
@@ -1447,7 +1456,11 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 			Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
 			//add a header
 			double delayMS = UniformVariable().GetValue()/1000.0;
-			Simulator::Schedule(Seconds(delayMS),&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, ipv4Header, *out);
+			fwdPacket->AddHeader(sourceHeader);//WIRED
+			senderHeader.SetSource(GetLocalAddress(interface));//WIRED
+			//,group,PIM_IP_PROTOCOL_NUM,copy->GetSize(),senderHeader.GetTtl(),false);
+			senderHeader.SetPayloadSize(sourceHeader.GetPayloadSize()+senderHeader.GetSerializedSize());//WIRED
+			Simulator::Schedule(Seconds(delayMS),&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, senderHeader, *out);
 		}
 	}
 	else {
