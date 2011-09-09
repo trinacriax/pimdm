@@ -895,22 +895,22 @@ MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupP
 	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
 }
 
-void
-MulticastRoutingProtocol::SendPruneBroadcast (int32_t interface, SourceGroupPair &sgp)
-{
-	NS_LOG_FUNCTION(this);
-	PIMHeader::MulticastGroupEntry mge;
-	PIMHeader msg;
-	Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
-	if(destination == Ipv4Address::GetLoopback()) return;
-	ForgeJoinPruneMessage(msg, destination);
-	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
-	AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceIfaceAddr));
-	AddMulticastGroupEntry(msg, mge);
-	Ptr<Packet> packet = Create<Packet> ();
-	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
-	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
-}
+//void
+//MulticastRoutingProtocol::SendPruneBroadcast (int32_t interface, SourceGroupPair &sgp)
+//{
+//	NS_LOG_FUNCTION(this);
+//	PIMHeader::MulticastGroupEntry mge;
+//	PIMHeader msg;
+//	Ipv4Address destination = RPF_prime(sgp.sourceIfaceAddr, sgp.groupMulticastAddr);
+//	if(destination == Ipv4Address::GetLoopback()) return;
+//	ForgeJoinPruneMessage(msg, destination);
+//	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
+//	AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceIfaceAddr));
+//	AddMulticastGroupEntry(msg, mge);
+//	Ptr<Packet> packet = Create<Packet> ();
+//	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceIfaceAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
+//	Simulator::Schedule(MilliSeconds(UniformVariable().GetValue()),&MulticastRoutingProtocol::SendPacketUnicast, this,packet, msg, destination);
+//}
 
 void
 MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgp)
@@ -1256,10 +1256,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		copy->RemoveHeader(sourceHeader);
 		source = sourceHeader.GetSource();
 	}
-
 	SocketAddressTag tag;
 	copy->RemovePacketTag(tag); // LOOK: it must be removed because will be added again by socket.
-
 	NS_ASSERT (group.IsMulticast());
 	SourceGroupPair sgp(source, group);
 	Ptr<Ipv4Route> rpf_route = GetRoute(source);
@@ -1315,9 +1313,10 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 					sgState->upstream->SG_PLT.Schedule();
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
-					sgState->upstream->SG_PLT.SetArguments(sgp, interface);
+					sgState->upstream->SG_PLT.SetArguments(sgp,sender);
 					int32_t interfaceGateway = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
-					SendPruneBroadcast(interfaceGateway, sgp);
+					SendPruneUnicast(sender, sgp);
+//					SendPruneBroadcast(interfaceGateway, sgp);
 					}
 					break;
 				}
@@ -1464,7 +1463,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		}
 	}
 	else {
-		SendPruneBroadcast(interface, sgp);
+//		SendPruneBroadcast(interface, sgp);
+		SendPruneUnicast(sender, sgp);
 	}
 }
 
@@ -1638,7 +1638,7 @@ MulticastRoutingProtocol::NeighborRestart (int32_t interface, Ipv4Address neighb
 			sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
 			sgState->SG_PT.SetArguments(sgState->SGPair);
 			sgState->SG_PT.Schedule();
-			Simulator::Schedule (Seconds(0), &MulticastRoutingProtocol::SendPruneBroadcast, this, interface, sgState->SGPair);
+			Simulator::Schedule (Seconds(0), &MulticastRoutingProtocol::SendPruneUnicast, this, neighbor, sgState->SGPair);
 		}
 	}
 //   TODO: Upon startup, a router MAY use any State Refresh messages received
@@ -1772,12 +1772,13 @@ MulticastRoutingProtocol::IsValidSG(int32_t interface, const Ipv4Address & sourc
 //       A Prune cannot be sent if this timer is running.
 //       This timer is normally set to t_limit (see 4.8).
 void
-MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp, int32_t interface)
+MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address destination)
 {
 	NS_LOG_FUNCTION(this);
+	int32_t interface = RPF_interface(destination);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	if(RPF_interface(sgp.sourceIfaceAddr)!=interface) return; // interface changed
-	SendPruneUnicast(RPF_prime(sgp.sourceIfaceAddr), sgp);
+	SendPruneUnicast(destination, sgp);
 	sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
 	sgState->upstream->SG_PLT.SetArguments(sgp);
 	sgState->upstream->SG_PLT.Schedule();
@@ -3045,11 +3046,11 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			//	   PLT(S, G) is not running, a Prune(S, G) MUST be sent to RPF'(S), and the PLT(S, G) MUST be set to t_limit.
 			//	   If the State Refresh has its Prune Indicator bit set to one, the router MUST reset PLT(S, G) to t_limit.
 				if(refresh.m_P==0 && !sgState->upstream->SG_PLT.IsRunning()){
-						SendPruneUnicast(RPF_prime(refresh.m_sourceAddr.m_unicastAddress), sgp);
 						sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 						sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
 						sgState->upstream->SG_PLT.SetArguments(sgp,interface);
 						sgState->upstream->SG_PLT.Schedule();
+						SendPruneUnicast(sender, sgp);
 					}
 				else if(refresh.m_P){
 					if(sgState->upstream->SG_PLT.IsRunning())
