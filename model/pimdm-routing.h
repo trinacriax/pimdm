@@ -537,7 +537,7 @@ private:
 	void HelloTimerExpire (int32_t interface);
 	void OTTimerExpire (SourceGroupPair &sgp, int32_t interface);
 	void GRTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
-	void PLTTimerExpire (SourceGroupPair &sgp, int32_t interface);
+	void PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address destination);
 	void ATTimerExpire (SourceGroupPair &sgp, int32_t interface);
 	void PPTTimerExpire (SourceGroupPair &sgp, int32_t interface);
 	void PTTimerExpire (SourceGroupPair &sgp, int32_t interface);
