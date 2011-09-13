@@ -378,6 +378,8 @@ struct NeighborhoodStatus{
 	NeighborList neighbors; ///< Neighbor State
 };
 
+typedef std::pair<int32_t, Ipv4Address> WiredEquivalentInterface ;	///< Neighbor List.
+
 }}; // namespace ns3, pimdm
 
 #endif  /* __PIM_DM_STRUCTURE_H__ */
