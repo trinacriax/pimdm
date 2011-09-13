@@ -88,33 +88,40 @@ operator < (const AssertMetric &a, const AssertMetric &b){
 /// (S,G) Pair. Source S and destination group G associated with an IP packet.
 struct SourceGroupPair{
 	SourceGroupPair():
-		sourceIfaceAddr("0.0.0.0"),
-		groupMulticastAddr("0.0.0.0")
+		sourceMulticastAddr("0.0.0.0"),
+		groupMulticastAddr("0.0.0.0"),
+		nextMulticastAddr("0.0.0.0")
 	{}
 	SourceGroupPair(Ipv4Address s, Ipv4Address g):
-		sourceIfaceAddr(s),
-		groupMulticastAddr(g){}
+		sourceMulticastAddr(s),
+		groupMulticastAddr(g){nextMulticastAddr = ("0.0.0.0");}
+	SourceGroupPair(Ipv4Address s, Ipv4Address g, Ipv4Address n):
+			sourceMulticastAddr(s),
+			groupMulticastAddr(g),
+			nextMulticastAddr(n){}
   /// Interface address of the source.
-	Ipv4Address sourceIfaceAddr;
+	Ipv4Address sourceMulticastAddr;
   /// Multicast group address.
 	Ipv4Address groupMulticastAddr;
+  /// Next hop address.
+	Ipv4Address nextMulticastAddr;
 };
 
 static inline bool
 operator == (const SourceGroupPair &a, const SourceGroupPair &b){
-	return (a.sourceIfaceAddr == b.sourceIfaceAddr)&&
+	return (a.sourceMulticastAddr == b.sourceMulticastAddr)&&
 			(a.groupMulticastAddr == b.groupMulticastAddr);
 }
 
 static inline bool
 operator < (const SourceGroupPair &a, const SourceGroupPair &b){
 	return (a.groupMulticastAddr < b.groupMulticastAddr) ||
-			((a.groupMulticastAddr == b.groupMulticastAddr) && (a.sourceIfaceAddr < b.sourceIfaceAddr));
+			((a.groupMulticastAddr == b.groupMulticastAddr) && (a.sourceMulticastAddr < b.sourceMulticastAddr));
 }
 
 static inline std::ostream&
 operator << (std::ostream &os, const SourceGroupPair &a){
-	os << "SourceGroupPair( SourceAddress = "<< a.sourceIfaceAddr<< ", GroupAddress = " << a.groupMulticastAddr<<")";
+	os << "SourceGroupPair( SourceAddress = "<< a.sourceMulticastAddr<< ", GroupAddress = " << a.groupMulticastAddr<<")";
 	return os;
 }
 
@@ -239,7 +246,7 @@ struct UpstreamState{
 
 //static inline std::ostream&
 //operator << (std::ostream &os, const SourceGroupState &a){
-//	os << "SourceGroupState (SourceGroupPair = ("<< a.SGPair.sourceIfaceAddr <<
+//	os << "SourceGroupState (SourceGroupPair = ("<< a.SGPair.sourceMulticastAddr <<
 //			","<<a.SGPair.groupMulticastAddr<< "), LocalMembership = " << a.LocalMembership <<
 //			", PruneState = " << a.PruneState << ", PPT = " << a.SGPPT.GetDelay().GetSeconds() <<
 //			", PT = "<< a.SGPT << ", Assert Winner = " << a.AssertState <<
