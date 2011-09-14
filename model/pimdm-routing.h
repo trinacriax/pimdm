@@ -505,7 +505,6 @@ private:
 	void RecvData (Ptr<Socket> socket);
 	void SendPacketPIMUnicast (Ptr<Packet> packet, const PIMHeader &message, Ipv4Address destination);
 	void SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv4Header &ipv4Header, int32_t interface);
-	void SendPacketPIMRouters (Ptr<Packet> packet, const PIMHeader &message);
 	void SendPacketPIMRoutersInterface (Ptr<Packet> packet, const PIMHeader &message, int32_t interface);
 	void SendPacketUnicast (Ptr<Packet> packet, Ipv4Address destination);
 	//end
@@ -812,26 +811,7 @@ private:
 		/// pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) (-) lost_assert (S,G) * (-)* boundary (G)
 		std::set_difference (resB.begin (), resB.end (), boundC.begin (), boundC.end (),std::inserter (resC, resC.end ()));
 		GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) (-) lost_assert (S,G) * (-)* boundary (G)",resC);
-		std::set<WiredEquivalentInterface > incCprime = incC;
-		for(std::set<WiredEquivalentInterface >::iterator citer = incC.begin(); citer != incC.end() ; citer++){
-			for(std::set<WiredEquivalentInterface >::iterator iter = resC.begin(); iter != resC.end() ; iter++){
-				if(iter->first == citer->first) {
-					incCprime.erase(*citer);
-					break;
-				}
-			}
-		}
-		result.clear();
-		std::set_difference (resC.begin (), resC.end (), incC.begin (), incC.end (),std::inserter (result, result.end ()));
-		GetPrinterList ("removing duplicates A: ",result);
-		resC.clear();
-		if(incCprime.size()){
-			std::set_union (result.begin (), result.end (), incCprime.begin (), incCprime.end (), std::inserter (resC, resC.end ()));
-			GetPrinterList ("removing duplicates B: ",resC);
-			return resC;
-		}
-		else
-			return result;
+		return resC;
 	}
 
 	void SourceDirectlyConnected (SourceGroupPair &sgp);
@@ -860,6 +840,25 @@ private:
 		GetPrinterList ("olist", _olist);
 		_olist.erase (RPF_interface(source));
 		GetPrinterList ("olist-RPF interface",_olist);
+//		std::set<WiredEquivalentInterface > def_olist, incC, incP;
+//		incC = pim_include (source, group);
+//		GetPrinterList ("incC ",incC);
+//		incP = pim_include (source, group);
+//		GetPrinterList ("incP ",incP);
+//		for(std::set<WiredEquivalentInterface >::iterator citer = incC.begin(); citer != incC.end() ; citer++){
+//			for(std::set<WiredEquivalentInterface >::iterator iter = _olist.begin(); iter != _olist.end() ; iter++){
+//				if(iter->first == citer->first) {//debugging here -> remove interfaces already present
+//					incP.erase(*citer);
+//					GetPrinterList ("incP ",incP);
+//					break;
+//				}
+//			}
+//		}
+//		std::set_difference(_olist.begin (), _olist.end (), incC.begin (), incC.end (),std::inserter (def_olist, def_olist.end ()));
+//		GetPrinterList ("removing all... ",def_olist);
+//		_olist.clear();
+//		std::set_union(def_olist.begin (), def_olist.end (), incP.begin (), incP.end (),std::inserter (_olist, _olist.end ()));
+//		GetPrinterList ("removing duplicates : ",_olist);
 		return _olist;
 	}
 
@@ -1081,6 +1080,7 @@ private:
 		WiredEquivalentInterface rpfCheck = RPF_interface (source);
 		bool couldAssert = rpfCheck.first != interface;
 		couldAssert = couldAssert || rpfCheck.second != neighbor;
+//		bool couldAssert = IsDownstream(interface, neighbor, source);
 		return couldAssert;
 	}
 
