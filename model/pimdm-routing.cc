@@ -1267,11 +1267,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	Ptr<Packet> copy = receivedPacket->Copy();// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
 	Ipv4Header senderHeader, sourceHeader;
 	RelyTag relyTag;
-	NS_LOG_DEBUG("Packet "<<copy->GetSize());
 	copy->RemoveHeader(sourceHeader);
-	NS_LOG_DEBUG("Packet "<<copy->GetSize());
 	bool rtag = copy->RemovePacketTag(relyTag);
-	NS_LOG_DEBUG("Packet "<<copy->GetSize());
 	if(relyTag.m_rely == 1)
 		copy->RemoveHeader(senderHeader);
 	else if (relyTag.m_rely == 2){
@@ -1280,7 +1277,6 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		}
 	else
 		senderHeader = sourceHeader;
-	NS_LOG_DEBUG("Packet "<<copy->GetSize());
 	source = sourceHeader.GetSource();
 	group = sourceHeader.GetDestination();
 	sender = senderHeader.GetSource();
@@ -1297,10 +1293,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		return;
 	}
 	NS_ASSERT(IsMyOwnAddress(destination));
-	NS_LOG_DEBUG("Packet "<<copy->GetSize());
 	SocketAddressTag satag;
 	copy->RemovePacketTag(satag); // LOOK: it must be removed because will be added again by socket.
-	NS_LOG_DEBUG("Packet "<<copy->GetSize());
 	NS_ASSERT (group.IsMulticast());
 	Ptr<Ipv4Route> rpf_route = GetRoute(source);
 	Ptr<NetDevice> netDevice = socket->GetBoundNetDevice();
