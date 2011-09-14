@@ -86,15 +86,15 @@ main (int argc, char *argv[])
 	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("AodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("MbnAodvNeighbors", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("MbnAodvNeighbors", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Node", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Ipv4EndPointDemux", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("UdpL4Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Packet", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("DefaultSimulatorImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
@@ -311,7 +311,7 @@ main (int argc, char *argv[])
 	apps = sink.Install (clients);
 	apps.Start (Seconds (4.0));
 	apps.Stop (Seconds (32.0));
-	Config::ConnectWithoutContext ("/NodeList/[16-29]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&SinkRx));
+	Config::ConnectWithoutContext ("/NodeList/[5-8]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&SinkRx));
 //
 //	MobilityHelper mobilityR;
 //	Ptr<ListPositionAllocator> positionAllocR = CreateObject<ListPositionAllocator> ();
@@ -339,8 +339,8 @@ main (int argc, char *argv[])
 //	mobilityC.SetMobilityModel("ns3::ConstantPositionMobilityModel");
 //	mobilityC.Install(client);
 
-	double deltaX = 100;
-	double deltaY = 100;
+	double deltaX, deltaY;
+	deltaX = deltaY = 100.0;
 	uint32_t widthG = (uint32_t)sqrt(sizePim*1.0);
 
 	MobilityHelper mobilityR;
@@ -364,11 +364,12 @@ main (int argc, char *argv[])
 
 	mobilityR.Install(routers);
 
+	deltaX = deltaY = 180.0;
 	MobilityHelper mobilityC;
 	mobilityC.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 	mobilityC.SetPositionAllocator ("ns3::GridPositionAllocator",
-	  "MinX", DoubleValue (10.0),
-	  "MinY", DoubleValue (10.0),
+	  "MinX", DoubleValue (-40.0),
+	  "MinY", DoubleValue (-40.0),
 	  "DeltaX", DoubleValue (deltaX),
 	  "DeltaY", DoubleValue (deltaY),
 	  "GridWidth", UintegerValue (widthG),
@@ -384,9 +385,9 @@ main (int argc, char *argv[])
 	mobilityS.Install(source);
 
 	for(int i = 0; i < allNodes.GetN(); i++){
-		  Ptr<MobilityModel> mobility2 = allNodes.Get(i)->GetObject<MobilityModel> ();
-	      Vector pos2 = mobility2->GetPosition (); // Get position
-	      NS_LOG_DEBUG("Position Node ["<<i<<"] = ("<< pos2.x << ", " << pos2.y<<", "<<pos2.z<<")");
+		  Ptr<MobilityModel> mobility = allNodes.Get(i)->GetObject<MobilityModel> ();
+	      Vector pos = mobility->GetPosition (); // Get position
+	      NS_LOG_DEBUG("Position Node ["<<i<<"] = ("<< pos.x << ", " << pos.y<<", "<<pos.z<<")");
 	}
 
 
