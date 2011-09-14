@@ -94,6 +94,10 @@
 #include "pimdm-structure.h"
 #include "pimdm-packet.h"
 
+#include "ns3/tag.h"
+#include "ns3/packet.h"
+#include "ns3/uinteger.h"
+
 #include "ns3/random-variable.h"
 #include "ns3/object.h"
 #include "ns3/packet.h"
@@ -1115,6 +1119,45 @@ private:
 		sgState->PruneState = state;
 	}
 };
+
+struct RelyTag : public Tag
+{
+	uint8_t m_rely;
+	RelyTag (uint8_t value = 0) : Tag(), m_rely(value) {}
+
+  static TypeId GetTypeId()
+  {
+	  static TypeId tid = TypeId ("ns3::RelyTag").SetParent<Tag>();
+	  return tid;
+  }
+
+  TypeId GetInstanceTypeId (void) const
+  {
+	  return GetTypeId();
+  }
+
+  uint32_t GetSerializedSize (void) const
+  {
+	  return sizeof(m_rely);
+  }
+
+  void Serialize (TagBuffer i) const
+  {
+	  i.WriteU8(m_rely);
+  }
+
+  void Deserialize (TagBuffer i)
+  {
+	  m_rely = i.ReadU8();
+  }
+
+  void Print (std::ostream &os) const
+  {
+	  os<<" RelyTag "<< m_rely;
+  }
+
+};
+
 }
 }// namespace pimdm, ns3
 #endif

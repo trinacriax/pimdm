@@ -1262,30 +1262,46 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	receivedPacket = socket->RecvFrom (sourceAddress);
 	uint64_t pid = receivedPacket->GetUid();
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
-	Ipv4Address source = inetSourceAddr.GetIpv4 ();
+	Ipv4Address source, group, sender, destination, gateway;
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
 	Ptr<Packet> copy = receivedPacket->Copy();// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
 	Ipv4Header senderHeader, sourceHeader;
+	RelyTag relyTag;
+	NS_LOG_DEBUG("Packet "<<copy->GetSize());
 	copy->RemoveHeader(sourceHeader);
-
-	Ipv4Address group = sourceHeader.GetDestination();
-	Ipv4Address sender = GetNextHop(source);
-	if(source == sender){//there is a multicast group with that source
-		sender = source;
-		senderHeader = sourceHeader;
-	}
-	else {
+	NS_LOG_DEBUG("Packet "<<copy->GetSize());
+	bool rtag = copy->RemovePacketTag(relyTag);
+	NS_LOG_DEBUG("Packet "<<copy->GetSize());
+	if(relyTag.m_rely == 1)
 		copy->RemoveHeader(senderHeader);
-		sender = senderHeader.GetSource();
-		if(!IsMyOwnAddress(senderHeader.GetDestination())){
-			NS_LOG_DEBUG("This packet "<< copy->GetUid()<< " is not for me "<< senderHeader.GetDestination());
-			return;
+	else if (relyTag.m_rely == 2){
+		NS_LOG_DEBUG("Drop packet "<< copy->GetUid()<< ", it is for clients.");
+		return ;
 		}
+	else
+		senderHeader = sourceHeader;
+	NS_LOG_DEBUG("Packet "<<copy->GetSize());
+	source = sourceHeader.GetSource();
+	group = sourceHeader.GetDestination();
+	sender = senderHeader.GetSource();
+	destination = senderHeader.GetDestination();
+	gateway = GetNextHop(source);
+	if(gateway == Ipv4Address::GetLoopback() && IsMyOwnAddress(destination)){
+		//TODO: We don't know the next hop towards the source: first node finds it, then it relies packets.
+		NS_LOG_DEBUG("RPF to "<< source<< " asking route");
+		SendHelloReply(m_ipv4->GetInterfaceForAddress(m_mainAddress), source);
+		return;
 	}
-	SocketAddressTag tag;
-	copy->RemovePacketTag(tag); // LOOK: it must be removed because will be added again by socket.
+	if((rtag && (destination.IsMulticast() || !IsMyOwnAddress(destination))) || (!rtag && destination.IsMulticast() && gateway != source)){
+		NS_LOG_DEBUG("Drop packet "<< copy->GetUid()<< ", is for someone else ["<< source<<"-"<<gateway<<"-"<<senderHeader.GetDestination() << ", Tag: "<< (uint16_t)relyTag.m_rely);
+		return;
+	}
+	NS_ASSERT(IsMyOwnAddress(destination));
+	NS_LOG_DEBUG("Packet "<<copy->GetSize());
+	SocketAddressTag satag;
+	copy->RemovePacketTag(satag); // LOOK: it must be removed because will be added again by socket.
+	NS_LOG_DEBUG("Packet "<<copy->GetSize());
 	NS_ASSERT (group.IsMulticast());
-	SourceGroupPair sgp(source, group);
 	Ptr<Ipv4Route> rpf_route = GetRoute(source);
 	Ptr<NetDevice> netDevice = socket->GetBoundNetDevice();
 	int32_t interface = -1;
@@ -1296,14 +1312,9 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	else //the underlying routing protocol is not able to get the right interface for the sender address:we guess it is the main interface..
 		interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);//DEFAULT interface
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
-	Ipv4Address gateway = (rpf_route!=NULL?rpf_route->GetGateway():Ipv4Address::GetLoopback());
-	if(gateway == Ipv4Address::GetLoopback()){
-		//TODO: We don't know the next hop towards the source: first node finds it, then it relies packets.
-		NS_LOG_DEBUG("Source "<< source<< " unknown...asking route");
-		SendHelloReply(m_ipv4->GetInterfaceForAddress(m_mainAddress), source);
-		return;
-	}
 	NS_LOG_DEBUG("Group "<<group<<" Source "<< source<< " Rely "<< sender<<" Local "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source) <<" IFC: "<<interface<<" GW: "<<gateway<< " PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
+	NS_ASSERT(group.IsMulticast());
+	SourceGroupPair sgp(source, group, sender);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp);
 	if(!sgState){
 		InsertSourceGroupState(interface, sender, sgp);
