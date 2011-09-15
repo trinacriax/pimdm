@@ -89,20 +89,20 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("MbnAodvNeighbors", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Node", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Ipv4EndPointDemux", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("UdpL4Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Packet", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("DefaultSimulatorImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 #endif
 	/// Number of PIM nodes
-	uint32_t sizePim = 4;
+	uint32_t sizePim = 16;
 	/// Number of client nodes
-	uint32_t sizeClient = 4;
+	uint32_t sizeClient = 16;
 	/// Animator filename
 	uint32_t sizeSource = 1;
 		/// Animator filename
@@ -110,7 +110,12 @@ main (int argc, char *argv[])
 	/// Distance between nodes, meters
 	double step = 100;
 	/// Simulation time, seconds
-	double totalTime = 60;
+	double totalTime = 80;
+	double onOffStart = 14;
+	double onOffStop = totalTime-5;
+	double sinkStart = onOffStart;
+	double sinkStop = totalTime-1;
+
 	/// Write per-device PCAP traces if true
 	bool pcap = true;
 	/// Print routes if true
@@ -303,15 +308,21 @@ main (int argc, char *argv[])
 	onoff.SetAttribute ("PacketSize", UintegerValue (1200));
 
 	ApplicationContainer apps = onoff.Install (source.Get (0));
-	apps.Start (Seconds (12.0));
-	apps.Stop (Seconds (28.0));
+	apps.Start (Seconds (onOffStart));
+	apps.Stop (Seconds (onOffStop));
 
 	NS_LOG_INFO ("Create Sink.");
 	PacketSinkHelper sink = PacketSinkHelper ("ns3::UdpSocketFactory", dst);
 	apps = sink.Install (clients);
-	apps.Start (Seconds (4.0));
-	apps.Stop (Seconds (32.0));
-	Config::ConnectWithoutContext ("/NodeList/[5-8]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&SinkRx));
+	apps.Start (Seconds (sinkStart));
+	apps.Stop (Seconds (sinkStop));
+	for(int i = source.GetN()+routers.GetN(); i < (source.GetN()+routers.GetN()+clients.GetN()); i++){
+		std::stringstream ss;
+		ss << "/NodeList/"<<i<<"/ApplicationList/0/$ns3::PacketSink/Rx";
+		Config::ConnectWithoutContext(ss.str(),MakeCallback (&SinkRx));
+		ss.str("");
+	}
+//	Config::ConnectWithoutContext ("/NodeList/[5-8]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&SinkRx));
 //
 //	MobilityHelper mobilityR;
 //	Ptr<ListPositionAllocator> positionAllocR = CreateObject<ListPositionAllocator> ();
@@ -364,12 +375,12 @@ main (int argc, char *argv[])
 
 	mobilityR.Install(routers);
 
-	deltaX = deltaY = 180.0;
+	deltaX = deltaY = 110.0;
 	MobilityHelper mobilityC;
 	mobilityC.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 	mobilityC.SetPositionAllocator ("ns3::GridPositionAllocator",
-	  "MinX", DoubleValue (-40.0),
-	  "MinY", DoubleValue (-40.0),
+	  "MinX", DoubleValue (10.0),
+	  "MinY", DoubleValue (10.0),
 	  "DeltaX", DoubleValue (deltaX),
 	  "DeltaY", DoubleValue (deltaY),
 	  "GridWidth", UintegerValue (widthG),
