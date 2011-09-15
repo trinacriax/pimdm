@@ -69,6 +69,11 @@ operator == (const AssertMetric &a, const AssertMetric &b){
 			(a.routeMetric == b.routeMetric);
 }
 
+static inline std::ostream&
+operator << (std::ostream& o, const AssertMetric &a){
+	return o << a.metricPreference << " "<< a.routeMetric<<" "<< a.IPAddress;
+}
+
 //When assert_metrics are compared, the metricPreference and routeMetric field are compared in order,
 //	where the first lower value wins.  If all fields are equal, the IP address of the router that
 //  sourced the Assert message is used as a tie-breaker, with the highest IP address winning.
