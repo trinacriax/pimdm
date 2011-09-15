@@ -2550,43 +2550,55 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 	NS_LOG_DEBUG("Node  "<<receiver <<" receives JP from "<<sender);
 	uint16_t groups = jp.m_joinPruneMessage.m_numGroups;
 	Time HoldTime = jp.m_joinPruneMessage.m_holdTime;
-	NS_LOG_DEBUG("Groups = "<<groups<<", HoldTime = "<<HoldTime.GetSeconds());
+	NS_LOG_DEBUG("Upstream Neighbor "<< jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress << ", Groups = " << groups << ", HoldTime = " << HoldTime.GetSeconds());
+//	Receive Join(S,G)
+//	   A Join(S,G) is received on interface I with the upstream neighbor
+//	   field set to the router's address on I.  The Prune(S,G)
+//	   Downstream state machine on interface I MUST transition to the
+//	   NoInfo (NI) state.  The PrunePending Timer (PPT(S,G,I)) MUST be cancelled.
 	for(std::vector<PIMHeader::MulticastGroupEntry>::iterator iter = jp.m_multicastGroups.begin();
 			iter != jp.m_multicastGroups.end(); iter++){///<Section 4.4.1.
 		NS_LOG_DEBUG("Join = "<<iter->m_numberJoinedSources<<", Prune = "<<iter->m_numberPrunedSources);
 		//JOIN sources' addresses
 		for(std::vector<PIMHeader::EncodedSource>::iterator iterJoin = iter->m_joinedSourceAddrs.begin();
 			iterJoin != iter->m_joinedSourceAddrs.end(); iterJoin++){
-			std::set<WiredEquivalentInterface> joinList = olist(iterJoin->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress);
+//			std::set<WiredEquivalentInterface> joinList = olist(iterJoin->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress);
 			//Interfaces interested in JOIN
-			for(std::set<WiredEquivalentInterface>::const_iterator iterList = joinList.begin(); iterList != joinList.end(); iterList++){
-				int32_t out_interface = iterList->first;
+//			for(std::set<WiredEquivalentInterface>::const_iterator iterList = joinList.begin(); iterList != joinList.end(); iterList++){
+//				int32_t out_interface = iterList->first;
 				// Upstream state machine
-				RecvJoin(jp, sender, receiver, out_interface, *iterJoin, iter->m_multicastGroupAddr);
-			}
+				RecvJoin(jp, sender, receiver, interface, *iterJoin, iter->m_multicastGroupAddr);
+//			}
 		}
 		//PRUNE
+//		A Prune(S,G) is received on interface I with the upstream
+//			neighbor field set to the router's address on I.  The Prune(S,G)
+//			Downstream state machine on interface I MUST transition to the
+//			PrunePending (PP) state.  The PrunePending Timer (PPT(S,G,I))
+//			MUST be set to J/P_Override_Interval if the router has more than
+//			one neighbor on I.  If the router has only one neighbor on
+//			interface I, then it SHOULD set the PPT(S,G,I) to zero,
+//			effectively transitioning immediately to the Pruned (P) state.
 		for(std::vector<PIMHeader::EncodedSource>::iterator iterPrune = iter->m_prunedSourceAddrs.begin();
 					iterPrune != iter->m_prunedSourceAddrs.end(); iterPrune++){
 			//This timer is set when a Prune(S, G) is received on the upstream interface where olist(S, G) != NULL.
 			//	When the timer expires, a Join(S, G) message is sent on the upstream interface.  This timer
 			//	is normally set to t_override (see 4.8).
-			std::set<WiredEquivalentInterface> pruneList = olist(iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress);
-			for(std::set<WiredEquivalentInterface>::const_iterator iterList = pruneList.begin(); iterList != pruneList.end(); iterList++){
-				int32_t out_interface = iterList->first;
-				SourceGroupPair sgp (iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress);
+//			std::set<WiredEquivalentInterface> pruneList = olist(iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress);
+//			for(std::set<WiredEquivalentInterface>::const_iterator iterList = pruneList.begin(); iterList != pruneList.end(); iterList++){
+//				int32_t out_interface = iterList->first;
+				SourceGroupPair sgp (iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress, sender);
 				if(IsUpstream(interface, sender, sgp)){
 					SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp);
 					if(sgState->upstream->SG_OT.IsRunning())
 						sgState->upstream->SG_OT.Cancel();
-					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(iterList->first)));
+					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 					sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
 					sgState->upstream->SG_OT.SetArguments(sgp, interface);
 					sgState->upstream->SG_OT.Schedule();
 				}
-				// Upstream state machine
-				RecvPrune(jp, sender, receiver, out_interface, *iterPrune, iter->m_multicastGroupAddr);
-			}
+				RecvPrune(jp, sender, receiver, interface, *iterPrune, iter->m_multicastGroupAddr);
+//			}
 		}
 	}
 }
