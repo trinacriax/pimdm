@@ -2687,7 +2687,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 	SourceGroupPair sgp(source.m_sourceAddress, group.m_groupAddress);
 //	int32_t sourceIface = wei.first;
  	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp);
- 	if (sgState == NULL) return;
+ 	NS_ASSERT(sgState != NULL);
 //	Ipv4Address current = GetLocalAddress(interface);
 	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
@@ -2698,14 +2698,14 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 			//  If the router has only one neighbor on interface I, then it SHOULD set the PPT(S, G, I) to zero,
 		    //  effectively transitioning immediately to the Pruned (P) state.
 			if(IsMyOwnAddress(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress)){
-				NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
 				sgState->PruneState = Prune_PrunePending;
+				NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
 				Time delay = Seconds(0);
 				if(nstatus->neighbors.size() == 0 )
 					sgState->PruneState = Prune_Pruned;
 				if(nstatus->neighbors.size()>1)
 					delay = Seconds(nstatus->overrideInterval.GetSeconds()+nstatus->propagationDelay.GetSeconds());
-				NS_LOG_DEBUG("Neighbor size "<< nstatus->neighbors.size()<< " Delay "<<delay.GetSeconds());
+				NS_LOG_DEBUG("Neighbor size "<< nstatus->neighbors.size()<< " Delay "<<delay.GetSeconds()<<"sec");
 				if(sgState->SG_PPT.IsRunning())
 					sgState->SG_PPT.Cancel();
 				sgState->SG_PPT.SetDelay(delay);
