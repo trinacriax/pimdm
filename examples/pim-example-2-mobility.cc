@@ -105,6 +105,11 @@ main (int argc, char *argv[])
 	uint32_t sizeClient = 16;
 	/// Animator filename
 	uint32_t sizeSource = 1;
+
+	double deltaX, deltaY;
+	deltaX = deltaY = 100.0;
+	uint32_t widthG = (uint32_t)sqrt(sizePim*1.0);
+
 		/// Animator filename
 	std::string animFile = "pimdm.tr";
 	/// Distance between nodes, meters
@@ -123,7 +128,6 @@ main (int argc, char *argv[])
 
 	SeedManager::SetSeed(1234);
 	CommandLine cmd;
-
 	cmd.AddValue("pcap", "Write PCAP traces.", pcap);
 	cmd.AddValue("printRoutes", "Print routing table dumps.", printRoutes);
 	cmd.AddValue("sizePim", "Number of PIM nodes.", sizePim);
@@ -350,9 +354,7 @@ main (int argc, char *argv[])
 //	mobilityC.SetMobilityModel("ns3::ConstantPositionMobilityModel");
 //	mobilityC.Install(client);
 
-	double deltaX, deltaY;
-	deltaX = deltaY = 100.0;
-	uint32_t widthG = (uint32_t)sqrt(sizePim*1.0);
+
 
 	MobilityHelper mobilityR;
 	mobilityR.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
