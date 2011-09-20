@@ -322,8 +322,6 @@ private:
 
 	bool IsValidSG (int32_t interface, const Ipv4Address & source,const Ipv4Address & group);
 
-	bool UsesNonPimDmOutgoingInterface (const Ipv4RoutingTableEntry &route);
-
 	int32_t GetReceivingInterface (Ipv4Address addr);
 
 	/// Threshold (I) returns the minimum TTL that a packet must have before it can be transmitted on interface I.
@@ -408,8 +406,8 @@ private:
 	void RecvPimDm (Ptr<Socket> socket);
 
 	void UpdateAssertWinner (SourceGroupState *sgState, int32_t interface);
-
 	void UpdateAssertWinner (SourceGroupState *sgState, uint32_t metricP, uint32_t routeP, Ipv4Address winner);
+	void UpdateAssertWinner (SourceGroupState *sgState, AssertMetric update);
 
 	void NeighborTimeout (int32_t interface);
 	/**
@@ -447,8 +445,7 @@ private:
 	SourceGroupState* FindSourceGroupState (int32_t interface, Ipv4Address neighbor, const SourceGroupPair &sgp);
 	SourceGroupState* FindSourceGroupState (int32_t interface, Ipv4Address neighbor, const SourceGroupPair &sgp, bool add);
 	SourceGroupState* FindSourceGroupState (int32_t interface, Ipv4Address neighbor, const Ipv4Address source, const Ipv4Address group);
-	void ChangeSourceGroupState (int32_t oldinterface, Ipv4Address oldneighbor,
-			int32_t newinterface, Ipv4Address newneighbor, const SourceGroupPair &sgp);
+//	void ChangeSourceGroupState (int32_t oldinterface, Ipv4Address oldneighbor, int32_t newinterface, Ipv4Address newneighbor, const SourceGroupPair &sgp);
 
 	void InsertNeighborhoodStatus (const int32_t interface);
 	NeighborhoodStatus* FindNeighborhoodStatus (int32_t interface);
@@ -457,9 +454,6 @@ private:
 	void InsertNeighborState(int32_t interface, const NeighborState ns);
 	NeighborState* FindNeighborState (int32_t interface, const NeighborState ns);
 	void EraseNeighborState (int32_t interface, const NeighborState &ns);
-	void EraseNeighborState (const int32_t interface);
-
-	void SetStateRefreshCapable (int32_t interface, bool state);
 
 	void SetLANDelayEnabled (int32_t interface, bool state);
 	void SetPropagationDelay (int32_t interface, Time delay);
@@ -504,6 +498,8 @@ private:
 	/// \param source Source IPv4 address
 	WiredEquivalentInterface RPF_interface (Ipv4Address source);
 
+	/// \brief Find the route for on-demand routing protocols.
+	/// \param destination Node to lookup.
 	void AskRoute (Ipv4Address destination);
 
 	/// \brief There are receivers for the given SourceGroup pair.

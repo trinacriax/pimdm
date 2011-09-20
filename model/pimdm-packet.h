@@ -30,10 +30,10 @@
 #define __PIM_DM_HEADER_H__
 
 #include <iostream>
+#include <stdio.h>
 #include <vector>
 #include <stdint.h>
-#include "stdio.h"
-#include "stdlib.h"
+#include <stdlib.h>
 #include "pimdm-common.h"
 #include "ns3/header.h"
 #include "ns3/ipv4-address.h"
@@ -173,6 +173,7 @@ struct EncodedUnicast{
 	Ipv4Address m_unicastAddress; // TODO: Just IPv4-> can be improved to get the corresponding addressFamily
 
 	void Print (std::ostream &os) const;
+
 	uint32_t GetSerializedSize (void) const;
 	void Serialize (Buffer::Iterator start) const;
 	uint32_t Deserialize (Buffer::Iterator start, uint32_t messageSize);
@@ -840,6 +841,7 @@ static inline std::ostream& operator<< (std::ostream& os, const PIMMessageList &
   os << "]";
   return os;
 }
+
 }//end namespace mbn
 }//end namespace ns3
 
