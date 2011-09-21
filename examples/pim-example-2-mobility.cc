@@ -63,6 +63,11 @@ static void SinkRx (Ptr<const Packet> p, const Address &ad)
 std::cout <<"Received Packet "<< p->GetSize() << " bytes from "<<InetSocketAddress::ConvertFrom (ad).GetIpv4()<< std::endl;
 }
 
+static void AppTx (Ptr<const Packet> p)
+{
+std::cout <<"Sending Packet "<< p->GetSize() << " bytes " << std::endl;
+}
+
 
 static void NodeStatusChanged(std::string source, Ptr<const mbn::RoutingProtocol> nodez) {
 	std::cout << Simulator::Now()<< " Node Status Changed: " << source << ", new status: "
@@ -78,16 +83,18 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("SimpleGlobalRoutingExample", LOG_LEVEL_INFO);
 	LogComponentEnable ("PimExample2Mob", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("MacLow", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("DcfManager", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("MacRxMiddle", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("YansWifiPhy", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("InterferenceHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("YansWifiChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("AodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("MbnAodvNeighbors", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("MbnAodvNeighbors", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("MbnRoutingTable", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
@@ -99,13 +106,20 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("Packet", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("DefaultSimulatorImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 #endif
+	/// Write per-device PCAP traces if true
+	bool pcap = true;
+	/// Print routes if true
+	bool printRoutes = true;
 	/// Number of PIM nodes
-	uint32_t sizePim = 16;
+	uint32_t sizePim = 12;
 	/// Number of client nodes
-	uint32_t sizeClient = 16;
+	uint32_t sizeClient = 12;
 	/// Animator filename
 	uint32_t sizeSource = 1;
 
+	int32_t routing = 3; //1) OLSR, 2) AODV, 3) MBN-AODV
+	uint32_t seed = 1234567890;
+	SeedManager::SetSeed(seed);
 	double deltaX, deltaY;
 	deltaX = deltaY = 100.0;
 	uint32_t widthG = (uint32_t)sqrt(sizePim*1.0);
@@ -121,11 +135,6 @@ main (int argc, char *argv[])
 	double sinkStart = onOffStart;
 	double sinkStop = totalTime-1;
 
-	/// Write per-device PCAP traces if true
-	bool pcap = true;
-	/// Print routes if true
-	bool printRoutes = true;
-
 	SeedManager::SetSeed(1234);
 	CommandLine cmd;
 	cmd.AddValue("pcap", "Write PCAP traces.", pcap);
@@ -133,6 +142,7 @@ main (int argc, char *argv[])
 	cmd.AddValue("sizePim", "Number of PIM nodes.", sizePim);
 	cmd.AddValue("sizeClient", "Number of PIM nodes.", sizeClient);
 	cmd.AddValue("sizeSource", "Number of PIM nodes.", sizeSource);
+	cmd.AddValue("routing", "Routing protocol to use.", routing);
 	cmd.AddValue("time", "Simulation time, s.", totalTime);
 	cmd.AddValue("step", "Grid step, m", step);
 	cmd.AddValue("animFile", "File Name for Animation Output", animFile);
@@ -170,13 +180,12 @@ main (int argc, char *argv[])
 
 	WifiHelper wifi = WifiHelper::Default ();
 	wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
-	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("OfdmRate6Mbps"), "RtsCtsThreshold", UintegerValue (0));
+	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("OfdmRate6Mbps"));
 
 	NetDeviceContainer sourceNetDev = wifi.Install(wifiPhy, wifiMac, source);
 	NetDeviceContainer routersNetDev = wifi.Install(wifiPhy, wifiMac, routers);
 	NetDeviceContainer clientsNetDev = wifi.Install(wifiPhy, wifiMac, clients);
 
-	int32_t routing = 3; //1) OLSR, 2) AODV, 3) MBN-AODV
 
 	// INSTALL INTERNET STACK
 	// Enable AODV
@@ -273,7 +282,7 @@ main (int argc, char *argv[])
 			}
 			case 3:{
 				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localWeightFunction",EnumValue(mbn::W_NODE_RND));
-				Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
+//				Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
 				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localNodeStatus",EnumValue(mbn::RN_NODE));
 				for(int i = source.GetN(); i < (source.GetN()+routers.GetN()); i++){
 					std::stringstream ss;
@@ -320,12 +329,16 @@ main (int argc, char *argv[])
 	apps = sink.Install (clients);
 	apps.Start (Seconds (sinkStart));
 	apps.Stop (Seconds (sinkStop));
-	for(int i = source.GetN()+routers.GetN(); i < (source.GetN()+routers.GetN()+clients.GetN()); i++){
-		std::stringstream ss;
-		ss << "/NodeList/"<<i<<"/ApplicationList/0/$ns3::PacketSink/Rx";
-		Config::ConnectWithoutContext(ss.str(),MakeCallback (&SinkRx));
-		ss.str("");
-	}
+	//sink callback
+//	for(int i = source.GetN()+routers.GetN(); i < (source.GetN()+routers.GetN()+clients.GetN()); i++){
+//		std::stringstream ss;
+//		ss << "/NodeList/"<<i<<"/ApplicationList/0/$ns3::PacketSink/Rx";
+//		Config::ConnectWithoutContext(ss.str(),MakeCallback (&SinkRx));
+//		ss.str("");
+//	}
+
+	Config::ConnectWithoutContext("/NodeList/0/ApplicationList/0/$ns3::OnOffApplication/Tx",MakeCallback (&AppTx));
+
 //	Config::ConnectWithoutContext ("/NodeList/[5-8]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&SinkRx));
 //
 //	MobilityHelper mobilityR;
