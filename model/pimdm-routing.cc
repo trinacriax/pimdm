@@ -1170,6 +1170,7 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
 		SourceGroupPair sgp (senderIfaceAddr, receiverIfaceAddr);
 		RPFCheck(sgp, interface,route);
 	}
+	if(route->GetGateway() == Ipv4Address::GetLoopback()) return AskRoute(senderIfaceAddr);
 	NS_ASSERT (senderIfacePort != PIM_PORT_NUMBER);
 	//Unlike PIM-SM, PIM-DM does not maintain a keepalive timer associated with each (S, G) route.
 	//  Within PIM-DM, route and state information associated with an (S, G) entry MUST be maintained as long as any
@@ -1244,7 +1245,8 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 	destination = senderHeader.GetDestination();
 	gateway = RPF_interface(source).second;
 	if(gateway == Ipv4Address::GetLoopback() && IsMyOwnAddress(destination)){
-		return AskRoute(source);
+		AskRoute(source);
+		gateway = sender;
 	}
 	if((rtag && (destination.IsMulticast() || !IsMyOwnAddress(destination))) || (!rtag && destination.IsMulticast() && gateway != source)){
 		NS_LOG_DEBUG("Drop packet "<< copy->GetUid()<< ", is for someone else [S:"<< source<<"; G:"<<gateway<<"; D:"<<senderHeader.GetDestination() << "] Tag: "<< (uint16_t)relyTag.m_rely);
@@ -1273,7 +1275,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 //	NS_ASSERT(Lookup(group,source,entry,mentry));
 	RPFCheck(sgp, interface, rpf_route);
 	std::set<WiredEquivalentInterface> fwd_list = olist(source, group);
-	if(IsUpstream(interface, sender, source)){//sender in on the RPF towards the source
+	if(gateway ==sender || IsUpstream(interface, sender, source)){//sender in on the RPF towards the source
 		switch (sgState->upstream->GraftPrune){
 			//The Upstream(S, G) state machine MUST transition to the Pruned (P)
 			// state, send a Prune(S, G) to RPF'(S), and set PLT(S, G) to t_limit seconds.
@@ -1419,7 +1421,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 
 	///   First, an RPF check MUST be performed to determine whether the packet should be accepted based on TIB state
 	///      and the interface on which that the packet arrived.
-	if(IsUpstream(interface, sender, source) && sgState->PruneState != Prune_Pruned ){
+	if((gateway == sender || IsUpstream(interface, sender, source)) && sgState->PruneState != Prune_Pruned ){
 		/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
 		/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
 //		fwd_list = olist(source, group);
@@ -1864,6 +1866,7 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 {
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
+	NS_ASSERT(sgState);
 	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
 			//nothing
@@ -1879,9 +1882,9 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 		//	Another Graft message for (S, G) SHOULD be unicast to RPF'(S) and the GraftRetry Timer (GRT(S, G)) reset to Graft_Retry_Period.
 		//	It is RECOMMENDED that the router retry a configured number of times before ceasing retries.
 			NeighborState dest(destination, GetLocalAddress(interface));
-			NeighborState *ns = FindNeighborState(interface, dest);
+			NeighborState *ns = FindNeighborState(interface, dest, true);
 			Ptr<Ipv4Route> route = GetRoute(destination);
-			if(route->GetGateway() == Ipv4Address::GetLoopback()) break; //Node lost the neighbor
+//			if(route->GetGateway() == Ipv4Address::GetLoopback()) break; //Node lost the neighbor -> send graft guarantee to find the gw
 			if(ns->neighborGraftRetry[0]<ns->neighborGraftRetry[1]){//increase counter retries
 				ns->neighborGraftRetry[0]++;
 				SendGraftUnicast(destination, sgp);
@@ -3695,6 +3698,14 @@ NeighborState* MulticastRoutingProtocol::FindNeighborState (int32_t interface, c
 	return NULL;
 }
 
+NeighborState* MulticastRoutingProtocol::FindNeighborState (int32_t interface, const NeighborState ns, bool append) {
+	if(append) {
+		InsertNeighborhoodStatus(interface);
+		InsertNeighborState(interface,ns);
+	}
+	return FindNeighborState(interface, ns);
+}
+
 void MulticastRoutingProtocol::InsertNeighborState(int32_t interface, const NeighborState ns) {
 	if (!FindNeighborState(interface, ns)) {
 		NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
@@ -3855,7 +3866,7 @@ Ipv4Header MulticastRoutingProtocol::BuildHeader (Ipv4Address source, Ipv4Addres
 /// If all routers on a LAN are using the LAN Prune Delay option, the Override_Interval (OI (I)) MUST be set to the
 /// largest value on the LAN. Otherwise, the Override_Interval (OI (I)) MUST be set to 2.5 seconds.
 
-uint32_t MulticastRoutingProtocol::t_override (int32_t interface){
+double MulticastRoutingProtocol::t_override (int32_t interface){
 	return UniformVariable ().GetValue (0, OverrideInterval (interface));
 }
 
@@ -3946,9 +3957,9 @@ void MulticastRoutingProtocol::SetPruneState (int32_t interface, Ipv4Address nei
 /// \param group Multicast group IPv4 address
 std::set<WiredEquivalentInterface > MulticastRoutingProtocol::olist (Ipv4Address source, Ipv4Address group) {
 	std::set<WiredEquivalentInterface > _olist = immediate_olist (source, group);
-	GetPrinterList ("olist", _olist);
+	// GetPrinterList ("olist", _olist);
 	_olist.erase (RPF_interface(source));
-	GetPrinterList ("olist-RPF interface",_olist);
+	// GetPrinterList ("olist-RPF interface",_olist);
 	return _olist;
 }
 
@@ -4146,45 +4157,45 @@ std::set<WiredEquivalentInterface > MulticastRoutingProtocol::immediate_olist (I
 	std::set<WiredEquivalentInterface > resA;
 	/// The set pim_nbrs is the set of all interfaces on which the router has at least one active PIM neighbor.
 	std::set<WiredEquivalentInterface > pim_nbrz = pim_nbrs ();
-	GetPrinterList ("pim_nbrz",pim_nbrz);
+	// GetPrinterList ("pim_nbrz",pim_nbrz);
 	/// prunes (S,G) = {all interfaces I such that DownstreamPState (S,G,I) is in Pruned state}
 	std::set<WiredEquivalentInterface > prunez = prunes (source, group);
-	GetPrinterList ("prunez",prunez);
+	// GetPrinterList ("prunez",prunez);
 	/// pim_nbrs * (-)* prunes (S,G)
 	std::set_difference (pim_nbrz.begin (), pim_nbrz.end (), prunez.begin (), prunez.end (),
 			 std::inserter (resA, resA.end ()));
-	GetPrinterList ("pim_nbrs * (-)* prunes (S,G)",resA);
+	// GetPrinterList ("pim_nbrs * (-)* prunes (S,G)",resA);
 	std::set<WiredEquivalentInterface > resB;
 	/// pim_include (*,G) = {all interfaces I such that: local_receiver_include (*,G,I)}
 	std::set<WiredEquivalentInterface > inc = pim_include (Ipv4Address::GetAny (), group);
-	GetPrinterList ("pim_include (*,G)",inc);
+	// GetPrinterList ("pim_include (*,G)",inc);
 	/// pim_exclude (S,G) = {all interfaces I such that: local_receiver_exclude (S,G,I)}
 	std::set<WiredEquivalentInterface > exc = pim_exclude (source, group);
-	GetPrinterList ("pim_exclude (S,G)",exc);
+	// GetPrinterList ("pim_exclude (S,G)",exc);
 	/// pim_include (*,G) * (-)* pim_exclude (S,G)
 	std::set_difference (inc.begin (), inc.end (), exc.begin (), exc.end (), std::inserter (resB, resB.end ()));
-	GetPrinterList ("pim_include (*,G) * (-)* pim_exclude (S,G)",resB);
+	// GetPrinterList ("pim_include (*,G) * (-)* pim_exclude (S,G)",resB);
 	std::set<WiredEquivalentInterface > result;
 	/// pim_nbrs (-) prunes (S,G) * (+)* (pim_include (*,G) (-) pim_exclude (S,G) )
 	std::set_union (resA.begin (), resA.end (), resB.begin (), resB.end (), std::inserter (result, result.end ()));
-	GetPrinterList ("pim_nbrs (-) prunes (S,G) * (+)* (pim_include (*,G) (-) pim_exclude (S,G))",result);
+	// GetPrinterList ("pim_nbrs (-) prunes (S,G) * (+)* (pim_include (*,G) (-) pim_exclude (S,G))",result);
 	/// pim_include (S,G) = {all interfaces I such that: local_receiver_include (S,G,I)}
 	std::set<WiredEquivalentInterface > incC = pim_include (source, group);
-	GetPrinterList ("pim_include (S,G)",incC);
+	// GetPrinterList ("pim_include (S,G)",incC);
 	/// pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) * (+)* pim_include (S,G)
 	std::set_union (result.begin (), result.end (), incC.begin (), incC.end (), std::inserter (resA, resA.end ()));
-	GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) * (+)* pim_include (S,G)",resA);
+	// GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) * (+)* pim_include (S,G)",resA);
 	std::set<WiredEquivalentInterface > lostC = lost_assert (source, group);
-	GetPrinterList ("lost_assert",lostC);
+	// GetPrinterList ("lost_assert",lostC);
 	/// pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) * (-)* lost_assert (S,G)
 	std::set_difference (resA.begin (), resA.end (), lostC.begin (), lostC.end (),std::inserter (resB, resB.end ()));
-	GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) * (-)* lost_assert (S,G)",resB);
+	// GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) * (-)* lost_assert (S,G)",resB);
 	std::set<WiredEquivalentInterface > boundC = boundary (group);
-	GetPrinterList ("boundary",boundC);
+	// GetPrinterList ("boundary",boundC);
 	std::set<WiredEquivalentInterface > resC;
 	/// pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) (-) lost_assert (S,G) * (-)* boundary (G)
 	std::set_difference (resB.begin (), resB.end (), boundC.begin (), boundC.end (),std::inserter (resC, resC.end ()));
-	GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) (-) lost_assert (S,G) * (-)* boundary (G)",resC);
+	// GetPrinterList ("pim_nbrs (-) prunes (S,G) (+) (pim_include (*,G) (-) pim_exclude (S,G) ) (+) pim_include (S,G) (-) lost_assert (S,G) * (-)* boundary (G)",resC);
 	return resC;
 }
 

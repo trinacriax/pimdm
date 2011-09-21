@@ -453,6 +453,8 @@ private:
 
 	void InsertNeighborState(int32_t interface, const NeighborState ns);
 	NeighborState* FindNeighborState (int32_t interface, const NeighborState ns);
+	NeighborState* FindNeighborState (int32_t interface, const NeighborState ns, bool append);
+
 	void EraseNeighborState (int32_t interface, const NeighborState &ns);
 
 	void SetLANDelayEnabled (int32_t interface, bool state);
