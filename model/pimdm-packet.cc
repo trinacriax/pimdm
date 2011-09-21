@@ -399,7 +399,7 @@ PIMHeader::HelloMessage::Serialize (Buffer::Iterator start) const
 		case HelloHoldTime:{
 			NS_ASSERT (he.m_optionLength == PIM_DM_HELLO_HOLDTIME);
 			i.WriteHtonU16(PIM_DM_HELLO_HOLDTIME);
-			i.WriteHtonU16(he.m_optionValue.holdTime.m_holdTime.GetSeconds());
+			i.WriteHtonU16((uint16_t)he.m_optionValue.holdTime.m_holdTime.GetSeconds());
 			break;
 		}
 	    case LANPruneDelay:{
@@ -516,7 +516,7 @@ PIMHeader::JoinPruneGraftMessage::Serialize (Buffer::Iterator start) const
   i.Next(size);
   i.WriteU8(this->m_reserved);
   i.WriteU8(this->m_numGroups);
-  uint16_t hold = this->m_holdTime.GetSeconds();
+  uint16_t hold = (uint16_t) this->m_holdTime.GetSeconds();
   i.WriteHtonU16(hold);
 //  std::cout << "Join SE\n";
 //  Print(std::cout);

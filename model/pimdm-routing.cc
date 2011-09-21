@@ -182,7 +182,7 @@ MulticastRoutingProtocol::register_member (std::string SGI){
 	}
 	AddEntry(group,source,Ipv4Address::GetLoopback(),-1);//We got an entry from IGMP for this source-group
 	int32_t sources = m_mrib.find(group)->second.mgroup.size();
-	NS_LOG_DEBUG("MainAddr = "<<  m_mainAddress << ", Group "<<group<<", #Source: "<< sources);
+	NS_LOG_DEBUG("Main Addr = "<<  m_mainAddress << ", Group "<<group<<", #Source: "<< sources);
 	if(group == ALL_PIM_ROUTERS4 || sources>1) return;
 	for(int32_t i = 0; i < m_ipv4->GetNInterfaces(); i++){
 		if(IsLoopInterface(i))
@@ -502,7 +502,16 @@ MulticastRoutingProtocol::IsMyOwnAddress (const Ipv4Address & address) const
 void
 MulticastRoutingProtocol::NotifyInterfaceUp (uint32_t i)
 {
-	NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Up: "<<i);
+	NS_LOG_FUNCTION(this);
+	NS_LOG_DEBUG("Interface Up: "<<i);
+	NS_LOG_FUNCTION(this);
+	if (m_mainAddress == Ipv4Address ()) {
+		Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
+		if (addr != Ipv4Address::GetLoopback()) {
+			m_mainAddress = addr;
+		}
+	}
+	NS_ASSERT (m_mainAddress != Ipv4Address ());
 	EnablePimInterface(i);
 }
 
@@ -637,24 +646,6 @@ MulticastRoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) co
 
 void MulticastRoutingProtocol::DoStart ()
 {
-	NS_LOG_FUNCTION(this);
-    Ipv4Address loopback ("127.0.0.1");
-	if (m_mainAddress == Ipv4Address ())
-	    {
-	      for (int32_t i = 0; i < m_ipv4->GetNInterfaces (); i++)
-	        {
-	          // Use primary address, if multiple
-	          Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
-	          if (addr != loopback)
-	            {
-	              m_mainAddress = addr;
-	              // ALL-PIM-ROUTERS socket
-	              break;
-	            }
-	        }
-
-	      NS_ASSERT (m_mainAddress != Ipv4Address ());
-	    }
 	if(m_generationID==0)
 		m_generationID = UniformVariable().GetInteger(1, INT_MAX);///force value > 0
 	m_latestPacketID = 0;
@@ -2581,7 +2572,7 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 //				int32_t out_interface = iterList->first;
 				SourceGroupPair sgp (iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress, sender);
 				if(IsUpstream(interface, sender, sgp)){
-					SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp);
+					SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
 					if(!sgState->upstream)
 						sgState->upstream = new UpstreamState;
 					if(sgState->upstream->SG_OT.IsRunning())
@@ -3868,7 +3859,7 @@ uint32_t MulticastRoutingProtocol::t_override (int32_t interface){
 	return UniformVariable ().GetValue (0, OverrideInterval (interface));
 }
 
-uint32_t MulticastRoutingProtocol::OverrideInterval (int32_t interface){
+double MulticastRoutingProtocol::OverrideInterval (int32_t interface){
 		NeighborhoodStatus *ns = FindNeighborhoodStatus (interface);
 		bool LPDO = true;
 		for (std::list<NeighborState>::iterator iter = ns->neighbors.begin (); iter!=ns->neighbors.end () && LPDO; iter++){

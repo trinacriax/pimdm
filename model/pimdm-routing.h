@@ -37,7 +37,7 @@
 ///  reasonably be expected to keep the Hello active until a new Hello
 ///  message is received. On most links, this will be 3.5 times the value
 ///  of Hello_Period.
-#define Hold_Time_Default (3.5*Hello_Period) //seconds
+#define Hold_Time_Default ((uint16_t)(3.5*Hello_Period)) //seconds
 /// Timer Name: Assert Timer (AT (S,G,I)). Period after last assert before assert state is timed out.
 #define Assert_Time 180
 /// Timer Name: Graft Retry Timer (GRT (S,G)). In the absence of receipt of a GraftAck message, the time before retransmission of a Graft message.
@@ -335,9 +335,9 @@ private:
 	/// If all routers on a LAN are using the LAN Prune Delay option, the Override_Interval (OI (I)) MUST be set to the
 	/// largest value on the LAN. Otherwise, the Override_Interval (OI (I)) MUST be set to 2.5 seconds.
 
-	uint32_t t_override (int32_t interface);
+	double t_override (int32_t interface);
 
-	uint32_t OverrideInterval (int32_t interface);
+	double OverrideInterval (int32_t interface);
 
 	PIMHeader::EncodedUnicast ForgeEncodedUnicast (Ipv4Address unicast);
 	PIMHeader::EncodedGroup ForgeEncodedGroup (Ipv4Address group);
