@@ -601,6 +601,9 @@ private:
 	bool StateRefreshCapable (int32_t interface);
 
 	void SetPruneState (int32_t interface, Ipv4Address neighbor, SourceGroupPair sgp, PruneState state);
+	Time TransmissionDelay (double l, double u, enum Time::Unit unit);
+	Time TransmissionDelay  (double l, double u);
+	Time TransmissionDelay  ();
 };
 
 struct RelyTag : public Tag
