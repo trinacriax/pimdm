@@ -31,7 +31,6 @@
 #include "ns3/ipv4-raw-socket-factory.h"
 #include "ns3/udp-socket-factory.h"
 #include "ns3/simulator.h"
-#include "ns3/log.h"
 #include "ns3/names.h"
 #include "ns3/random-variable.h"
 #include "ns3/inet-socket-address.h"
