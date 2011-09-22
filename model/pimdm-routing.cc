@@ -192,7 +192,7 @@ MulticastRoutingProtocol::register_member (std::string SGI){
 		socketG->SetAttribute("IpHeaderInclude", BooleanValue(true));
 		socketG->SetAllowBroadcast (true);
 		InetSocketAddress inetAddr (group, PIM_PORT_NUMBER);
-		socketG->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvData, this));
+		socketG->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvMessage, this));
 		if (socketG->Bind (inetAddr)){
 			NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<group);
 		}
@@ -535,7 +535,7 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t j, Ipv4InterfaceAddress add
 	socketP->SetAttribute("IpHeaderInclude", BooleanValue(true));
 	socketP->SetAllowBroadcast (false);
 	InetSocketAddress inetAddrP (ALL_PIM_ROUTERS4, PIM_PORT_NUMBER);
-	socketP->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm, this));
+	socketP->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvMessage, this));
 	// Add ALL_PIM_ROUTERS4 multicast group, where the source is the node it self.
 	AddEntry(ALL_PIM_ROUTERS4, addr, Ipv4Address::GetLoopback(), i);
 	if (socketP->Bind (inetAddrP)){
@@ -552,7 +552,7 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t j, Ipv4InterfaceAddress add
 	socket->SetAttribute("IpHeaderInclude", BooleanValue(true));
 	socket->SetAllowBroadcast (true);
 	InetSocketAddress inetAddr (addr , PIM_PORT_NUMBER);
-	socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvPimDm, this));
+	socket->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvMessage, this));
 	if (socket->Bind (inetAddr)){
 		NS_FATAL_ERROR ("Failed to bind() PIMDM socket "<< addr<<":"<<PIM_PORT_NUMBER);
 	}
@@ -597,8 +597,8 @@ MulticastRoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
 Ipv4Address
 MulticastRoutingProtocol::GetLocalAddress (int32_t interface)
 {
-  NS_ASSERT(interface<m_ipv4->GetNInterfaces ());
-  return (interface>0 ? m_ipv4->GetAddress (interface, 0).GetLocal () : Ipv4Address::GetLoopback());
+  NS_ASSERT(interface<m_ipv4->GetNInterfaces () && interface >= 0);
+  return m_ipv4->GetAddress (interface, 0).GetLocal ();
 }
 
 void MulticastRoutingProtocol::DoDispose ()
@@ -1143,10 +1143,8 @@ MulticastRoutingProtocol::RPFCheck(SourceGroupPair sgp, int32_t interface, Ptr<I
 		}
 	}
 }
-
-
 void
-MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
+MulticastRoutingProtocol::RecvMessage (Ptr<Socket> socket)
 {
 	NS_LOG_FUNCTION(this);
 	Ptr<Packet> receivedPacket;
@@ -1155,14 +1153,42 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
 	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
 	Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4 ();
 	uint16_t senderIfacePort = inetSourceAddr.GetPort();
-	Ptr<Ipv4Route> route = GetRoute(senderIfaceAddr);
 	int32_t interface = m_ipv4->GetInterfaceForDevice(socket->GetBoundNetDevice());
 	Ipv4Address receiverIfaceAddr = m_ipv4->GetAddress(interface, 0).GetLocal();
 	NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
 	Ipv4Header ipv4header;
 	receivedPacket->RemoveHeader(ipv4header);
+	RelyTag rtag;
+	bool tag = receivedPacket->RemovePacketTag(rtag);
 	Ipv4Address group = ipv4header.GetDestination();
-	NS_LOG_DEBUG("Sender = "<< senderIfaceAddr<<", Group = " << group << ", Destination = "<< receiverIfaceAddr<< ", Socket = " << socket);
+	NS_LOG_DEBUG("Sender: "<< senderIfaceAddr << ", Port: " << senderIfacePort<< ", Group: "<< group<<  ", Tag: "<<tag);
+	receivedPacket->AddHeader(ipv4header);
+	if (tag || (group.IsMulticast() && group != Ipv4Address(ALL_PIM_ROUTERS4))){//Lookup(ipv4header.GetDestination(),ipv4header.GetSource(),rmt,me)){
+		if(tag)
+			receivedPacket->AddPacketTag(rtag);
+		return RecvPIMData (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
+	}
+	else if (group == Ipv4Address(ALL_PIM_ROUTERS4) || group == GetLocalAddress(interface)){
+		return RecvPIMDM (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
+	}
+	else
+		NS_LOG_ERROR("Unexpected message "<< receivedPacket);
+}
+
+
+
+void
+MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address senderIfaceAddr, uint16_t senderIfacePort, int32_t interface)
+{
+	NS_LOG_FUNCTION(this);
+	Ptr<Ipv4Route> route = GetRoute(senderIfaceAddr);
+	Ipv4Address receiverIfaceAddr = GetLocalAddress(interface);
+	NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
+	NS_ASSERT (interface);
+	Ipv4Header ipv4header;
+	receivedPacket->RemoveHeader(ipv4header);
+	Ipv4Address group = ipv4header.GetDestination();
+	NS_LOG_DEBUG("Sender = "<< senderIfaceAddr<<", Group = " << group << ", Destination = "<< receiverIfaceAddr);
 	if(route) NS_LOG_DEBUG("\t Route = "<<route->GetSource()<< " <"<<interface<<"> " <<route->GetGateway() <<" <...> "<<senderIfaceAddr);
 	if(ipv4header.GetDestination().IsMulticast() && ipv4header.GetDestination() != Ipv4Address(ALL_PIM_ROUTERS4)) {
 		NS_LOG_ERROR("Received "<< ipv4header.GetDestination() <<" it should be captured by another callback.");
@@ -1170,7 +1196,7 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
 		RPFCheck(sgp, interface,route);
 	}
 	if(route->GetGateway() == Ipv4Address::GetLoopback()) return AskRoute(senderIfaceAddr);
-	NS_ASSERT (senderIfacePort != PIM_PORT_NUMBER);
+	NS_ASSERT (senderIfacePort != PIM_PORT_NUMBER);// TODO: necessary?
 	//Unlike PIM-SM, PIM-DM does not maintain a keepalive timer associated with each (S, G) route.
 	//  Within PIM-DM, route and state information associated with an (S, G) entry MUST be maintained as long as any
 	//	timer associated with that (S, G) entry is active.  When no timer associated with an (S, G) entry is active,
@@ -1215,66 +1241,55 @@ MulticastRoutingProtocol::RecvPimDm (Ptr<Socket> socket)
 }
 
 void
-MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
+MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address senderIfaceAddr, uint16_t senderIfacePort, int32_t interface)
 {
-	NS_LOG_FUNCTION(this<< socket->GetBoundNetDevice());
-	Ptr<Packet> receivedPacket;
-	Address sourceAddress;
-	receivedPacket = socket->RecvFrom (sourceAddress);
-	uint64_t pid = receivedPacket->GetUid();
-	InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
+	NS_LOG_FUNCTION(this);
+	NS_ASSERT(interface);
 	Ipv4Address source, group, sender, destination, gateway;
-	uint16_t senderIfacePort = inetSourceAddr.GetPort();
 	Ptr<Packet> copy = receivedPacket->Copy();// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
 	Ipv4Header senderHeader, sourceHeader;
 	RelyTag relyTag;
-	copy->RemoveHeader(sourceHeader);
+	copy->RemoveHeader(senderHeader);
 	bool rtag = copy->RemovePacketTag(relyTag);
 	if(relyTag.m_rely == 1)
-		copy->RemoveHeader(senderHeader);
+		copy->RemoveHeader(sourceHeader);
 	else if (relyTag.m_rely == 2){
 		NS_LOG_DEBUG("Drop packet "<< copy->GetUid()<< ", it is for clients.");
 		return ;
 		}
 	else
-		senderHeader = sourceHeader;
+		sourceHeader = senderHeader;
 	source = sourceHeader.GetSource();
 	group = sourceHeader.GetDestination();
 	sender = senderHeader.GetSource();
 	destination = senderHeader.GetDestination();
 	gateway = RPF_interface(source).second;
 	if(gateway == Ipv4Address::GetLoopback() && IsMyOwnAddress(destination)){
-		AskRoute(source);
-		gateway = sender;
+		return AskRoute(source);
 	}
 	if((rtag && (destination.IsMulticast() || !IsMyOwnAddress(destination))) || (!rtag && destination.IsMulticast() && gateway != source)){
 		NS_LOG_DEBUG("Drop packet "<< copy->GetUid()<< ", is for someone else [S:"<< source<<"; G:"<<gateway<<"; D:"<<senderHeader.GetDestination() << "] Tag: "<< (uint16_t)relyTag.m_rely);
 		return;
 	}
-	NS_ASSERT(IsMyOwnAddress(destination));
+	NS_ASSERT(IsMyOwnAddress(destination));//useless
 	SocketAddressTag satag;
 	copy->RemovePacketTag(satag); // LOOK: it must be removed because will be added again by socket.
 	NS_ASSERT (group.IsMulticast());
 	Ptr<Ipv4Route> rpf_route = GetRoute(source);
-	Ptr<NetDevice> netDevice = socket->GetBoundNetDevice();
-	int32_t interface = -1;
-	if(netDevice)
-		interface = m_ipv4->GetInterfaceForDevice(netDevice);//interface of the device where the node received the packet
-	else if (rpf_route)
-		interface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());//interface of the device towards the sender
-	else //the underlying routing protocol is not able to get the right interface for the sender address:we guess it is the main interface..
-		interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);//DEFAULT interface
+//	if(netDevice)
+//		interface = m_ipv4->GetInterfaceForDevice(netDevice);//interface of the device where the node received the packet
+//	if (rpf_route)
+//		interface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());//interface of the device towards the sender
+//	else //the underlying routing protocol is not able to get the right interface for the sender address:we guess it is the main interface..
+//		interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);//DEFAULT interface
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
 	NS_LOG_DEBUG("Group "<<group<<" Source "<< source<< " Rely "<< sender<<" Local "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source) <<" IFC: "<<interface<<" GW: "<<gateway<< " PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
 	NS_ASSERT(group.IsMulticast());
 	SourceGroupPair sgp (source, group, sender);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
-//	RoutingMulticastTable entry;
-//	MulticastEntry mentry;
-//	NS_ASSERT(Lookup(group,source,entry,mentry));
 	RPFCheck(sgp, interface, rpf_route);
 	std::set<WiredEquivalentInterface> fwd_list = olist(source, group);
-	if(gateway == sender /* Forward packet until we know the RPF */ || IsUpstream(interface, sender, source) /*sender in on the RPF towards the source*/){
+	if(IsUpstream(interface, sender, source) /*sender in on the RPF towards the source*/){
 		switch (sgState->upstream->GraftPrune){
 			//The Upstream(S, G) state machine MUST transition to the Pruned (P)
 			// state, send a Prune(S, G) to RPF'(S), and set PLT(S, G) to t_limit seconds.
@@ -1420,7 +1435,7 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 
 	///   First, an RPF check MUST be performed to determine whether the packet should be accepted based on TIB state
 	///      and the interface on which that the packet arrived.
-	if((gateway == sender || IsUpstream(interface, sender, source)) && sgState->PruneState != Prune_Pruned ){
+	if(IsUpstream(interface, sender, source) && sgState->PruneState != Prune_Pruned ){
 		/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
 		/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
 //		fwd_list = olist(source, group);
@@ -1447,11 +1462,12 @@ MulticastRoutingProtocol::RecvData (Ptr<Socket> socket)
 		if(!IsMyOwnAddress(out->second)) {//to PIM neighbors
 			relyTag.m_rely = 1;
 			fwdPacket->AddPacketTag(relyTag);
-			senderHeader.SetSource(GetLocalAddress(interface));//WIRED
-			senderHeader.SetDestination(out->second);//WIRED
-			fwdPacket->AddHeader(senderHeader);//WIRED
-			sourceHeader.SetPayloadSize(senderHeader.GetPayloadSize()+sourceHeader.GetSerializedSize());//WIRED
 			fwdPacket->AddHeader(sourceHeader);//WIRED
+			senderHeader.SetSource(GetLocalAddress(interface));//WIRED
+			senderHeader.SetProtocol(PIM_IP_PROTOCOL_NUM);
+			senderHeader.SetDestination(out->second);//WIRED
+			senderHeader.SetPayloadSize(sourceHeader.GetPayloadSize()+senderHeader.GetSerializedSize());//WIRED
+			fwdPacket->AddHeader(senderHeader);//WIRED
 			NS_LOG_DEBUG("DataFwd towards node "<<out->second <<" interfaces/nodes " << fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
 			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketUnicast, this, fwdPacket, out->second);
 		}

@@ -395,15 +395,16 @@ private:
 
 	void SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgpair);
 
-	void RecvData (Ptr<Socket> socket);
+	void RecvMessage (Ptr<Socket> packet);
+	void RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address senderIfaceAddr, uint16_t senderIfacePort, int32_t interface);
+	void RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address senderIfaceAddr, uint16_t senderIfacePort, int32_t interface);
+
 	void SendPacketPIMUnicast (Ptr<Packet> packet, const PIMHeader &message, Ipv4Address destination);
 	void SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv4Header &ipv4Header, int32_t interface);
 	void SendPacketPIMRoutersInterface (Ptr<Packet> packet, const PIMHeader &message, int32_t interface);
 	void SendPacketUnicast (Ptr<Packet> packet, Ipv4Address destination);
 	//end
 	void NeighborRestart (int32_t interface, Ipv4Address neighbor);
-
-	void RecvPimDm (Ptr<Socket> socket);
 
 	void UpdateAssertWinner (SourceGroupState *sgState, int32_t interface);
 	void UpdateAssertWinner (SourceGroupState *sgState, uint32_t metricP, uint32_t routeP, Ipv4Address winner);
