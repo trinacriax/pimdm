@@ -87,6 +87,7 @@
 //  default value of 3 seconds.
 #define JoinDelay 3 //Prune override
 #define TTL_SAMPLE .2
+#define PIMDM_TTL 1
 #define PIM_RESERVED 0
 #define PIM_PORT_NUMBER 703 //IANA Unassigned
 
