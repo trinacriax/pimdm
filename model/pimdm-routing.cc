@@ -3465,11 +3465,11 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 {
 	NS_LOG_LOGIC("Sender = "<< sender<< " Receiver = "<< receiver);
 	uint16_t entry = 0;
-	NeighborState tmp(sender, receiver);
-	NeighborState *ns = FindNeighborState(interface, tmp);
+	NeighborState *tmp = new NeighborState (sender, receiver);
+	NeighborState *ns = FindNeighborState(interface, *tmp);
 	if(!ns){// Hello message received from a new neighbor
-		InsertNeighborState(interface, tmp);
-		ns = FindNeighborState(interface, tmp);
+		InsertNeighborState(interface, *tmp);
+		ns = FindNeighborState(interface, *tmp);
 		NeighborhoodStatus *nst = FindNeighborhoodStatus(interface);
 		// If a Hello message is received from a new neighbor, the receiving router SHOULD send its own Hello message
 		//    after a random delay between 0 and Triggered_Hello_Delay.
@@ -3489,7 +3489,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 						ns->neighborTimeoutB=false;
 						break;
 					case 0://Removing old information
-						EraseNeighborState(interface, tmp);
+						EraseNeighborState(interface, *tmp);
 						break;
 					default:
 						if(ns->neigborNLT.IsRunning()){
@@ -3513,7 +3513,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 					// Generation ID changed The Generation ID is regenerated whenever PIM
 					//   forwarding is started or restarted on the interface.
 					EraseNeighborState(interface, *ns);
-					InsertNeighborState(interface, tmp);
+					InsertNeighborState(interface, *tmp);
 					NeighborRestart(interface, sender);
 				}
 				break;
@@ -3667,8 +3667,9 @@ SourceGroupState* MulticastRoutingProtocol::FindSourceGroupState (int32_t interf
 		InsertSourceGroupList(interface, neighbor);
 	if (add && !FindSourceGroupState(interface, neighbor, sgp))
 		InsertSourceGroupState(interface, neighbor, sgp);
-	if(add && !(FindSourceGroupState(interface, neighbor, sgp)->upstream))
-		FindSourceGroupState(interface, neighbor, sgp)->upstream = new UpstreamState;
+	SourceGroupState *sgState = FindSourceGroupState(interface, neighbor, sgp);
+	if(add && IsUpstream(interface, neighbor, sgp.sourceMulticastAddr) && sgState->upstream == NULL)
+		sgState->upstream = new UpstreamState ();
 	return FindSourceGroupState(interface, neighbor, sgp);
 }
 
