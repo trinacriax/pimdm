@@ -168,7 +168,7 @@ MulticastRoutingProtocol::register_member (std::string SGI){
 	int32_t interface;
 	ParseSourceGroupInterface(SGI, group, source, interface);
 	if(source == group && interface == 0) return;//skip initialization
-	NS_LOG_DEBUG("Member for ("<<source<<","<<group<<") over interface "<< interface);
+	NS_LOG_LOGIC("Member for ("<<source<<","<<group<<") over interface "<< interface);
 	SourceGroupPair sgp (source,group);
 	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){//add a new receiver on a specific (source,group) on a given interface
 		std::set<int32_t> iface;
@@ -894,7 +894,7 @@ MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupP
 //	msg.Print(std::cout);
 	Ptr<Packet> packet = Create<Packet> ();
 	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
-	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
+	NS_LOG_LOGIC("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
 }
 
 void
@@ -958,7 +958,7 @@ MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination, SourceGroup
 	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
 	AddMulticastGroupSourceJoin(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
 	AddMulticastGroupEntry(msg, mge);
-	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
+	NS_LOG_LOGIC("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
 	// Send the packet toward the RPF(S)
 	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
 }
@@ -986,7 +986,7 @@ MulticastRoutingProtocol::SendGraftAckUnicast(SourceGroupPair &sgp, const Ipv4Ad
 	PIMHeader msg; // Create the graft packet
 	ForgeGraftAckMessage(msg, destination);
 	AddMulticastGroupEntry(msg, mge);
-	NS_LOG_DEBUG("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination);
+	NS_LOG_LOGIC("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination);
 	// Send the packet toward the RPF(S)
 	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
 }
@@ -1161,15 +1161,14 @@ MulticastRoutingProtocol::RecvMessage (Ptr<Socket> socket)
 	RelyTag rtag;
 	bool tag = receivedPacket->RemovePacketTag(rtag);
 	Ipv4Address group = ipv4header.GetDestination();
-	NS_LOG_DEBUG("Sender: "<< senderIfaceAddr << ", Port: " << senderIfacePort<< ", Group: "<< group<<  ", Tag: "<<tag);
+	NS_LOG_LOGIC("Sender: "<< senderIfaceAddr << ", Port: " << senderIfacePort<< ", Group: "<< group<<  ", Tag: "<<tag);
 	receivedPacket->AddHeader(ipv4header);
 	if (tag || (group.IsMulticast() && group != Ipv4Address(ALL_PIM_ROUTERS4))){//Lookup(ipv4header.GetDestination(),ipv4header.GetSource(),rmt,me)){
-		if(tag)
-			receivedPacket->AddPacketTag(rtag);
-		return RecvPIMData (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
+		if(tag) receivedPacket->AddPacketTag(rtag);
+		this->RecvPIMData (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
 	}
 	else if (group == Ipv4Address(ALL_PIM_ROUTERS4) || group == GetLocalAddress(interface)){
-		return RecvPIMDM (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
+		this->RecvPIMDM (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
 	}
 	else
 		NS_LOG_ERROR("Unexpected message "<< receivedPacket);
@@ -1188,7 +1187,7 @@ MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address sen
 	Ipv4Header ipv4header;
 	receivedPacket->RemoveHeader(ipv4header);
 	Ipv4Address group = ipv4header.GetDestination();
-	NS_LOG_DEBUG("Sender = "<< senderIfaceAddr<<", Group = " << group << ", Destination = "<< receiverIfaceAddr);
+	NS_LOG_LOGIC("Sender = "<< senderIfaceAddr<<", Group = " << group << ", Destination = "<< receiverIfaceAddr);
 	if(route) NS_LOG_DEBUG("\t Route = "<<route->GetSource()<< " <"<<interface<<"> " <<route->GetGateway() <<" <...> "<<senderIfaceAddr);
 	if(ipv4header.GetDestination().IsMulticast() && ipv4header.GetDestination() != Ipv4Address(ALL_PIM_ROUTERS4)) {
 		NS_LOG_ERROR("Received "<< ipv4header.GetDestination() <<" it should be captured by another callback.");
@@ -1196,7 +1195,7 @@ MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address sen
 		RPFCheck(sgp, interface,route);
 	}
 	if(route->GetGateway() == Ipv4Address::GetLoopback()) return AskRoute(senderIfaceAddr);
-	NS_ASSERT (senderIfacePort != PIM_PORT_NUMBER);// TODO: necessary?
+	NS_ASSERT (senderIfacePort != PIM_PORT_NUMBER);
 	//Unlike PIM-SM, PIM-DM does not maintain a keepalive timer associated with each (S, G) route.
 	//  Within PIM-DM, route and state information associated with an (S, G) entry MUST be maintained as long as any
 	//	timer associated with that (S, G) entry is active.  When no timer associated with an (S, G) entry is active,
@@ -1204,8 +1203,8 @@ MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address sen
 	PIMHeader pimdmPacket;
 	receivedPacket->RemoveHeader(pimdmPacket);
 //	if(pimdmPacket.GetType()!=PIM_HELLO && !IsValidSG(GetReceivingInterface(receiverIfaceAddr), senderIfaceAddr, group)){
-//			NS_LOG_DEBUG ("PIM-DM No running timer: discarded");
-//			return;
+//		NS_LOG_DEBUG ("PIM-DM No running timer: discarded");
+//		return;
 //	}
 	switch (pimdmPacket.GetType()){
 		case PIM_HELLO:{
@@ -1283,7 +1282,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 //	else //the underlying routing protocol is not able to get the right interface for the sender address:we guess it is the main interface..
 //		interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);//DEFAULT interface
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
-	NS_LOG_DEBUG("Group "<<group<<" Source "<< source<< " Rely "<< sender<<" Local "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source) <<" IFC: "<<interface<<" GW: "<<gateway<< " PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
+	NS_LOG_LOGIC("Group "<<group<<" Source "<< source<< " Rely "<< sender<<" Local "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source) <<" IFC: "<<interface<<" GW: "<<gateway<< " PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
 	NS_ASSERT(group.IsMulticast());
 	SourceGroupPair sgp (source, group, sender);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
@@ -1525,7 +1524,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 			//	set to the router's address on I.  The Prune(S, G) Downstream state machine on interface I
 			//	MUST transition to the NoInfo (NI) state and send a Graft Ack back to the Graft's source.
 			//	The Prune Timer (PT(S, G, I)) MUST be cancelled.
-			//	TODO: The router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
+			//	The router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
 			case Prune_Pruned:{
 				sgState->PruneState = Prune_NoInfo;
 				SendGraftAckUnicast(sgp, sender);
@@ -1684,7 +1683,7 @@ MulticastRoutingProtocol::SendPacketPIMRoutersInterface(Ptr<Packet> packet, cons
 			  << ", Local "<<GetLocalAddress(interface)<< ", If "<<  m_ipv4->GetInterfaceForDevice (i->first->GetBoundNetDevice()));
 	  if(m_ipv4->GetInterfaceForDevice (i->first->GetBoundNetDevice()) == interface && !i->second.GetLocal ().IsMulticast()){
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-		  NS_LOG_DEBUG ("Node " << GetLocalAddress(interface)<< " is sending to "<< bcast<<":"<<PIM_PORT_NUMBER<<", Socket "<< i->first);
+		  NS_LOG_LOGIC ("Node " << GetLocalAddress(interface)<< " is sending to "<< bcast<<":"<<PIM_PORT_NUMBER<<", Socket "<< i->first);
 		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
 		  break;
 	  }
@@ -1713,7 +1712,7 @@ MulticastRoutingProtocol::SendPacketPIMUnicast(Ptr<Packet> packet, const PIMHead
   		  Ptr<Packet> copy = packet->Copy();
   		  Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, copy->GetSize(), 1, false);
   		  copy->AddHeader(ipv4Header);
-  		  NS_LOG_DEBUG ("Node " << route->GetSource()<< " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
+  		  NS_LOG_LOGIC ("Node " << route->GetSource()<< " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
   		  i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
   		  break;
   	  }
@@ -1737,7 +1736,7 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, Ipv4Address dest
       {
   	  if(route->GetSource() == i->second.GetLocal () ){
   		  Ptr<Packet> copy = packet->Copy();
-  		  NS_LOG_DEBUG ("Node " << route->GetSource()<< " is sending packet "<<copy <<"("<<copy->GetSize() << ") to Destination: " << destination << ", Interface "<<interface<<", Socket "<<i->first);
+  		  NS_LOG_LOGIC ("Node " << route->GetSource()<< " is sending packet "<<copy <<"("<<copy->GetSize() << ") to Destination: " << destination << ", Interface "<<interface<<", Socket "<<i->first);
   		  i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
   		  break;
   	  }
@@ -1760,7 +1759,7 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
 	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
 		  packet->AddHeader(ipv4Header);
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
-		  NS_LOG_DEBUG ("Node " << GetObject<Node> ()->GetId() << " is forwarding packet " << packet <<"("<<packet->GetSize() << ") to Destination "<< ipv4Header.GetDestination() <<", Interface "<< interface<< ", Pid "<< packet->GetUid()<<", Socket "<<i->first);
+		  NS_LOG_LOGIC ("Node " << GetObject<Node> ()->GetId() << " is forwarding packet " << packet <<"("<<packet->GetSize() << ") to Destination "<< ipv4Header.GetDestination() <<", Interface "<< interface<< ", Pid "<< packet->GetUid()<<", Socket "<<i->first);
 		  i->first->SendTo (packet, 0, InetSocketAddress (ipv4Header.GetDestination(), PIM_PORT_NUMBER));
 		  break; // Just to speedup and avoid the complete loop over all sockets.
 	  }
@@ -2554,7 +2553,7 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 	NS_LOG_DEBUG("Node  "<<receiver <<" receives JP from "<<sender);
 	uint16_t groups = jp.m_joinPruneMessage.m_numGroups;
 	Time HoldTime = jp.m_joinPruneMessage.m_holdTime;
-	NS_LOG_DEBUG("Upstream Neighbor "<< jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress << ", Groups = " << groups << ", HoldTime = " << HoldTime.GetSeconds());
+	NS_LOG_LOGIC("Upstream Neighbor "<< jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress << ", Groups = " << groups << ", HoldTime = " << HoldTime.GetSeconds());
 //	Receive Join(S,G)
 //	   A Join(S,G) is received on interface I with the upstream neighbor
 //	   field set to the router's address on I.  The Prune(S,G)
@@ -2596,6 +2595,7 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 					SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
 					if(!sgState->upstream)
 						sgState->upstream = new UpstreamState;
+					NS_LOG_LOGIC("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
 					if(sgState->upstream->SG_OT.IsRunning())
 						sgState->upstream->SG_OT.Cancel();
 					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
@@ -2645,6 +2645,7 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 			if(GetNextHop(source.m_sourceAddress) != source.m_sourceAddress && !sgState->upstream->SG_OT.IsRunning()){
 				sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
+				NS_LOG_LOGIC("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
 				sgState->upstream->SG_OT.SetArguments(sgp, interface);
 				sgState->upstream->SG_OT.Schedule();
 				}
@@ -2674,6 +2675,7 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 			if(!sgState->upstream->SG_OT.IsRunning()){
 				sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
+				NS_LOG_LOGIC("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
 				sgState->upstream->SG_OT.SetArguments(sgp, interface);
 				sgState->upstream->SG_OT.Schedule();
 			}
@@ -3106,7 +3108,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
 	WiredEquivalentInterface wei = RPF_interface(sgp.sourceMulticastAddr);
 	Ipv4Address gateway = wei.second;
-	NS_LOG_DEBUG("Source " << sgp.sourceMulticastAddr << " Group " << sgp.groupMulticastAddr << " Gateway "<< gateway << " Sender "<< sender <<" Receiver "<<receiver << " Interface "<< interface);
+	NS_LOG_LOGIC("Source " << sgp.sourceMulticastAddr << " Group " << sgp.groupMulticastAddr << " Gateway "<< gateway << " Sender "<< sender <<" Receiver "<<receiver << " Interface "<< interface);
 	if(gateway == Ipv4Address::GetLoopback()) return AskRoute(sgp.sourceMulticastAddr);
 	//TODO: Upon startup, a router MAY use any State Refresh messages received within Hello_Period of its first Hello message on an interface to establish state information.
 	for(int32_t i = 0; Simulator::Now() < Seconds(m_startTime.GetSeconds()+Hello_Period) && i < m_ipv4->GetNInterfaces();i++){
@@ -3150,6 +3152,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					if(!sgState->upstream->SG_OT.IsRunning()){
 					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 					sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
+					NS_LOG_LOGIC("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
 					sgState->upstream->SG_OT.SetArguments(sgp, interface);
 					sgState->upstream->SG_OT.Schedule();
 					}
@@ -3186,6 +3189,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					if(!sgState->upstream->SG_OT.IsRunning()){
 						sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 						sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
+						NS_LOG_LOGIC("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
 						sgState->upstream->SG_OT.SetArguments(sgp, interface);
 						sgState->upstream->SG_OT.Schedule();
 					}
@@ -3456,7 +3460,7 @@ MulticastRoutingProtocol::ForwardingStateRefresh(PIMHeader::StateRefreshMessage 
 void
 MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address sender, Ipv4Address receiver, int32_t interface)
 {
-	NS_LOG_DEBUG("Sender = "<< sender<< " Receiver = "<< receiver);
+	NS_LOG_LOGIC("Sender = "<< sender<< " Receiver = "<< receiver);
 	uint16_t entry = 0;
 	NeighborState tmp(sender, receiver);
 	NeighborState *ns = FindNeighborState(interface, tmp);
@@ -3567,7 +3571,7 @@ MulticastRoutingProtocol::NeighborTimeout(int32_t interface)
 	int32_t size = nl->neighbors.size();
 	IsExpired pred;
 	nl->neighbors.erase (std::remove_if (nl->neighbors.begin (), nl->neighbors.end (), pred), nl->neighbors.end ());
-	NS_LOG_DEBUG("Clean neighbors list on interface "<< interface<<": "<< size << " -> "<< nl->neighbors.size());
+	NS_LOG_LOGIC("Clean neighbors list on interface "<< interface<<": "<< size << " -> "<< nl->neighbors.size());
 }
 
 void
@@ -4228,7 +4232,7 @@ Time MulticastRoutingProtocol::TransmissionDelay (double l, double u){
 Time MulticastRoutingProtocol::TransmissionDelay (double l, double u, enum Time::Unit unit){
 	double delay = UniformVariable().GetValue(l,u);
 	Time delayms = Time::FromDouble(delay, unit);
-	NS_LOG_DEBUG("Time ("<<l<<","<<u<<") = "<<delayms.GetSeconds()<<"s "<< delay);
+//	NS_LOG_DEBUG("Time ("<<l<<","<<u<<") = "<<delayms.GetSeconds()<<"s "<< delay);
 	return delayms;
 }
 
