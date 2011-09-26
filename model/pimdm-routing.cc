@@ -1899,6 +1899,7 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, Ipv4Address dest
 void
 MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv4Header &ipv4Header, int32_t interface)
 {
+	if(m_stopTx) return;
 	NS_LOG_FUNCTION(this);
 	// Send it
 	if(interface != 0 && !GetPimInterface(interface)) {
