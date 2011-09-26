@@ -391,9 +391,7 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 		}
 		rtentry->SetSource (ifAddr.GetLocal ());
 		rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
-		Ipv4Address gateway = header.GetDestination(); //TODO check this!
-//		if(gateway == Ipv4Address::GetLoopback())//gateway not defined in the table entry -> get broadcast!
-//			gateway = m_ipv4->GetAddress (interfaceIdx, 0).GetLocal().GetSubnetDirectedBroadcast ( m_ipv4->GetAddress (interfaceIdx, 0).GetMask());
+		Ipv4Address gateway = header.GetDestination();
 		rtentry->SetGateway(gateway);
 		NS_LOG_DEBUG ("PIM-DM node " << m_mainAddress << ": RouteOutput for dest= " << header.GetDestination () << " gateway= "<< rtentry->GetGateway () << ", interface = " << interfaceIdx<<" device = "<<gateway);
 		found = true;
