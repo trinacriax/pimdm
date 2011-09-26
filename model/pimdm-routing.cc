@@ -2001,16 +2001,20 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, int32_t interface
 	NS_LOG_FUNCTION(this);
 	Ipv4Address gateway = RPF_prime(sgp.sourceMulticastAddr, sgp.groupMulticastAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp.nextMulticastAddr, sgp);
+	NS_ASSERT(sgState);
+	NS_ASSERT(sgState->upstream);
 	if(gateway == Ipv4Address::GetLoopback()){
-		sgState->upstream->SG_OT.Cancel();
-		sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
-		sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
-		sgState->upstream->SG_OT.SetArguments(sgp, interface);
-		sgState->upstream->SG_OT.Schedule();
+		if(sgState->upstream){
+			sgState->upstream->SG_OT.Cancel();
+			sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
+			sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
+			sgState->upstream->SG_OT.SetArguments(sgp, interface);
+			sgState->upstream->SG_OT.Schedule();
+		}
 		return AskRoute(gateway);
 	}
 	sgState = FindSourceGroupState(interface, gateway, sgp);
-	NS_ASSERT(sgState && sgState->upstream && gateway != Ipv4Address::GetLoopback());
+
 	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:
 			//The OverrideTimer (OT(S, G)) expires.  The router MUST send a Join(S, G) to RPF'(S) to override a previously detected prune.
