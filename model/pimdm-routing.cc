@@ -3673,8 +3673,8 @@ SourceGroupState* MulticastRoutingProtocol::FindSourceGroupState (int32_t interf
 
 SourceGroupState* MulticastRoutingProtocol::FindSourceGroupState (int32_t interface, Ipv4Address neighbor, const Ipv4Address source, const Ipv4Address group) {
 	NS_LOG_FUNCTION(this<<interface<<neighbor<<source<<group);
-	SourceGroupPair sgp (source, group, neighbor);
-	return FindSourceGroupState (interface, neighbor, sgp);
+	SourceGroupPair *sgp =new SourceGroupPair (source, group, neighbor);
+	return FindSourceGroupState (interface, neighbor, *sgp);
 }
 
 void MulticastRoutingProtocol::EraseSourceGroupList (int32_t interface, Ipv4Address neighbor) {
