@@ -3620,8 +3620,8 @@ void MulticastRoutingProtocol::InsertSourceGroupList (int32_t interface, Ipv4Add
 			m_IfaceSourceGroup.find (i_n);
 	if (iter != m_IfaceSourceGroup.end ())
 		return;
-	SourceGroupList sgl;
-	std::pair<WiredEquivalentInterface , SourceGroupList> i_s (i_n, sgl);
+	SourceGroupList *sgl = new SourceGroupList ();
+	std::pair<WiredEquivalentInterface , SourceGroupList> i_s (i_n, *sgl);
 	m_IfaceSourceGroup.insert (i_s);
 }
 
