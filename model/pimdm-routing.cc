@@ -2596,8 +2596,7 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 				SourceGroupPair sgp (iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress, sender);
 				if(IsUpstream(interface, sender, sgp)){
 					SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
-					if(!sgState->upstream)
-						sgState->upstream = new UpstreamState;
+					NS_ASSERT(sgState->upstream);
 					NS_LOG_LOGIC("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
 					if(sgState->upstream->SG_OT.IsRunning())
 						sgState->upstream->SG_OT.Cancel();
