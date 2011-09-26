@@ -4040,7 +4040,7 @@ std::set<WiredEquivalentInterface > MulticastRoutingProtocol::pim_include (Ipv4A
 bool MulticastRoutingProtocol::seek_traffic_from (Ipv4Address source, Ipv4Address group,int32_t interface) {
 	Ipv4Address nexthop = RPF_interface(source).second;
 	SourceGroupState *sgs = FindSourceGroupState (interface, nexthop, source, group);
-	return (sgs ? sgs->members : true);
+	return (sgs ? local_receiver_include(source,group,interface) : true);
 }
 
 // Local members for a (source,group) pair.
