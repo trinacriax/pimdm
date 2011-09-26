@@ -3629,22 +3629,21 @@ void MulticastRoutingProtocol::InsertSourceGroupState (int32_t interface, Ipv4Ad
 	NS_LOG_FUNCTION(this<<interface<<neighbor<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
 	SourceGroupState *sgState = FindSourceGroupState (interface, neighbor, sgp);
 	if (!sgState) {
-		SourceGroupState sgs (sgp);
-		sgs.SGPair.nextMulticastAddr = neighbor;
-		sgs.LocalMembership = Local_NoInfo;
-		sgs.PruneState = Prune_NoInfo;
-		sgs.AssertState = Assert_NoInfo;
-		sgs.upstream = NULL;
+		SourceGroupState *sgs = new SourceGroupState (sgp);
+		sgs->SGPair.nextMulticastAddr = neighbor;
+		sgs->LocalMembership = Local_NoInfo;
+		sgs->PruneState = Prune_NoInfo;
+		sgs->AssertState = Assert_NoInfo;
 		WiredEquivalentInterface key(interface,neighbor);
-		SourceGroupList sgl;
-		std::pair<WiredEquivalentInterface,SourceGroupList> k_pair(key,sgl);
+		SourceGroupList *sgl = new SourceGroupList ();
+		std::pair<WiredEquivalentInterface,SourceGroupList> k_pair(key,*sgl);
 		m_IfaceSourceGroup.insert(k_pair);
 		NS_ASSERT(m_IfaceSourceGroup.find(key) != m_IfaceSourceGroup.end());
-		m_IfaceSourceGroup.find(key)->second.push_back(sgs);
+		m_IfaceSourceGroup.find(key)->second.push_back(*sgs);
 		NS_ASSERT(m_IfaceSourceGroup.find(key)->second.size() > 0);
 		sgState = FindSourceGroupState (interface, neighbor, sgp);
-		if(IsUpstream(interface,neighbor,sgp))
-			sgState->upstream = new UpstreamState;
+		if(IsUpstream(interface,neighbor,sgp) && !sgState->upstream)
+			sgState->upstream = new UpstreamState ();
 		}
 	}
 
