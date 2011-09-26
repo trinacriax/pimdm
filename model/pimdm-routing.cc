@@ -1345,8 +1345,7 @@ MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address sen
 	if(route) NS_LOG_DEBUG("\t Route = "<<route->GetSource()<< " <"<<interface<<"> " <<route->GetGateway() <<" <...> "<<senderIfaceAddr);
 	if(ipv4header.GetDestination().IsMulticast() && ipv4header.GetDestination() != Ipv4Address(ALL_PIM_ROUTERS4)) {
 		NS_LOG_ERROR("Received "<< ipv4header.GetDestination() <<" it should be captured by another callback.");
-		SourceGroupPair sgp (senderIfaceAddr, receiverIfaceAddr);
-		RPFCheck(sgp, interface,route);
+		return;
 	}
 	if(route->GetGateway() == Ipv4Address::GetLoopback()) return AskRoute(senderIfaceAddr);
 	NS_ASSERT (senderIfacePort != PIM_PORT_NUMBER);
