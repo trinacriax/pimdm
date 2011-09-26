@@ -131,37 +131,37 @@ operator << (std::ostream &os, const SourceGroupPair &a){
 }
 
 struct SourceGroupState{
-	SourceGroupState():
-		members(false),
-		lastStateRefresh(Seconds(0)),
-		LocalMembership(Local_NoInfo),
-		AssertState(Assert_NoInfo),
-		AssertWinner(),
-		SG_AT(Timer::CANCEL_ON_DESTROY),
-		PruneState(Prune_NoInfo),
-		SG_PT(Timer::CANCEL_ON_DESTROY),
-		SG_PPT(Timer::CANCEL_ON_DESTROY),
-//		SGAW("0.0.0.0"),
-		SGAM(0),
-		SG_SR_TTL(0),
-		SG_DATA_TTL(0)
-	{}
+//	SourceGroupState():
+//		members(false),
+//		lastStateRefresh(Seconds(0)),
+//		LocalMembership(Local_NoInfo),
+//		AssertState(Assert_NoInfo),
+//		AssertWinner(),
+//		SG_AT(Timer::CANCEL_ON_DESTROY),
+//		PruneState(Prune_NoInfo),
+//		SG_PT(Timer::CANCEL_ON_DESTROY),
+//		SG_PPT(Timer::CANCEL_ON_DESTROY),
+////		SGAW("0.0.0.0"),
+//		SGAM(0),
+//		SG_SR_TTL(0),
+//		SG_DATA_TTL(0)
+//	{
+//		upstream = NULL;
+//	}
 	SourceGroupState(SourceGroupPair sgp):
 		SGPair(sgp),
-		members(false),
-		lastStateRefresh(Seconds(0)),
 		LocalMembership(Local_NoInfo),
 		AssertState(Assert_NoInfo),
 		AssertWinner(),
-		SG_AT(Timer::CANCEL_ON_DESTROY),
 		PruneState(Prune_NoInfo),
+		SG_AT(Timer::CANCEL_ON_DESTROY),
 		SG_PT(Timer::CANCEL_ON_DESTROY),
 		SG_PPT(Timer::CANCEL_ON_DESTROY),
-//		SGAW("0.0.0.0"),
+		lastStateRefresh(Seconds(0)),
 		SGAM(0),
 		SG_SR_TTL(0),
 		SG_DATA_TTL(0)
-	{}
+	{upstream = NULL;}
 	/// SourceGroup pair.
 	struct SourceGroupPair SGPair;
 	/// Local membership.
@@ -186,17 +186,13 @@ struct SourceGroupState{
 	Timer SG_PPT;/// Prune Pending Timer (PPT)
 	/// Pointer to upstream data
 	struct UpstreamState *upstream;
-
-	/// local members on interface I that seek to receive all traffic sent to G.
-	bool members;//todo remove
 	/// Time of the last received StateRefresh(S,G)
 	Time lastStateRefresh;
-	/// Assert winner's IP Address.
-//	Ipv4Address SGAW;
 	/// Assert winner's Assert Metric.
 	uint32_t SGAM;
-	/// TTL of the packet for use in State Refresh messages.
+	/// TTL of the packet to use in State Refresh messages.
 	uint8_t SG_SR_TTL;
+	/// TTL of the packet to use in Data packets.
 	uint8_t SG_DATA_TTL;
 
 };
