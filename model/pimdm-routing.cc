@@ -2246,9 +2246,10 @@ MulticastRoutingProtocol::ATTimerExpire (SourceGroupPair &sgp, int32_t interface
 			//	delete the Assert Winner's address and metric.
 			sgState->AssertState = Assert_NoInfo;
 			UpdateAssertWinner(sgState, 0xffffffff, 0xffffffff, Ipv4Address("255.255.255.255"));
-			//TODO: If CouldAssert == TRUE, the router MUST evaluate any possible transitions to its Upstream(S, G) state machine.
-			UpstreamStateMachine(sgp);
-			// if(CouldAssert(sgp.sourceMulticastAddr, sgp.groupMulticastAddr, interface)){}
+			//If CouldAssert == TRUE, the router MUST evaluate any possible transitions to its Upstream(S, G) state machine.
+			if(CouldAssert(sgp.sourceMulticastAddr, sgp.groupMulticastAddr, interface, destination)){
+				UpstreamStateMachine(sgp);
+			}
 			break;
 		}
 		default:{
