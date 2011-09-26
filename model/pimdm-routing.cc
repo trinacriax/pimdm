@@ -4235,15 +4235,15 @@ Time MulticastRoutingProtocol::TransmissionDelay (double l, double u, enum Time:
 }
 }// namespace ns3
 
-//TODO
+//TODO LIST
 //* The LAN Delay inserted by a router in the LAN Prune Delay option expresses the expected message propagation delay on the link and
 //		SHOULD be configurable by the system administrator.
-//* When a packet is send, we should guarantee the packet will not send on an PIM-DM excluded interface
 //* When a PIM router takes an interface down or changes IP address, a Hello message with a zero Hold Time SHOULD be sent immediately (with the old IP address if the IP address is
 //		changed) to cause any PIM neighbors to remove the old information immediately.
-//* All PIM-DM packets use the same format as PIM-SM packets.  In the event of a discrepancy, PIM-SM [4] should be considered the
-//		definitive specification.  All PIM control messages have IP protocol number 103.  All PIM-DM messages MUST be sent with a TTL of 1 (IPV4).  All
-//		PIM-DM messages except Graft and Graft Ack messages MUST be sent to the ALL-PIM-ROUTERS group.
+//* All PIM-DM packets use the same format as PIM-SM packets.  In the event of a discrepancy, PIM-SM [4] should be considered the definitive specification.
+//		All PIM control messages have IP protocol number 103.  All PIM-DM messages MUST be sent with a TTL of 1 (IPV4).
+//		All PIM-DM messages except Graft and Graft Ack messages MUST be sent to the ALL-PIM-ROUTERS group.
 //		Graft messages SHOULD be unicast to the RPF'(S).  Graft Ack messages MUST be unicast to the sender of the Graft.
 //* When a PIM router takes an interface down or changes IP address, a Hello message with a zero Hold Time SHOULD be
 //		sent immediately (with the old IP address if the IP address is changed) to cause any PIM neighbors to remove the old information immediately.
+//* Packets TTL
