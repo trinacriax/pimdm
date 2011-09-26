@@ -108,7 +108,7 @@ MulticastRoutingProtocol::GetTypeId (void)
 
 uint16_t
 MulticastRoutingProtocol::GetRouteMetric(int32_t interface, Ipv4Address source)
-{//TODO: The cost metric of the unicast route to the source.  The metric is in units applicable to the unicast routing protocol used.
+{// The cost metric of the unicast route to the source.  The metric is in units applicable to the unicast routing protocol used.
   Ptr<Ipv4RoutingProtocol> rp_Gw = (m_ipv4->GetRoutingProtocol ());
   Ptr<Ipv4ListRouting> lrp_Gw = DynamicCast<Ipv4ListRouting> (rp_Gw);
   Ptr<olsr::RoutingProtocol> olsr_Gw;
@@ -162,7 +162,7 @@ MulticastRoutingProtocol::GetMetricPreference(int32_t interface)
 
 void
 MulticastRoutingProtocol::register_member (std::string SGI){
-	///////////////////////// TODO: TO REMOVE WITH IGMP
+	/***************** TODO: TO REMOVE WITH IGMP *****************/
 	NS_LOG_FUNCTION(this);
 	Ipv4Address group, source;
 	int32_t interface;
@@ -1017,7 +1017,7 @@ MulticastRoutingProtocol::ForgeStateRefresh (int32_t interface, Ipv4Address dest
 //	 Assert Override flag.  This SHOULD be set to 1 by upstream routers
 //	     on a LAN if the Assert Timer (AT(S,G)) is not running and SHOULD be
 //	     ignored upon receipt.  This is for compatibility with earlier
-//	     versions of state refresh. TODO -> by upstream routers on a LAN if
+//	     versions of state refresh.
 	refresh.m_O = (!sgState->SG_AT.IsRunning())?1:0;
 	refresh.m_reserved = 0;
 	refresh.m_interval = RefreshInterval;
@@ -1797,22 +1797,13 @@ MulticastRoutingProtocol::NeighborRestart (int32_t interface, Ipv4Address neighb
 		else if (IsUpstream(interface, neighbor, sgState->SGPair) && sgState->PruneState == Prune_Pruned){
 			if(sgState->SG_PT.IsRunning())
 				sgState->SG_PT.Cancel();
-			sgState->SG_PT.SetDelay(Seconds(2*RefreshInterval));//TODO I am not sure of that: I have to understand the prune better
+			sgState->SG_PT.SetDelay(Seconds(2*RefreshInterval));
 			sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
 			sgState->SG_PT.SetArguments(sgState->SGPair);
 			sgState->SG_PT.Schedule();
 			Simulator::Schedule (Seconds(0), &MulticastRoutingProtocol::SendPruneUnicast, this, neighbor, sgState->SGPair);
 		}
 	}
-//   TODO: Upon startup, a router MAY use any State Refresh messages received
-//   within Hello_Period of its first Hello message on an interface to
-//   establish state information.  The State Refresh source will be the
-//   RPF'(S), and Prune status for all interfaces will be set according to
-//   the Prune Indicator bit in the State Refresh message.  If the Prune
-//   Indicator is set, the router SHOULD set the PruneLimitTimer to
-//   Prune_Holdtime and set the PruneTimer on all downstream interfaces to
-//   the State Refresh's Interval times two.  The router SHOULD then
-//   propagate the State Refresh as described in Section 4.5.1.
 }
 
 void
@@ -1980,7 +1971,7 @@ MulticastRoutingProtocol::NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Add
 					//	The current Assert winner's NeighborLiveness Timer (NLT(N, I)) has
 					//	expired.  The Assert state machine MUST transition to the NoInfo
 					//	(NI) state, delete the Assert Winner's address and metric, and
-					//	TODO: evaluate any possible transitions to its Upstream(S, G) state machine.
+					//	evaluate any possible transitions to its Upstream(S, G) state machine.
 					sgState->AssertState = Assert_NoInfo;
 					UpdateAssertWinner(&*sgState, 0xffffffff, 0xffffffff, Ipv4Address("255.255.255.255"));
 					UpstreamStateMachine(sgState->SGPair);
@@ -2119,8 +2110,8 @@ MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 			//	Its purpose is to add additional reliability so that if a Join that should have
 			//	overridden the Prune is lost locally on the LAN, the PruneEcho(S, G) may be received
 			//	and trigger a new Join message.
-			//	TODO: A PruneEcho(S, G) is OPTIONAL on an interface with only one PIM neighbor.
-			//	TODO: In addition, the router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
+			//	A PruneEcho(S, G) is OPTIONAL on an interface with only one PIM neighbor.
+			//	In addition, the router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
 				UpstreamStateMachine(sgp);
 			}
 			break;
@@ -2154,7 +2145,7 @@ MulticastRoutingProtocol::PTTimerExpire (SourceGroupPair &sgp, int32_t interface
 		//PT(S, G, I) Expires. The Prune Timer (PT(S, G, I)) expires, indicating that it is again
 		//	time to flood data from S addressed to group G onto interface I.
 		//	The Prune(S, G) Downstream state machine on interface I MUST transition to the NoInfo (NI) state.
-		//	TODO: The router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
+		//	The router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
 			sgState->PruneState = Prune_NoInfo;
 			UpstreamStateMachine(sgp);
 			break;
@@ -2207,7 +2198,7 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 				sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
 				sgState->upstream->SG_SRT.SetArguments(sgp, interface);
 				sgState->upstream->SG_SRT.Schedule();
-				PIMHeader refresh;//TODO Check to which interfaces should be sent
+				PIMHeader refresh;
 				ForgeStateRefresh(interface, destination, sgp, refresh);
 				refresh.GetStateRefreshMessage().m_P = (IsDownstream(interface, destination, sgp) && (sgStateBis->PruneState == Prune_Pruned) ? 1 : 0);
 				Ptr<Packet> packet = Create<Packet> ();
@@ -2774,7 +2765,6 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 			//An Assert loser that receives a Prune(S, G), Join(S, G), or
 			//  Graft(S, G) directed to it initiates a new Assert negotiation so
 			//  that the downstream router can correct its RPF'(S).
-			// TODO
 			break;
 			}
 		default:{
@@ -2861,7 +2851,7 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp, Ip
 		//	neighbor field set to the router's address on I.  The Prune(S, G) downstream state
 		//	machine on interface I MUST transition to the NoInfo (NI) state.
 		//	The Prune Timer (PT(S, G, I)) MUST be cancelled.
-		//	TODO: The router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
+		//	The router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
 			if(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
 				sgState->PruneState = Prune_NoInfo;
 				sgState->SG_PPT.Cancel();
@@ -2964,7 +2954,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					//If CouldAssert(S, G, I) == TRUE,
 					//	the router MUST also multicast a Prune(S, G) to the Assert winner
 					//	with a Prune Hold Time equal to the Assert Timer and
-					//  TODO: evaluate any changes in its Upstream(S, G) state machine.
+					//  evaluate any changes in its Upstream(S, G) state machine.
 					PIMHeader prune;
 					ForgeJoinPruneMessage(prune, sender);
 					PIMHeader::MulticastGroupEntry mge;
@@ -3026,7 +3016,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, sender);
 				//The router MUST also multicast a Prune(S, G) to the Assert winner, with a Prune Hold
 				//	Time equal to the Assert Timer, and evaluate any changes in its	Upstream(S, G) state machine.
-				//TODO prune for state refresh messages
+				// prune for state refresh messages
 //				PIMHeader prune;
 //				ForgeJoinPruneMessage(prune, sender);
 //				PIMHeader::MulticastGroupEntry mge;
@@ -3046,7 +3036,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 		//  the winner's metric became worse).  The Assert state machine MUST
 		//  transition to NoInfo (NI) state and cancel AT(S, G, I).  The router
 		//  MUST delete the previous Assert Winner's address and metric and
-		//  TODO: evaluate any possible transitions to its Upstream(S, G) state machine.
+		//  evaluate any possible transitions to its Upstream(S, G) state machine.
 		//	Usually this router will eventually re-assert and win
 		//  when data packets from S have started flowing again.
 			myMetric = my_assert_metric(assert.m_sourceAddr.m_unicastAddress, assert.m_multicastGroupAddr.m_groupAddress, interface, sender);
