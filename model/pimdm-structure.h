@@ -99,7 +99,7 @@ struct SourceGroupPair{
 	{}
 	SourceGroupPair(Ipv4Address s, Ipv4Address g):
 		sourceMulticastAddr(s),
-		groupMulticastAddr(g){nextMulticastAddr = ("0.0.0.0");}
+		groupMulticastAddr(g){nextMulticastAddr = Ipv4Address::GetAny();}
 	SourceGroupPair(Ipv4Address s, Ipv4Address g, Ipv4Address n):
 			sourceMulticastAddr(s),
 			groupMulticastAddr(g),
