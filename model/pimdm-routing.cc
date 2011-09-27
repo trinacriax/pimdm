@@ -2835,7 +2835,7 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp, Ip
 {
 	NS_LOG_FUNCTION(this<<sender<<receiver<<interface<<source.m_sourceAddress<<group.m_groupAddress);
 	SourceGroupPair sgp (source.m_sourceAddress, group.m_groupAddress, sender);
-	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp);
+	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
 	Ipv4Address current = GetLocalAddress(interface);
 	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
