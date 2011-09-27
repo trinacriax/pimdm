@@ -2004,15 +2004,22 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, int32_t interface
 		}
 		return AskRoute(gateway);
 	}
-	sgState = FindSourceGroupState(interface, gateway, sgp);
-
+	sgState = FindSourceGroupState(interface, gateway, sgp, true);
 	switch (sgState->upstream->GraftPrune){
-		case GP_Forwarding:
-			//The OverrideTimer (OT(S, G)) expires.  The router MUST send a Join(S, G) to RPF'(S) to override a previously detected prune.
-			//	The Upstream(S, G) state machine remains in the Forwarding (F) state.
+		case GP_Forwarding:{
+			//    OT(S,G) Expires AND S NOT directly connected
+			//      The OverrideTimer (OT(S,G)) expires.  The router MUST send a
+			//      Join(S,G) to RPF'(S) to override a previously detected prune.
+			//      The Upstream(S,G) state machine remains in the Forwarding (F) state.
+			if(gateway != sgp.sourceMulticastAddr)
+				SendJoinUnicast(gateway, sgp);
+			break;
+		}
 		case GP_AckPending:{
-			//The OverrideTimer (OT(S, G)) expires.  The router MUST send a Join(S, G) to RPF'(S).
-			//	The Upstream(S, G) state machine remains in the AckPending (AP) state.
+			//    OT(S,G) Expires
+			//      The OverrideTimer (OT(S,G)) expires.  The router MUST send a
+			//      Join(S,G) to RPF'(S).  The Upstream(S,G) state machine remains in
+			//      the AckPending (AP) state.
 			SendJoinUnicast(gateway, sgp); //broadcast
 			break;
 		}
