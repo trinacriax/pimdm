@@ -225,8 +225,9 @@ struct UpstreamState{
 	/// is sent on the upstream interface.  This timer is normally set to t_override (see 4.8).
 	Timer SG_OT;
 	/// Prune Limit Timer (PLT). This timer is used to rate-limit Prunes on a LAN.  It is only
-	/// used when the Upstream(S,G) state machine is in the Pruned state. A Prune cannot be sent if this timer is running.  This timer is
-	/// normally set to t_limit (see 4.8).
+	/// used when the Upstream(S,G) state machine is in the Pruned state.
+	/// A Prune cannot be sent if this timer is running.
+	/// This timer is normally set to t_limit (see 4.8).
 	Timer SG_PLT;
 	//Originator State: Source Active Timer (SAT).
 	//	This timer is first set when the Origination(S,G) state machine
