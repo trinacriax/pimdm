@@ -869,6 +869,11 @@ void
 MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupPair &sgp)
 {
 	NS_LOG_FUNCTION(this<< destination << sgp.sourceMulticastAddr << sgp.groupMulticastAddr);
+	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(destination).first, destination, sgp, true);
+	if(sgState->upstream && sgState->upstream->SG_PLT.IsRunning()){
+		NS_LOG_DEBUG("Limiting prune on LAN with PLT");
+		return;
+	}
 	PIMHeader msg;
 	ForgeJoinPruneMessage(msg, destination);
 	PIMHeader::MulticastGroupEntry mge;
