@@ -2344,11 +2344,11 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp)
 		//	The GraftRetry Timer (GRT(S, G)) MUST be cancelled, and PLT(S, G) MUST be set to t_limit seconds.
 			sgState->upstream->GraftPrune = GP_Pruned;
 			WiredEquivalentInterface wei= RPF_interface(sgp.sourceMulticastAddr);
-			PIMHeader::MulticastGroupEntry mge;
-			AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
 			PIMHeader msg;
 			ForgeJoinPruneMessage(msg, wei.second);
+			PIMHeader::MulticastGroupEntry mge;
 			CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
+			AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
 			AddMulticastGroupEntry(msg, mge);
 			Ptr<Packet> packet = Create<Packet> ();
 			Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, wei.second);
