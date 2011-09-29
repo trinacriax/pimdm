@@ -38,20 +38,20 @@
 #include <string>
 #include <sstream>
 
-#include "ns3/core-module.h"
 #include "ns3/mbn-aodv-module.h"
-#include "ns3/network-module.h"
 #include "ns3/internet-module.h"
-#include "ns3/applications-module.h"
-#include "ns3/wifi-module.h"
 #include "ns3/mbn-aodv-helper.h"
 #include "ns3/aodv-helper.h"
 #include "ns3/olsr-helper.h"
 #include "ns3/pimdm-helper.h"
 #include "ns3/pimdm-routing.h"
-#include "ns3/mobility-module.h"
 #include "ns3/string.h"
-
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+#include "ns3/applications-module.h"
+#include "ns3/mobility-module.h"
+#include "ns3/tools-module.h"
+#include "ns3/wifi-module.h"
 
 
 using namespace ns3;
@@ -181,7 +181,7 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("DcfManager", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Node", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("MacLow", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("MacLow", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("MacRxMiddle", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("YansWifiPhy", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("InterferenceHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
@@ -255,21 +255,33 @@ main (int argc, char *argv[])
 
 	NS_LOG_INFO ("Build Topology.");
 
-	WifiHelper wifi = WifiHelper::Default ();
-	wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
-	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue("OfdmRate6Mbps"));
+	// disable fragmentation
+//	Config::SetDefault ("ns3::WifiRemoteStationManager::FragmentationThreshold", StringValue ("2200"));
+//	Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue ("2200"));
 
-	NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default();
+//    Config::SetDefault ("ns3::WifiRemoteStationManager::NonUnicastMode", StringValue ("DsssRate11Mbps"));
+	WifiHelper wifi = WifiHelper::Default ();
+	wifi.SetStandard (WIFI_PHY_STANDARD_80211g);
+//	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager");//,
+//			"DataMode", StringValue ("ErpOfdmRate54Mbps"),
+//			"ControlMode",StringValue ("ErpOfdmRate12Mbps"));
+//	wifi.SetRemoteStationManager ("ns3::AarfWifiManager", "FragmentationThreshold", UintegerValue (2500));
+
+
+	NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default ();
 	wifiMac.SetType ("ns3::AdhocWifiMac");
 
-	// Configure YansWifiChannel
 	YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default ();
-	YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
-	wifiPhy.SetChannel (wifiChannel.Create ());
 
-	NetDeviceContainer sourceNetDev = wifi.Install(wifiPhy, wifiMac, source);
-	NetDeviceContainer routersNetDev = wifi.Install(wifiPhy, wifiMac, routers);
-	NetDeviceContainer clientsNetDev = wifi.Install(wifiPhy, wifiMac, clients);
+	YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
+
+	YansWifiPhyHelper phy = wifiPhy;
+	phy.SetChannel (wifiChannel.Create ());
+	NqosWifiMacHelper mac = wifiMac;
+
+	NetDeviceContainer sourceNetDev = wifi.Install(phy, mac, source);
+	NetDeviceContainer routersNetDev = wifi.Install(phy, mac, routers);
+	NetDeviceContainer clientsNetDev = wifi.Install(phy, mac, clients);
 
 
 	// INSTALL INTERNET STACK
@@ -402,7 +414,7 @@ main (int argc, char *argv[])
 	OnOffHelper onoff = OnOffHelper ("ns3::UdpSocketFactory", dst);
 	onoff.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
 	onoff.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0.0)));
-	onoff.SetAttribute ("DataRate", DataRateValue (DataRate (15000)));
+	onoff.SetAttribute ("DataRate", StringValue ("10kb/s"));// DataRateValue (DataRate (4000)));
 	onoff.SetAttribute ("PacketSize", UintegerValue (1200));
 
 	ApplicationContainer apps = onoff.Install (source.Get (0));
@@ -425,12 +437,12 @@ main (int argc, char *argv[])
 	Config::ConnectWithoutContext("/NodeList/0/ApplicationList/0/$ns3::OnOffApplication/Tx",MakeCallback (&AppTx));
 //	Config::ConnectWithoutContext("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/PhyTxDrop",MakeCallback (&PhyTxDrop));
 
-//	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacTx", MakeCallback (&DevTxTrace));
-//	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacRx",	MakeCallback (&DevRxTrace));
-//	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/RxOk",	MakeCallback (&PhyRxOkTrace));
-//	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/RxError",	MakeCallback (&PhyRxErrorTrace));
-//	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/Tx",	MakeCallback (&PhyTxTrace));
-//	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/State", MakeCallback (&PhyStateTrace));
+	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacTx", MakeCallback (&DevTxTrace));
+	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacRx",	MakeCallback (&DevRxTrace));
+	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/RxOk",	MakeCallback (&PhyRxOkTrace));
+	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/RxError",	MakeCallback (&PhyRxErrorTrace));
+	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/Tx",	MakeCallback (&PhyTxTrace));
+	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/State", MakeCallback (&PhyStateTrace));
 
 //	Config::ConnectWithoutContext ("/NodeList/[5-8]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&SinkRx));
 //
