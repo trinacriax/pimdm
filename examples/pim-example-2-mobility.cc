@@ -254,16 +254,18 @@ main (int argc, char *argv[])
 	}
 
 	NS_LOG_INFO ("Build Topology.");
-	NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default();
-	wifiMac.SetType ("ns3::AdhocWifiMac");
-
-	YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default();
-	YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
-	wifiPhy.SetChannel(wifiChannel.Create());
 
 	WifiHelper wifi = WifiHelper::Default ();
 	wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
-	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("OfdmRate6Mbps"));
+	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue("OfdmRate6Mbps"));
+
+	NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default();
+	wifiMac.SetType ("ns3::AdhocWifiMac");
+
+	// Configure YansWifiChannel
+	YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default ();
+	YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
+	wifiPhy.SetChannel (wifiChannel.Create ());
 
 	NetDeviceContainer sourceNetDev = wifi.Install(wifiPhy, wifiMac, source);
 	NetDeviceContainer routersNetDev = wifi.Install(wifiPhy, wifiMac, routers);
