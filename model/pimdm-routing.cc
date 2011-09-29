@@ -1481,7 +1481,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 				break;
 			}
 			default:{
-				NS_LOG_ERROR("RecvData: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
+				NS_LOG_ERROR("RecvPIMData: Graft Prune state not valid"<<sgState->upstream->GraftPrune);
 				break;
 			}
 		}
@@ -1571,7 +1571,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 				break;
 			}
 			default:{
-				NS_LOG_ERROR("RecvData: Assert State not valid "<<sgState->AssertState);
+				NS_LOG_ERROR("RecvPIMData: Assert State not valid "<<sgState->AssertState);
 				break;
 			}
 		}
