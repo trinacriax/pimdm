@@ -869,8 +869,12 @@ void
 MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupPair &sgp)
 {
 	NS_LOG_FUNCTION(this<< destination << sgp.sourceMulticastAddr << sgp.groupMulticastAddr);
+	WiredEquivalentInterface wei = RPF_interface(destination);//know the interface-nextHop
+	if (wei.first< 1 || wei.second == Ipv4Address::GetLoopback()){
+		return AskRoute(destination);
+	}
 	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(destination).first, destination, sgp, true);
-	if(sgState->upstream && sgState->upstream->SG_PLT.IsRunning()){
+	if(sgState->upstream && sgState->upstream->SG_PLT.IsRunning()){//the prune timer is not active
 		NS_LOG_DEBUG("Limiting prune on LAN with PLT");
 		return;
 	}
