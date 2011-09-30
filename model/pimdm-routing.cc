@@ -3119,33 +3119,33 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 	NS_LOG_LOGIC("Source " << sgp.sourceMulticastAddr << " Group " << sgp.groupMulticastAddr << " Gateway "<< gateway << " Sender "<< sender <<" Receiver "<<receiver << " Interface "<< interface);
 	if(gateway == Ipv4Address::GetLoopback()) return AskRoute(sgp.sourceMulticastAddr);
 	//TODO: Upon startup, a router MAY use any State Refresh messages received within Hello_Period of its first Hello message on an interface to establish state information.
-	for(int32_t i = 0; Simulator::Now() < Seconds(m_startTime.GetSeconds()+Hello_Period) && i < m_ipv4->GetNInterfaces();i++){
+	for(int32_t i = 0; Simulator::Now() < Seconds(m_startTime.GetSeconds()+Hello_Period) && i < m_ipv4->GetNInterfaces() &&  refresh.m_P == 1;i++){
 		if(IsLoopInterface(i)) continue;
-		SourceGroupState *sgStateB = FindSourceGroupState(i, sender, sgp);
+		SourceGroupState *sgStateB;
 		//	The State Refresh source will be the RPF'(S), and Prune status for all interfaces will be set according to the Prune Indicator bit in the State Refresh message.
-		//	If the Prune Indicator is set, the router SHOULD set the PruneLimitTimer to Prune_Holdtime ...
-		if (IsUpstream(interface, sender, sgp) && refresh.m_P){
-			if(sgStateB->upstream->SG_PLT.IsRunning())
-				sgStateB->upstream->SG_PLT.Cancel();
-			sgStateB->upstream->SG_PLT.SetDelay(Seconds(PruneHoldTime));
-			sgStateB->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
-			sgStateB->upstream->SG_PLT.SetArguments(sgp, gateway);
-			sgStateB->upstream->SG_PLT.Schedule();
-			continue;
-		}
-		//	.... and set the PruneTimer on all downstream interfaces to the State Refresh's Interval times two.
-		//	The router SHOULD then propagate the State Refresh as described in Section 4.5.1.
-//		sgStateB->PruneState = (refresh.m_P ? Prune_Pruned: Prune_NoInfo);//TODO: serve??
-		for(std::map<WiredEquivalentInterface, SourceGroupList>::iterator iter = m_IfaceSourceGroup.begin(); refresh.m_P && iter != m_IfaceSourceGroup.end(); iter++){
-//		if(refresh.m_P){
-			if (IsUpstream(interface, sender, sgp) )continue;
-			if(sgStateB->SG_PT.IsRunning())
-				sgStateB->SG_PT.Cancel();
-			sgStateB->SG_PT.SetDelay(Seconds(2 * StateRefreshInterval));
-			sgStateB->SG_PT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
-			sgStateB->SG_PT.SetArguments(sgp, gateway);
-			sgStateB->SG_PT.Schedule();
-			ForwardingStateRefresh(refresh, sender, receiver);
+		//	  If the Prune Indicator is set, the router SHOULD set the PruneLimitTimer
+		//    to Prune_Holdtime and set the PruneTimer on all downstream interfaces to the State Refresh's Interval times two.
+		for(std::map<WiredEquivalentInterface, SourceGroupList>::iterator iter = m_IfaceSourceGroup.begin(); iter != m_IfaceSourceGroup.end(); iter++){
+			Ipv4Address neighbor = iter->first.second;
+			sgStateB = FindSourceGroupState(interface, neighbor, sgp);
+			if (IsUpstream(interface, neighbor, sgp) && refresh.m_P){
+				if(sgStateB->upstream->SG_PLT.IsRunning())
+					sgStateB->upstream->SG_PLT.Cancel();
+				sgStateB->upstream->SG_PLT.SetDelay(Seconds(PruneHoldTime));
+				sgStateB->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
+				sgStateB->upstream->SG_PLT.SetArguments(sgp, gateway);
+				sgStateB->upstream->SG_PLT.Schedule();
+			}
+			else if(IsDownstream(interface, neighbor, sgp) && refresh.m_P){
+				if(sgStateB->SG_PT.IsRunning())
+					sgStateB->SG_PT.Cancel();
+				sgStateB->SG_PT.SetDelay(Seconds(2 * StateRefreshInterval));
+				sgStateB->SG_PT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
+				sgStateB->SG_PT.SetArguments(sgp, gateway);
+				sgStateB->SG_PT.Schedule();
+				ForwardingStateRefresh(refresh, sender, receiver);
+			}
+			sgStateB->PruneState = (refresh.m_P ? Prune_Pruned: Prune_NoInfo);
 		}
 	}
 	if(IsUpstream(interface, sender, sgp)){
@@ -3323,7 +3323,6 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				CreateMulticastGroupEntry(mge, ForgeEncodedGroup(refresh.m_multicastGroupAddr.m_groupAddress));
 				AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(refresh.m_sourceAddr.m_unicastAddress));
 				AddMulticastGroupEntry(prune, mge);
-				prune.GetJoinPruneMessage().m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress = refresh.m_originatorAddr.m_unicastAddress;//TODO check
 				prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 				Ptr<Packet> packet = Create<Packet> ();
 				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, prune, refresh.m_originatorAddr.m_unicastAddress);
@@ -3370,13 +3369,13 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				if(CouldAssert(refresh.m_sourceAddr.m_unicastAddress, refresh.m_multicastGroupAddr.m_groupAddress, interface, sender)){
 					//	and if CouldAssert(S, G, I) == TRUE, the router MUST multicast a
 					//	Prune(S, G) to the new Assert winner.
-					PIMHeader::MulticastGroupEntry mge;
-					AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(refresh.m_sourceAddr.m_unicastAddress));
 					PIMHeader prune;
 					ForgeJoinPruneMessage(prune, refresh.m_originatorAddr.m_unicastAddress);
+					PIMHeader::MulticastGroupEntry mge;
 					CreateMulticastGroupEntry(mge, ForgeEncodedGroup(refresh.m_multicastGroupAddr.m_groupAddress));
-					prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
+					AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(refresh.m_sourceAddr.m_unicastAddress));
 					AddMulticastGroupEntry(prune, mge);
+//					prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 					Ptr<Packet> packet = Create<Packet> ();
 					Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, prune, refresh.m_originatorAddr.m_unicastAddress);
 				}
@@ -3994,8 +3993,9 @@ std::set<WiredEquivalentInterface > MulticastRoutingProtocol::olist (Ipv4Address
 }
 
 void MulticastRoutingProtocol::AskRoute (Ipv4Address destination){
-		//TODO: We don't know the next hop towards the source: first node finds it, then it relies packets.
-		SendHelloReply(m_ipv4->GetInterfaceForAddress(m_mainAddress), destination);
+	NS_LOG_DEBUG(destination);
+	//TODO: We don't know the next hop towards the source: first node finds it, then it relies packets.
+	SendHelloReply(m_ipv4->GetInterfaceForAddress(m_mainAddress), destination);
 }
 
 /// \brief There are receivers for the given SourceGroup pair.
