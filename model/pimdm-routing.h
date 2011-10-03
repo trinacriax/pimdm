@@ -91,14 +91,10 @@
 #define PIM_RESERVED 0
 #define PIM_PORT_NUMBER 703 //IANA Unassigned
 
-#include "ns3/test.h"
 #include "pimdm-structure.h"
 #include "pimdm-packet.h"
 
-#include "ns3/tag.h"
-#include "ns3/packet.h"
 #include "ns3/uinteger.h"
-
 #include "ns3/random-variable.h"
 #include "ns3/object.h"
 #include "ns3/packet.h"
