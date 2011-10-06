@@ -58,6 +58,9 @@
 #include "ns3/tools-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/applications-module.h"
+#include "ns3/propagation-delay-model.h"
+#include "ns3/propagation-loss-model.h"
+#include "ns3/yans-error-rate-model.h"
 
 using namespace ns3;
 
@@ -225,7 +228,6 @@ main (int argc, char *argv[])
 	double sinkStart = onOffStart;
 	double sinkStop = totalTime-1;
 
-	SeedManager::SetSeed(1234);
 	CommandLine cmd;
 	cmd.AddValue("pcap", "Write PCAP traces.", pcap);
 	cmd.AddValue("seed", "Seed Random.", seed);
@@ -270,25 +272,36 @@ main (int argc, char *argv[])
 	// disable fragmentation
 //	Config::SetDefault ("ns3::WifiRemoteStationManager::FragmentationThreshold", StringValue ("2200"));
 //	Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue ("2200"));
-
 //    Config::SetDefault ("ns3::WifiRemoteStationManager::NonUnicastMode", StringValue ("DsssRate11Mbps"));
 	WifiHelper wifi = WifiHelper::Default ();
 	wifi.SetStandard (WIFI_PHY_STANDARD_80211g);
-//	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager");//,
-//			"DataMode", StringValue ("ErpOfdmRate54Mbps"),
-//			"ControlMode",StringValue ("ErpOfdmRate12Mbps"));
+	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
+		"DataMode", WifiModeValue (WifiPhy::GetErpOfdmRate54Mbps()),
+		"ControlMode",WifiModeValue (WifiPhy::GetErpOfdmRate54Mbps()),
+		"NonUnicastMode", WifiModeValue (WifiPhy::GetErpOfdmRate54Mbps())
+		);
+
 //	wifi.SetRemoteStationManager ("ns3::AarfWifiManager", "FragmentationThreshold", UintegerValue (2500));
+
+
+	Ptr<YansWifiChannel> channel = CreateObject<YansWifiChannel> ();
+	Ptr<ConstantSpeedPropagationDelayModel> delayModel = CreateObject<ConstantSpeedPropagationDelayModel> ();
+	channel->SetPropagationDelayModel (delayModel);
+	Ptr<LogDistancePropagationLossModel> lossModel = CreateObject<LogDistancePropagationLossModel> ();
+	channel->SetPropagationLossModel (lossModel);
+
+	YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+	phy.SetChannel (channel);
+	Ptr<ErrorRateModel> error = CreateObject<YansErrorRateModel> ();
+	phy.SetErrorRateModel("ns3::YansErrorRateModel");
+	phy.Set("TxGain",DoubleValue(0.0));
+	phy.Set("RxGain",DoubleValue(0.0));
+
 
 
 	NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default ();
 	wifiMac.SetType ("ns3::AdhocWifiMac");
 
-	YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default ();
-
-	YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
-
-	YansWifiPhyHelper phy = wifiPhy;
-	phy.SetChannel (wifiChannel.Create ());
 	NqosWifiMacHelper mac = wifiMac;
 
 	NetDeviceContainer sourceNetDev = wifi.Install(phy, mac, source);
