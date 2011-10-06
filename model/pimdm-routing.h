@@ -472,7 +472,7 @@ private:
 	///
 	std::set<WiredEquivalentInterface > immediate_olist (Ipv4Address source, Ipv4Address group);
 	void SourceDirectlyConnected (SourceGroupPair &sgp);
-	void SourceNoDirectlyConnected (SourceGroupPair &sgp);
+	void SourceNoDirectlyConnected (SourceGroupPair &sgp, uint32_t interface, Ipv4Address gateway);
 	/// Basically RPF' is the RPF neighbor toward a source
 	/// unless a PIM-DM Assert has overridden the normal choice of neighbor.
 

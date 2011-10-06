@@ -1158,8 +1158,8 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, int32_t oldInterface
 	bool couldAssert = CouldAssert(sgp.sourceMulticastAddr, sgp.groupMulticastAddr, oldInterface, oldGateway);
 	CouldAssertCheck(sgp.sourceMulticastAddr, sgp.groupMulticastAddr, oldInterface, oldGateway, couldAssert);
 	SourceGroupState *sgState = FindSourceGroupState(oldInterface, oldGateway, sgp);
-	if(sgp.sourceMulticastAddr == oldGateway)
-		SourceNoDirectlyConnected(sgp);
+	if(sgp.nextMulticastAddr == oldGateway)
+		SourceNoDirectlyConnected(sgp, oldInterface, oldGateway);
 	sgState = FindSourceGroupState(newInterface, newGateway, sgp, true);
 	couldAssert = CouldAssert(sgp.sourceMulticastAddr, sgp.groupMulticastAddr, newInterface, newGateway);
 	CouldAssertCheck(sgp.sourceMulticastAddr, sgp.groupMulticastAddr, newInterface, newGateway, couldAssert);
@@ -2468,12 +2468,9 @@ MulticastRoutingProtocol::SourceDirectlyConnected(SourceGroupPair &sgp)
 }
 
 void
-MulticastRoutingProtocol::SourceNoDirectlyConnected(SourceGroupPair &sgp)
+MulticastRoutingProtocol::SourceNoDirectlyConnected(SourceGroupPair &sgp, uint32_t interface, Ipv4Address gateway)
 {
 	NS_LOG_FUNCTION(this);
-	WiredEquivalentInterface wei = RPF_interface(sgp.sourceMulticastAddr);
-	int32_t interface = wei.first;
-	Ipv4Address gateway = wei.second;
 	SourceGroupState *sgState = FindSourceGroupState(interface, gateway, sgp);
 	switch (sgState->upstream->origination) {
 		case NotOriginator:{
