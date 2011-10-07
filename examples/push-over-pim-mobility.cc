@@ -166,36 +166,38 @@ main (int argc, char *argv[])
 // for selected modules; the below lines suggest how to do this
 #if 1
 //	LogComponentEnable ("SimpleGlobalRoutingExample", LOG_LEVEL_INFO);
-	LogComponentEnable ("PushPim", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("VideoPushApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("AodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("MbnAodvNeighbors", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("MbnRoutingTable", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("UdpL4Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4EndPointDemux", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4Interface", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("WifiNetDevice", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("AdhocWifiMac", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("DcaTxop", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("DcaManager", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("WifiMacQueue", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("DcfManager", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Node", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("MacLow", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("MacRxMiddle", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("YansWifiPhy", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("InterferenceHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("YansWifiChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Packet", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("DefaultSimulatorImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("PushPim", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("VideoPushApplication", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("AodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("MbnAodvNeighbors", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("MbnRoutingTable", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("UdpL4Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Ipv4ListRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("UdpSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Ipv4L3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Ipv4EndPointDemux", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Ipv4Interface", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("WifiNetDevice", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("AdhocWifiMac", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("DcaTxop", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("DcaManager", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("WifiMacQueue", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("DcfManager", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Socket", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Node", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("MacLow", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("MacRxMiddle", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("YansWifiPhy", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("InterferenceHelper", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("ArpL3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("ArpCache", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("YansWifiChannel", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Packet", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("DefaultSimulatorImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 #endif
 	/// Write per-device PCAP traces if true
 	bool pcap = true;
@@ -266,23 +268,16 @@ main (int argc, char *argv[])
 		os << "node-" <<i;
 		Names::Add(os.str(), allNodes.Get(i));
 	}
-
 	NS_LOG_INFO ("Build Topology.");
 
-	// disable fragmentation
-//	Config::SetDefault ("ns3::WifiRemoteStationManager::FragmentationThreshold", StringValue ("2200"));
-//	Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue ("2200"));
-//    Config::SetDefault ("ns3::WifiRemoteStationManager::NonUnicastMode", StringValue ("DsssRate11Mbps"));
+//	WifiModeValue phyMode = WifiModeValue(WifiPhy::GetOfdmRate54Mbps());
+//
+//    Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue ("2200"));
+//    Config::SetDefault ("ns3::WifiRemoteStationManager::NonUnicastMode", phyMode);
+
 	WifiHelper wifi = WifiHelper::Default ();
+//	wifi.SetStandard (WIFI_PHY_STANDARD_80211g);
 	wifi.SetStandard (WIFI_PHY_STANDARD_80211g);
-	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
-		"DataMode", WifiModeValue (WifiPhy::GetErpOfdmRate54Mbps()),
-		"ControlMode",WifiModeValue (WifiPhy::GetErpOfdmRate54Mbps()),
-		"NonUnicastMode", WifiModeValue (WifiPhy::GetErpOfdmRate54Mbps())
-		);
-
-//	wifi.SetRemoteStationManager ("ns3::AarfWifiManager", "FragmentationThreshold", UintegerValue (2500));
-
 
 	Ptr<YansWifiChannel> channel = CreateObject<YansWifiChannel> ();
 	Ptr<ConstantSpeedPropagationDelayModel> delayModel = CreateObject<ConstantSpeedPropagationDelayModel> ();
@@ -295,14 +290,20 @@ main (int argc, char *argv[])
 	Ptr<ErrorRateModel> error = CreateObject<YansErrorRateModel> ();
 	phy.SetErrorRateModel("ns3::YansErrorRateModel");
 	phy.Set("TxGain",DoubleValue(0.0));
-	phy.Set("RxGain",DoubleValue(0.0));
+	phy.Set("RxGain",DoubleValue(1.0));
+
+	 // Add a non-QoS upper mac, and disable rate control
+	NqosWifiMacHelper mac = NqosWifiMacHelper::Default ();
+
+	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
+		"DataMode", WifiModeValue (WifiPhy::GetErpOfdmRate12Mbps()),
+		"ControlMode",WifiModeValue (WifiPhy::GetErpOfdmRate6Mbps()),
+		"NonUnicastMode", WifiModeValue (WifiPhy::GetErpOfdmRate6Mbps())
+		);
 
 
-
-	NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default ();
-	wifiMac.SetType ("ns3::AdhocWifiMac");
-
-	NqosWifiMacHelper mac = wifiMac;
+	// Set it to adhoc mode
+	mac.SetType ("ns3::AdhocWifiMac");
 
 	NetDeviceContainer sourceNetDev = wifi.Install(phy, mac, source);
 	NetDeviceContainer routersNetDev = wifi.Install(phy, mac, routers);
@@ -437,7 +438,7 @@ main (int argc, char *argv[])
 	InetSocketAddress dst = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
 	Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
 	VideoHelper video = VideoHelper ("ns3::UdpSocketFactory", dst);
-	video.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (10.0)));
+	video.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
 	video.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
 	video.SetAttribute ("DataRate", StringValue ("10kb/s"));
 	video.SetAttribute ("PacketSize", UintegerValue (1200));
@@ -451,11 +452,32 @@ main (int argc, char *argv[])
 	apps.Start (Seconds (onOffStart));
 	apps.Stop (Seconds (onOffStop));
 
-	NS_LOG_INFO ("Create Sink.");
-	PacketSinkHelper sink = PacketSinkHelper ("ns3::UdpSocketFactory", dst);
-	apps = sink.Install (clients);
-	apps.Start (Seconds (sinkStart));
-	apps.Stop (Seconds (sinkStop));
+	for(int n = 0; n < clients.GetN() ; n++){
+		InetSocketAddress dstC = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
+		Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
+		VideoHelper videoC = VideoHelper ("ns3::UdpSocketFactory", dstC);
+		videoC.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
+		videoC.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
+//		videoC.SetAttribute ("DataRate", StringValue ("10kb/s"));
+//		videoC.SetAttribute ("PacketSize", UintegerValue (1200));
+		videoC.SetAttribute ("PeerType", EnumValue (PEER));
+		videoC.SetAttribute ("LocalPort", UintegerValue (PIM_PORT_NUMBER));
+		video.SetAttribute ("Local", AddressValue (ipClient.GetAddress(n)));
+//		videoC.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
+//		videoC.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
+
+		ApplicationContainer appC = videoC.Install (clients.Get(n));
+		appC.Start (Seconds (onOffStart));
+		appC.Stop (Seconds (onOffStop));
+	}
+
+//	NS_LOG_INFO ("Create Sink.");
+//	PacketSinkHelper sink = PacketSinkHelper ("ns3::UdpSocketFactory", dst);
+//	apps = sink.Install (clients);
+//	apps.Start (Seconds (sinkStart));
+//	apps.Stop (Seconds (sinkStop));
+
+
 	//sink callback
 //	for(int i = source.GetN()+routers.GetN(); i < (source.GetN()+routers.GetN()+clients.GetN()); i++){
 //		std::stringstream ss;
@@ -525,13 +547,11 @@ main (int argc, char *argv[])
 
 	mobilityR.Install(routers);
 
-	deltaX +=10.0;
-	deltaY +=10.0;
 	MobilityHelper mobilityC;
 	mobilityC.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 	mobilityC.SetPositionAllocator ("ns3::GridPositionAllocator",
-	  "MinX", DoubleValue (10.0),
-	  "MinY", DoubleValue (10.0),
+	  "MinX", DoubleValue (50.0),
+	  "MinY", DoubleValue (50.0),
 	  "DeltaX", DoubleValue (deltaX),
 	  "DeltaY", DoubleValue (deltaY),
 	  "GridWidth", UintegerValue (rowsize),
@@ -540,7 +560,7 @@ main (int argc, char *argv[])
 	mobilityC.Install(clients);
 
 	Ptr<ListPositionAllocator> positionAllocS = CreateObject<ListPositionAllocator> ();
-	positionAllocS->Add(Vector(-30.0, -30.0, 0.0));// Source
+	positionAllocS->Add(Vector(-70.0, -70.0, 0.0));// Source
 	MobilityHelper mobilityS;
 	mobilityS.SetPositionAllocator(positionAllocS);
 	mobilityS.SetMobilityModel("ns3::ConstantPositionMobilityModel");
