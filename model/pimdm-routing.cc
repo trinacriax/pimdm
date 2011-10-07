@@ -23,9 +23,6 @@
  */
 
 /// \brief	This file implements the PIM-DM node state.
-#define NS_LOG_APPEND_CONTEXT                                   \
-  if (GetObject<Node> ()) { std::clog << "[node " << GetObject<Node> ()->GetId () << "] "; }
-
 #include "pimdm-routing.h"
 #include "ns3/socket-factory.h"
 #include "ns3/ipv4-raw-socket-factory.h"
