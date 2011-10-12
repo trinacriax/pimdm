@@ -308,14 +308,20 @@ main (int argc, char *argv[])
 
 	ipv4.SetBase ("10.1.2.0", "255.255.255.0");
 	Ipv4InterfaceContainer ipr0c0 = ipv4.Assign (dr0dc0);
+	ipv4.SetBase ("10.1.3.0", "255.255.255.0");
 	Ipv4InterfaceContainer ipr1c1 = ipv4.Assign (dr1dc1);
+	ipv4.SetBase ("10.1.4.0", "255.255.255.0");
 	Ipv4InterfaceContainer ipr2c2 = ipv4.Assign (dr2dc2);
+	ipv4.SetBase ("10.1.5.0", "255.255.255.0");
 	Ipv4InterfaceContainer ipr3c3 = ipv4.Assign (dr3dc3);
 
-	ipv4.SetBase ("10.1.5.0", "255.255.255.0");
+	ipv4.SetBase ("10.2.1.0", "255.255.255.0");
 	Ipv4InterfaceContainer ipr0r1 = ipv4.Assign (dr0dr1);
+	ipv4.SetBase ("10.2.2.0", "255.255.255.0");
 	Ipv4InterfaceContainer ipr0r2 = ipv4.Assign (dr0dr2);
+	ipv4.SetBase ("10.2.3.0", "255.255.255.0");
 	Ipv4InterfaceContainer ipr1r3 = ipv4.Assign (dr1dr3);
+	ipv4.SetBase ("10.2.4.0", "255.255.255.0");
 	Ipv4InterfaceContainer ipr2r3 = ipv4.Assign (dr2dr3);
 
 	Ipv4InterfaceContainer ipClients;
