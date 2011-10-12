@@ -303,8 +303,6 @@ main (int argc, char *argv[])
 	// Later, we add IP addresses.
 	NS_LOG_INFO ("Assign IP Addresses.");
 	Ipv4AddressHelper ipv4;
-	ipv4.SetBase ("10.1.1.0", "255.255.255.0");
-	Ipv4InterfaceContainer ips0r0 = ipv4.Assign (ds0dr0);
 
 	ipv4.SetBase ("10.1.2.0", "255.255.255.0");
 	Ipv4InterfaceContainer ipr0c0 = ipv4.Assign (dr0dc0);
@@ -314,6 +312,9 @@ main (int argc, char *argv[])
 	Ipv4InterfaceContainer ipr2c2 = ipv4.Assign (dr2dc2);
 	ipv4.SetBase ("10.1.5.0", "255.255.255.0");
 	Ipv4InterfaceContainer ipr3c3 = ipv4.Assign (dr3dc3);
+
+	ipv4.SetBase ("10.1.1.0", "255.255.255.0");
+	Ipv4InterfaceContainer ips0r0 = ipv4.Assign (ds0dr0);
 
 	ipv4.SetBase ("10.2.1.0", "255.255.255.0");
 	Ipv4InterfaceContainer ipr0r1 = ipv4.Assign (dr0dr1);
@@ -358,12 +359,11 @@ main (int argc, char *argv[])
 	}
 	ss.str("");
 	ss<< multicastSource<< "," << multicastGroup << "," << "1";
-	for (int n = 1;  n < routers.GetN() ; n++){
+	for (int n = 0;  n < routers.GetN() ; n++){
 		std::stringstream command;//create a stringstream
 		command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember";
 		Config::Set(command.str(), StringValue(ss.str()));
 	}
-
 
 	switch(routing){
 			case 1:{
