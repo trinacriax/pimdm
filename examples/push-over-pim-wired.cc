@@ -129,7 +129,7 @@ main (int argc, char *argv[])
 	/// Animator filename
 	uint32_t sizeSource = 1;
 	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
-	int32_t routing = 2;
+	int32_t routing = 1;
 	//Seed for random numbers
 	uint32_t seed = 1234567890;
 	/// Animator filename
