@@ -1473,7 +1473,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 //		interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);//DEFAULT interface
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
 	NS_LOG_LOGIC("Group "<<group<<" Source "<< source<< " Sender ("<< sender<<", " << interface<<") -- Gateway ("<<gateway<< ", " << m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice()) << ")");
-	NS_LOG_LOGIC("\tLocal "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source) <<" IFC: "<<interface<<" PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
+	NS_LOG_LOGIC("\tLocal "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source)<<" PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
 	NS_ASSERT(group.IsMulticast());
 	SourceGroupPair sgp (source, group, sender);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
@@ -1651,9 +1651,10 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 		//add a header
 		if(!IsMyOwnAddress(out->second)) {//to PIM neighbors
 			relyTag.m_rely = 1;
+			Ipv4Address localAddr = GetLocalAddress(out->first);
 			fwdPacket->AddPacketTag(relyTag);
 			fwdPacket->AddHeader(sourceHeader);//WIRED
-			senderHeader.SetSource(GetLocalAddress(interface));//WIRED
+			senderHeader.SetSource(localAddr);//WIRED
 			senderHeader.SetProtocol(PIM_IP_PROTOCOL_NUM);
 			senderHeader.SetDestination(out->second);//WIRED
 			senderHeader.SetPayloadSize(sourceHeader.GetPayloadSize()+senderHeader.GetSerializedSize());//WIRED
