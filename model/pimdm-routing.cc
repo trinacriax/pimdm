@@ -1472,7 +1472,8 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 //	else //the underlying routing protocol is not able to get the right interface for the sender address:we guess it is the main interface..
 //		interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);//DEFAULT interface
 	// Data Packet arrives on RPF_Interface(S) AND olist(S, G) == NULL AND S NOT directly connected
-	NS_LOG_LOGIC("Group "<<group<<" Source "<< source<< " Rely "<< sender<<" Local "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source) <<" IFC: "<<interface<<" GW: "<<gateway<< " PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
+	NS_LOG_LOGIC("Group "<<group<<" Source "<< source<< " Sender ("<< sender<<", " << interface<<") -- Gateway ("<<gateway<< ", " << m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice()) << ")");
+	NS_LOG_LOGIC("\tLocal "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source) <<" IFC: "<<interface<<" PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
 	NS_ASSERT(group.IsMulticast());
 	SourceGroupPair sgp (source, group, sender);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
