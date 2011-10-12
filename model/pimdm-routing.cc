@@ -79,11 +79,15 @@ MulticastRoutingProtocol::GetTypeId (void)
 			 	 	UintegerValue (Hold_Time_Default),
 			        MakeUintegerAccessor (&MulticastRoutingProtocol::SetHelloHoldTime),
 			        MakeUintegerChecker<uint16_t> ())
-	.AddAttribute ("RegisterMember", "Register a new member triple (group, source, interface) like a new IGMP entry",
+	.AddAttribute ("RegisterSG", "Register a new source-group pair, like a new IGMP entry",
+					StringValue("0,0"),
+					MakeStringAccessor(&MulticastRoutingProtocol::register_SG),
+					MakeStringChecker())
+	.AddAttribute ("RegisterMember", "Register a new member triple (group, source, interface) ",
 					StringValue("0,0,0"),
 					MakeStringAccessor(&MulticastRoutingProtocol::register_member),
 					MakeStringChecker())
-   .AddAttribute ("RPFCheckInterval", "RPF check interval.",
+	.AddAttribute ("RPFCheckInterval", "RPF check interval.",
 					TimeValue (Seconds (RPF_CHECK)),
 					MakeTimeAccessor (&MulticastRoutingProtocol::m_rpfCheck),
 					MakeTimeChecker ())
@@ -158,28 +162,53 @@ MulticastRoutingProtocol::GetMetricPreference(int32_t interface)
 
 
 void
-MulticastRoutingProtocol::register_member (std::string SGI){
+MulticastRoutingProtocol::register_member (std::string csv){
 	/***************** TODO: TO REMOVE WITH IGMP *****************/
 	NS_LOG_FUNCTION(this);
 	Ipv4Address group, source;
 	int32_t interface;
-	ParseSourceGroupInterface(SGI, group, source, interface);
+	std::vector<std::string> tokens;
+	Tokenize(csv, tokens, ",");
+	if(tokens.size()!= 3) return;
+	source = Ipv4Address(tokens.at(0).c_str());
+	group = Ipv4Address(tokens.at(1).c_str());
+	interface = atoi(tokens.at(2).c_str());
+	tokens.clear();
 	if(source == group && interface == 0) return;//skip initialization
-	NS_LOG_LOGIC("Member for ("<<source<<","<<group<<") over interface "<< interface);
+	NS_LOG_LOGIC("Register interface with members for ("<<source<<","<<group<<") over interface "<< interface);
 	SourceGroupPair sgp (source,group);
 	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){//add a new receiver on a specific (source,group) on a given interface
 		std::set<int32_t> iface;
 		m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<int32_t> >(sgp,iface));
 		NS_LOG_DEBUG("Adding Source-Group ("<<source<<","<<group<<") to the map");
 	}
-	if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface<m_ipv4->GetNInterfaces()){
+	if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
 		m_LocalReceiver.find(sgp)->second.insert(interface);
 		NS_LOG_DEBUG("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
 	}
+	else NS_LOG_DEBUG("Interface " << interface<< " already registered for ("<<source<<","<<group<<")");
+	int32_t sources = m_mrib.find(group)->second.mgroup.size();
+	NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< sources << " #Clients "<< m_LocalReceiver.find(sgp)->second.size());
+}
+
+void
+MulticastRoutingProtocol::register_SG (std::string csv){
+	/***************** TODO: TO REMOVE WITH IGMP *****************/
+	NS_LOG_FUNCTION(this);
+	Ipv4Address group, source;
+	std::vector<std::string> tokens;
+	Tokenize(csv, tokens, ",");
+	if(tokens.size()!= 2) return;
+	source = Ipv4Address(tokens.at(0).c_str());
+	group = Ipv4Address(tokens.at(1).c_str());
+	tokens.clear();
+	if(source == group) return;//skip initialization
+	NS_LOG_LOGIC("Registering SourceGroup pair ("<<source<<","<<group<<")");
+	SourceGroupPair sgp (source,group);
 	AddEntry(group,source,Ipv4Address::GetLoopback(),-1);//We got an entry from IGMP for this source-group
 	int32_t sources = m_mrib.find(group)->second.mgroup.size();
-	NS_LOG_DEBUG("Main Addr = "<<  m_mainAddress << ", Group "<<group<<", #Source: "<< sources);
-	if(group == ALL_PIM_ROUTERS4 || sources>1) return;
+	NS_LOG_DEBUG("Main Addr = "<<  m_mainAddress << ": Group "<<group<<" #Source: "<< sources);
+	if(group == ALL_PIM_ROUTERS4 || sources > 1) return;//Socket already available for this group
 	for(int32_t i = 0; i < m_ipv4->GetNInterfaces(); i++){
 		if(IsLoopInterface(i))
 			continue;
@@ -194,9 +223,10 @@ MulticastRoutingProtocol::register_member (std::string SGI){
 			NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<group);
 		}
 		socketG->BindToNetDevice (m_ipv4->GetNetDevice (i));
-//		m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0); //PROBLEM; does not broadcast on local IP, takes the other group-interface
-		Ipv4InterfaceAddress mgroup(group, Ipv4Mask::GetOnes());
-		m_socketAddresses[socketG] = mgroup;
+//		m_socketAddresses[socketG] = m_ipv4->GetAddress (i, 0); //PROBLEM; does not broadcast on local IP, takes the other group-interface
+//		NS_LOG_DEBUG("Registering Group Socket = "<<socketG<< " Device = "<<socketG->GetBoundNetDevice()<< ", SocketAddr = "<<m_ipv4->GetAddress (i, 0).GetLocal() <<", I = "<<i);
+		Ipv4InterfaceAddress mgroup(group, Ipv4Mask::GetOnes()); 	// WIFI OK
+		m_socketAddresses[socketG] = mgroup;						// WIFI OK
 		NS_LOG_DEBUG("Registering Group Socket = "<<socketG<< " Device = "<<socketG->GetBoundNetDevice()<< ", SocketAddr = "<<mgroup.GetLocal()<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
 	}
 }
@@ -3847,17 +3877,23 @@ uint32_t MulticastRoutingProtocol::getThreshold (int32_t interface){
 	return 2; //TODO check what is it
 }
 
-void MulticastRoutingProtocol::ParseSourceGroupInterface(std::string SGI, Ipv4Address &source, Ipv4Address &group, int32_t &interface){
-	// Just to get the IP info
-	size_t p = SGI.find(",");
-	size_t l = SGI.find(",",p+1);
-	size_t m = SGI.length() ;
-	std::string groupS = SGI.substr(0,p);
-	std::string sourceS = SGI.substr(p+1,l-p-1);
-	std::string ifaceS = SGI.substr(l+1,m);
-	group = Ipv4Address(groupS.c_str());
-	source = Ipv4Address(sourceS.c_str());
-	interface = atoi(ifaceS.c_str());
+
+void MulticastRoutingProtocol::Tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters)
+{
+// Skip delimiters at beginning.
+std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+// Find first "non-delimiter".
+std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
+	while (std::string::npos != pos || std::string::npos != lastPos)
+	{
+		// Found a token, add it to the vector.
+		tokens.push_back(str.substr(lastPos, pos - lastPos));
+		NS_LOG_DEBUG("\""<<str.substr(lastPos, pos - lastPos)<<"\""<< " POS "<< pos << " LAST "<< lastPos);
+		// Skip delimiters.  Note the "not_of"
+		lastPos = str.find_first_not_of(delimiters, pos);
+		// Find next "non-delimiter"
+		pos = str.find_first_of(delimiters, lastPos);
+	}
 }
 
 Ipv4Header MulticastRoutingProtocol::BuildHeader (Ipv4Address source, Ipv4Address destination, uint8_t protocol, uint16_t payloadSize, uint8_t ttl, bool mayFragment)

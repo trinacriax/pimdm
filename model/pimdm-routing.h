@@ -239,6 +239,7 @@ public:
 	std::vector<RoutingMulticastTable> GetRoutingTableEntries () const;
 
 	void register_member (std::string SGI);
+	void register_SG (std::string SG);
 
 	void UpdateMRIB (){}
 
@@ -324,6 +325,7 @@ private:
 	/// Threshold (I) returns the minimum TTL that a packet must have before it can be transmitted on interface I.
 	uint32_t getThreshold (int32_t interface);
 
+	void Tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters = ",");
 	void ParseSourceGroupInterface(std::string SGI, Ipv4Address &source, Ipv4Address &group, int32_t &interface);
 	Ipv4Header BuildHeader (Ipv4Address source, Ipv4Address destination, uint8_t protocol, uint16_t payloadSize, uint8_t ttl, bool mayFragment);
 
