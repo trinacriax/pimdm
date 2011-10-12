@@ -1377,8 +1377,9 @@ MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address sen
 	Ipv4Header ipv4header;
 	receivedPacket->RemoveHeader(ipv4header);
 	Ipv4Address group = ipv4header.GetDestination();
+	Ipv4Address localAddr = GetLocalAddress(interface);
 	NS_LOG_LOGIC("Sender = "<< senderIfaceAddr<<", Group = " << group << ", Destination = "<< receiverIfaceAddr);
-	if(route) NS_LOG_DEBUG("\t Route = "<<route->GetSource()<< " <"<<interface<<"> " <<route->GetGateway() <<" <...> "<<senderIfaceAddr);
+	if(route) NS_LOG_DEBUG("\t Route = "<<localAddr<< " <"<<interface<<"> " <<route->GetGateway() <<" <...> "<<senderIfaceAddr);
 	if(ipv4header.GetDestination().IsMulticast() && ipv4header.GetDestination() != Ipv4Address(ALL_PIM_ROUTERS4)) {
 		NS_LOG_ERROR("Received "<< ipv4header.GetDestination() <<" it should be captured by another callback.");
 		return;
