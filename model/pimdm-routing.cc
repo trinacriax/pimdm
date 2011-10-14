@@ -27,6 +27,7 @@
 #include "ns3/socket-factory.h"
 #include "ns3/ipv4-raw-socket-factory.h"
 #include "ns3/udp-socket-factory.h"
+#include "ns3/udp-socket.h"
 #include "ns3/simulator.h"
 #include "ns3/names.h"
 #include "ns3/random-variable.h"
@@ -213,6 +214,22 @@ MulticastRoutingProtocol::register_SG (std::string csv){
 		if(IsLoopInterface(i))
 			continue;
 	///Registering endpoint for that address... by creating a socket to listen only on this interface
+//	Ptr<Socket> socketG = Socket::CreateSocket (GetObject<Node> (), UdpSocketFactory::GetTypeId());
+//	InetSocketAddress mgroup = InetSocketAddress (group, PIM_PORT_NUMBER);
+//	if (socketG->Bind (mgroup)){
+//		NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<group);
+//	}
+//	Ptr<UdpSocket> udpSocket = DynamicCast<UdpSocket> (socketG);
+//	if (udpSocket)
+//		{
+//		  // equivalent to setsockopt (MCAST_JOIN_GROUP)
+//		  udpSocket->MulticastJoinGroup (0, mgroup);
+//		}
+//		else
+//		{
+//		  NS_FATAL_ERROR ("Error: joining multicast on a non-UDP socket");
+//		}
+
 	Ptr<Socket> socketG = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
 	socketG->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
 	socketG->SetAttribute("IpHeaderInclude", BooleanValue(true));
@@ -522,7 +539,6 @@ MulticastRoutingProtocol::IsMyOwnAddress (const Ipv4Address & address) const
   return false;
 }
 
-
 void
 MulticastRoutingProtocol::NotifyInterfaceUp (uint32_t i)
 {
@@ -571,7 +587,7 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t j, Ipv4InterfaceAddress add
 	m_socketAddresses[socketP] = mpim;
 	NS_LOG_DEBUG("Registering PIM Socket = "<<socketP << " Device = "<<m_ipv4->GetNetDevice (i)<< ", LocalAddr = "<<mpim.GetLocal()<<" Destination = "<<  ALL_PIM_ROUTERS4<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
 
-	// Create a socket to listen only on this interface
+	// Create a socket to listen only on this Interface/Address
 	Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
 	socket->SetAttribute("Protocol", UintegerValue(PIM_IP_PROTOCOL_NUM));
 	socket->SetAttribute("IpHeaderInclude", BooleanValue(true));
@@ -583,9 +599,11 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t j, Ipv4InterfaceAddress add
 	}
 	socket->BindToNetDevice (m_ipv4->GetNetDevice (i));
 	m_socketAddresses[socket] = m_ipv4->GetAddress (i, 0);
-	NS_LOG_DEBUG("Registering Local Socket = "<<socket << " Device = "<<m_ipv4->GetNetDevice (i)<< ", LocalAddr = "<<m_ipv4->GetAddress (i, 0).GetLocal()<<" Destination = "<<  m_ipv4->GetAddress (i, 0).GetLocal ().GetSubnetDirectedBroadcast (m_ipv4->GetAddress (i, 0).GetMask ())<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
+	NS_LOG_DEBUG("Socket "<<socket << " Device "<<m_ipv4->GetNetDevice (i)<<" Iface "<<i
+			<< " Addr "<< addr
+			<<" Broad "<< addr.GetSubnetDirectedBroadcast (m_ipv4->GetAddress (i, 0).GetMask ())
+	);
 
-	NS_LOG_DEBUG ("PIMDM up on " << m_ipv4->GetAddress (i, 0).GetLocal () << ", Generation Id = "<< m_generationID<<", Starting @ "<<m_startTime);
 	NeighborhoodStatus *ns = FindNeighborhoodStatus(i);
 	NS_ASSERT(ns == NULL);
 	InsertNeighborhoodStatus(i);
@@ -596,13 +614,13 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t j, Ipv4InterfaceAddress add
 	ns->pruneHoldtime = Seconds(UniformVariable().GetValue(PruneHoldTime*.3, PruneHoldTime));
 	ns->LANDelayEnabled = true;
 	ns->stateRefreshCapable = true;
-	NS_LOG_DEBUG ("Generating Neighborhood ("<<i<<"): PD=" << ns->propagationDelay.GetSeconds() <<"s, OI="<< ns->overrideInterval.GetSeconds() <<
-			"s, SRI="<< ns->stateRefreshInterval.GetSeconds()<<"s, PHT="<< ns->pruneHoldtime.GetSeconds()<<"s, LDE="<<ns->LANDelayEnabled<<
-			"s, SRC="<< ns->stateRefreshCapable);
+	NS_LOG_DEBUG ("Neighborhood ("<<i<<"): PD " << ns->propagationDelay.GetSeconds() <<"s OI "<< ns->overrideInterval.GetSeconds() <<
+			"s SRI "<< ns->stateRefreshInterval.GetSeconds()<<"s PHT "<< ns->pruneHoldtime.GetSeconds()<<"s LDE "<<ns->LANDelayEnabled<<
+			"s SRC "<< ns->stateRefreshCapable);
 	Time rndHello = TransmissionDelay(0, Triggered_Hello_Delay);
 	Simulator::Schedule (rndHello, &MulticastRoutingProtocol::HelloTimerExpire, this, i);
 	ns->hello_timer.SetDelay(m_helloTime);
-	NS_LOG_DEBUG ("Generating SG List("<<i<<") HT="<<m_helloTime.GetSeconds()<<"s, Starting "<< rndHello.GetSeconds()<<"s");
+	NS_LOG_DEBUG ("SourceGroup List("<<i<<") HT "<<m_helloTime.GetSeconds()<<"s Starting "<< rndHello.GetSeconds()<<"s");
 }
 
 void
