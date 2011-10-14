@@ -214,22 +214,6 @@ MulticastRoutingProtocol::register_SG (std::string csv){
 		if(IsLoopInterface(i))
 			continue;
 	///Registering endpoint for that address... by creating a socket to listen only on this interface
-//	Ptr<Socket> socketG = Socket::CreateSocket (GetObject<Node> (), UdpSocketFactory::GetTypeId());
-//	InetSocketAddress mgroup = InetSocketAddress (group, PIM_PORT_NUMBER);
-//	if (socketG->Bind (mgroup)){
-//		NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<group);
-//	}
-//	Ptr<UdpSocket> udpSocket = DynamicCast<UdpSocket> (socketG);
-//	if (udpSocket)
-//		{
-//		  // equivalent to setsockopt (MCAST_JOIN_GROUP)
-//		  udpSocket->MulticastJoinGroup (0, mgroup);
-//		}
-//		else
-//		{
-//		  NS_FATAL_ERROR ("Error: joining multicast on a non-UDP socket");
-//		}
-
 	Ptr<Socket> socketG = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
 	socketG->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
 	socketG->SetAttribute("IpHeaderInclude", BooleanValue(true));
