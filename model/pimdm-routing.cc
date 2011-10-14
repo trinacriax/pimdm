@@ -212,22 +212,22 @@ MulticastRoutingProtocol::register_SG (std::string csv){
 	for(int32_t i = 0; i < m_ipv4->GetNInterfaces(); i++){
 		if(IsLoopInterface(i))
 			continue;
-		///Registering endpoint for that address... by creating a socket to listen only on this interface
-		Ptr<Socket> socketG = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
-		socketG->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
-		socketG->SetAttribute("IpHeaderInclude", BooleanValue(true));
-		socketG->SetAllowBroadcast (true);
-		InetSocketAddress inetAddr (group, PIM_PORT_NUMBER);
-		socketG->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvMessage, this));
-		if (socketG->Bind (inetAddr)){
-			NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<group);
-		}
-		socketG->BindToNetDevice (m_ipv4->GetNetDevice (i));
-//		m_socketAddresses[socketG] = m_ipv4->GetAddress (i, 0); //PROBLEM; does not broadcast on local IP, takes the other group-interface
-//		NS_LOG_DEBUG("Registering Group Socket = "<<socketG<< " Device = "<<socketG->GetBoundNetDevice()<< ", SocketAddr = "<<m_ipv4->GetAddress (i, 0).GetLocal() <<", I = "<<i);
-		Ipv4InterfaceAddress mgroup(group, Ipv4Mask::GetOnes()); 	// WIFI OK
-		m_socketAddresses[socketG] = mgroup;						// WIFI OK
-		NS_LOG_DEBUG("Registering Group Socket = "<<socketG<< " Device = "<<socketG->GetBoundNetDevice()<< ", SocketAddr = "<<mgroup.GetLocal()<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
+	///Registering endpoint for that address... by creating a socket to listen only on this interface
+	Ptr<Socket> socketG = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
+	socketG->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
+	socketG->SetAttribute("IpHeaderInclude", BooleanValue(true));
+	socketG->SetAllowBroadcast (true);
+	InetSocketAddress inetAddr (group, PIM_PORT_NUMBER);
+	socketG->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvMessage, this));
+	if (socketG->Bind (inetAddr)){
+		NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<group);
+	}
+	socketG->BindToNetDevice (m_ipv4->GetNetDevice (i));
+	m_socketAddresses[socketG] = m_ipv4->GetAddress (i, 0); //PROBLEM; does not broadcast on local IP, takes the other group-interface
+	NS_LOG_DEBUG("Registering Group Socket = "<<socketG<< " Device = "<<socketG->GetBoundNetDevice()<< ", SocketAddr = "<<m_ipv4->GetAddress (i, 0).GetLocal() <<", I = "<<i);
+	Ipv4InterfaceAddress mgroup(group, Ipv4Mask::GetOnes());	// WIFI OK
+	m_socketAddresses[socketG] = mgroup;						// WIFI OK
+	NS_LOG_DEBUG("Group Socket "<<socketG << " Addr: "<<group<<":"<<PIM_PORT_NUMBER);
 	}
 }
 
@@ -549,7 +549,7 @@ MulticastRoutingProtocol::NotifyInterfaceDown (uint32_t i)
 void
 MulticastRoutingProtocol::NotifyAddAddress (uint32_t j, Ipv4InterfaceAddress address)
 {
-	NS_LOG_FUNCTION(this);
+	NS_LOG_FUNCTION(this << GetObject<Node> ()->GetId());
 	int32_t i = (int32_t)j;
 	Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	if (addr == Ipv4Address::GetLoopback())
@@ -1351,7 +1351,7 @@ MulticastRoutingProtocol::RecvMessage (Ptr<Socket> socket)
 	RelyTag rtag;
 	bool tag = receivedPacket->RemovePacketTag(rtag);
 	Ipv4Address group = ipv4header.GetDestination();
-	NS_LOG_LOGIC("Sender: "<< senderIfaceAddr << ", Port: " << senderIfacePort<< ", Group: "<< group<<  ", Tag: "<<tag);
+	NS_LOG_LOGIC("Sender "<< senderIfaceAddr << " Port " << senderIfacePort<< " Group "<< group<<  " Tag "<<tag);
 	receivedPacket->AddHeader(ipv4header);
 	if (tag || (group.IsMulticast() && group != Ipv4Address(ALL_PIM_ROUTERS4))){//Lookup(ipv4header.GetDestination(),ipv4header.GetSource(),rmt,me)){
 		if(tag) receivedPacket->AddPacketTag(rtag);
