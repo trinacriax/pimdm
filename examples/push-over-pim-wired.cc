@@ -156,6 +156,7 @@ main (int argc, char *argv[])
 	cmd.AddValue("sizePim", "Number of PIM nodes.", sizePim);
 	cmd.AddValue("sizeClient", "Number of PIM nodes.", sizeClient);
 	cmd.AddValue("sizeSource", "Number of PIM nodes.", sizeSource);
+	cmd.AddValue("cols", "Number of cols in the grid.", cols);
 	cmd.AddValue("routing", "Routing protocol to use.", routing);
 	cmd.AddValue("time", "Simulation time, s.", totalTime);
 	cmd.AddValue("animFile", "File Name for Animation Output", animFile);
