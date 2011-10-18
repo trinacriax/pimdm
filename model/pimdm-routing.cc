@@ -390,7 +390,7 @@ MulticastRoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header,
 			interfaceIdx = m_ipv4->GetInterfaceForAddress(header.GetSource());
 		else if(Lookup(header.GetDestination(), entry1))//we don't know anything :( looking for the first entry for this group;
 			interfaceIdx = entry1.mgroup.begin()->second.interface;
-		if (oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx)){
+		if ((oif && m_ipv4->GetInterfaceForDevice (oif) != static_cast<int> (interfaceIdx)) || interfaceIdx <0){
 		  // We do not attempt to perform a constrained routing search
 		  // if the caller specifies the oif; we just enforce
 		  // that the found route matches the requested outbound interface
