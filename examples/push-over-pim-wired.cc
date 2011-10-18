@@ -123,11 +123,13 @@ main (int argc, char *argv[])
 	/// Print routes if true
 	bool printRoutes = true;
 	/// Number of PIM nodes
-	uint32_t sizePim = 1;
+	uint32_t sizePim = 4;
 	/// Number of client nodes
-	uint32_t sizeClient = 1;
+	uint32_t sizeClient = 4;
 	/// Animator filename
 	uint32_t sizeSource = 1;
+	/// grid cols number
+	uint16_t cols = sqrt(sizePim);
 	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
 	int32_t routing = 1;
 	//Seed for random numbers
@@ -139,7 +141,7 @@ main (int argc, char *argv[])
 	/// Video start
 	double sourceStart = 30;
 	/// Video stop
-	double sourceStop = totalTime-5;
+	double sourceStop = totalTime-10;
 	/// Client start
 	double clientStart = sourceStart;
 	/// Client stop
@@ -190,53 +192,37 @@ main (int argc, char *argv[])
 	csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
 //	csma.SetDeviceAttribute ("EncapsulationMode", StringValue ("Llc"));
 
-	// Node 0 -> Client 0
-	NodeContainer r0c0;
-	r0c0.Add(routers.Get(0));
-	r0c0.Add(clients.Get(0));
-	NetDeviceContainer dr0dc0 = csma.Install (r0c0);
+	std::list<NetDeviceContainer> rcDevices;
+	for (int c = 0; c < routers.GetN() ; c++){
+		NodeContainer nc;
+		nc.Add(routers.Get(c));
+		nc.Add(clients.Get(c));
+		rcDevices.push_back(csma.Install (nc));
+	}
 
-	// Node 1 -> Client 1
-//	NodeContainer r1c1;
-//	r1c1.Add(routers.Get(1));
-//	r1c1.Add(clients.Get(1));
-//	NetDeviceContainer dr1dc1 = csma.Install (r1c1);
+	// Node 0 -> Node 1
+	NodeContainer r0r1;
+	r0r1.Add(routers.Get(0));
+	r0r1.Add(routers.Get(1));
+	NetDeviceContainer dr0dr1 = csma.Install (r0r1);
 
-//	// Node 2 -> Client 2
-//	NodeContainer r2c2;
-//	r2c2.Add(routers.Get(2));
-//	r2c2.Add(clients.Get(2));
-//	NetDeviceContainer dr2dc2 = csma.Install (r2c2);
-//
-//	// Node 3 -> Client 3
-//	NodeContainer r3c3;
-//	r3c3.Add(routers.Get(3));
-//	r3c3.Add(clients.Get(3));
-//	NetDeviceContainer dr3dc3 = csma.Install (r3c3);
-//
-//	// Node 0 -> Node 1
-//	NodeContainer r0r1;
-//	r0r1.Add(routers.Get(0));
-//	r0r1.Add(routers.Get(1));
-//	NetDeviceContainer dr0dr1 = csma.Install (r0r1);
-//
-//	// Node 0 -> Node 2
-//	NodeContainer r0r2;
-//	r0r2.Add(routers.Get(0));
-//	r0r2.Add(routers.Get(2));
-//	NetDeviceContainer dr0dr2 = csma.Install (r0r2);
-//
-//	// Node 2 -> Node 3
-//	NodeContainer r2r3;
-//	r2r3.Add(routers.Get(2));
-//	r2r3.Add(routers.Get(3));
-//	NetDeviceContainer dr2dr3 = csma.Install (r2r3);
-//
-//	// Node 1 -> Node 3
-//	NodeContainer r1r3;
-//	r1r3.Add(routers.Get(1));
-//	r1r3.Add(routers.Get(3));
-//	NetDeviceContainer dr1dr3 = csma.Install (r1r3);
+	// Node 0 -> Node 2
+	NodeContainer r0r2;
+	r0r2.Add(routers.Get(0));
+	r0r2.Add(routers.Get(2));
+	NetDeviceContainer dr0dr2 = csma.Install (r0r2);
+
+	// Node 2 -> Node 3
+	NodeContainer r2r3;
+	r2r3.Add(routers.Get(2));
+	r2r3.Add(routers.Get(3));
+	NetDeviceContainer dr2dr3 = csma.Install (r2r3);
+
+	// Node 1 -> Node 3
+	NodeContainer r1r3;
+	r1r3.Add(routers.Get(1));
+	r1r3.Add(routers.Get(3));
+	NetDeviceContainer dr1dr3 = csma.Install (r1r3);
 
 	// Source 0 -> Node 0
 	NodeContainer s0r0;
@@ -305,31 +291,24 @@ main (int argc, char *argv[])
 	Ipv4AddressHelper ipv4;
 
 	ipv4.SetBase ("10.1.2.0", "255.255.255.0");
-	Ipv4InterfaceContainer ipr0c0 = ipv4.Assign (dr0dc0);
-//	ipv4.SetBase ("10.1.3.0", "255.255.255.0");
-//	Ipv4InterfaceContainer ipr1c1 = ipv4.Assign (dr1dc1);
-//	ipv4.SetBase ("10.1.4.0", "255.255.255.0");
-//	Ipv4InterfaceContainer ipr2c2 = ipv4.Assign (dr2dc2);
-//	ipv4.SetBase ("10.1.5.0", "255.255.255.0");
-//	Ipv4InterfaceContainer ipr3c3 = ipv4.Assign (dr3dc3);
-//
+	Ipv4InterfaceContainer ipClients;
+	while(!rcDevices.empty()){
+		Ipv4InterfaceContainer iprc = ipv4.Assign (rcDevices.front());
+		ipClients.Add(iprc.Get(1));
+		rcDevices.pop_front();
+	}
+
 	ipv4.SetBase ("10.1.1.0", "255.255.255.0");
 	Ipv4InterfaceContainer ips0r0 = ipv4.Assign (ds0dr0);
-//
-//	ipv4.SetBase ("10.2.1.0", "255.255.255.0");
-//	Ipv4InterfaceContainer ipr0r1 = ipv4.Assign (dr0dr1);
-//	ipv4.SetBase ("10.2.2.0", "255.255.255.0");
-//	Ipv4InterfaceContainer ipr0r2 = ipv4.Assign (dr0dr2);
-//	ipv4.SetBase ("10.2.3.0", "255.255.255.0");
-//	Ipv4InterfaceContainer ipr1r3 = ipv4.Assign (dr1dr3);
-//	ipv4.SetBase ("10.2.4.0", "255.255.255.0");
-//	Ipv4InterfaceContainer ipr2r3 = ipv4.Assign (dr2dr3);
 
-	Ipv4InterfaceContainer ipClients;
-	ipClients.Add(ipr0c0.Get(1));
-//	ipClients.Add(ipr1c1.Get(1));
-//	ipClients.Add(ipr2c2.Get(1));
-//	ipClients.Add(ipr3c3.Get(1));
+	ipv4.SetBase ("10.2.1.0", "255.255.255.0");
+	Ipv4InterfaceContainer ipr0r1 = ipv4.Assign (dr0dr1);
+	ipv4.SetBase ("10.2.2.0", "255.255.255.0");
+	Ipv4InterfaceContainer ipr0r2 = ipv4.Assign (dr0dr2);
+	ipv4.SetBase ("10.2.3.0", "255.255.255.0");
+	Ipv4InterfaceContainer ipr1r3 = ipv4.Assign (dr1dr3);
+	ipv4.SetBase ("10.2.4.0", "255.255.255.0");
+	Ipv4InterfaceContainer ipr2r3 = ipv4.Assign (dr2dr3);
 
 	NS_LOG_INFO ("Configure multicasting.");
 	Ipv4Address multicastSource ("10.1.1.1");
