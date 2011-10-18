@@ -244,17 +244,24 @@ main (int argc, char *argv[])
 
 	Ipv4ListRoutingHelper listRouters;
 	listRouters.Add (staticRouting, 0);
+
+	Ipv4ListRoutingHelper listClients;
+	listClients.Add (staticRouting, 11);
+
 	switch(routing){
 			case 1:{
 				listRouters.Add (olsr, 10);
+				listClients.Add (olsr, 10);
 				break;
 			}
 			case 2:{
 				listRouters.Add (aodv, 10);
+				listClients.Add (aodv, 10);
 				break;
 			}
 			case 3:{
 				listRouters.Add (mbnaodv, 10);
+				listClients.Add (mbnaodv, 10);
 				break;
 			}
 		}
@@ -263,23 +270,6 @@ main (int argc, char *argv[])
 	InternetStackHelper internetRouters;
 	internetRouters.SetRoutingHelper (listRouters);
 	internetRouters.Install (routers);
-
-	Ipv4ListRoutingHelper listClients;
-	switch(routing){
-		case 1:{
-			listClients.Add (olsr, 10);
-			break;
-		}
-		case 2:{
-			listClients.Add (aodv, 10);
-			break;
-		}
-		case 3:{
-			listClients.Add (mbnaodv, 10);
-			break;
-		}
-	}
-	listClients.Add (staticRouting, 11);
 
 	InternetStackHelper internetClients;
 	internetClients.SetRoutingHelper (listClients);
