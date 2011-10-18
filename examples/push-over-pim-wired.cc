@@ -200,29 +200,28 @@ main (int argc, char *argv[])
 		rcDevices.push_back(csma.Install (nc));
 	}
 
-	// Node 0 -> Node 1
-	NodeContainer r0r1;
-	r0r1.Add(routers.Get(0));
-	r0r1.Add(routers.Get(1));
-	NetDeviceContainer dr0dr1 = csma.Install (r0r1);
-
-	// Node 0 -> Node 2
-	NodeContainer r0r2;
-	r0r2.Add(routers.Get(0));
-	r0r2.Add(routers.Get(2));
-	NetDeviceContainer dr0dr2 = csma.Install (r0r2);
-
-	// Node 2 -> Node 3
-	NodeContainer r2r3;
-	r2r3.Add(routers.Get(2));
-	r2r3.Add(routers.Get(3));
-	NetDeviceContainer dr2dr3 = csma.Install (r2r3);
-
-	// Node 1 -> Node 3
-	NodeContainer r1r3;
-	r1r3.Add(routers.Get(1));
-	r1r3.Add(routers.Get(3));
-	NetDeviceContainer dr1dr3 = csma.Install (r1r3);
+	std::list<NetDeviceContainer> rrDevices;
+	for (int n = 0; n < sizePim; n++){
+		NetDeviceContainer ndc;
+		if(n + 1 < sizePim && !((n+1)%cols == 0)){
+			NodeContainer dx;
+			uint16_t p = n+1;
+			dx.Add(routers.Get(n));
+			dx.Add(routers.Get(p));
+			ndc = csma.Install (dx);
+			NS_LOG_DEBUG("Node "<< n << " <--> "<< p << " :: " << ndc.GetN());
+			rrDevices.push_back(ndc);
+		}
+		if(n + cols < sizePim){
+			NodeContainer dw;
+			uint16_t p = n+cols;
+			dw.Add(routers.Get(n));
+			dw.Add(routers.Get(p));
+			ndc = csma.Install (dw);
+			NS_LOG_DEBUG("Node "<< n << " <--> "<< p << " :: " << ndc.GetN());
+			rrDevices.push_back(ndc);
+		}
+	}
 
 	// Source 0 -> Node 0
 	NodeContainer s0r0;
@@ -298,17 +297,18 @@ main (int argc, char *argv[])
 		rcDevices.pop_front();
 	}
 
+	Ipv4Address base = Ipv4Address("10.2.1.0");
+	ipv4.SetBase (base, "255.255.255.0");
+	while(!rrDevices.empty()){
+		NS_LOG_DEBUG("IP Base "<<base);
+		Ipv4InterfaceContainer iprr = ipv4.Assign (rrDevices.front());
+		rrDevices.pop_front();
+		base = Ipv4Address(base.Get()+256);
+		ipv4.SetBase (base, "255.255.255.0");
+	}
+
 	ipv4.SetBase ("10.1.1.0", "255.255.255.0");
 	Ipv4InterfaceContainer ips0r0 = ipv4.Assign (ds0dr0);
-
-	ipv4.SetBase ("10.2.1.0", "255.255.255.0");
-	Ipv4InterfaceContainer ipr0r1 = ipv4.Assign (dr0dr1);
-	ipv4.SetBase ("10.2.2.0", "255.255.255.0");
-	Ipv4InterfaceContainer ipr0r2 = ipv4.Assign (dr0dr2);
-	ipv4.SetBase ("10.2.3.0", "255.255.255.0");
-	Ipv4InterfaceContainer ipr1r3 = ipv4.Assign (dr1dr3);
-	ipv4.SetBase ("10.2.4.0", "255.255.255.0");
-	Ipv4InterfaceContainer ipr2r3 = ipv4.Assign (dr2dr3);
 
 	NS_LOG_INFO ("Configure multicasting.");
 	Ipv4Address multicastSource ("10.1.1.1");
