@@ -1353,7 +1353,7 @@ MulticastRoutingProtocol::RecvMessage (Ptr<Socket> socket)
 	RelyTag rtag;
 	bool tag = receivedPacket->RemovePacketTag(rtag);
 	Ipv4Address group = ipv4header.GetDestination();
-	NS_LOG_LOGIC("Sender "<< senderIfaceAddr << " Port " << senderIfacePort<< " Group "<< group<<  " Tag "<<tag);
+	NS_LOG_LOGIC("Node "<<receiverIfaceAddr<< ": Sender "<< senderIfaceAddr << " Port " << senderIfacePort<< " Group "<< group<<  " Tag "<<tag);
 	receivedPacket->AddHeader(ipv4header);
 	if (tag || (group.IsMulticast() && group != Ipv4Address(ALL_PIM_ROUTERS4))){//Lookup(ipv4header.GetDestination(),ipv4header.GetSource(),rmt,me)){
 		if(tag) receivedPacket->AddPacketTag(rtag);
