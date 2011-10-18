@@ -1661,13 +1661,13 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			senderHeader.SetDestination(out->second);//WIRED
 			senderHeader.SetPayloadSize(sourceHeader.GetPayloadSize()+senderHeader.GetSerializedSize());//WIRED
 			fwdPacket->AddHeader(senderHeader);//WIRED
-			NS_LOG_DEBUG("DataFwd towards node "<<out->second <<" interfaces/nodes " << fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
+			NS_LOG_DEBUG("DataFwd towards node ("<<out->second <<", "<< out->first <<") interfaces/nodes " << fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
 			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketUnicast, this, fwdPacket, out->second);
 		}
 		else{
 			relyTag.m_rely = 2;//to Clients
 			fwdPacket->AddPacketTag(relyTag);
-			NS_LOG_DEBUG("DataFwd towards clients "<<out->second <<" interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
+			NS_LOG_DEBUG("DataFwd towards clients ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
 			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
 		}
 		delayMS += TransmissionDelay();
