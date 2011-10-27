@@ -381,7 +381,7 @@ main (int argc, char *argv[])
 				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localWeightFunction",EnumValue(mbn::W_NODE_RND));
 //				Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
 				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localNodeStatus",EnumValue(mbn::RN_NODE));
-				for(int i = source.GetN(); i < (source.GetN()+routers.GetN()); i++){
+				for(uint32_t i = source.GetN(); i < (source.GetN()+routers.GetN()); i++){
 					std::stringstream ss;
 					ss << "/NodeList/"<<i<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
 					Config::Set(ss.str(),EnumValue(mbn::BCN_NODE));
@@ -515,7 +515,7 @@ main (int argc, char *argv[])
 	mobilityS.SetMobilityModel("ns3::ConstantPositionMobilityModel");
 	mobilityS.Install(source);
 
-	for(int i = 0; i < allNodes.GetN(); i++){
+	for(uint32_t i = 0; i < allNodes.GetN(); i++){
 		  Ptr<MobilityModel> mobility = allNodes.Get(i)->GetObject<MobilityModel> ();
 	      Vector pos = mobility->GetPosition (); // Get position
 	      NS_LOG_DEBUG("Position Node ["<<i<<"] = ("<< pos.x << ", " << pos.y<<", "<<pos.z<<")");
