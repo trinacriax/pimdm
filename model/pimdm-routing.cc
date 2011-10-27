@@ -676,7 +676,7 @@ void MulticastRoutingProtocol::DoStart ()
 		m_generationID = UniformVariable().GetInteger(1, INT_MAX);///force value > 0
 	m_latestPacketID = 0;
 	m_startTime = Simulator::Now();
-	if(m_rpfChecker.IsRunning())
+	if(m_rpfChecker.IsRunning()) //TODO can be removed
 		m_rpfChecker.Cancel();
 	m_rpfChecker.SetDelay(m_rpfCheck);
 	m_rpfChecker.SetFunction(&MulticastRoutingProtocol::RPFCheckAll, this);
