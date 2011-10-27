@@ -218,7 +218,7 @@ main (int argc, char *argv[])
 	//Step in the grid Y
 	double deltaY = 100;
 	//Nodes in a row
-	uint32_t rowsize = sqrt(sizePim*1.0);
+	uint32_t rowsize = (uint32_t) sqrt(sizePim*1.0);
 
 		/// Animator filename
 	std::string animFile = "pimdm.tr";
@@ -227,8 +227,8 @@ main (int argc, char *argv[])
 	double totalTime = 80;
 	double onOffStart = 14;
 	double onOffStop = totalTime-5;
-	double sinkStart = onOffStart;
-	double sinkStop = totalTime-1;
+//	double sinkStart = onOffStart;
+//	double sinkStop = totalTime-1;
 
 	CommandLine cmd;
 	cmd.AddValue("pcap", "Write PCAP traces.", pcap);
@@ -407,7 +407,7 @@ main (int argc, char *argv[])
 				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localWeightFunction",EnumValue(mbn::W_NODE_RND));
 //				Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
 				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localNodeStatus",EnumValue(mbn::RN_NODE));
-				for(int i = source.GetN(); i < (source.GetN()+routers.GetN()); i++){
+				for(uint32_t i = source.GetN(); i < (source.GetN()+routers.GetN()); i++){
 					std::stringstream ss;
 					ss << "/NodeList/"<<i<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
 					Config::Set(ss.str(),EnumValue(mbn::BCN_NODE));
@@ -452,7 +452,7 @@ main (int argc, char *argv[])
 	apps.Start (Seconds (onOffStart));
 	apps.Stop (Seconds (onOffStop));
 
-	for(int n = 0; n < clients.GetN() ; n++){
+	for(uint32_t n = 0; n < clients.GetN() ; n++){
 		InetSocketAddress dstC = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
 		Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
 		VideoHelper videoC = VideoHelper ("ns3::UdpSocketFactory", dstC);
