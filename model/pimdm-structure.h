@@ -49,18 +49,18 @@ struct AssertMetric {
 		IPAddress("0.0.0.0")
 	{}
 	AssertMetric(int m, int r, uint32_t ip):
-			metricPreference(m),
-			routeMetric(r),
-			IPAddress(ip)
-		{}
+		metricPreference(m),
+		routeMetric(r),
+		IPAddress(ip)
+	{}
 	AssertMetric(int m, int r, Ipv4Address ip):
-				metricPreference(m),
-				routeMetric(r),
-				IPAddress(ip)
-			{}
-     uint32_t metricPreference;
-     uint32_t routeMetric;
-     Ipv4Address IPAddress;
+		metricPreference(m),
+		routeMetric(r),
+		IPAddress(ip)
+	{}
+    uint32_t metricPreference;
+    uint32_t routeMetric;
+    Ipv4Address IPAddress;
    };
 
 static inline bool
@@ -126,7 +126,7 @@ operator < (const SourceGroupPair &a, const SourceGroupPair &b){
 
 static inline std::ostream&
 operator << (std::ostream &os, const SourceGroupPair &a){
-	os << "SourceGroupPair( SourceAddress = "<< a.sourceMulticastAddr<< ", GroupAddress = " << a.groupMulticastAddr<<")";
+	os << "SourceGroupPair(SourceAddress = "<< a.sourceMulticastAddr<< ", GroupAddress = " << a.groupMulticastAddr<<")";
 	return os;
 }
 
@@ -153,8 +153,8 @@ struct SourceGroupState{
 		LocalMembership(Local_NoInfo),
 		AssertState(Assert_NoInfo),
 		AssertWinner(),
-		PruneState(Prune_NoInfo),
 		SG_AT(Timer::CANCEL_ON_DESTROY),
+		PruneState(Prune_NoInfo),
 		SG_PT(Timer::CANCEL_ON_DESTROY),
 		SG_PPT(Timer::CANCEL_ON_DESTROY),
 		lastStateRefresh(Seconds(0)),
@@ -194,7 +194,6 @@ struct SourceGroupState{
 	uint8_t SG_SR_TTL;
 	/// TTL of the packet to use in Data packets.
 	uint8_t SG_DATA_TTL;
-
 };
 
 static inline bool
@@ -215,7 +214,6 @@ struct UpstreamState{
 	///< Upstream interface-specific:
 	/// Graft/Prune State.
 	enum GraftPruneState GraftPrune;///< 4.1.2. State: One of {"NoInfo" (NI), "Pruned" (P), "Forwarding" (F),"AckPending" (AP) }
-
 	/// GraftRetry Timer (GRT). This timer is set when a Graft is sent upstream.  If a corresponding GraftAck
 	///  is not received before the timer expires, then another Graft is sent, and the GraftRetry Timer is reset.
 	///  The timer is stopped when a Graft Ack message is received.  This timer is normally set to Graft_Retry_Period (see 4.8).
@@ -315,7 +313,6 @@ typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 		Time neighborTimeout;
 		/// Timeout is enabled
 		bool neighborTimeoutB;
-
 		/// * * * Hello Information * * *
 		/// Neighbor Liveness Timer: NLT(N,I)
 		Timer neigborNLT;
