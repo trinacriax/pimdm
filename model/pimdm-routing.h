@@ -478,12 +478,12 @@ private:
 	/// Basically RPF' is the RPF neighbor toward a source
 	/// unless a PIM-DM Assert has overridden the normal choice of neighbor.
 
-	void RPF_primeChanges (SourceGroupPair &sgp, Ipv4Address destination);
+	void RPF_primeChanges(SourceGroupPair &sgp, uint32_t oldinterface, Ipv4Address oldgateway);
 
 //	void RPF_Changes (SourceGroupPair &sgp, int32_t oldInterface, int32_t newInterface);
 	void RPF_Changes(SourceGroupPair &sgp, int32_t oldInterface, Ipv4Address oldGateway, int32_t newInterface, Ipv4Address newGateway);
 
-	void RPFCheck (SourceGroupPair sgp, int32_t interface, Ptr<Ipv4Route> rpf_route);
+	void RPFCheck (SourceGroupPair sgp);//, int32_t interface);//, Ptr<Ipv4Route> rpf_route);
 	void RPFCheckAll ();
 
 	void olistCheck (SourceGroupPair &sgp, std::set<WiredEquivalentInterface > &list);
