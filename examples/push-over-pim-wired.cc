@@ -79,10 +79,10 @@ std::cout <<"Sending Packet "<< p->GetSize() << " bytes " << std::endl;
 //std::cout <<"Sending Packet "<< p->GetSize() << " bytes " << std::endl;
 //}
 
-//static void NodeStatusChanged(std::string source, Ptr<const mbn::RoutingProtocol> nodez) {
-//	std::cout << Simulator::Now()<< " Node Status Changed: " << source << ", new status: "
-//			<< nodez->GetLocalNodeStatus()<< std::endl;
-//}
+static void NodeStatusChanged(std::string source, Ptr<const mbn::RoutingProtocol> nodez) {
+	std::cout << Simulator::Now()<< " Node Status Changed: " << source << ", new status: "
+			<< nodez->GetLocalNodeStatus()<< std::endl;
+}
 
 int
 main (int argc, char *argv[])
@@ -123,15 +123,15 @@ main (int argc, char *argv[])
 	/// Print routes if true
 	bool printRoutes = true;
 	/// Number of PIM nodes
-	uint32_t sizePim = 4;
+	uint32_t sizePim = 56;
 	/// Number of client nodes
-	uint32_t sizeClient = 4;
+	uint32_t sizeClient = 56;
 	/// Animator filename
 	uint32_t sizeSource = 1;
 	/// grid cols number
-	uint16_t cols = sqrt(sizePim);
+	uint16_t cols = (uint16_t)sqrt(sizePim);
 	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
-	int32_t routing = 1;
+	int32_t routing = 2;
 	//Seed for random numbers
 	uint32_t seed = 1234567890;
 	/// Animator filename
@@ -194,7 +194,7 @@ main (int argc, char *argv[])
 //	csma.SetDeviceAttribute ("EncapsulationMode", StringValue ("Llc"));
 
 	std::list<NetDeviceContainer> rcDevices;
-	for (int c = 0; c < routers.GetN() ; c++){
+	for (uint32_t c = 0; c < routers.GetN() ; c++){
 		NodeContainer nc;
 		nc.Add(routers.Get(c));
 		nc.Add(clients.Get(c));
@@ -202,7 +202,7 @@ main (int argc, char *argv[])
 	}
 
 	std::list<NetDeviceContainer> rrDevices;
-	for (int n = 0; n < sizePim; n++){
+	for (uint32_t n = 0; n < sizePim; n++){
 		NetDeviceContainer ndc;
 		if(n + 1 < sizePim && !((n+1)%cols == 0)){
 			NodeContainer dx;
@@ -334,7 +334,6 @@ main (int argc, char *argv[])
 		command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember";
 		Config::Set(command.str(), StringValue(ss.str()));
 	}
-
 	switch(routing){
 			case 1:{
 				break;
@@ -344,15 +343,24 @@ main (int argc, char *argv[])
 			}
 			case 3:{
 				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localWeightFunction",EnumValue(mbn::W_NODE_RND));
-//				Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
-				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localNodeStatus",EnumValue(mbn::RN_NODE));
-				for(int i = source.GetN(); i < (source.GetN()+routers.GetN()); i++){
-					std::stringstream ss;
-					ss << "/NodeList/"<<i<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
-					Config::Set(ss.str(),EnumValue(mbn::BCN_NODE));
-					ss.str("");
+				Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
+
+				for (int n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
+					std::stringstream command;
+					command<< "/NodeList/"<<clients.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
+					Config::Set(command.str(), EnumValue(mbn::RN_NODE));
 				}
-//				Config::Set("/NodeList/[1-16]/$ns3::mbn::RoutingProtocol/localNodeStatus",EnumValue(mbn::BCN_NODE));
+				for (int n = 0;  n < source.GetN() ; n++){//SOURCE is BN so it can Tx
+					std::stringstream command;
+					command<< "/NodeList/"<<source.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
+					Config::Set(command.str(), EnumValue(mbn::BN_NODE));
+				}
+
+				for (int n = 0;  n < routers.GetN() ; n++){//ROUTERS are BCN nodes
+					std::stringstream command;//create a stringstream
+					command<< "/NodeList/"<<routers.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
+					Config::Set(command.str(), EnumValue(mbn::BCN_NODE));
+				}
 //				for(int i = 0; i < routers.GetN(); i++){
 //					std::stringstream ss;
 //					ss << "/NodeList/"<<i<<"/$ns3::mbn::RoutingProtocol/localWeight";
@@ -361,13 +369,7 @@ main (int argc, char *argv[])
 //					ss.str("");
 //				}
 				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(6));
-//				Config::Set("/NodeList/2/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(7));
-//				Config::Set("/NodeList/3/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(7));
-//				Config::Set("/NodeList/4/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(11));
-//				Config::Set("/NodeList/5/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(4));
-//				Config::Set("/NodeList/6/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(12));
-//				Config::Set("/NodeList/7/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(1));
-//				Config::Set("/NodeList/8/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(10));
+				Config::Set("/NodeList/0/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(9));
 				std::cout << "Starting simulation for " << totalTime << " s ...\n";
 				break;
 			}
@@ -412,17 +414,17 @@ main (int argc, char *argv[])
 
 	Config::ConnectWithoutContext("/NodeList/0/ApplicationList/0/$ns3::VideoPushApplication/Tx",MakeCallback (&AppTx));
 
-	AsciiTraceHelper ascii;
-	csma.EnableAsciiAll (ascii.CreateFileStream (animFile));
-	csma.EnablePcapAll ("link12", false);
+//	AsciiTraceHelper ascii;
+//	csma.EnableAsciiAll (ascii.CreateFileStream (animFile));
+//	csma.EnablePcapAll ("link12", false);
 
 	// Flow Monitor
-	Ptr<FlowMonitor> flowmon;
-	if (enableFlowMonitor)
-	{
-	  FlowMonitorHelper flowmonHelper;
-	  flowmon = flowmonHelper.InstallAll ();
-	}
+//	Ptr<FlowMonitor> flowmon;
+//	if (enableFlowMonitor)
+//	{
+//	  FlowMonitorHelper flowmonHelper;
+//	  flowmon = flowmonHelper.InstallAll ();
+//	}
 
 	NS_LOG_INFO ("Run Simulation.");
 	Simulator::Stop (Seconds (totalTime));
@@ -430,10 +432,10 @@ main (int argc, char *argv[])
 	NS_LOG_INFO ("Done.");
 
 
-	if (enableFlowMonitor)
-	{
-	  flowmon->SerializeToXmlFile (animFile, false, false);
-	}
+//	if (enableFlowMonitor)
+//	{
+//	  flowmon->SerializeToXmlFile (animFile, false, false);
+//	}
 
 	Simulator::Destroy ();
 	return 0;
