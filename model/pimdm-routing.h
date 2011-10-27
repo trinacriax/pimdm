@@ -90,6 +90,7 @@
 #define PIMDM_TTL 1
 #define PIM_RESERVED 0
 #define PIM_PORT_NUMBER 703 //IANA Unassigned
+#define PIM_VERSION_2 2
 
 #include "pimdm-structure.h"
 #include "pimdm-packet.h"

@@ -807,9 +807,9 @@ void
 MulticastRoutingProtocol::ForgeHeaderMessage (enum PIMType type, PIMHeader &msg)
 {
 	NS_LOG_FUNCTION(this);
-	msg.SetVersion(2);
+	msg.SetVersion(PIM_VERSION_2);
 	msg.SetType(type);
-	msg.SetReserved(0);
+	msg.SetReserved(PIM_RESERVED);
 }
 
 void
