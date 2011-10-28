@@ -1178,7 +1178,7 @@ MulticastRoutingProtocol::RPFCheck (SourceGroupPair sgp)
 		}
 		if((me.interface != interfaceN || me.nextAddr != gatewayN) && interfaceN>0){//RPF neighbor has changed
 			RPF_Changes (sgp, entry.mgroup[sgp.sourceMulticastAddr].interface, entry.mgroup[sgp.sourceMulticastAddr].nextAddr, interfaceN, gatewayN);
-			RPF_primeChanges (sgp, me.interface, me.nextAddr);//check interface old is right
+			RPF_primeChanges (sgp, me.interface, me.nextAddr, interfaceN, gatewayN);//check interface old is right
 			if(FindSourceGroupState (interfaceN, gatewayN, sgp)->upstream && !FindSourceGroupState(me.interface , me.nextAddr, sgp)->upstream)//RPF prime change succeed
 				UpdateEntry (sgp.groupMulticastAddr,sgp.sourceMulticastAddr,gatewayN,interfaceN);
 			else
@@ -1228,18 +1228,15 @@ MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, int32_t oldInterface
 }
 
 void
-MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t oldinterface, Ipv4Address oldgateway)
+MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interfaceO, Ipv4Address gatewayO, int32_t interfaceN, Ipv4Address gatewayN)
 {
-	NS_LOG_FUNCTION(this << sgp.sourceMulticastAddr<<sgp.groupMulticastAddr << oldgateway);
+	NS_LOG_FUNCTION(this << sgp.sourceMulticastAddr<<sgp.groupMulticastAddr << interfaceO<<gatewayO << interfaceN<<gatewayN);
 	std::set<WiredEquivalentInterface> outlist = olist(sgp.sourceMulticastAddr, sgp.groupMulticastAddr);
-	WiredEquivalentInterface wei = RPF_interface(sgp.sourceMulticastAddr);
-	int32_t newinterface = wei.first;
-	Ipv4Address newgateway = wei.second;
-	SourceGroupState *sgState = FindSourceGroupState(oldinterface, oldgateway, sgp);
-	if(sgState->upstream->SG_GRT.IsRunning())
+	SourceGroupState *sgState = FindSourceGroupState(interfaceO, gatewayO, sgp);
+	if(sgState->upstream->SG_GRT.IsRunning()) // remove all pending timers...
 		sgState->upstream->SG_GRT.Remove();
 	if(sgState->upstream->SG_OT.IsRunning())
-		sgState->upstream->SG_OT.Remove(); // remove all pending timers...
+		sgState->upstream->SG_OT.Remove();
 	if(sgState->upstream->SG_PLT.IsRunning())
 		sgState->upstream->SG_PLT.Remove();
 	if(sgState->upstream->SG_SAT.IsRunning())
@@ -1248,8 +1245,9 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t oldint
 		sgState->upstream->SG_SRT.Remove();
 	delete sgState->upstream;
 	sgState->upstream = NULL;
-	sgState = FindSourceGroupState(newinterface, newgateway, sgp, true); // find new RPF pair...
-	NS_ASSERT(!(newgateway == Ipv4Address::GetLoopback() || newgateway == Ipv4Address::GetAny()));
+	// starting new entries
+	sgState = FindSourceGroupState(interfaceN, gatewayN, sgp, true); // find new RPF pair...
+	NS_ASSERT(!(gatewayN == Ipv4Address::GetLoopback() || gatewayN == Ipv4Address::GetAny()));
 	NS_ASSERT(sgState->upstream);
 	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
@@ -1263,56 +1261,56 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t oldint
 		//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 		//	The Upstream(S, G) state machine MUST transition to the AckPending (AP) state,
 		//	unicast a Graft to the new RPF'(S), and set the GraftRetry Timer (GRT(S, G)) to Graft_Retry_Period.
-			if(outlist.size()>0 && sgp.sourceMulticastAddr != GetNextHop(sgp.sourceMulticastAddr)){
+			if(outlist.size()>0 && sgp.sourceMulticastAddr != gatewayN){
 				sgState->upstream->GraftPrune = GP_AckPending;
-				SendGraftUnicast(newgateway, sgp);
-				NeighborState tmp(newgateway, GetLocalAddress(newinterface));
-				NeighborState *ns = FindNeighborState(newinterface, tmp);
+				SendGraftUnicast(gatewayN, sgp);
+				NeighborState tmp(gatewayN, GetLocalAddress(interfaceN));
+				NeighborState *ns = FindNeighborState(interfaceN, tmp);
 				if(!ns){// RPF_Prime changed with a new neighbor we didn't know before...
-					InsertNeighborState(newinterface, tmp);//add it and send a Hello...
-					ns = FindNeighborState(newinterface, tmp);
-					NeighborhoodStatus *nst = FindNeighborhoodStatus(newinterface);
+					InsertNeighborState(interfaceN, tmp);//add it and send a Hello...
+					ns = FindNeighborState(interfaceN, tmp);
+					NeighborhoodStatus *nst = FindNeighborhoodStatus(interfaceN);
 					// If a Hello message is received from a new neighbor, the receiving router SHOULD send its own Hello message
 					//    after a random delay between 0 and Triggered_Hello_Delay.
 					Time delay = TransmissionDelay(0, Triggered_Hello_Delay);
-					Simulator::Schedule (delay, &MulticastRoutingProtocol::SendHelloReply, this, newinterface, newgateway);
+					Simulator::Schedule (delay, &MulticastRoutingProtocol::SendHelloReply, this, interfaceN, gatewayN);
 					NS_LOG_DEBUG("Neighbors = "<< nst->neighbors.size() << ", reply at "<<(Simulator::Now()+delay).GetSeconds());
 				}
 				if(sgState->upstream->SG_GRT.IsRunning())
 					sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
 				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-				sgState->upstream->SG_GRT.SetArguments(sgp, newinterface, newgateway);
+				sgState->upstream->SG_GRT.SetArguments(sgp, interfaceN, gatewayN);
 				sgState->upstream->SG_GRT.Schedule();
 			}
 			break;
 		}
 		case GP_Pruned:{
-			if(outlist.size()==0 && sgp.sourceMulticastAddr != GetNextHop(sgp.sourceMulticastAddr)){
+			if(outlist.size()==0 && sgp.sourceMulticastAddr != gatewayN){
 			//RPF'(S) Changes AND olist(S, G) == NULL AND S NOT directly connected
 			//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 			//	The Upstream(S, G) state machine stays in the Pruned (P) state and MUST cancel the PLT(S, G) timer.
 				sgState->upstream->SG_PLT.Cancel();
 			}
-			if(outlist.size()>0 && sgp.sourceMulticastAddr != GetNextHop(sgp.sourceMulticastAddr)){
+			if(outlist.size()>0 && sgp.sourceMulticastAddr != gatewayN){
 			//RPF'(S) Changes AND olist(S, G) == non-NULL AND S NOT directly connected
 			//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 			//	The Upstream(S, G) state machine MUST cancel PLT(S, G), transition to the AckPending (AP) state,
 			//	send a Graft unicast to the new RPF'(S), and set the GraftRetry Timer (GRT(S, G)) to Graft_Retry_Period.
 				sgState->upstream->SG_PLT.Cancel();
 				sgState->upstream->GraftPrune = GP_AckPending;
-				SendGraftUnicast(newgateway, sgp);
+				SendGraftUnicast(gatewayN, sgp);
 				if(sgState->upstream->SG_GRT.IsRunning())
 					sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
 				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-				sgState->upstream->SG_GRT.SetArguments(sgp, newinterface, newgateway);
+				sgState->upstream->SG_GRT.SetArguments(sgp, interfaceN, gatewayN);
 				sgState->upstream->SG_GRT.Schedule();
 			}
 			break;
 		}
 		case GP_AckPending:{
-			if(outlist.size()==0 && sgp.sourceMulticastAddr != GetNextHop(sgp.sourceMulticastAddr)){
+			if(outlist.size()==0 && sgp.sourceMulticastAddr != gatewayN){
 			//RPF'(S) Changes AND olist(S, G) == NULL AND S NOT directly connected
 			//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 			//	The Upstream(S, G) state machine MUST transition to the Pruned (P) state.
@@ -1321,17 +1319,17 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t oldint
 				if(sgState->upstream->SG_GRT.IsRunning())
 					sgState->upstream->SG_GRT.Cancel();
 			}
-			if(outlist.size()>0 && sgp.sourceMulticastAddr != GetNextHop(sgp.sourceMulticastAddr)){
+			if(outlist.size()>0 && sgp.sourceMulticastAddr != gatewayN){
 				//RPF'(S) Changes AND olist(S, G) does not become NULL AND S NOT directly connected
 				//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 				//	The Upstream(S, G) state machine stays in the AckPending (AP) state.
 				//	A Graft MUST be unicast to the new RPF'(S) and the GraftRetry Timer (GRT(S, G)) reset to Graft_Retry_Period.
-				SendGraftUnicast(newgateway, sgp);
+				SendGraftUnicast(gatewayN, sgp);
 				if(sgState->upstream->SG_GRT.IsRunning())
 					sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
 				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-				sgState->upstream->SG_GRT.SetArguments(sgp, newinterface, newgateway);
+				sgState->upstream->SG_GRT.SetArguments(sgp, interfaceN, gatewayN);
 				sgState->upstream->SG_GRT.Schedule();
 			}
 			break;
@@ -1341,7 +1339,8 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t oldint
 			break;
 		}
 	}
-	if(newgateway == Ipv4Address::GetLoopback()) return AskRoute(sgp.sourceMulticastAddr);//find the gateway before change RPF_prime!
+	if(gatewayN == Ipv4Address::GetLoopback())
+		return AskRoute(sgp.sourceMulticastAddr);//find the gateway before change RPF_prime!
 }
 
 void
