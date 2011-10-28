@@ -943,8 +943,8 @@ MulticastRoutingProtocol::ForgeAssertMessage (int32_t interface, Ipv4Address des
 	assertMessage.m_sourceAddr =  ForgeEncodedUnicast(sgp.sourceMulticastAddr);
 	assertMessage.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);
 	assertMessage.m_R = 0;
-	assertMessage.m_metricPreference = (sgState==NULL) ? GetMetricPreference(GetReceivingInterface(sgp.sourceMulticastAddr)):sgState->AssertWinner.metricPreference;
-	assertMessage.m_metric = (sgState==NULL) ? GetRouteMetric(GetReceivingInterface(sgp.sourceMulticastAddr),sgp.sourceMulticastAddr): sgState->AssertWinner.routeMetric;
+	assertMessage.m_metricPreference = (sgState==NULL) ? GetMetricPreference(interface):sgState->AssertWinner.metricPreference;
+	assertMessage.m_metric = (sgState==NULL) ? GetRouteMetric(interface, sgp.sourceMulticastAddr): sgState->AssertWinner.routeMetric;
 }
 
 void
@@ -1040,8 +1040,8 @@ MulticastRoutingProtocol::ForgeStateRefresh (int32_t interface, Ipv4Address dest
 	refresh.m_originatorAddr = ForgeEncodedUnicast(Ipv4Address(GetLocalAddress(interface)));
 	//	 The Rendezvous Point Tree bit.  Set to 0 for PIM-DM.  Ignored upon receipt.
 	refresh.m_R = 0;
-	refresh.m_metricPreference = GetMetricPreference(GetReceivingInterface(sgp.sourceMulticastAddr));
-	refresh.m_metric = GetRouteMetric(GetReceivingInterface(sgp.sourceMulticastAddr),sgp.sourceMulticastAddr);
+	refresh.m_metricPreference = GetMetricPreference(interface);//(sgp.sourceMulticastAddr));
+	refresh.m_metric = GetRouteMetric(interface,sgp.sourceMulticastAddr);
 	refresh.m_maskLength = IPV4_ADDRESS_SIZE;
 	refresh.m_ttl = (sgState->SG_DATA_TTL>0 ? sgState->SG_DATA_TTL : sgState->SG_SR_TTL);
 //    Prune indicator flag.  This MUST be set to 1 if the State Refresh
@@ -3417,8 +3417,8 @@ MulticastRoutingProtocol::ForwardingStateRefresh(PIMHeader::StateRefreshMessage 
 {
 	//4.5.1.  Forwarding of State Refresh Messages.
 	//	When a State Refresh message, SRM, is received, it is forwarded according to the following pseudo-code.
-	int32_t iif = GetReceivingInterface(sender);
 	WiredEquivalentInterface wei = RPF_interface(refresh.m_sourceAddr.m_unicastAddress);
+	int32_t iif = RPF_interface(sender).first;
 	if (iif<0 || IsDownstream(iif, sender, refresh.m_sourceAddr.m_unicastAddress))
 		return;
 	//srcaddr(SRM) returns the source address contained in the network
@@ -3472,9 +3472,9 @@ MulticastRoutingProtocol::ForwardingStateRefresh(PIMHeader::StateRefreshMessage 
 		// set TTL of SRMP' to TTL(SRM) - 1;
 		SRMP.m_ttl = refresh.m_ttl-1;
 		// set metric of SRMP' to metric of unicast route used to reach S;
-		SRMP.m_metric = GetMetricPreference(GetReceivingInterface(refresh.m_sourceAddr.m_unicastAddress));
+		SRMP.m_metric = GetRouteMetric(wei.first, refresh.m_sourceAddr.m_unicastAddress);//(refresh.m_sourceAddr.m_unicastAddress));
 		// set pref of ' to preference of unicast route used to reach S;
-		SRMP.m_metricPreference = GetMetricPreference(GetReceivingInterface(refresh.m_sourceAddr.m_unicastAddress));
+		SRMP.m_metricPreference = GetMetricPreference(wei.first);//GetReceivingInterface(refresh.m_sourceAddr.m_unicastAddress));
 		// set mask of SRMP' to mask of route used to reach S;
 		SourceGroupPair sgp (refresh.m_sourceAddr.m_unicastAddress, refresh.m_multicastGroupAddr.m_groupAddress, sender);
 		SourceGroupState *sgState = FindSourceGroupState(i_nbrs->first, i_nbrs->second, sgp);
@@ -3849,17 +3849,17 @@ void MulticastRoutingProtocol::DelMulticastGroup (Ipv4Address group){
 	}
 }
 
-int32_t MulticastRoutingProtocol::GetReceivingInterface (Ipv4Address addr){
-	int32_t interface = -1;
-	if (!addr.IsMulticast ()){
-		Ptr<Ipv4Route> route = GetRoute (addr);
-		if(route){
-			Ptr<NetDevice> dev = route->GetOutputDevice ();
-			interface = m_ipv4->GetInterfaceForDevice (dev);
-		}
-	}
-	return interface;
-}
+//int32_t MulticastRoutingProtocol::GetReceivingInterface (Ipv4Address addr){
+//	int32_t interface = -1;
+//	if (!addr.IsMulticast ()){
+//		Ptr<Ipv4Route> route = GetRoute (addr);
+//		if(route){
+//			Ptr<NetDevice> dev = route->GetOutputDevice ();
+//			interface = m_ipv4->GetInterfaceForDevice (dev);
+//		}
+//	}
+//	return interface;
+//}
 
 /// Threshold (I) returns the minimum TTL that a packet must have before it can be transmitted on interface I.
 uint32_t MulticastRoutingProtocol::getThreshold (int32_t interface){

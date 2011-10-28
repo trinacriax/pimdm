@@ -321,7 +321,7 @@ private:
 
 	bool IsValidSG (int32_t interface, const Ipv4Address & source,const Ipv4Address & group);
 
-	int32_t GetReceivingInterface (Ipv4Address addr);
+//	int32_t GetReceivingInterface (Ipv4Address addr);
 
 	/// Threshold (I) returns the minimum TTL that a packet must have before it can be transmitted on interface I.
 	uint32_t getThreshold (int32_t interface);
