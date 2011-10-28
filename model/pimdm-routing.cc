@@ -526,9 +526,7 @@ MulticastRoutingProtocol::IsMyOwnAddress (const Ipv4Address & address) const
 void
 MulticastRoutingProtocol::NotifyInterfaceUp (uint32_t i)
 {
-	NS_LOG_FUNCTION(this);
-	NS_LOG_DEBUG("Interface Up: "<<i);
-	NS_LOG_FUNCTION(this);
+	NS_LOG_FUNCTION(this<<i);
 	if (m_mainAddress == Ipv4Address ()) {
 		Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 		if (addr != Ipv4Address::GetLoopback()) {
@@ -542,7 +540,7 @@ MulticastRoutingProtocol::NotifyInterfaceUp (uint32_t i)
 void
 MulticastRoutingProtocol::NotifyInterfaceDown (uint32_t i)
 {
-	NS_LOG_FUNCTION(this);NS_LOG_DEBUG("Interface Down "<<i);
+	NS_LOG_FUNCTION(this << i);
 	DisablePimInterface(i);
 }
 
@@ -1161,7 +1159,7 @@ MulticastRoutingProtocol::RPFCheckAll()
 }
 
 void
-MulticastRoutingProtocol::RPFCheck (SourceGroupPair sgp) //, int32_t interface)//, Ptr<Ipv4Route> rpf_route)
+MulticastRoutingProtocol::RPFCheck (SourceGroupPair sgp)
 {
 	NS_LOG_DEBUG("("<<sgp.sourceMulticastAddr<<","<<sgp.groupMulticastAddr);
 	RoutingMulticastTable entry;
