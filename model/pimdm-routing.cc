@@ -733,14 +733,6 @@ MulticastRoutingProtocol::IsUpstream (int32_t interface, Ipv4Address neighbor, I
 	return (interface == rpfPair.first && rpfPair.second == neighbor);
 }
 
-WiredEquivalentInterface
-MulticastRoutingProtocol::RPF_interface(Ipv4Address target) {
-	Ptr<Ipv4Route> route = GetRoute(target);
-	int32_t rpfInterface = (route) ? m_ipv4->GetInterfaceForDevice(route->GetOutputDevice()):-1;
-	Ipv4Address rpfNeighbor = (route) ? route->GetGateway() : Ipv4Address::GetLoopback();
-	return WiredEquivalentInterface (rpfInterface, rpfNeighbor);
-}
-
 Ptr<Ipv4Route>
 MulticastRoutingProtocol::GetRoute(Ipv4Address destination) {
 	Ptr<Packet> receivedPacket = Create<Packet> (1000);
@@ -753,10 +745,29 @@ MulticastRoutingProtocol::GetRoute(Ipv4Address destination) {
 	return route;
 }
 
+WiredEquivalentInterface
+MulticastRoutingProtocol::RPF_interface(Ipv4Address target) {
+	Ptr<Ipv4Route> route = GetRoute(target);
+	int32_t rpfInterface = (route) ? m_ipv4->GetInterfaceForDevice(route->GetOutputDevice()):-1;
+	Ipv4Address rpfNeighbor = (route) ? route->GetGateway() : Ipv4Address::GetLoopback();
+	return WiredEquivalentInterface (rpfInterface, rpfNeighbor);
+}
+
+WiredEquivalentInterface
+MulticastRoutingProtocol::RPF_interface(Ipv4Address source, Ipv4Address group) {
+	RoutingMulticastTable mt;
+	MulticastEntry me;
+	if(Lookup(group, source, mt, me))
+		return WiredEquivalentInterface (me.interface, me.nextAddr);
+	else
+		return WiredEquivalentInterface (-1, Ipv4Address::GetLoopback());
+}
+
 Ipv4Address
 MulticastRoutingProtocol::GetNextHop(Ipv4Address destination)
 {
-	return GetRoute(destination)->GetGateway();
+	WiredEquivalentInterface wei = RPF_interface(destination);
+	return wei.second;
 }
 
 void
@@ -1372,7 +1383,7 @@ void
 MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address senderIfaceAddr, uint16_t senderIfacePort, int32_t interface)
 {
 	NS_LOG_FUNCTION(this);
-	Ptr<Ipv4Route> route = GetRoute(senderIfaceAddr);
+	Ptr<Ipv4Route> route = GetRoute (senderIfaceAddr);
 	Ipv4Address receiverIfaceAddr = GetLocalAddress(interface);
 	NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
 	NS_ASSERT (interface);
@@ -1386,7 +1397,8 @@ MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address sen
 		NS_LOG_ERROR("Received "<< ipv4header.GetDestination() <<" it should be captured by another callback.");
 		return;
 	}
-	if(route->GetGateway() == Ipv4Address::GetLoopback()) return AskRoute(senderIfaceAddr);
+	if(route->GetGateway() == Ipv4Address::GetLoopback())
+		return AskRoute(senderIfaceAddr);
 	NS_ASSERT (senderIfacePort != PIM_PORT_NUMBER);
 	//Unlike PIM-SM, PIM-DM does not maintain a keepalive timer associated with each (S, G) route.
 	//  Within PIM-DM, route and state information associated with an (S, G) entry MUST be maintained as long as any
@@ -1877,9 +1889,12 @@ MulticastRoutingProtocol::SendPacketPIMUnicast(Ptr<Packet> packet, const PIMHead
   // Trace it
   m_txPacketTrace (message);
   // Send
-  Ptr<Ipv4Route> route = GetRoute(destination);
-  if(!route) return AskRoute(destination);//no route to destination
-  int32_t interface = m_ipv4->GetInterfaceForDevice(route->GetOutputDevice());
+//  Ptr<Ipv4Route> route = GetRoute(destination);
+//  if(!route) return AskRoute(destination);//no route to destination
+  WiredEquivalentInterface wei = RPF_interface(destination);
+  if(wei.second == Ipv4Address::GetLoopback())
+	  AskRoute(destination);
+  int32_t interface = wei.first;
   if(interface != 0 && !GetPimInterface(interface)) { /// to allow aodv to work-> loopback deferred route
 	  NS_LOG_DEBUG("Interface "<<interface<<" is PIM-DISABLED");
 	  return;
@@ -1887,7 +1902,7 @@ MulticastRoutingProtocol::SendPacketPIMUnicast(Ptr<Packet> packet, const PIMHead
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
         m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
       {
-  	  if(route->GetSource() == i->second.GetLocal () ){
+  	  if(GetLocalAddress(interface) == i->second.GetLocal () ){
   		  Ptr<Packet> copy = packet->Copy();
   		  Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, copy->GetSize(), 1, false);
   		  copy->AddHeader(ipv4Header);
@@ -1903,9 +1918,13 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, Ipv4Address dest
 {
   if(m_stopTx) return;
   // Send
-  Ptr<Ipv4Route> route = GetRoute(destination);
-  if(!route) return AskRoute(destination);//no route to destination
-  int32_t interface = m_ipv4->GetInterfaceForDevice(route->GetOutputDevice());
+  WiredEquivalentInterface wei = RPF_interface(destination);
+  if(wei.second == Ipv4Address::GetLoopback())
+	  AskRoute(destination);
+  int32_t interface = wei.first;
+//  Ptr<Ipv4Route> route = GetRoute(destination);
+//  if(!route) return AskRoute(destination);//no route to destination
+//  int32_t interface = m_ipv4->GetInterfaceForDevice(route->GetOutputDevice());
   if(interface != 0 && !GetPimInterface(interface)) { /// to allow aodv to work-> loopback deferred route
 	  NS_LOG_DEBUG("Interface "<<interface<<" is PIM-DISABLED");
 	  return;
@@ -1913,7 +1932,7 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, Ipv4Address dest
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
         m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
       {
-  	  if(route->GetSource() == i->second.GetLocal () ){
+  	  if(GetLocalAddress(interface) == i->second.GetLocal () ){
   		  Ptr<Packet> copy = packet->Copy();
   		  NS_LOG_LOGIC ("Node " << route->GetSource()<< " is sending packet "<<copy <<"("<<copy->GetSize() << ") to Destination: " << destination << ", Interface "<<interface<<", Socket "<<i->first);
   		  i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
@@ -2091,7 +2110,7 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 		//	It is RECOMMENDED that the router retry a configured number of times before ceasing retries.
 			NeighborState dest(destination, GetLocalAddress(interface));
 			NeighborState *ns = FindNeighborState(interface, dest, true);
-			Ptr<Ipv4Route> route = GetRoute(destination);
+//			Ptr<Ipv4Route> route = GetRoute(destination);
 //			if(route->GetGateway() == Ipv4Address::GetLoopback()) break; //Node lost the neighbor -> send graft guarantee to find the gw
 			if(ns->neighborGraftRetry[0]<ns->neighborGraftRetry[1]){//increase counter retries
 				ns->neighborGraftRetry[0]++;

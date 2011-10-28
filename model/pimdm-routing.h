@@ -500,6 +500,7 @@ private:
 	/// \brief RPF interface towards the source S as indicated by the MRIB.
 	/// \param source Source IPv4 address
 	WiredEquivalentInterface RPF_interface (Ipv4Address source);
+	WiredEquivalentInterface RPF_interface(Ipv4Address source, Ipv4Address group);
 
 	/// \brief Find the route for on-demand routing protocols.
 	/// \param destination Node to lookup.
