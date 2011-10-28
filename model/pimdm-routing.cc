@@ -1798,7 +1798,8 @@ MulticastRoutingProtocol::RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ip
 						break;
 					}
 					case GP_AckPending:{
-						sgState->upstream->SG_GRT.Cancel();
+						if(sgState->upstream->SG_GRT.IsRunning())
+							sgState->upstream->SG_GRT.Cancel();
 						sgState->upstream->GraftPrune = GP_Forwarding;
 						break;
 					}
