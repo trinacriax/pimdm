@@ -4025,7 +4025,7 @@ void MulticastRoutingProtocol::SetPruneState (int32_t interface, Ipv4Address nei
 std::set<WiredEquivalentInterface > MulticastRoutingProtocol::olist (Ipv4Address source, Ipv4Address group) {
 	std::set<WiredEquivalentInterface > _olist = immediate_olist (source, group);
 	// GetPrinterList ("olist", _olist);
-	_olist.erase (RPF_interface(source));
+	_olist.erase (RPF_interface(source, group));
 	// GetPrinterList ("olist-RPF interface",_olist);
 	return _olist;
 }
