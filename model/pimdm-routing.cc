@@ -721,13 +721,13 @@ MulticastRoutingProtocol::IsDownstream (int32_t interface, Ipv4Address neighbor,
 
 bool
 MulticastRoutingProtocol::IsUpstream (int32_t interface, Ipv4Address neighbor, SourceGroupPair sgpair)
-{return IsUpstream(interface, neighbor, sgpair.sourceMulticastAddr);}
+{return IsUpstream(interface, neighbor, sgpair.sourceMulticastAddr, sgpair.groupMulticastAddr);}
 
 bool
-MulticastRoutingProtocol::IsUpstream (int32_t interface, Ipv4Address neighbor, Ipv4Address source)
+MulticastRoutingProtocol::IsUpstream (int32_t interface, Ipv4Address neighbor, Ipv4Address source, Ipv4Address group)
 {
 	NS_ASSERT(interface>0 && interface<m_ipv4->GetNInterfaces());
-	WiredEquivalentInterface rpfPair = RPF_interface(source);
+	WiredEquivalentInterface rpfPair = RPF_interface(source, group);
 	return (interface == rpfPair.first && rpfPair.second == neighbor);
 }
 
@@ -1484,7 +1484,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
 	RPFCheck (sgp);
 	std::set<WiredEquivalentInterface> fwd_list = olist(source, group);
-	if(IsUpstream(interface, sender, source) /*sender in on the RPF towards the source*/){
+	if(IsUpstream(interface, sender, sgp)){ /*sender in on the RPF towards the source*/
 		switch (sgState->upstream->GraftPrune){
 			//The Upstream(S, G) state machine MUST transition to the Pruned (P)
 			// state, send a Prune(S, G) to RPF'(S), and set PLT(S, G) to t_limit seconds.
@@ -1630,7 +1630,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 
 	///   First, an RPF check MUST be performed to determine whether the packet should be accepted based on TIB state
 	///      and the interface on which that the packet arrived.
-	if(IsUpstream(interface, sender, source) && sgState->PruneState != Prune_Pruned ){
+	if(IsUpstream(interface, sender, sgp) && sgState->PruneState != Prune_Pruned ){
 		/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
 		/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
 //		fwd_list = olist(source, group);
@@ -1685,7 +1685,7 @@ MulticastRoutingProtocol::RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address
 			mgroup!=graft.m_multicastGroups.end(); mgroup++){
 		for(std::vector<PIMHeader::EncodedSource>::iterator msource = mgroup->m_joinedSourceAddrs.begin();
 					msource != mgroup->m_joinedSourceAddrs.end(); msource++){
-			if(!IsUpstream(interface, sender, msource->m_sourceAddress)){
+			if(!IsUpstream(interface, sender, msource->m_sourceAddress, mgroup->m_multicastGroupAddr.m_groupAddress)){
 				RecvGraftDownstream (graft, sender, receiver, *msource, mgroup->m_multicastGroupAddr, interface);
 			}
 		}
@@ -1785,7 +1785,7 @@ MulticastRoutingProtocol::RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ip
 			SourceGroupPair sgp (iterSource->m_sourceAddress, groups->m_multicastGroupAddr.m_groupAddress, sender);
 			SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp);
 			NS_LOG_DEBUG("Removing Timer GRAFT " << sgState->upstream->SG_GRT.GetDelayLeft().GetMilliSeconds()<<" ms");
-			if(IsUpstream(interface, sender, iterSource->m_sourceAddress) ){
+			if(IsUpstream(interface, sender, sgp) ){
 				switch (sgState->upstream->GraftPrune){
 				//The Upstream(S, G) state machine MUST transition to the Pruned (P)
 				// state, send a Prune(S, G) to RPF'(S), and set PLT(S, G) to t_limit seconds.
@@ -1973,7 +1973,7 @@ MulticastRoutingProtocol::IsValidSG(int32_t interface, const Ipv4Address & sourc
 		valid = valid || sgState->SG_AT.IsRunning();
 		valid = valid || sgState->SG_PPT.IsRunning();
 		///     Upstream interface-specific
-		if(IsUpstream(interface, nexthop, source)){
+		if(IsUpstream(interface, nexthop, sgp)){
 			valid = valid || sgState->upstream->SG_OT.IsRunning();
 			valid = valid || sgState->upstream->SG_GRT.IsRunning();
 			valid = valid || sgState->upstream->SG_PLT.IsRunning();
@@ -1994,7 +1994,7 @@ MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address dest
 	NS_LOG_FUNCTION(this);
 	WiredEquivalentInterface wei = RPF_interface(destination);
 	SourceGroupState *sgState = FindSourceGroupState(wei.first, destination, sgp);
-	if(!IsUpstream(wei.first, destination, sgp.sourceMulticastAddr)) return; // interface changed
+	if(!IsUpstream(wei.first, destination, sgp)) return; // interface changed
 	if(sgState->PruneState == Prune_Pruned) return;
 	SendPruneUnicast(destination, sgp);
 	if(sgState->upstream->SG_PLT.IsRunning())
@@ -2664,7 +2664,7 @@ MulticastRoutingProtocol::RecvPrune (PIMHeader::JoinPruneMessage &jp, Ipv4Addres
 	NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
 	nstatus->pruneHoldtime = Time(jp.m_joinPruneMessage.m_holdTime);
 	// The node is not directly connected to S.
-	if(IsUpstream(interface, sender, source.m_sourceAddress))
+	if(IsUpstream(interface, sender, source.m_sourceAddress, group.m_groupAddress))
 		RecvPruneUpstream(jp, sender, receiver, interface, source, group);
 	else
 		RecvPruneDownstream(jp, sender, receiver, interface, source, group);
@@ -2833,7 +2833,7 @@ void
 MulticastRoutingProtocol::RecvJoin(PIMHeader::JoinPruneMessage &jp, Ipv4Address &sender, Ipv4Address &receiver, int32_t &interface, const PIMHeader::EncodedSource &source, PIMHeader::EncodedGroup &group)
 {
 	NS_LOG_FUNCTION(this<<sender<<receiver<<interface<<source.m_sourceAddress<<group.m_groupAddress);
-	if(IsUpstream(interface, sender, source.m_sourceAddress))
+	if(IsUpstream(interface, sender, source.m_sourceAddress, group.m_groupAddress))
 		RecvJoinUpstream(jp, sender, receiver, interface, source, group);
 	else
 		RecvJoinDownstream(jp, sender, receiver, interface, source, group);
@@ -3711,7 +3711,7 @@ SourceGroupState* MulticastRoutingProtocol::FindSourceGroupState (int32_t interf
 	if (add && !FindSourceGroupState(interface, neighbor, sgp))
 		InsertSourceGroupState(interface, neighbor, sgp);
 	SourceGroupState *sgState = FindSourceGroupState(interface, neighbor, sgp);
-	if(add && IsUpstream(interface, neighbor, sgp.sourceMulticastAddr) && sgState->upstream == NULL){
+	if(add && IsUpstream(interface, neighbor, sgp) && sgState->upstream == NULL){
 		sgState->upstream = new UpstreamState ();
 	}
 	return FindSourceGroupState(interface, neighbor, sgp);
@@ -4178,7 +4178,7 @@ std::set<WiredEquivalentInterface > MulticastRoutingProtocol::lost_assert (Ipv4A
  * True if the node has lost an (S,G) Assert on that interface.
  */
 bool MulticastRoutingProtocol::lost_assert (Ipv4Address source, Ipv4Address group, int32_t interface, Ipv4Address neighbor) {
-	if(IsUpstream(interface, neighbor, source))
+	if(IsUpstream(interface, neighbor, source, group))
 		return false;
 	Ipv4Address assertWinner = AssertWinner (source, group, interface, neighbor);
 	bool result = assertWinner != Ipv4Address::GetAny () && assertWinner != Ipv4Address::GetBroadcast();

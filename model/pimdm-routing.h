@@ -422,7 +422,7 @@ private:
 	 * Interface toward the source of the datagram. Also known as the RPF Interface.
 	 */
 	bool IsUpstream (int32_t interface, Ipv4Address neighbor, SourceGroupPair sgpair);
-	bool IsUpstream (int32_t interface, Ipv4Address neighbor, Ipv4Address source);
+	bool IsUpstream (int32_t interface, Ipv4Address neighbor, Ipv4Address source, Ipv4Address group);
 
 	void SendPacket (Ptr<Packet> packet, const PIMMessageList &containedMessages);
 
