@@ -416,7 +416,7 @@ private:
 	 * All interfaces that are not the upstream interface, including the router itself.
 	 */
 	bool IsDownstream (int32_t interface, Ipv4Address destination, SourceGroupPair sgpair);
-	bool IsDownstream (int32_t interface, Ipv4Address neighbor, Ipv4Address source);
+	bool IsDownstream (int32_t interface, Ipv4Address neighbor, Ipv4Address source, Ipv4Address group);
 	/**
 	 * Upstream Interface.
 	 * Interface toward the source of the datagram. Also known as the RPF Interface.

@@ -713,11 +713,11 @@ MulticastRoutingProtocol::HelloTimerExpire (int32_t i)
 
 bool
 MulticastRoutingProtocol::IsDownstream (int32_t interface, Ipv4Address neighbor, SourceGroupPair sgpair)
-{return IsDownstream(interface, neighbor,sgpair.sourceMulticastAddr);}
+{return IsDownstream(interface, neighbor,sgpair.sourceMulticastAddr, sgpair.groupMulticastAddr);}
 
 bool
-MulticastRoutingProtocol::IsDownstream (int32_t interface, Ipv4Address neighbor, Ipv4Address source)
-{return !(IsUpstream(interface, neighbor,source));}
+MulticastRoutingProtocol::IsDownstream (int32_t interface, Ipv4Address neighbor, Ipv4Address source, Ipv4Address group)
+{return !(IsUpstream(interface, neighbor, source, group));}
 
 bool
 MulticastRoutingProtocol::IsUpstream (int32_t interface, Ipv4Address neighbor, SourceGroupPair sgpair)
@@ -3435,7 +3435,7 @@ MulticastRoutingProtocol::ForwardingStateRefresh(PIMHeader::StateRefreshMessage 
 	//	When a State Refresh message, SRM, is received, it is forwarded according to the following pseudo-code.
 	WiredEquivalentInterface wei = RPF_interface(refresh.m_sourceAddr.m_unicastAddress);
 	int32_t iif = RPF_interface(sender).first;
-	if (iif<0 || IsDownstream(iif, sender, refresh.m_sourceAddr.m_unicastAddress))
+	if (iif<0 || IsDownstream(iif, sender, refresh.m_sourceAddr.m_unicastAddress, refresh.m_multicastGroupAddr.m_groupAddress ))
 		return;
 	//srcaddr(SRM) returns the source address contained in the network
 	//	protocol (e.g., IPv4) header of the State Refresh Message, SRM.
@@ -4144,7 +4144,7 @@ std::set<WiredEquivalentInterface > MulticastRoutingProtocol::prunes (Ipv4Addres
 			if(i!=iter->first.first) continue;
 			SourceGroupState *sgState = FindSourceGroupState (iter->first.first, iter->first.second, sgp);
 			if (!sgState) continue;
-			if (IsDownstream(iter->first.first, iter->first.second, source) && sgState->PruneState == Prune_Pruned) {
+			if (IsDownstream(iter->first.first, iter->first.second, sgp) && sgState->PruneState == Prune_Pruned) {
 				prune.insert (iter->first);
 			}
 		}
