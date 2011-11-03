@@ -3036,15 +3036,18 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				sgState->SG_AT.Schedule();
 			}
 			else{
-				//Receive Preferred Assert or State Refresh.
-				//	An (S, G) Assert or State Refresh is received that has a better
-				//	metric than this router's metric for S on interface I. The
-				//	Assert state machine MUST transition to "I am Assert Loser" state
-				//	and store the new Assert Winner's address and metric.  If the
-				//	metric was received in an Assert, the router MUST set the Assert
-				//	Timer (AT(S, G, I)) to Assert_Time.  If the metric was received in
-				//	a State Refresh, the router MUST set the Assert Timer (AT(S, G, I))
-				//	to three times the State Refresh Interval.
+				//Receive Preferred Assert or State Refresh
+				//   An (S,G) Assert or State Refresh is received that has a better
+				//   metric than this router's metric for S on interface I.  The
+				//   Assert state machine MUST transition to "I am Assert Loser" state
+				//   and store the new Assert Winner's address and metric.  If the
+				//   metric was received in an Assert, the router MUST set the Assert
+				//   Timer (AT(S,G,I)) to Assert_Time.  If the metric was received in
+				//   a State Refresh, the router MUST set the Assert Timer (AT(S,G,I))
+				//   to three times the State Refresh Interval.  The router MUST also
+				//	 multicast a Prune(S,G) to the Assert winner, with a Prune Hold
+				//   Time equal to the Assert Timer, and evaluate any changes in its
+				//   Upstream(S,G) state machine.
 				sgState->AssertState = Assert_Loser;
 				UpdateAssertWinner(sgState, received);
 				if(sgState->SG_AT.IsRunning())
@@ -3053,25 +3056,17 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
 				sgState->SG_AT.SetArguments(sgp, interface, sender);
 				sgState->SG_AT.Schedule();
-				//ci starebbe un assert... ????
-				PIMHeader assertR;
-				ForgeAssertMessage(interface, sender, assertR, sgp);
-				assertR.GetAssertMessage().m_metricPreference = sgState->AssertWinner.metricPreference;
-				assertR.GetAssertMessage().m_metric = sgState->AssertWinner.routeMetric;
+				//TODO previously commented out
+				PIMHeader prune;
+				ForgeJoinPruneMessage(prune, sender);
+				PIMHeader::MulticastGroupEntry mge;
+				CreateMulticastGroupEntry(mge, ForgeEncodedGroup(assert.m_multicastGroupAddr.m_groupAddress));
+				AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(assert.m_sourceAddr.m_unicastAddress));
+				AddMulticastGroupEntry(prune, mge);
+				prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
 				Ptr<Packet> packet = Create<Packet> ();
-				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, sender);
-				//The router MUST also multicast a Prune(S, G) to the Assert winner, with a Prune Hold
-				//	Time equal to the Assert Timer, and evaluate any changes in its	Upstream(S, G) state machine.
-				// prune for state refresh messages
-//				PIMHeader prune;
-//				ForgeJoinPruneMessage(prune, sender);
-//				PIMHeader::MulticastGroupEntry mge;
-//				CreateMulticastGroupEntry(mge, ForgeEncodedGroup(assert.m_multicastGroupAddr.m_groupAddress));
-//				AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(assert.m_sourceAddr.m_unicastAddress));
-//				AddMulticastGroupEntry(prune, mge);
-//				prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay();
-//				Ptr<Packet> packet = Create<Packet> ();
-//				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, prune, sender);
+				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, prune, sender);
+				UpstreamStateMachine(sgp);
 				}
 			break;
 		}
