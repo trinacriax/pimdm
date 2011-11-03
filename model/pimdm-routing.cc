@@ -1728,7 +1728,8 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 			case Prune_Pruned:{
 				sgState->PruneState = Prune_NoInfo;
 				SendGraftAckUnicast(sgp, sender);
-				sgState->SG_PPT.Cancel();
+				if(sgState->SG_PPT.IsRunning())
+					sgState->SG_PPT.Cancel();
 				UpstreamStateMachine(sgp);
 				break;
 			}
