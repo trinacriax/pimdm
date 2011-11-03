@@ -4014,9 +4014,30 @@ std::set<WiredEquivalentInterface > MulticastRoutingProtocol::olist (Ipv4Address
 }
 
 void MulticastRoutingProtocol::AskRoute (Ipv4Address destination){
-	NS_LOG_DEBUG(destination);
 	//TODO: We don't know the next hop towards the source: first node finds it, then it relies packets.
-	SendHelloReply(m_ipv4->GetInterfaceForAddress(m_mainAddress), destination);
+	NS_LOG_FUNCTION(this<< destination);
+	PIMHeader msg;
+	Ptr<Packet> packet = Create<Packet> (); //forge a hello reply
+	int32_t interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);
+	ForgeHelloMessage(interface, msg);
+	if(m_stopTx) return;
+	packet->AddHeader(msg);
+	// Trace it
+	m_txPacketTrace (msg);
+	// Send
+	Ipv4Address local = GetLocalAddress(interface);
+	for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
+			m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
+	{
+	  if(local == i->second.GetLocal () ){
+		Ptr<Packet> copy = packet->Copy();
+		Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, copy->GetSize(), 1, false);
+		copy->AddHeader(ipv4Header);
+		NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
+		i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
+		break;
+		}
+	}
 }
 
 /// \brief There are receivers for the given SourceGroup pair.
