@@ -438,7 +438,7 @@ bool MulticastRoutingProtocol::RouteInput  (Ptr<const Packet> p,
   UnicastForwardCallback ucb, MulticastForwardCallback mcb,
   LocalDeliverCallback lcb, ErrorCallback ecb)
 {
-	  NS_LOG_FUNCTION (this << " " << m_ipv4->GetObject<Node> ()->GetId () << " " << header.GetDestination ());
+	  NS_LOG_FUNCTION (this << m_ipv4->GetObject<Node> ()->GetId () << header.GetDestination ());
 
 	  Ipv4Address dst = header.GetDestination ();
 	  Ipv4Address origin = header.GetSource ();
