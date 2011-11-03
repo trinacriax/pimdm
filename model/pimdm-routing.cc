@@ -1891,30 +1891,23 @@ MulticastRoutingProtocol::SendPacketPIMUnicast(Ptr<Packet> packet, const PIMHead
   // Trace it
   m_txPacketTrace (message);
   // Send
-//  Ptr<Ipv4Route> route = GetRoute(destination);
-//  if(!route) return AskRoute(destination);//no route to destination
   WiredEquivalentInterface wei = RPF_interface(destination);
-  if(wei.second == Ipv4Address::GetLoopback())
-	  AskRoute(destination);
-  int32_t interface = wei.first;
-  if(interface != 0 && !GetPimInterface(interface)) { /// to allow aodv to work-> loopback deferred route
-	  NS_LOG_DEBUG("Interface "<<interface<<" is PIM-DISABLED");
-	  return;
-  }
+  int32_t interface = wei.first >0 ? wei.first : m_ipv4->GetInterfaceForAddress(m_mainAddress);
   Ipv4Address local = GetLocalAddress(interface);
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
-        m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
-      {
-  	  if(GetLocalAddress(interface) == i->second.GetLocal () ){
-  		  Ptr<Packet> copy = packet->Copy();
-  		  Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, copy->GetSize(), 1, false);
-  		  copy->AddHeader(ipv4Header);
-  		  NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
-  		  i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
-  		  break;
-  	  }
+	m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
+	{
+	  if(local == i->second.GetLocal () ){
+		Ptr<Packet> copy = packet->Copy();
+		Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, copy->GetSize(), 1, false);
+		copy->AddHeader(ipv4Header);
+		NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
+		i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
+		break;
+		}
 	}
 }
+
 
 void
 MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, Ipv4Address destination)
