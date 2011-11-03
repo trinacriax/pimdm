@@ -908,22 +908,23 @@ MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupP
 {
 	NS_LOG_FUNCTION(this<< destination << sgp.sourceMulticastAddr << sgp.groupMulticastAddr);
 	WiredEquivalentInterface wei = RPF_interface(destination);//know the interface-nextHop
-	if (wei.first< 1 || wei.second == Ipv4Address::GetLoopback()){
-		return AskRoute(destination);
-	}
+//	if (wei.first< 1 || wei.second == Ipv4Address::GetLoopback()){
+//		return AskRoute(destination);
+//	} //just send it out, it will find its path
 	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(destination).first, destination, sgp, true);
 	if(sgState->upstream && sgState->upstream->SG_PLT.IsRunning()){//the prune timer is not active
 		NS_LOG_DEBUG("Limiting prune on LAN with PLT");
-		return;
 	}
-	PIMHeader msg;
-	ForgeJoinPruneMessage(msg, destination);
-	PIMHeader::MulticastGroupEntry mge;
-	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
-	AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
-	AddMulticastGroupEntry(msg, mge);
-	Ptr<Packet> packet = Create<Packet> ();
-	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
+	else {
+		PIMHeader msg;
+		ForgeJoinPruneMessage(msg, destination);
+		PIMHeader::MulticastGroupEntry mge;
+		CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
+		AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
+		AddMulticastGroupEntry(msg, mge);
+		Ptr<Packet> packet = Create<Packet> ();
+		Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
+	}
 }
 
 void
