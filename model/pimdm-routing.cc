@@ -1177,12 +1177,15 @@ MulticastRoutingProtocol::RPFCheck (SourceGroupPair sgp)
 			Lookup(sgp.groupMulticastAddr,sgp.sourceMulticastAddr, entry, me);
 		}
 		if((me.interface != interfaceN || me.nextAddr != gatewayN) && interfaceN>0){//RPF neighbor has changed
-			RPF_Changes (sgp, entry.mgroup[sgp.sourceMulticastAddr].interface, entry.mgroup[sgp.sourceMulticastAddr].nextAddr, interfaceN, gatewayN);
+			Ipv4Address gatewayO = me.nextAddr;
+			int32_t interfaceO = me.interface;
+			UpdateEntry (sgp.groupMulticastAddr, sgp.sourceMulticastAddr, gatewayN, interfaceN);//continue from here: problem is that in the second roung it
+			RPF_Changes (sgp, interfaceO, gatewayO, interfaceN, gatewayN);
 			RPF_primeChanges (sgp, me.interface, me.nextAddr, interfaceN, gatewayN);//check interface old is right
-			if(FindSourceGroupState (interfaceN, gatewayN, sgp)->upstream && !FindSourceGroupState(me.interface , me.nextAddr, sgp)->upstream)//RPF prime change succeed
-				UpdateEntry (sgp.groupMulticastAddr,sgp.sourceMulticastAddr,gatewayN,interfaceN);
-			else
-				NS_LOG_DEBUG ("RPF "<< gatewayN<<" not found: looking for it");
+//			if(FindSourceGroupState (interfaceN, gatewayN, sgp)->upstream && !FindSourceGroupState(me.interface , me.nextAddr, sgp)->upstream)//RPF prime change succeed
+//				UpdateEntry (sgp.groupMulticastAddr,sgp.sourceMulticastAddr,gatewayN,interfaceN);
+//			else
+//				NS_LOG_DEBUG ("RPF "<< gatewayN<<" not found: looking for it");
 		}
 	}
 }
