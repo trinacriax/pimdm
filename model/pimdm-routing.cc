@@ -1915,21 +1915,12 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, Ipv4Address dest
   if(m_stopTx) return;
   // Send
   WiredEquivalentInterface wei = RPF_interface(destination);
-  if(wei.second == Ipv4Address::GetLoopback())
-	  AskRoute(destination);
-  int32_t interface = wei.first;
-//  Ptr<Ipv4Route> route = GetRoute(destination);
-//  if(!route) return AskRoute(destination);//no route to destination
-//  int32_t interface = m_ipv4->GetInterfaceForDevice(route->GetOutputDevice());
-  if(interface != 0 && !GetPimInterface(interface)) { /// to allow aodv to work-> loopback deferred route
-	  NS_LOG_DEBUG("Interface "<<interface<<" is PIM-DISABLED");
-	  return;
-  }
+  int32_t interface = wei.first >0 ? wei.first : m_ipv4->GetInterfaceForAddress(m_mainAddress);
   Ipv4Address local = GetLocalAddress(interface);
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
         m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
       {
-  	  if( local == i->second.GetLocal () ){
+  	  if(local == i->second.GetLocal () ){
   		  Ptr<Packet> copy = packet->Copy();
   		  NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy <<"("<<copy->GetSize() << ") to Destination: " << destination << ", Interface "<<interface<<", Socket "<<i->first);
   		  i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
