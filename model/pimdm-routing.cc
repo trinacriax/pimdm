@@ -2761,7 +2761,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 				sgState->PruneState = Prune_PrunePending;
 				NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
 				Time delay = Seconds(0);
-				if(nstatus->neighbors.size() == 0 )
+				if(nstatus->neighbors.size() == 1 )
 					sgState->PruneState = Prune_Pruned;
 				if(nstatus->neighbors.size()>1)
 					delay = Seconds(nstatus->overrideInterval.GetSeconds()+nstatus->propagationDelay.GetSeconds());
