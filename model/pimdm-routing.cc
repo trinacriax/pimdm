@@ -2406,7 +2406,7 @@ void
 MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp)
 {
 	WiredEquivalentInterface wei = RPF_interface(sgp.sourceMulticastAddr);
-	NS_LOG_FUNCTION(this << wei.first << wei.second);
+	NS_LOG_FUNCTION(this <<  wei.first << wei.second);
 	if(wei.second == Ipv4Address::GetLoopback()) return AskRoute(sgp.sourceMulticastAddr);
 	SourceGroupState *sgState = FindSourceGroupState(wei.first, wei.second, sgp, true);
 	NS_ASSERT(sgState && sgState->upstream);
