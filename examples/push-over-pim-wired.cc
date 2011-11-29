@@ -280,15 +280,23 @@ main (int argc, char *argv[])
 	NS_LOG_INFO ("Assign IP Addresses.");
 	Ipv4AddressHelper ipv4;
 
+	Ipv4Address base = Ipv4Address("10.1.2.0");
 	ipv4.SetBase ("10.1.2.0", "255.255.255.0");
 	Ipv4InterfaceContainer ipClients;
+	int loop = 0;
 	while(!rcDevices.empty()){
 		Ipv4InterfaceContainer iprc = ipv4.Assign (rcDevices.front());
 		ipClients.Add(iprc.Get(1));
 		rcDevices.pop_front();
+		loop+=2;
+		if (loop > 240){
+			base = Ipv4Address(base.Get()+256);
+			ipv4.SetBase (base, "255.255.255.0");
+		}
+		//evitare il loop
 	}
 
-	Ipv4Address base = Ipv4Address("10.2.1.0");
+	base = Ipv4Address(base.Get()+2560);
 	ipv4.SetBase (base, "255.255.255.0");
 	while(!rrDevices.empty()){
 		NS_LOG_DEBUG("IP Base "<<base);
@@ -407,6 +415,7 @@ main (int argc, char *argv[])
 		videoC.SetAttribute ("Local", AddressValue (ipClients.GetAddress(n)));
 		videoC.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
 		videoC.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
+
 		ApplicationContainer appC = videoC.Install (clients.Get(n));
 		appC.Start (Seconds (clientStart));
 		appC.Stop (Seconds (clientStop));
