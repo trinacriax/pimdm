@@ -1247,8 +1247,9 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 		sgState->upstream->SG_SAT.Remove();
 	if(sgState->upstream->SG_SRT.IsRunning())
 		sgState->upstream->SG_SRT.Remove();
-	delete sgState->upstream;
-	sgState->upstream = NULL;
+//	delete sgState->upstream;
+	sgState->upstream->origination = NotOriginator;
+	sgState->upstream->GraftPrune = GP_Pruned;
 	// starting new entries
 	sgState = FindSourceGroupState(interfaceN, gatewayN, sgp, true); // find new RPF pair...
 	NS_ASSERT(!(gatewayN == Ipv4Address::GetLoopback() || gatewayN == Ipv4Address::GetAny()));
@@ -3698,7 +3699,8 @@ SourceGroupState* MulticastRoutingProtocol::FindSourceGroupState (int32_t interf
 	if (add && !FindSourceGroupState(interface, neighbor, sgp))
 		InsertSourceGroupState(interface, neighbor, sgp);
 	SourceGroupState *sgState = FindSourceGroupState(interface, neighbor, sgp);
-	if(add && IsUpstream(interface, neighbor, sgp) && sgState->upstream == NULL){
+	if(add //&& IsUpstream(interface, neighbor, sgp)
+			&& sgState->upstream == NULL){
 		sgState->upstream = new UpstreamState ();
 	}
 	return FindSourceGroupState(interface, neighbor, sgp);
