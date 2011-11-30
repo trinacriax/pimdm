@@ -1162,7 +1162,7 @@ MulticastRoutingProtocol::RPFCheckAll()
 void
 MulticastRoutingProtocol::RPFCheck (SourceGroupPair sgp)
 {
-	NS_LOG_DEBUG("("<<sgp.sourceMulticastAddr<<","<<sgp.groupMulticastAddr);
+	NS_LOG_DEBUG("("<<sgp.sourceMulticastAddr<<","<<sgp.groupMulticastAddr<<")");
 	RoutingMulticastTable entry;
 	MulticastEntry me;
 	WiredEquivalentInterface wei = RPF_interface(sgp.sourceMulticastAddr);
