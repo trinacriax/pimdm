@@ -1252,7 +1252,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 	sgState->upstream->GraftPrune = GP_Pruned;
 	// starting new entries
 	sgState = FindSourceGroupState(interfaceN, gatewayN, sgp, true); // find new RPF pair...
-	NS_ASSERT(!isValidGateway(gatewayN));
+	NS_ASSERT(isValidGateway(gatewayN));
 	NS_ASSERT(sgState->upstream);
 	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
