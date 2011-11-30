@@ -263,6 +263,7 @@ private:
 	bool GetPimInterface(int32_t interface);
 
 	Ipv4Address GetLocalAddress (int32_t interface);
+	bool isValidGateway(Ipv4Address gw);
 
 	// From Ipv4RoutingProtocol
 	virtual Ptr<Ipv4Route> RouteOutput (Ptr<Packet> p, const Ipv4Header &header,Ptr<NetDevice> oif, Socket::SocketErrno &sockerr);

@@ -4289,6 +4289,11 @@ Time MulticastRoutingProtocol::TransmissionDelay (double l, double u, enum Time:
 	return delayms;
 }
 
+bool
+MulticastRoutingProtocol::isValidGateway(Ipv4Address gw)
+{
+return !(gw == Ipv4Address::GetAny() || gw == Ipv4Address::GetLoopback());
+}
 }
 }// namespace ns3
 
