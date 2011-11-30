@@ -1169,7 +1169,7 @@ MulticastRoutingProtocol::RPFCheck (SourceGroupPair sgp)
 	int32_t interfaceN = wei.first;
 	Ipv4Address gatewayN = wei.second;
 	bool ret = Lookup(sgp.groupMulticastAddr,sgp.sourceMulticastAddr, entry, me); // there is a entry for this group/source
-	ret = ret && (interfaceN != -1 && gatewayN != Ipv4Address::GetLoopback()); // there is a valid gateway
+	ret = ret && (interfaceN != -1 && isValidGateway(gatewayN)); // there is a valid gateway
 	ret = ret && entry.mgroup.find(sgp.sourceMulticastAddr) != entry.mgroup.end(); // there is a record for the source
 	if(ret) {
 		if(me.nextAddr == Ipv4Address::GetLoopback()){//now we know the RPF for the first time, just update it!
@@ -1252,7 +1252,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 	sgState->upstream->GraftPrune = GP_Pruned;
 	// starting new entries
 	sgState = FindSourceGroupState(interfaceN, gatewayN, sgp, true); // find new RPF pair...
-	NS_ASSERT(!(gatewayN == Ipv4Address::GetLoopback() || gatewayN == Ipv4Address::GetAny()));
+	NS_ASSERT(!isValidGateway(gatewayN));
 	NS_ASSERT(sgState->upstream);
 	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
@@ -1344,7 +1344,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 			break;
 		}
 	}
-	if(gatewayN == Ipv4Address::GetLoopback())
+	if(!isValidGateway(gatewayN))
 		return AskRoute(sgp.sourceMulticastAddr);//find the gateway before change RPF_prime!
 }
 
@@ -1399,7 +1399,7 @@ MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address sen
 		NS_LOG_ERROR("Received "<< ipv4header.GetDestination() <<" it should be captured by another callback.");
 		return;
 	}
-	if(route->GetGateway() == Ipv4Address::GetLoopback())
+	if(!isValidGateway(route->GetGateway()))
 		return AskRoute(senderIfaceAddr);
 	NS_ASSERT (senderIfacePort != PIM_PORT_NUMBER);
 	//Unlike PIM-SM, PIM-DM does not maintain a keepalive timer associated with each (S, G) route.
@@ -1471,7 +1471,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	Ptr<Ipv4Route> rpf_route = GetRoute(source);
 	gateway = rpf_route->GetGateway();
 	int32_t gatewayIface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
-	if(gateway == Ipv4Address::GetLoopback() && IsMyOwnAddress(destination)){
+	if(!isValidGateway(gateway) && IsMyOwnAddress(destination)){
 		return AskRoute(source);
 	}
 	if((rtag && (destination.IsMulticast() || !IsMyOwnAddress(destination))) || (!rtag && destination.IsMulticast() && gateway != source)){
@@ -2038,7 +2038,7 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, int32_t interface
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp.nextMulticastAddr, sgp);
 	NS_ASSERT(sgState);
 	NS_ASSERT(sgState->upstream);
-	if(gateway == Ipv4Address::GetLoopback()){
+	if(!isValidGateway(gateway)){
 		if(sgState->upstream){
 			sgState->upstream->SG_OT.Cancel();
 			sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
@@ -2408,7 +2408,7 @@ MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp)
 {
 	WiredEquivalentInterface wei = RPF_interface(sgp.sourceMulticastAddr);
 	NS_LOG_FUNCTION(this <<  wei.first << wei.second);
-	if(wei.second == Ipv4Address::GetLoopback()) return AskRoute(sgp.sourceMulticastAddr);
+	if(!isValidGateway(wei.second)) return AskRoute(sgp.sourceMulticastAddr);
 	SourceGroupState *sgState = FindSourceGroupState(wei.first, wei.second, sgp, true);
 	NS_ASSERT(sgState && sgState->upstream);
 	switch (sgState->upstream->GraftPrune){
@@ -3144,7 +3144,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 	WiredEquivalentInterface wei = RPF_interface(sgp.sourceMulticastAddr);
 	Ipv4Address gateway = wei.second;
 	NS_LOG_LOGIC("Source " << sgp.sourceMulticastAddr << " Group " << sgp.groupMulticastAddr << " Gateway "<< gateway << " Sender "<< sender <<" Receiver "<<receiver << " Interface "<< interface);
-	if(gateway == Ipv4Address::GetLoopback()) return AskRoute(sgp.sourceMulticastAddr);
+	if(!isValidGateway(gateway)) return AskRoute(sgp.sourceMulticastAddr);
 	//TODO: Upon startup, a router MAY use any State Refresh messages received within Hello_Period of its first Hello message on an interface to establish state information.
 	for(int32_t i = 0; Simulator::Now() < Seconds(m_startTime.GetSeconds()+Hello_Period) && i < m_ipv4->GetNInterfaces() &&  refresh.m_P == 1;i++){
 		if(IsLoopInterface(i)) continue;
