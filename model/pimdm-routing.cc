@@ -3660,6 +3660,7 @@ void MulticastRoutingProtocol::InsertSourceGroupList (int32_t interface, Ipv4Add
 void MulticastRoutingProtocol::InsertSourceGroupState (int32_t interface, Ipv4Address neighbor, SourceGroupPair sgp) {
 	NS_LOG_FUNCTION(this<<interface<<neighbor<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
 	SourceGroupState *sgState = FindSourceGroupState (interface, neighbor, sgp);
+	NS_ASSERT(interface >0 && interface <m_ipv4->GetNInterfaces());
 	if (!sgState) {
 		SourceGroupState *sgs = new SourceGroupState (sgp);
 		sgs->SGPair.nextMulticastAddr = neighbor;
