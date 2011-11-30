@@ -71,7 +71,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("PushPimWifi");
 
-static bool g_verbose = true;
+static bool g_verbose = false;
 
 int
 GetNodeID (std::string context){
@@ -97,10 +97,10 @@ static void AppTx (Ptr<const Packet> p)
 std::cout <<"Sending Packet "<< p->GetSize() << " bytes " << std::endl;
 }
 
-//static void PhyTxDrop (Ptr<const Packet> p)
-//{
-//std::cout <<"Sending Packet "<< p->GetSize() << " bytes " << std::endl;
-//}
+static void PhyTxDrop (Ptr<const Packet> p)
+{
+std::cout <<"Phy Drop Packet "<< p->GetSize() << " bytes " << std::endl;
+}
 
 static void NodeStatusChanged(std::string source, Ptr<const mbn::RoutingProtocol> nodez) {
 	std::cout << Simulator::Now()<< " Node Status Changed: " << source << ", new status: "
@@ -177,9 +177,9 @@ main (int argc, char *argv[])
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("AodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("OlsrRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("MbnAodvNeighbors", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("MbnRoutingTable", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("MbnAodvNeighbors", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("MbnRoutingTable", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("UdpL4Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("Ipv4ListRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("UdpSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
@@ -195,6 +195,7 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("ArpL3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("ArpCache", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("YansWifiChannel", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable("YansWifiPhy", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_FUNC | LOG_PREFIX_NODE | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Node", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("InterferenceHelper", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("ArpL3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
@@ -207,9 +208,9 @@ main (int argc, char *argv[])
 	/// Print routes if true
 	bool printRoutes = true;
 	/// Number of PIM nodes
-	uint32_t sizePim = 4;
+	uint32_t sizePim = 8;
 	/// Number of client nodes
-	uint32_t sizeClient = 4;
+	uint32_t sizeClient = 8;
 	/// Animator filename
 	uint32_t sizeSource = 1;
 	/// grid cols number
@@ -217,16 +218,16 @@ main (int argc, char *argv[])
 	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
 	int32_t routing = 3;
 	//Seed for random numbers
-	uint32_t seed = 1234567890;
+	uint32_t seed = 4001254589;
 	//Step in the grid X
-	double deltaX =100;
+	double deltaX = 100;
 	//Step in the grid Y
 	double deltaY = 100;
 	//Nodes in a row
 	/// Animator filename
 	std::string animFile = "push-over-pim-wireles.tr";
 	/// Simulation time, seconds
-	double totalTime = 80;
+	double totalTime = 82;
 	/// Video start
 	double sourceStart = 30;
 	/// Video stop
@@ -261,8 +262,8 @@ main (int argc, char *argv[])
 	// Here, we will explicitly create four nodes.  In more sophisticated
 	// topologies, we could configure a node factory.
 
-	SeedManager::SetSeed(seed);
-
+//	SeedManager::SetSeed(seed);
+	SeedManager::SetRun(2);
 	NS_LOG_INFO ("Create nodes.");
 	NodeContainer source;
 	source.Create(sizeSource);
@@ -289,7 +290,7 @@ main (int argc, char *argv[])
 //    Config::SetDefault ("ns3::WifiRemoteStationManager::NonUnicastMode", phyMode);
 
 	WifiHelper wifi = WifiHelper::Default ();
-//	wifi.SetStandard (WIFI_PHY_STANDARD_80211g);
+//	wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
 	wifi.SetStandard (WIFI_PHY_STANDARD_80211g);
 
 	Ptr<YansWifiChannel> channel = CreateObject<YansWifiChannel> ();
@@ -308,8 +309,16 @@ main (int argc, char *argv[])
 	 // Add a non-QoS upper mac, and disable rate control
 	NqosWifiMacHelper mac = NqosWifiMacHelper::Default ();
 
+	//802.11b
+//	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
+//		"DataMode", WifiModeValue (WifiPhy::GetDsssRate1Mbps()),
+//		"ControlMode",WifiModeValue (WifiPhy::GetDsssRate1Mbps()),
+//		"NonUnicastMode", WifiModeValue (WifiPhy::GetDsssRate1Mbps())
+//		);
+
+	//802.11g
 	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
-		"DataMode", WifiModeValue (WifiPhy::GetErpOfdmRate12Mbps()),
+		"DataMode", WifiModeValue (WifiPhy::GetErpOfdmRate6Mbps()),
 		"ControlMode",WifiModeValue (WifiPhy::GetErpOfdmRate6Mbps()),
 		"NonUnicastMode", WifiModeValue (WifiPhy::GetErpOfdmRate6Mbps())
 		);
@@ -381,13 +390,16 @@ main (int argc, char *argv[])
 	// Later, we add IP addresses.
 	NS_LOG_INFO ("Assign IP Addresses.");
 	Ipv4AddressHelper ipv4;
-	ipv4.SetBase ("10.1.1.0", "255.255.0.0");
+	Ipv4Address base = Ipv4Address("10.1.1.0");
+	Ipv4Mask mask = Ipv4Mask("255.255.255.0");
+	ipv4.SetBase (base, mask);
 	Ipv4InterfaceContainer ipSource = ipv4.Assign (sourceNetDev);
+	Ipv4Address multicastSource (base.Get()+1);
 	Ipv4InterfaceContainer ipRouter = ipv4.Assign (routersNetDev);
 	Ipv4InterfaceContainer ipClient = ipv4.Assign (clientsNetDev);
 
 	NS_LOG_INFO ("Configure multicasting.");
-	Ipv4Address multicastSource ("10.1.1.1");
+
 	Ipv4Address multicastGroup ("225.1.2.4");
 
 	// 1) Configure a (static) multicast route on ASNGW (multicastRouter)
@@ -487,7 +499,7 @@ main (int argc, char *argv[])
 //		videoC.SetAttribute ("PacketSize", UintegerValue (1200));
 		videoC.SetAttribute ("PeerType", EnumValue (PEER));
 		videoC.SetAttribute ("LocalPort", UintegerValue (PIM_PORT_NUMBER));
-		video.SetAttribute ("Local", AddressValue (ipClient.GetAddress(n)));
+		videoC.SetAttribute ("Local", AddressValue(ipClient.GetAddress(n)));
 		videoC.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
 		videoC.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
 
@@ -512,15 +524,16 @@ main (int argc, char *argv[])
 //	}
 
 	Config::ConnectWithoutContext("/NodeList/0/ApplicationList/0/$ns3::VideoPushApplication/Tx",MakeCallback (&AppTx));
-//	Config::ConnectWithoutContext("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/PhyTxDrop",MakeCallback (&PhyTxDrop));
 
-//	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacTx", MakeCallback (&DevTxTrace));
-//	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacRx",	MakeCallback (&DevRxTrace));
-//	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/RxOk",	MakeCallback (&PhyRxOkTrace));
-//	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/RxError",	MakeCallback (&PhyRxErrorTrace));
-//	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/Tx",	MakeCallback (&PhyTxTrace));
-//	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/State", MakeCallback (&PhyStateTrace));
-
+if(g_verbose){
+	Config::ConnectWithoutContext("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/PhyTxDrop",MakeCallback (&PhyTxDrop));
+	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacTx", MakeCallback (&DevTxTrace));
+	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacRx",	MakeCallback (&DevRxTrace));
+	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/RxOk",	MakeCallback (&PhyRxOkTrace));
+	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/RxError",	MakeCallback (&PhyRxErrorTrace));
+	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/Tx",	MakeCallback (&PhyTxTrace));
+	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/State", MakeCallback (&PhyStateTrace));
+}
 //	Config::ConnectWithoutContext ("/NodeList/[5-8]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&SinkRx));
 //
 //	MobilityHelper mobilityR;
