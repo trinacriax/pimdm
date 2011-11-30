@@ -162,6 +162,11 @@ struct SourceGroupState{
 		SG_SR_TTL(0),
 		SG_DATA_TTL(0)
 	{upstream = NULL;}
+	~SourceGroupState(){
+		SG_AT.Remove();
+		SG_PT.Remove();
+		SG_PPT.Remove();
+	}
 	/// SourceGroup pair.
 	struct SourceGroupPair SGPair;
 	/// Local membership.
@@ -211,6 +216,13 @@ struct UpstreamState{
 		SG_SRT(Timer::CANCEL_ON_DESTROY),
 		origination(NotOriginator)
 	{}
+	~UpstreamState(){
+		SG_GRT.Remove();
+		SG_OT.Remove();
+		SG_PLT.Remove();
+		SG_SAT.Remove();
+		SG_GRT.Remove();
+	}
 	///< Upstream interface-specific:
 	/// Graft/Prune State.
 	enum GraftPruneState GraftPrune;///< 4.1.2. State: One of {"NoInfo" (NI), "Pruned" (P), "Forwarding" (F),"AckPending" (AP) }
@@ -301,6 +313,9 @@ typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 			neighborGraftRetry[0] = 0;
 			neighborGraftRetry[1] = MaxGraftRetry;
 		}
+		~NeighborState(){
+			neigborNLT.Remove();
+		}
 		/// Interface address of the neighbor node.
 		Ipv4Address neighborIfaceAddr;
 		/// Interface address of the local node to the neighbor
@@ -375,6 +390,9 @@ struct NeighborhoodStatus{
 	Time stateRefreshInterval;///< Router's configured state refresh
 	Time pruneHoldtime;
 	NeighborList neighbors; ///< Neighbor State
+	~NeighborhoodStatus(){
+		hello_timer.Remove();
+	}
 };
 
 typedef std::pair<int32_t, Ipv4Address> WiredEquivalentInterface ;	///< Neighbor List.
