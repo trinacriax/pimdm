@@ -174,12 +174,12 @@ main (int argc, char *argv[])
 	LogComponentEnable ("PushPimWifi", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 	LogComponentEnable ("VideoPushApplication", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("AodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("OlsrRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	LogComponentEnable ("MbnAodvNeighbors", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	LogComponentEnable ("MbnRoutingTable", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("MbnAodvNeighbors", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("MbnRoutingTable", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("UdpL4Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("Ipv4ListRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("UdpSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
@@ -209,8 +209,8 @@ main (int argc, char *argv[])
 	bool printRoutes = true;
 	/// Number of PIM nodes
 	uint32_t sizePim = 8;
-	/// Number of client nodes
-	uint32_t sizeClient = 8;
+//	/// Number of client nodes
+//	uint32_t sizeClient = 8;
 	/// Animator filename
 	uint32_t sizeSource = 1;
 	/// grid cols number
@@ -249,7 +249,7 @@ main (int argc, char *argv[])
 	cmd.AddValue("seed", "Seed Random.", seed);
 	cmd.AddValue("printRoutes", "Print routing table dumps.", printRoutes);
 	cmd.AddValue("sizePim", "Number of PIM nodes.", sizePim);
-	cmd.AddValue("sizeClient", "Number of PIM nodes.", sizeClient);
+//	cmd.AddValue("sizeClient", "Number of PIM nodes.", sizeClient);
 	cmd.AddValue("sizeSource", "Number of PIM nodes.", sizeSource);
 	cmd.AddValue("routing", "Routing protocol to use.", routing);
 	cmd.AddValue("time", "Simulation time, s.", totalTime);
@@ -269,13 +269,13 @@ main (int argc, char *argv[])
 	source.Create(sizeSource);
 	NodeContainer routers;
 	routers.Create (sizePim);// here routes from node 0 to 3
-	NodeContainer clients;
-	clients.Create (sizeClient);// here clients from node 4 to 7, 7 is the source
+//	NodeContainer clients;
+//	clients.Create (sizeClient);// here clients from node 4 to 7, 7 is the source
 
 	NodeContainer allNodes;
 	allNodes.Add(source);
 	allNodes.Add(routers);
-	allNodes.Add(clients);
+//	allNodes.Add(clients);
 
 	for (uint32_t i = 0; i < allNodes.GetN(); ++i) {// Name nodes
 			std::ostringstream os;
@@ -329,7 +329,7 @@ main (int argc, char *argv[])
 
 	NetDeviceContainer sourceNetDev = wifi.Install(phy, mac, source);
 	NetDeviceContainer routersNetDev = wifi.Install(phy, mac, routers);
-	NetDeviceContainer clientsNetDev = wifi.Install(phy, mac, clients);
+//	NetDeviceContainer clientsNetDev = wifi.Install(phy, mac, clients);
 
 
 	// INSTALL INTERNET STACK
@@ -381,10 +381,10 @@ main (int argc, char *argv[])
 		}
 	}
 	listClients.Add (staticRouting, 11);
-
+//
 	InternetStackHelper internetClients;
 	internetClients.SetRoutingHelper (listClients);
-	internetClients.Install (clients);
+//	internetClients.Install (clients);
 	internetClients.Install (source);
 
 	// Later, we add IP addresses.
@@ -396,7 +396,7 @@ main (int argc, char *argv[])
 	Ipv4InterfaceContainer ipSource = ipv4.Assign (sourceNetDev);
 	Ipv4Address multicastSource (base.Get()+1);
 	Ipv4InterfaceContainer ipRouter = ipv4.Assign (routersNetDev);
-	Ipv4InterfaceContainer ipClient = ipv4.Assign (clientsNetDev);
+//	Ipv4InterfaceContainer ipClient = ipv4.Assign (clientsNetDev);
 
 	NS_LOG_INFO ("Configure multicasting.");
 
@@ -441,11 +441,11 @@ main (int argc, char *argv[])
 			Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localWeightFunction",EnumValue(mbn::W_NODE_RND));
 			Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
 
-			for (int n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
-				std::stringstream command;
-				command<< "/NodeList/"<<clients.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
-				Config::Set(command.str(), EnumValue(mbn::RN_NODE));
-			}
+//			for (int n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
+//				std::stringstream command;
+//				command<< "/NodeList/"<<clients.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
+//				Config::Set(command.str(), EnumValue(mbn::RN_NODE));
+//			}
 			for (int n = 0;  n < source.GetN() ; n++){//SOURCE is BN so it can Tx
 				std::stringstream command;
 				command<< "/NodeList/"<<source.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
@@ -489,23 +489,43 @@ main (int argc, char *argv[])
 	apps.Start (Seconds (sourceStart));
 	apps.Stop (Seconds (sourceStop));
 
-	for(uint32_t n = 0; n < clients.GetN() ; n++){
-		InetSocketAddress dstC = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
+//	for(uint32_t n = 0; n < clients.GetN() ; n++){
+//		InetSocketAddress dstC = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
+//		Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
+//		VideoHelper videoC = VideoHelper ("ns3::UdpSocketFactory", dstC);
+//		videoC.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
+//		videoC.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
+////		videoC.SetAttribute ("DataRate", StringValue ("10kb/s"));
+////		videoC.SetAttribute ("PacketSize", UintegerValue (1200));
+//		videoC.SetAttribute ("PeerType", EnumValue (PEER));
+//		videoC.SetAttribute ("LocalPort", UintegerValue (PIM_PORT_NUMBER));
+//		videoC.SetAttribute ("Local", AddressValue(ipClient.GetAddress(n)));
+//		videoC.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
+//		videoC.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
+//
+//		ApplicationContainer appC = videoC.Install (clients.Get(n));
+//		appC.Start (Seconds (clientStart));
+//		appC.Stop (Seconds (clientStop));
+//	}
+
+	for(uint32_t n = 0; n < routers.GetN() ; n++){
+		InetSocketAddress dstR = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
 		Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
-		VideoHelper videoC = VideoHelper ("ns3::UdpSocketFactory", dstC);
-		videoC.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
-		videoC.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
+		VideoHelper videoR = VideoHelper ("ns3::UdpSocketFactory", dstR);
+		videoR.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
+		videoR.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
 //		videoC.SetAttribute ("DataRate", StringValue ("10kb/s"));
 //		videoC.SetAttribute ("PacketSize", UintegerValue (1200));
-		videoC.SetAttribute ("PeerType", EnumValue (PEER));
-		videoC.SetAttribute ("LocalPort", UintegerValue (PIM_PORT_NUMBER));
-		videoC.SetAttribute ("Local", AddressValue(ipClient.GetAddress(n)));
-		videoC.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
-		videoC.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
+		videoR.SetAttribute ("PeerType", EnumValue (PEER));
+		videoR.SetAttribute ("LocalPort", UintegerValue (PIM_PORT_NUMBER));
+		videoR.SetAttribute ("Local", AddressValue(ipRouter.GetAddress(n)));
+		videoR.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
+		videoR.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
 
-		ApplicationContainer appC = videoC.Install (clients.Get(n));
-		appC.Start (Seconds (clientStart));
-		appC.Stop (Seconds (clientStop));
+
+		ApplicationContainer appR = videoR.Install (routers.Get(n));
+		appR.Start (Seconds (clientStart));
+		appR.Stop (Seconds (clientStop));
 	}
 
 //	NS_LOG_INFO ("Create Sink.");
@@ -585,17 +605,17 @@ if(g_verbose){
 
 	mobilityR.Install(routers);
 
-	MobilityHelper mobilityC;
-	mobilityC.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-	mobilityC.SetPositionAllocator ("ns3::GridPositionAllocator",
-	  "MinX", DoubleValue (50.0),
-	  "MinY", DoubleValue (50.0),
-	  "DeltaX", DoubleValue (deltaX),
-	  "DeltaY", DoubleValue (deltaY),
-	  "GridWidth", UintegerValue (cols),
-	  "LayoutType", StringValue ("RowFirst"));
-
-	mobilityC.Install(clients);
+//	MobilityHelper mobilityC;
+//	mobilityC.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+//	mobilityC.SetPositionAllocator ("ns3::GridPositionAllocator",
+//	  "MinX", DoubleValue (50.0),
+//	  "MinY", DoubleValue (50.0),
+//	  "DeltaX", DoubleValue (deltaX),
+//	  "DeltaY", DoubleValue (deltaY),
+//	  "GridWidth", UintegerValue (cols),
+//	  "LayoutType", StringValue ("RowFirst"));
+//
+//	mobilityC.Install(clients);
 
 	Ptr<ListPositionAllocator> positionAllocS = CreateObject<ListPositionAllocator> ();
 	positionAllocS->Add(Vector(-70.0, -70.0, 0.0));// Source
