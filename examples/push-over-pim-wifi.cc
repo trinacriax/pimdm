@@ -522,6 +522,8 @@ main (int argc, char *argv[])
 		videoR.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
 		videoR.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
 
+		Ipv4StaticRoutingHelper multicast;
+		multicast.AddMulticastRoute (routers.Get(n), multicastSource, multicastGroup, routersNetDev.Get (n), routersNetDev.Get (n));
 
 		ApplicationContainer appR = videoR.Install (routers.Get(n));
 		appR.Start (Seconds (clientStart));
