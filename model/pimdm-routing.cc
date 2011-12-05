@@ -209,7 +209,7 @@ MulticastRoutingProtocol::register_SG (std::string csv){
 	AddEntry(group,source,Ipv4Address::GetLoopback(),-1);//We got an entry from IGMP for this source-group
 	int32_t sources = m_mrib.find(group)->second.mgroup.size();
 	NS_LOG_DEBUG("Main Addr = "<<  m_mainAddress << ": Group "<<group<<" #Source: "<< sources);
-	if(group == ALL_PIM_ROUTERS4 || sources > 1) return;//Socket already available for this group
+	if(group == ALL_PIM_ROUTERS4 || sources > 1) return;//Socket already registered for this group
 	for(int32_t i = 0; i < m_ipv4->GetNInterfaces(); i++){
 		if(IsLoopInterface(i))
 			continue;
@@ -218,7 +218,8 @@ MulticastRoutingProtocol::register_SG (std::string csv){
 	socketG->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
 	socketG->SetAttribute("IpHeaderInclude", BooleanValue(true));
 	socketG->SetAllowBroadcast (true);
-	InetSocketAddress inetAddr (group, PIM_PORT_NUMBER);
+//	InetSocketAddress inetAddr (group, PIM_PORT_NUMBER);
+	InetSocketAddress inetAddr (group);
 	socketG->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvMessage, this));
 	if (socketG->Bind (inetAddr)){
 		NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<group);
@@ -228,7 +229,7 @@ MulticastRoutingProtocol::register_SG (std::string csv){
 	NS_LOG_DEBUG("Registering Group Socket = "<<socketG<< " Device = "<<socketG->GetBoundNetDevice()<< ", SocketAddr = "<<m_ipv4->GetAddress (i, 0).GetLocal() <<", I = "<<i);
 	Ipv4InterfaceAddress mgroup(group, Ipv4Mask::GetOnes());	// WIFI OK
 	m_socketAddresses[socketG] = mgroup;						// WIFI OK
-	NS_LOG_DEBUG("Group Socket "<<socketG << " Addr: "<<group<<":"<<PIM_PORT_NUMBER);
+	NS_LOG_DEBUG("Group Socket "<<socketG << " Addr: "<<group<<":AnyPort");
 	}
 }
 
