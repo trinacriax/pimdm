@@ -1501,9 +1501,9 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 					if(sgState->upstream->SG_PLT.IsRunning())
 						sgState->upstream->SG_PLT.Cancel();
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
-					sgState->upstream->SG_PLT.Schedule();
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
 					sgState->upstream->SG_PLT.SetArguments(sgp, sender);
+					sgState->upstream->SG_PLT.Schedule();
 					SendPruneUnicast(sender, sgp);
 					return;
 					}
@@ -1512,9 +1512,9 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			case GP_Pruned:{
 				if(!sgState->upstream->SG_PLT.IsRunning() && gateway != source){
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
-					sgState->upstream->SG_PLT.Schedule();
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
 					sgState->upstream->SG_PLT.SetArguments(sgp, sender);
+					sgState->upstream->SG_PLT.Schedule();
 					SendPruneUnicast(sender, sgp);
 					return;
 					}
