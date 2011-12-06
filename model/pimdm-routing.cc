@@ -1455,16 +1455,12 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	Ptr<Packet> copy = receivedPacket->Copy();// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
 	Ipv4Header senderHeader, sourceHeader;
 	RelyTag relyTag;
-	copy->RemoveHeader(senderHeader);
 	bool rtag = copy->RemovePacketTag(relyTag);
 	if(relyTag.m_rely == 1)
-		copy->RemoveHeader(sourceHeader);
-	else if (relyTag.m_rely == 2){
-		NS_LOG_DEBUG("Drop packet "<< copy->GetUid()<< ", it is for clients.");
-		return ;
-		}
+	copy->RemoveHeader(sourceHeader);
+		copy->RemoveHeader(senderHeader);
 	else
-		sourceHeader = senderHeader;
+		senderHeader = sourceHeader;
 	source = sourceHeader.GetSource();
 	group = sourceHeader.GetDestination();
 	sender = senderHeader.GetSource();
@@ -1664,21 +1660,21 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			relyTag.m_rely = 1;
 			Ipv4Address localAddr = GetLocalAddress(out->first);
 			fwdPacket->AddPacketTag(relyTag);
-			fwdPacket->AddHeader(sourceHeader);//WIRED
 			senderHeader.SetSource(localAddr);//WIRED
 			senderHeader.SetProtocol(PIM_IP_PROTOCOL_NUM);
 			senderHeader.SetDestination(out->second);//WIRED
-			senderHeader.SetPayloadSize(sourceHeader.GetPayloadSize()+senderHeader.GetSerializedSize());//WIRED
 			fwdPacket->AddHeader(senderHeader);//WIRED
+			sourceHeader.SetPayloadSize(senderHeader.GetPayloadSize()+sourceHeader.GetSerializedSize());//WIRED
+			fwdPacket->AddHeader(sourceHeader);//WIRED
 			NS_LOG_DEBUG("DataFwd towards node ("<<out->second <<", "<< out->first <<") interfaces/nodes " << fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
 			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketUnicast, this, fwdPacket, out->second);
 		}
-		else{
-			relyTag.m_rely = 2;//to Clients
-			fwdPacket->AddPacketTag(relyTag);
-			NS_LOG_DEBUG("DataFwd towards clients ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
-			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
-		}
+//		else{
+//			relyTag.m_rely = 2;//to Clients
+//			fwdPacket->AddPacketTag(relyTag);
+//			NS_LOG_DEBUG("DataFwd towards clients ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
+//			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
+//		}
 		delayMS += TransmissionDelay();
 	}
 }
