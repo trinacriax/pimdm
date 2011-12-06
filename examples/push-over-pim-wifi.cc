@@ -174,20 +174,20 @@ main (int argc, char *argv[])
 	LogComponentEnable ("PushPimWifi", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 	LogComponentEnable ("VideoPushApplication", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("AodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("OlsrRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("MbnAodvNeighbors", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("MbnRoutingTable", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("UdpL4Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("Ipv4ListRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("UdpSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("Ipv4L3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("Ipv4EndPointDemux", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("Socket", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("Ipv4Interface", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("MbnAodvNeighbors", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("MbnRoutingTable", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("UdpL4Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("Ipv4ListRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("UdpSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("Ipv4L3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("Ipv4EndPointDemux", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("Socket", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("Ipv4Interface", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("MacLow", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("MacRxMiddle", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("YansWifiPhy", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
@@ -474,7 +474,7 @@ main (int argc, char *argv[])
 	}
 
 	NS_LOG_INFO ("Create Source");
-	InetSocketAddress dst = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER+1);
+	InetSocketAddress dst = InetSocketAddress (multicastGroup, PUSH_PORT);
 	Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
 	VideoHelper video = VideoHelper ("ns3::UdpSocketFactory", dst);
 	video.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
@@ -482,7 +482,6 @@ main (int argc, char *argv[])
 	video.SetAttribute ("DataRate", StringValue ("10kb/s"));
 	video.SetAttribute ("PacketSize", UintegerValue (1200));
 	video.SetAttribute ("PeerType", EnumValue (SOURCE));
-	video.SetAttribute ("LocalPort", UintegerValue (PIM_PORT_NUMBER+1));
 	video.SetAttribute ("Local", AddressValue (ipSource.GetAddress(0)));
 	video.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
 	video.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
@@ -512,7 +511,7 @@ main (int argc, char *argv[])
 //	}
 
 	for(uint32_t n = 0; n < routers.GetN() ; n++){
-		InetSocketAddress dstR = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER+1);
+		InetSocketAddress dstR = InetSocketAddress (multicastGroup, PUSH_PORT);
 		Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
 		VideoHelper videoR = VideoHelper ("ns3::UdpSocketFactory", dstR);
 		videoR.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
@@ -520,13 +519,12 @@ main (int argc, char *argv[])
 //		videoC.SetAttribute ("DataRate", StringValue ("10kb/s"));
 //		videoC.SetAttribute ("PacketSize", UintegerValue (1200));
 		videoR.SetAttribute ("PeerType", EnumValue (PEER));
-		videoR.SetAttribute ("LocalPort", UintegerValue (PIM_PORT_NUMBER+1));
 		videoR.SetAttribute ("Local", AddressValue(ipRouter.GetAddress(n)));
 		videoR.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
 		videoR.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
 
-		Ipv4StaticRoutingHelper multicast;
-		multicast.AddMulticastRoute (routers.Get(n), multicastSource, multicastGroup, routersNetDev.Get (n), routersNetDev.Get (n));
+//		Ipv4StaticRoutingHelper multicast;
+//		multicast.AddMulticastRoute (routers.Get(n), multicastSource, multicastGroup, routersNetDev.Get (n), routersNetDev.Get (n));
 
 		ApplicationContainer appR = videoR.Install (routers.Get(n));
 		appR.Start (Seconds (clientStart));

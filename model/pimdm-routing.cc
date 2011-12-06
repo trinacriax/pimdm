@@ -1667,9 +1667,9 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			senderHeader.SetDestination(out->second);//WIRED
 			fwdPacket->AddHeader(senderHeader);//WIRED
 			sourceHeader.SetPayloadSize(senderHeader.GetPayloadSize()+sourceHeader.GetSerializedSize());//WIRED
-			fwdPacket->AddHeader(sourceHeader);//WIRED
+//			fwdPacket->AddHeader(sourceHeader);//WIRED
 			NS_LOG_DEBUG("DataFwd towards node ("<<out->second <<", "<< out->first <<") interfaces/nodes " << fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
-			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketUnicast, this, fwdPacket, out->second);
+			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
 		}
 //		else{
 //			relyTag.m_rely = 2;//to Clients
@@ -1936,19 +1936,19 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
 	if(m_stopTx) return;
 	NS_LOG_FUNCTION(this);
 	// Send it
-	if(interface != 0 && !GetPimInterface(interface)) {
-		NS_LOG_DEBUG("Interface "<<interface<<" is PIM-DISABLED");
-		return;
-	}
+	Ipv4Header senderHeader;
+	UdpHeader udpHeader;
+	packet->RemoveHeader(senderHeader);
+	packet->RemoveHeader(udpHeader);
+	Ipv4Address remote = senderHeader.GetDestination();
 	for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
 	  m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
 	{
 	  NS_LOG_DEBUG("Local "<<i->second.GetLocal()<<", Broad "<<i->second.GetBroadcast()<<", Mask "<<i->second.GetMask());
 	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
 		  packet->AddHeader(ipv4Header);
-		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
 		  NS_LOG_LOGIC ("Node " << GetObject<Node> ()->GetId() << " is forwarding packet " << packet <<"("<<packet->GetSize() << ") to Destination "<< ipv4Header.GetDestination() <<", Interface "<< interface<< ", Pid "<< packet->GetUid()<<", Socket "<<i->first);
-		  i->first->SendTo (packet, 0, InetSocketAddress (ipv4Header.GetDestination(), PIM_PORT_NUMBER));
+		  i->first->SendTo (packet, 0, InetSocketAddress (remote));
 		  break; // Just to speedup and avoid the complete loop over all sockets.
 	  }
 	}
