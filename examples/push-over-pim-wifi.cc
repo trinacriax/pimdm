@@ -474,7 +474,7 @@ main (int argc, char *argv[])
 	}
 
 	NS_LOG_INFO ("Create Source");
-	InetSocketAddress dst = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
+	InetSocketAddress dst = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER+1);
 	Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
 	VideoHelper video = VideoHelper ("ns3::UdpSocketFactory", dst);
 	video.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
@@ -482,6 +482,7 @@ main (int argc, char *argv[])
 	video.SetAttribute ("DataRate", StringValue ("10kb/s"));
 	video.SetAttribute ("PacketSize", UintegerValue (1200));
 	video.SetAttribute ("PeerType", EnumValue (SOURCE));
+	video.SetAttribute ("LocalPort", UintegerValue (PIM_PORT_NUMBER+1));
 	video.SetAttribute ("Local", AddressValue (ipSource.GetAddress(0)));
 	video.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
 	video.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
@@ -511,7 +512,7 @@ main (int argc, char *argv[])
 //	}
 
 	for(uint32_t n = 0; n < routers.GetN() ; n++){
-		InetSocketAddress dstR = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
+		InetSocketAddress dstR = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER+1);
 		Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
 		VideoHelper videoR = VideoHelper ("ns3::UdpSocketFactory", dstR);
 		videoR.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
@@ -519,7 +520,7 @@ main (int argc, char *argv[])
 //		videoC.SetAttribute ("DataRate", StringValue ("10kb/s"));
 //		videoC.SetAttribute ("PacketSize", UintegerValue (1200));
 		videoR.SetAttribute ("PeerType", EnumValue (PEER));
-		videoR.SetAttribute ("LocalPort", UintegerValue (PIM_PORT_NUMBER));
+		videoR.SetAttribute ("LocalPort", UintegerValue (PIM_PORT_NUMBER+1));
 		videoR.SetAttribute ("Local", AddressValue(ipRouter.GetAddress(n)));
 		videoR.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
 		videoR.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
