@@ -1364,7 +1364,7 @@ MulticastRoutingProtocol::RecvMessage (Ptr<Socket> socket)
 	NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
 	Ipv4Header ipv4header;
 	receivedPacket->RemoveHeader(ipv4header);
-	RelyTag rtag;
+	RelayTag rtag;
 	bool tag = receivedPacket->RemovePacketTag(rtag);
 	Ipv4Address group = ipv4header.GetDestination();
 	NS_LOG_LOGIC("Node "<<receiverIfaceAddr<< ": Sender "<< senderIfaceAddr << " Port " << senderIfacePort<< " Group "<< group<<  " Tag "<<tag);
@@ -1454,10 +1454,10 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	Ipv4Address source, group, sender, destination, gateway;
 	Ptr<Packet> copy = receivedPacket->Copy();// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
 	Ipv4Header senderHeader, sourceHeader;
-	RelyTag relyTag;
-	bool rtag = copy->RemovePacketTag(relyTag);
-	if(relyTag.m_rely == 1)
+	RelayTag relayTag;
 	copy->RemoveHeader(sourceHeader);
+	bool rtag = copy->RemovePacketTag(relayTag);
+	if(relayTag.m_relay == 1)
 		copy->RemoveHeader(senderHeader);
 	else
 		senderHeader = sourceHeader;
@@ -1468,12 +1468,14 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	Ptr<Ipv4Route> rpf_route = GetRoute(source);
 	gateway = rpf_route->GetGateway();
 	int32_t gatewayIface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
+	bool relay_packet_other = rtag && !IsMyOwnAddress(destination); // has the relay tag and the destination is not this node
+	bool not_source_packet = !rtag && destination.IsMulticast() && gateway != source; // no relay tag and destination is multicast and was not issued by the source
+	if(relay_packet_other || not_source_packet){
+		NS_LOG_DEBUG("Drop packet "<< copy->GetUid()<< ", is for someone else [S:"<< source<<"; G:"<<gateway<<"; D:"<<senderHeader.GetDestination() << "] Tag: "<< (uint16_t)relayTag.m_relay);
+		return;
+	}
 	if(!isValidGateway(gateway) && IsMyOwnAddress(destination)){
 		return AskRoute(source);
-	}
-	if((rtag && (destination.IsMulticast() || !IsMyOwnAddress(destination))) || (!rtag && destination.IsMulticast() && gateway != source)){
-		NS_LOG_DEBUG("Drop packet "<< copy->GetUid()<< ", is for someone else [S:"<< source<<"; G:"<<gateway<<"; D:"<<senderHeader.GetDestination() << "] Tag: "<< (uint16_t)relyTag.m_rely);
-		return;
 	}
 	NS_ASSERT(IsMyOwnAddress(destination));//useless
 	SocketAddressTag satag;
@@ -1657,9 +1659,9 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 		Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
 		//add a header
 		if(!IsMyOwnAddress(out->second)) {//to PIM neighbors
-			relyTag.m_rely = 1;
+			relayTag.m_relay = 1;
 			Ipv4Address localAddr = GetLocalAddress(out->first);
-			fwdPacket->AddPacketTag(relyTag);
+			fwdPacket->AddPacketTag(relayTag);
 			senderHeader.SetSource(localAddr);//WIRED
 			senderHeader.SetProtocol(PIM_IP_PROTOCOL_NUM);
 			senderHeader.SetDestination(out->second);//WIRED

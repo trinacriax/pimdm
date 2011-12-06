@@ -609,10 +609,10 @@ private:
 	Time TransmissionDelay  ();
 };
 
-struct RelyTag : public Tag
+struct RelayTag : public Tag
 {
-	uint8_t m_rely;
-	RelyTag (uint8_t value = 0) : Tag(), m_rely(value) {}
+	uint8_t m_relay;
+	RelayTag (uint8_t value = 0) : Tag(), m_relay(value) {}
 
   static TypeId GetTypeId()
   {
@@ -627,22 +627,22 @@ struct RelyTag : public Tag
 
   uint32_t GetSerializedSize (void) const
   {
-	  return sizeof(m_rely);
+	  return sizeof(m_relay);
   }
 
   void Serialize (TagBuffer i) const
   {
-	  i.WriteU8(m_rely);
+	  i.WriteU8(m_relay);
   }
 
   void Deserialize (TagBuffer i)
   {
-	  m_rely = i.ReadU8();
+	  m_relay = i.ReadU8();
   }
 
   void Print (std::ostream &os) const
   {
-	  os<<" RelyTag "<< m_rely;
+	  os<<" RelyTag "<< m_relay;
   }
 
 };
