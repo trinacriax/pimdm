@@ -422,13 +422,13 @@ main (int argc, char *argv[])
 		command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterSG";
 		Config::Set(command.str(), StringValue(ss.str()));
 	}
-//	ss.str("");
-//	ss<< multicastSource<< "," << multicastGroup << "," << "1";
-//	for (int n = 0;  n < routers.GetN() ; n++){
-//		std::stringstream command;//create a stringstream
-//		command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember";
-//		Config::Set(command.str(), StringValue(ss.str()));
-//	}
+	for (int n = 0;  n < routers.GetN() ; n++){
+		std::stringstream command;//create a stringstream
+		ss.str("");
+		ss<< multicastSource<< "," << multicastGroup << "," << "1";
+		command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterAsMember";
+		Config::Set(command.str(), StringValue(ss.str()));
+	}
 
 	switch(routing){
 		case 1:{
