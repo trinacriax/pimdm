@@ -76,11 +76,11 @@ MulticastRoutingProtocol::GetTypeId (void)
                    TimeValue (Seconds (Hello_Period)),
                    MakeTimeAccessor (&MulticastRoutingProtocol::m_helloTime),
                    MakeTimeChecker ())
-	.AddAttribute ("HelloHoldTime", "HoldTime used in hello messages",
+	.AddAttribute ("HelloHoldTime", "HoldTime used in hello messages.",
 			 	 	UintegerValue (Hold_Time_Default),
 			        MakeUintegerAccessor (&MulticastRoutingProtocol::SetHelloHoldTime),
 			        MakeUintegerChecker<uint16_t> ())
-	.AddAttribute ("RegisterSG", "Register a new source-group pair, like a new IGMP entry",
+	.AddAttribute ("RegisterSG", "Register a new source-group pair, like a new IGMP entry.",
 					StringValue("0,0"),
 					MakeStringAccessor(&MulticastRoutingProtocol::register_SG),
 					MakeStringChecker())
