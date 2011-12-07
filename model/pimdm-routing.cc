@@ -84,7 +84,7 @@ MulticastRoutingProtocol::GetTypeId (void)
 					StringValue("0,0"),
 					MakeStringAccessor(&MulticastRoutingProtocol::register_SG),
 					MakeStringChecker())
-	.AddAttribute ("RegisterMember", "Register a new member triple (group, source, interface) ",
+	.AddAttribute ("RegisterAsMember", "Register as a member of the group. Tuple (group, source, interface).",
 					StringValue("0,0,0"),
 					MakeStringAccessor(&MulticastRoutingProtocol::register_member),
 					MakeStringChecker())
