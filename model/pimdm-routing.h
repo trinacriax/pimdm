@@ -611,12 +611,13 @@ private:
 
 struct RelayTag : public Tag
 {
-	uint8_t m_relay;
-	RelayTag (uint8_t value = 0) : Tag(), m_relay(value) {}
+	Ipv4Address m_sender;
+	Ipv4Address m_receiver;
+	RelayTag (Ipv4Address sender = Ipv4Address::GetAny(), Ipv4Address receiver = Ipv4Address::GetAny()) : Tag(), m_sender (sender), m_receiver (receiver) {}
 
   static TypeId GetTypeId()
   {
-	  static TypeId tid = TypeId ("ns3::RelyTag").SetParent<Tag>();
+	  static TypeId tid = TypeId ("ns3::RelayTag").SetParent<Tag>();
 	  return tid;
   }
 
@@ -627,22 +628,24 @@ struct RelayTag : public Tag
 
   uint32_t GetSerializedSize (void) const
   {
-	  return sizeof(m_relay);
+	  return sizeof(m_sender)+sizeof(m_receiver);
   }
 
   void Serialize (TagBuffer i) const
   {
-	  i.WriteU8(m_relay);
+	  i.WriteU32 (m_sender.Get());
+	  i.WriteU32 (m_receiver.Get());
   }
 
   void Deserialize (TagBuffer i)
   {
-	  m_relay = i.ReadU8();
+	  m_sender = Ipv4Address(i.ReadU32());
+	  m_receiver = Ipv4Address(i.ReadU32());
   }
 
   void Print (std::ostream &os) const
   {
-	  os<<" RelyTag "<< m_relay;
+	  os<<" RelayTag: Sender "<< m_sender<<", Receiver "<<m_receiver;
   }
 
 };

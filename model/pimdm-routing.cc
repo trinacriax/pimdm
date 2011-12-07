@@ -1453,25 +1453,25 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	NS_ASSERT(interface);
 	Ipv4Address source, group, sender, destination, gateway;
 	Ptr<Packet> copy = receivedPacket->Copy();// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
-	Ipv4Header senderHeader, sourceHeader;
+	Ipv4Header sourceHeader;
 	RelayTag relayTag;
 	copy->RemoveHeader(sourceHeader);
-	bool rtag = copy->RemovePacketTag(relayTag);
-	if(relayTag.m_relay == 1)
-		copy->RemoveHeader(senderHeader);
-	else
-		senderHeader = sourceHeader;
 	source = sourceHeader.GetSource();
 	group = sourceHeader.GetDestination();
-	sender = senderHeader.GetSource();
-	destination = senderHeader.GetDestination();
+	sender = source;
+	destination = group;
+	bool rtag = copy->RemovePacketTag(relayTag);
+	if(rtag){
+		sender = relayTag.m_sender;
+		destination = relayTag.m_receiver;
+	}
 	Ptr<Ipv4Route> rpf_route = GetRoute(source);
 	gateway = rpf_route->GetGateway();
 	int32_t gatewayIface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
 	bool relay_packet_other = rtag && !IsMyOwnAddress(destination); // has the relay tag and the destination is not this node
 	bool not_source_packet = !rtag && destination.IsMulticast() && gateway != source; // no relay tag and destination is multicast and was not issued by the source
 	if(relay_packet_other || not_source_packet){
-		NS_LOG_DEBUG("Drop packet "<< copy->GetUid()<< ", is for someone else [S:"<< source<<"; G:"<<gateway<<"; D:"<<senderHeader.GetDestination() << "] Tag: "<< (uint16_t)relayTag.m_relay);
+		NS_LOG_DEBUG("Drop packet "<< copy->GetUid()<< ", is for someone else [S:"<< source<<"; G:"<<gateway<<"; D:"<<  destination << "] Tag: ["<< relayTag.m_sender << ","<<relayTag.m_receiver<<"]");
 		return;
 	}
 	if(!isValidGateway(gateway) && IsMyOwnAddress(destination)){
@@ -1547,7 +1547,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 					sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
 					sgState->upstream->SG_SRT.SetArguments(sgp, interface);
 					sgState->upstream->SG_SRT.Schedule();
-					sgState->SG_DATA_TTL = senderHeader.GetTtl();
+					sgState->SG_DATA_TTL = sourceHeader.GetTtl();
 				}
 				break;
 			}
@@ -1566,7 +1566,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 				sgState->upstream->SG_SAT.SetArguments(sgp, interface, gateway);
 				sgState->upstream->SG_SAT.Schedule();
 				double sample = UniformVariable().GetValue();
-				if(sample < TTL_SAMPLE && senderHeader.GetTtl() > sgState->SG_DATA_TTL){
+				if(sample < TTL_SAMPLE && sourceHeader.GetTtl() > sgState->SG_DATA_TTL){
 					sgState->SG_DATA_TTL += 1;
 				}
 				break;
@@ -1659,17 +1659,12 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 		Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
 		//add a header
 		if(!IsMyOwnAddress(out->second)) {//to PIM neighbors
-			relayTag.m_relay = 1;
 			Ipv4Address localAddr = GetLocalAddress(out->first);
-			fwdPacket->AddPacketTag(relayTag);
-			senderHeader.SetSource(localAddr);//WIRED
-			senderHeader.SetProtocol(PIM_IP_PROTOCOL_NUM);
-			senderHeader.SetDestination(out->second);//WIRED
-			fwdPacket->AddHeader(senderHeader);//WIRED
-			sourceHeader.SetPayloadSize(senderHeader.GetPayloadSize()+sourceHeader.GetSerializedSize());//WIRED
-//			fwdPacket->AddHeader(sourceHeader);//WIRED
-			NS_LOG_DEBUG("DataFwd towards node ("<<out->second <<", "<< out->first <<") interfaces/nodes " << fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
-			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
+			RelayTag relayF (localAddr, out->second);
+			fwdPacket->AddPacketTag(relayF);
+			fwdPacket->AddHeader(sourceHeader);
+			NS_LOG_DEBUG("DataFwd towards node ("<<out->second <<", "<< out->first <<") bytes: " << fwdPacket->GetSize()<< ", delay: "<<delayMS.GetSeconds()<<"ms");
+			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketUnicast, this, fwdPacket, out->second);
 		}
 //		else{
 //			relyTag.m_rely = 2;//to Clients
