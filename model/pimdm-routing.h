@@ -166,7 +166,7 @@ private:
 	///TIB - Tree Information Base
 	std::map<uint32_t, SourceGroupList> m_IfaceSourceGroup; ///< List of (S,G) pair state (RFC 3973, section 4.1.2).
 
-	std::map<SourceGroupPair, std::set<int32_t>> m_LocalReceiver;
+	std::map<SourceGroupPair, std::set<int32_t> > m_LocalReceiver;
 
 	///pim ENABLED INTERFACES
 	std::map<int32_t, bool> m_IfacePimEnabled; //TODO, right now all interfaces are pim enabled.
@@ -401,7 +401,6 @@ private:
 	void RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address senderIfaceAddr, uint16_t senderIfacePort, int32_t interface);
 
 	void SendPacketPIMUnicast (Ptr<Packet> packet, const PIMHeader &message, Ipv4Address destination);
-	void SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv4Header &ipv4Header, int32_t interface);
 	void SendPacketPIMRoutersInterface (Ptr<Packet> packet, const PIMHeader &message, int32_t interface);
 	void SendPacketUnicast (Ptr<Packet> packet, Ipv4Address destination);
 	//end
@@ -429,14 +428,14 @@ private:
 
 	void HelloTimerExpire (int32_t interface);
 	void OTTimerExpire (SourceGroupPair &sgp, int32_t interface);
-	void GRTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
+	void GRTTimerExpire (SourceGroupPair &sgp, int32_t interface);
 	void PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address destination);
-	void ATTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
-	void PPTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
+	void ATTimerExpire (SourceGroupPair &sgp, int32_t interface);
+	void PPTTimerExpire (SourceGroupPair &sgp, int32_t interface);
 	void PTTimerExpire (SourceGroupPair &sgp, int32_t interface);
 	void NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr, int32_t interface);
 	void SRTTimerExpire (SourceGroupPair &sgp, int32_t interface);
-	void SATTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
+	void SATTimerExpire (SourceGroupPair &sgp, int32_t interface);
 
 	void UpstreamStateMachine(SourceGroupPair &sgp);
 
@@ -585,7 +584,7 @@ private:
 	//  machine (in Section 4.6) for (S,G) on interface I is in the "I am
 	//  Assert Loser" state.
 	Ipv4Address RPF_prime (Ipv4Address source, Ipv4Address group);
-	bool I_Am_Assert_loser (Ipv4Address source, Ipv4Address group, int32_t interface, Ipv4Address nexthop);
+	bool I_Am_Assert_loser (Ipv4Address source, Ipv4Address group, int32_t interface);
 
 	void CouldAssertCheck (Ipv4Address source, Ipv4Address group, int32_t interface, Ipv4Address destination, bool couldAssert);
 
