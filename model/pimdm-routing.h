@@ -164,9 +164,9 @@ private:
 	//\{
 	std::map<int32_t, NeighborhoodStatus> m_IfaceNeighbors; ///< Information on interface and neighbors (RFC 3973, section 4.1.1).
 	///TIB - Tree Information Base
-	std::map<WiredEquivalentInterface, SourceGroupList> m_IfaceSourceGroup; ///< List of (S,G) pair state (RFC 3973, section 4.1.2).
+	std::map<uint32_t, SourceGroupList> m_IfaceSourceGroup; ///< List of (S,G) pair state (RFC 3973, section 4.1.2).
 
-	std::map<SourceGroupPair, std::set<int32_t> > m_LocalReceiver;
+	std::map<SourceGroupPair, std::set<int32_t>> m_LocalReceiver;
 
 	///pim ENABLED INTERFACES
 	std::map<int32_t, bool> m_IfacePimEnabled; //TODO, right now all interfaces are pim enabled.
@@ -416,14 +416,14 @@ private:
 	 * Downstream Interface.
 	 * All interfaces that are not the upstream interface, including the router itself.
 	 */
-	bool IsDownstream (int32_t interface, Ipv4Address destination, SourceGroupPair sgpair);
-	bool IsDownstream (int32_t interface, Ipv4Address neighbor, Ipv4Address source, Ipv4Address group);
+	bool IsDownstream (int32_t interface, SourceGroupPair sgpair);
+	bool IsDownstream (int32_t interface, Ipv4Address source, Ipv4Address group);
 	/**
 	 * Upstream Interface.
 	 * Interface toward the source of the datagram. Also known as the RPF Interface.
 	 */
-	bool IsUpstream (int32_t interface, Ipv4Address neighbor, SourceGroupPair sgpair);
-	bool IsUpstream (int32_t interface, Ipv4Address neighbor, Ipv4Address source, Ipv4Address group);
+	bool IsUpstream (int32_t interface, SourceGroupPair sgpair);
+	bool IsUpstream (int32_t interface, Ipv4Address source, Ipv4Address group);
 
 	void SendPacket (Ptr<Packet> packet, const PIMMessageList &containedMessages);
 
@@ -440,13 +440,13 @@ private:
 
 	void UpstreamStateMachine(SourceGroupPair &sgp);
 
-	void InsertSourceGroupList (int32_t interface, Ipv4Address neighbor);
-	SourceGroupList* FindSourceGroupList (int32_t interface, Ipv4Address neighbor);
-	void EraseSourceGroupList (int32_t interface, Ipv4Address neighbor);
-	void InsertSourceGroupState (int32_t interface, Ipv4Address neighbor, SourceGroupPair sgp);
-	SourceGroupState* FindSourceGroupState (int32_t interface, Ipv4Address neighbor, const SourceGroupPair &sgp);
-	SourceGroupState* FindSourceGroupState (int32_t interface, Ipv4Address neighbor, const SourceGroupPair &sgp, bool add);
-	SourceGroupState* FindSourceGroupState (int32_t interface, Ipv4Address neighbor, const Ipv4Address source, const Ipv4Address group);
+	void InsertSourceGroupList (int32_t interface);
+	SourceGroupList* FindSourceGroupList (int32_t interface);
+	void EraseSourceGroupList (int32_t interface);
+	void InsertSourceGroupState (int32_t interface, SourceGroupPair sgp);
+	SourceGroupState* FindSourceGroupState (int32_t interface, const SourceGroupPair &sgp);
+	SourceGroupState* FindSourceGroupState (int32_t interface, const SourceGroupPair &sgp, bool add);
+	SourceGroupState* FindSourceGroupState (int32_t interface, const Ipv4Address source, const Ipv4Address group);
 //	void ChangeSourceGroupState (int32_t oldinterface, Ipv4Address oldneighbor, int32_t newinterface, Ipv4Address newneighbor, const SourceGroupPair &sgp);
 
 	void InsertNeighborhoodStatus (const int32_t interface);
@@ -464,7 +464,7 @@ private:
 
 	void SetOverrideInterval (int32_t interface, Time interval);
 
-	void GetPrinterList (std::string string, std::set<WiredEquivalentInterface > resB);
+	void GetPrinterList (std::string string, std::set<uint32_t> resB);
 
 	///
 	/// \brief The most important macros are those defining the outgoing
@@ -474,7 +474,7 @@ private:
 	/// \param source Source IPv4 address
 	/// \param group Multicast group IPv4 address
 	///
-	std::set<WiredEquivalentInterface > immediate_olist (Ipv4Address source, Ipv4Address group);
+	std::set<uint32_t> immediate_olist (Ipv4Address source, Ipv4Address group);
 	void SourceDirectlyConnected (SourceGroupPair &sgp);
 	void SourceNoDirectlyConnected (SourceGroupPair &sgp, uint32_t interface, Ipv4Address gateway);
 	/// Basically RPF' is the RPF neighbor toward a source
@@ -488,7 +488,7 @@ private:
 	void RPFCheck (SourceGroupPair sgp);//, int32_t interface);//, Ptr<Ipv4Route> rpf_route);
 	void RPFCheckAll ();
 
-	void olistCheck (SourceGroupPair &sgp, std::set<WiredEquivalentInterface > &list);
+	void olistCheck (SourceGroupPair &sgp, std::set<uint32_t> &list);
 	void olistEmpty (SourceGroupPair &sgp);
 	void olistFull (SourceGroupPair &sgp);
 
@@ -496,12 +496,12 @@ private:
 	///
 	/// \param source Source IPv4 address
 	/// \param group Multicast group IPv4 address
-	std::set<WiredEquivalentInterface > olist (Ipv4Address source, Ipv4Address group);
+	std::set<uint32_t> olist (Ipv4Address source, Ipv4Address group);
 
 	/// \brief RPF interface towards the source S as indicated by the MRIB.
 	/// \param source Source IPv4 address
-	WiredEquivalentInterface RPF_interface (Ipv4Address source);
-	WiredEquivalentInterface RPF_interface(Ipv4Address source, Ipv4Address group);
+	uint32_t RPF_interface (Ipv4Address source);
+	uint32_t RPF_interface(Ipv4Address source, Ipv4Address group);
 
 	/// \brief Find the route for on-demand routing protocols.
 	/// \param destination Node to lookup.
@@ -531,7 +531,7 @@ private:
 	//
 	//  pim_include (*,G) = {all interfaces I such that: local_receiver_include (*,G,I)}
 	//  pim_include (S,G) = {all interfaces I such that: local_receiver_include (S,G,I)}
-	std::set<WiredEquivalentInterface > pim_include (Ipv4Address source, Ipv4Address group);
+	std::set<uint32_t> pim_include (Ipv4Address source, Ipv4Address group);
 
 	bool seek_traffic_from (Ipv4Address source, Ipv4Address group,int32_t interface);
 
@@ -542,20 +542,20 @@ private:
 
 	/// The interfaces to which traffic might not be forwarded because of hosts that are not local members on those interfaces.
 	///  pim_exclude (S,G) = {all interfaces I such that: local_receiver_exclude (S,G,I)}
-	std::set<WiredEquivalentInterface > pim_exclude (Ipv4Address source, Ipv4Address group) ;
+	std::set<uint32_t> pim_exclude (Ipv4Address source, Ipv4Address group) ;
 
 	bool IsLoopInterface (int32_t interface);
 
 	/*
 	 * All interfaces on which the router has at least one active PIM neighbor.
 	 */
-	std::set<WiredEquivalentInterface > pim_nbrs (void) ;
+	std::set<uint32_t> pim_nbrs (void) ;
 
 	/*
 	 * The set of all interfaces on which the router has received Prune (S,G) messages:
 	 *   prunes (S,G) = {all interfaces I such that DownstreamPState (S,G,I) is in Pruned state}
 	 */
-	std::set<WiredEquivalentInterface > prunes (Ipv4Address source, Ipv4Address group);
+	std::set<uint32_t> prunes (Ipv4Address source, Ipv4Address group);
 
 	/* The set lost_assert (S,G) is the set of all interfaces on which the
 	 *  router has lost an (S,G) Assert.
@@ -563,23 +563,23 @@ private:
 	 *            lost_assert (S,G,I) == TRUE}
 	 *
 	 */
-	std::set<WiredEquivalentInterface > lost_assert (Ipv4Address source, Ipv4Address group);
+	std::set<uint32_t> lost_assert (Ipv4Address source, Ipv4Address group);
 
 	/*
 	 * True if the node has lost an (S,G) Assert on that interface.
 	 */
-	bool lost_assert (Ipv4Address source, Ipv4Address group, int32_t interface, Ipv4Address neighbor) ;
+	bool lost_assert (Ipv4Address source, Ipv4Address group, int32_t interface) ;
 
 	//AssertWinner (S,G,I) defaults to NULL -> ANY
-	Ipv4Address AssertWinner (Ipv4Address source, Ipv4Address group, int32_t interface, Ipv4Address neighbor) ;
+	Ipv4Address AssertWinner (Ipv4Address source, Ipv4Address group, int32_t interface) ;
 
-	struct AssertMetric AssertWinnerMetric (Ipv4Address source, Ipv4Address group, int32_t interface, Ipv4Address neighbor);
+	struct AssertMetric AssertWinnerMetric (Ipv4Address source, Ipv4Address group, int32_t interface);
 	bool boundary (int32_t interface, Ipv4Address group);
 
 	/*
 	 * boundary (G) = {all interfaces I with an administratively scoped boundary for group G}
 	 */
-	std::set<WiredEquivalentInterface > boundary (Ipv4Address G) ;
+	std::set<uint32_t> boundary (Ipv4Address G) ;
 
 	//The macro I_Am_Assert_loser (S, G, I) is true if the Assert state
 	//  machine (in Section 4.6) for (S,G) on interface I is in the "I am
@@ -589,13 +589,13 @@ private:
 
 	void CouldAssertCheck (Ipv4Address source, Ipv4Address group, int32_t interface, Ipv4Address destination, bool couldAssert);
 
-	bool CouldAssert (Ipv4Address source, Ipv4Address group, int32_t interface, Ipv4Address neighbor);
+	bool CouldAssert (Ipv4Address source, Ipv4Address group, int32_t interface);
 
 	struct AssertMetric spt_assert_metric (Ipv4Address source, int32_t interface) ;
 
 	struct AssertMetric infinite_assert_metric ();
 
-	struct AssertMetric my_assert_metric (Ipv4Address source, Ipv4Address group, int32_t interface, Ipv4Address neighbor);
+	struct AssertMetric my_assert_metric (Ipv4Address source, Ipv4Address group, int32_t interface);
 
 	//StateRefreshRateLimit (S,G) is TRUE if the time elapsed since the last received StateRefresh (S,G)
 	//	is less than the configured RefreshLimitInterval.
@@ -603,7 +603,7 @@ private:
 
 	bool StateRefreshCapable (int32_t interface);
 
-	void SetPruneState (int32_t interface, Ipv4Address neighbor, SourceGroupPair sgp, PruneState state);
+	void SetPruneState (int32_t interface, SourceGroupPair sgp, PruneState state);
 	Time TransmissionDelay (double l, double u, enum Time::Unit unit);
 	Time TransmissionDelay  (double l, double u);
 	Time TransmissionDelay  ();
