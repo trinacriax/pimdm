@@ -123,15 +123,15 @@ main (int argc, char *argv[])
 	/// Print routes if true
 	bool printRoutes = true;
 	/// Number of PIM nodes
-	uint32_t sizePim = 56;
+	uint32_t sizePim = 6;
 	/// Number of client nodes
-	uint32_t sizeClient = 56;
+	uint32_t maxClient = 5;
 	/// Animator filename
 	uint32_t sizeSource = 1;
 	/// grid cols number
 	uint16_t cols = (uint16_t)sqrt(sizePim);
 	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
-	int32_t routing = 2;
+	int32_t routing = 1;
 	//Seed for random numbers
 	uint32_t seed = 1234567890;
 	/// Animator filename
@@ -154,7 +154,7 @@ main (int argc, char *argv[])
 	cmd.AddValue("seed", "Seed Random.", seed);
 	cmd.AddValue("printRoutes", "Print routing table dumps.", printRoutes);
 	cmd.AddValue("sizePim", "Number of PIM nodes.", sizePim);
-	cmd.AddValue("sizeClient", "Number of PIM nodes.", sizeClient);
+	cmd.AddValue("maxClient", "Max number of clients for each PIM router.", maxClient);
 	cmd.AddValue("sizeSource", "Number of PIM nodes.", sizeSource);
 	cmd.AddValue("cols", "Number of cols in the grid.", cols);
 	cmd.AddValue("routing", "Routing protocol to use.", routing);
@@ -173,13 +173,11 @@ main (int argc, char *argv[])
 	source.Create(sizeSource);
 	NodeContainer routers;
 	routers.Create (sizePim);// here routes from node 0 to 3
-	NodeContainer clients;
-	clients.Create (sizeClient);// here clients from node 4 to 7, 7 is the source
+	NodeContainer all_clients;
 
 	NodeContainer allNodes;
 	allNodes.Add(source);
 	allNodes.Add(routers);
-	allNodes.Add(clients);
 
 	for (uint32_t i = 0; i < allNodes.GetN(); ++i) {// Name nodes
 		std::ostringstream os;
@@ -193,11 +191,21 @@ main (int argc, char *argv[])
 	csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
 //	csma.SetDeviceAttribute ("EncapsulationMode", StringValue ("Llc"));
 
+	// Defines connections between routers and clients
+
+	NodeContainer join;
 	std::list<NetDeviceContainer> rcDevices;
 	for (uint32_t c = 0; c < routers.GetN() ; c++){
+		uint32_t n_clients = UniformVariable().GetInteger(0,maxClient);
+		NS_LOG_DEBUG("Node "<< c << " has " << n_clients << " clients on interface 1");
+		if( n_clients < 2) continue;
 		NodeContainer nc;
 		nc.Add(routers.Get(c));
-		nc.Add(clients.Get(c));
+		join.Add(routers.Get(c));
+		NodeContainer clients;
+		clients.Create(n_clients);
+		nc.Add(clients);
+		all_clients.Add(clients);
 		rcDevices.push_back(csma.Install (nc));
 	}
 
@@ -273,7 +281,7 @@ main (int argc, char *argv[])
 
 	InternetStackHelper internetClients;
 	internetClients.SetRoutingHelper (listClients);
-	internetClients.Install (clients);
+	internetClients.Install (all_clients);
 	internetClients.Install (source);
 
 	// Later, we add IP addresses.
@@ -283,16 +291,13 @@ main (int argc, char *argv[])
 	Ipv4Address base = Ipv4Address("10.1.2.0");
 	ipv4.SetBase ("10.1.2.0", "255.255.255.0");
 	Ipv4InterfaceContainer ipClients;
-	int loop = 0;
 	while(!rcDevices.empty()){
 		Ipv4InterfaceContainer iprc = ipv4.Assign (rcDevices.front());
-		ipClients.Add(iprc.Get(1));
+		for (int k = 1; k < iprc.GetN(); k++)
+			ipClients.Add(iprc.Get(k));
 		rcDevices.pop_front();
-		loop+=2;
-		if (loop > 240){
-			base = Ipv4Address(base.Get()+256);
-			ipv4.SetBase (base, "255.255.255.0");
-		}
+		base = Ipv4Address(base.Get()+256);
+		ipv4.SetBase (base, "255.255.255.0");
 		//evitare il loop
 	}
 
@@ -337,9 +342,9 @@ main (int argc, char *argv[])
 	}
 	ss.str("");
 	ss<< multicastSource<< "," << multicastGroup << "," << "1";
-	for (int n = 0;  n < routers.GetN() ; n++){
+	for (int n = 0;  n < join.GetN() ; n++){
 		std::stringstream command;//create a stringstream
-		command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember";
+		command<< "NodeList/" << join.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterAsMember";
 		Config::Set(command.str(), StringValue(ss.str()));
 	}
 	switch(routing){
@@ -353,9 +358,9 @@ main (int argc, char *argv[])
 				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localWeightFunction",EnumValue(mbn::W_NODE_RND));
 				Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
 
-				for (int n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
+				for (int n = 0;  n < all_clients.GetN() ; n++){//Clients are RN nodes
 					std::stringstream command;
-					command<< "/NodeList/"<<clients.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
+					command<< "/NodeList/"<<all_clients.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
 					Config::Set(command.str(), EnumValue(mbn::RN_NODE));
 				}
 				for (int n = 0;  n < source.GetN() ; n++){//SOURCE is BN so it can Tx
@@ -402,7 +407,7 @@ main (int argc, char *argv[])
 	apps.Start (Seconds (sourceStart));
 	apps.Stop (Seconds (sourceStop));
 
-	for(int n = 0; n < clients.GetN() ; n++){
+	for(int n = 0; n < all_clients.GetN() ; n++){
 		InetSocketAddress dstC = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
 		Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
 		VideoHelper videoC = VideoHelper ("ns3::UdpSocketFactory", dstC);
@@ -416,7 +421,7 @@ main (int argc, char *argv[])
 		videoC.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
 		videoC.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
 
-		ApplicationContainer appC = videoC.Install (clients.Get(n));
+		ApplicationContainer appC = videoC.Install (all_clients.Get(n));
 		appC.Start (Seconds (clientStart));
 		appC.Stop (Seconds (clientStop));
 	}
