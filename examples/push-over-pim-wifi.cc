@@ -87,10 +87,10 @@ GetNodeID (std::string context){
 	return p3;
 }
 
-//static void SinkRx (Ptr<const Packet> p, const Address &ad)
-//{
-//std::cout <<"Received Packet "<< p->GetSize() << " bytes from "<<InetSocketAddress::ConvertFrom (ad).GetIpv4()<< std::endl;
-//}
+static void AppRx (Ptr<const Packet> p, const Address &ad)
+{
+std::cout <<"Received Packet "<< p->GetSize() << " bytes from "<<InetSocketAddress::ConvertFrom (ad).GetIpv4()<< std::endl;
+}
 
 static void AppTx (Ptr<const Packet> p)
 {
@@ -209,20 +209,18 @@ main (int argc, char *argv[])
 	bool printRoutes = true;
 	/// Number of PIM nodes
 	uint32_t sizePim = 8;
-//	/// Number of client nodes
-//	uint32_t sizeClient = 8;
 	/// Animator filename
 	uint32_t sizeSource = 1;
 	/// grid cols number
 	uint16_t cols = (uint16_t)sqrt(sizePim);
 	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
-	int32_t routing = 3;
+	int32_t routing = 1;
 	//Seed for random numbers
 	uint32_t seed = 4001254589;
 	//Step in the grid X
-	double deltaX = 100;
+	double deltaX = 30;
 	//Step in the grid Y
-	double deltaY = 100;
+	double deltaY = 30;
 	//Nodes in a row
 	/// Animator filename
 	std::string animFile = "push-over-pim-wireles.tr";
@@ -238,11 +236,8 @@ main (int argc, char *argv[])
 	double clientStop = totalTime;
 	/// Flow Monitor
 	bool enableFlowMonitor = false;
-//
-//	double onOffStart = 14;
-//	double onOffStop = totalTime-5;
-//	double sinkStart = onOffStart;
-//	double sinkStop = totalTime-1;
+	/// Run
+	uint32_t run = 2;
 
 	CommandLine cmd;
 	cmd.AddValue("pcap", "Write PCAP traces.", pcap);
@@ -257,25 +252,23 @@ main (int argc, char *argv[])
 	cmd.AddValue("deltaX", "Grid step X", deltaX);
 	cmd.AddValue("cols", "Grid width ", cols);
 	cmd.AddValue("animFile", "File Name for Animation Output", animFile);
+	cmd.AddValue("run", "Run to execute.", run);
 
 	cmd.Parse(argc, argv);
 	// Here, we will explicitly create four nodes.  In more sophisticated
 	// topologies, we could configure a node factory.
 
 //	SeedManager::SetSeed(seed);
-	SeedManager::SetRun(2);
+	SeedManager::SetRun(run);
 	NS_LOG_INFO ("Create nodes.");
 	NodeContainer source;
 	source.Create(sizeSource);
 	NodeContainer routers;
 	routers.Create (sizePim);// here routes from node 0 to 3
-//	NodeContainer clients;
-//	clients.Create (sizeClient);// here clients from node 4 to 7, 7 is the source
 
 	NodeContainer allNodes;
 	allNodes.Add(source);
 	allNodes.Add(routers);
-//	allNodes.Add(clients);
 
 	for (uint32_t i = 0; i < allNodes.GetN(); ++i) {// Name nodes
 			std::ostringstream os;
@@ -288,10 +281,6 @@ main (int argc, char *argv[])
 //
 //    Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue ("2200"));
 //    Config::SetDefault ("ns3::WifiRemoteStationManager::NonUnicastMode", phyMode);
-
-	WifiHelper wifi = WifiHelper::Default ();
-//	wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
-	wifi.SetStandard (WIFI_PHY_STANDARD_80211g);
 
 	Ptr<YansWifiChannel> channel = CreateObject<YansWifiChannel> ();
 	Ptr<ConstantSpeedPropagationDelayModel> delayModel = CreateObject<ConstantSpeedPropagationDelayModel> ();
@@ -309,28 +298,30 @@ main (int argc, char *argv[])
 	 // Add a non-QoS upper mac, and disable rate control
 	NqosWifiMacHelper mac = NqosWifiMacHelper::Default ();
 
-	//802.11b
-//	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
-//		"DataMode", WifiModeValue (WifiPhy::GetDsssRate1Mbps()),
-//		"ControlMode",WifiModeValue (WifiPhy::GetDsssRate1Mbps()),
-//		"NonUnicastMode", WifiModeValue (WifiPhy::GetDsssRate1Mbps())
-//		);
+	WifiHelper wifi = WifiHelper::Default ();
 
-	//802.11g
+	/************  802.11b   ************/
+	// Typical indoor range is 30 m (100 ft) at 11 Mbit/s and 90 m (300 ft) at 1 Mbit/s
+	wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
 	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
-		"DataMode", WifiModeValue (WifiPhy::GetErpOfdmRate6Mbps()),
-		"ControlMode",WifiModeValue (WifiPhy::GetErpOfdmRate6Mbps()),
-		"NonUnicastMode", WifiModeValue (WifiPhy::GetErpOfdmRate6Mbps())
+		"DataMode", WifiModeValue (WifiPhy::GetDsssRate1Mbps())
+		,"ControlMode",WifiModeValue (WifiPhy::GetDsssRate5_5Mbps())
+//		,"NonUnicastMode", WifiModeValue (WifiPhy::GetDsssRate1Mbps())
 		);
 
+	/************  802.11g   ************/
+//	wifi.SetStandard (WIFI_PHY_STANDARD_80211g);
+//	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
+//		"DataMode", WifiModeValue (WifiPhy::GetErpOfdmRate54Mbps())
+//		,"ControlMode",WifiModeValue (WifiPhy::GetErpOfdmRate54Mbps())
+////		,"NonUnicastMode", WifiModeValue (WifiPhy::GetErpOfdmRate24Mbps())
+//		);
 
 	// Set it to adhoc mode
 	mac.SetType ("ns3::AdhocWifiMac");
 
 	NetDeviceContainer sourceNetDev = wifi.Install(phy, mac, source);
 	NetDeviceContainer routersNetDev = wifi.Install(phy, mac, routers);
-//	NetDeviceContainer clientsNetDev = wifi.Install(phy, mac, clients);
-
 
 	// INSTALL INTERNET STACK
 	// Enable AODV
@@ -365,26 +356,25 @@ main (int argc, char *argv[])
 	internetRouters.SetRoutingHelper (listRouters);
 	internetRouters.Install (routers);
 
-	Ipv4ListRoutingHelper listClients;
+	Ipv4ListRoutingHelper listSource;
 	switch(routing){
 		case 1:{
-			listClients.Add (olsr, 10);
+			listSource.Add (olsr, 10);
 			break;
 		}
 		case 2:{
-			listClients.Add (aodv, 10);
+			listSource.Add (aodv, 10);
 			break;
 		}
 		case 3:{
-			listClients.Add (mbnaodv, 10);
+			listSource.Add (mbnaodv, 10);
 			break;
 		}
 	}
-	listClients.Add (staticRouting, 11);
-//
+	listSource.Add (staticRouting, 11);
+
 	InternetStackHelper internetClients;
-	internetClients.SetRoutingHelper (listClients);
-//	internetClients.Install (clients);
+	internetClients.SetRoutingHelper (listSource);
 	internetClients.Install (source);
 
 	// Later, we add IP addresses.
@@ -396,7 +386,6 @@ main (int argc, char *argv[])
 	Ipv4InterfaceContainer ipSource = ipv4.Assign (sourceNetDev);
 	Ipv4Address multicastSource (base.Get()+1);
 	Ipv4InterfaceContainer ipRouter = ipv4.Assign (routersNetDev);
-//	Ipv4InterfaceContainer ipClient = ipv4.Assign (clientsNetDev);
 
 	NS_LOG_INFO ("Configure multicasting.");
 
@@ -476,77 +465,41 @@ main (int argc, char *argv[])
 	NS_LOG_INFO ("Create Source");
 	InetSocketAddress dst = InetSocketAddress (multicastGroup, PUSH_PORT);
 	Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
-	VideoHelper video = VideoHelper ("ns3::UdpSocketFactory", dst);
-	video.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
-	video.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
-	video.SetAttribute ("DataRate", StringValue ("10kb/s"));
-	video.SetAttribute ("PacketSize", UintegerValue (1200));
-	video.SetAttribute ("PeerType", EnumValue (SOURCE));
-	video.SetAttribute ("Local", AddressValue (ipSource.GetAddress(0)));
-	video.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
-	video.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
+	VideoHelper videoSource = VideoHelper ("ns3::UdpSocketFactory", dst);
+	videoSource.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
+	videoSource.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
+	videoSource.SetAttribute ("DataRate", StringValue ("10kb/s"));
+	videoSource.SetAttribute ("PacketSize", UintegerValue (1200));
+	videoSource.SetAttribute ("PeerType", EnumValue (SOURCE));
+	videoSource.SetAttribute ("Local", AddressValue (ipSource.GetAddress(0)));
+	videoSource.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
+	videoSource.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
 
 
-	ApplicationContainer apps = video.Install (source.Get (0));
+	ApplicationContainer apps = videoSource.Install (source.Get (0));
 	apps.Start (Seconds (sourceStart));
 	apps.Stop (Seconds (sourceStop));
-
-//	for(uint32_t n = 0; n < clients.GetN() ; n++){
-//		InetSocketAddress dstC = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
-//		Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
-//		VideoHelper videoC = VideoHelper ("ns3::UdpSocketFactory", dstC);
-//		videoC.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
-//		videoC.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
-////		videoC.SetAttribute ("DataRate", StringValue ("10kb/s"));
-////		videoC.SetAttribute ("PacketSize", UintegerValue (1200));
-//		videoC.SetAttribute ("PeerType", EnumValue (PEER));
-//		videoC.SetAttribute ("LocalPort", UintegerValue (PIM_PORT_NUMBER));
-//		videoC.SetAttribute ("Local", AddressValue(ipClient.GetAddress(n)));
-//		videoC.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
-//		videoC.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
-//
-//		ApplicationContainer appC = videoC.Install (clients.Get(n));
-//		appC.Start (Seconds (clientStart));
-//		appC.Stop (Seconds (clientStop));
-//	}
 
 	for(uint32_t n = 0; n < routers.GetN() ; n++){
 		InetSocketAddress dstR = InetSocketAddress (multicastGroup, PUSH_PORT);
 		Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
-		VideoHelper videoR = VideoHelper ("ns3::UdpSocketFactory", dstR);
-		videoR.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
-		videoR.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
-//		videoC.SetAttribute ("DataRate", StringValue ("10kb/s"));
-//		videoC.SetAttribute ("PacketSize", UintegerValue (1200));
-		videoR.SetAttribute ("PeerType", EnumValue (PEER));
-		videoR.SetAttribute ("Local", AddressValue(ipRouter.GetAddress(n)));
-		videoR.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
-		videoR.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
+		VideoHelper videoNodes = VideoHelper ("ns3::UdpSocketFactory", dstR);
+		videoNodes.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
+		videoNodes.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
+//		videoNodes.SetAttribute ("DataRate", StringValue ("10kb/s"));
+//		videoNodes.SetAttribute ("PacketSize", UintegerValue (1200));
+		videoNodes.SetAttribute ("PeerType", EnumValue (PEER));
+		videoNodes.SetAttribute ("Local", AddressValue(ipRouter.GetAddress(n)));
+		videoNodes.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
+		videoNodes.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
 
-//		Ipv4StaticRoutingHelper multicast;
-//		multicast.AddMulticastRoute (routers.Get(n), multicastSource, multicastGroup, routersNetDev.Get (n), routersNetDev.Get (n));
-
-		ApplicationContainer appR = videoR.Install (routers.Get(n));
+		ApplicationContainer appR = videoNodes.Install (routers.Get(n));
 		appR.Start (Seconds (clientStart));
 		appR.Stop (Seconds (clientStop));
 	}
 
-//	NS_LOG_INFO ("Create Sink.");
-//	PacketSinkHelper sink = PacketSinkHelper ("ns3::UdpSocketFactory", dst);
-//	apps = sink.Install (clients);
-//	apps.Start (Seconds (sinkStart));
-//	apps.Stop (Seconds (sinkStop));
-
-
-	//sink callback
-//	for(int i = source.GetN()+routers.GetN(); i < (source.GetN()+routers.GetN()+clients.GetN()); i++){
-//		std::stringstream ss;
-//		ss << "/NodeList/"<<i<<"/ApplicationList/0/$ns3::PacketSink/Rx";
-//		Config::ConnectWithoutContext(ss.str(),MakeCallback (&SinkRx));
-//		ss.str("");
-//	}
-
 if(g_verbose){
+	Config::ConnectWithoutContext("/NodeList/*/ApplicationList/0/$ns3::VideoPushApplication/Rx", MakeCallback (&AppRx));
 	Config::ConnectWithoutContext("/NodeList/0/ApplicationList/0/$ns3::VideoPushApplication/Tx",MakeCallback (&AppTx));
 	Config::ConnectWithoutContext("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/PhyTxDrop",MakeCallback (&PhyTxDrop));
 	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacTx", MakeCallback (&DevTxTrace));
@@ -556,8 +509,7 @@ if(g_verbose){
 	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/Tx",	MakeCallback (&PhyTxTrace));
 	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/State", MakeCallback (&PhyStateTrace));
 }
-//	Config::ConnectWithoutContext ("/NodeList/[5-8]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&SinkRx));
-//
+
 //	MobilityHelper mobilityR;
 //	Ptr<ListPositionAllocator> positionAllocR = CreateObject<ListPositionAllocator> ();
 //	positionAllocR->Add(Vector(250.0, 310.0, 0.0));// 0
@@ -584,40 +536,35 @@ if(g_verbose){
 //	mobilityC.SetMobilityModel("ns3::ConstantPositionMobilityModel");
 //	mobilityC.Install(client);
 
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 	 	 	 	 	 Mobility Nodes
+    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-
-	MobilityHelper mobilityR;
-	mobilityR.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-	mobilityR.SetPositionAllocator ("ns3::GridPositionAllocator",
+	MobilityHelper mobilityNodes;
+	mobilityNodes.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+	mobilityNodes.SetPositionAllocator ("ns3::GridPositionAllocator",
 	  "MinX", DoubleValue (0.0),
 	  "MinY", DoubleValue (0.0),
 	  "DeltaX", DoubleValue (deltaX),
 	  "DeltaY", DoubleValue (deltaY),
 	  "GridWidth", UintegerValue (cols),
 	  "LayoutType", StringValue ("RowFirst"));
-//  mobility.SetPositionAllocator ("ns3::RandomDiscPositionAllocator",
+
+//  mobilityNodes.SetPositionAllocator ("ns3::RandomDiscPositionAllocator",
 //								 "X", StringValue ("100.0"),
 //								 "Y", StringValue ("100.0"),
 //								 "Rho", StringValue ("Uniform:0:30"));
-//  mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+
+//  mobilityNodes.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
 //                             "Mode", StringValue ("Time"),
 //                             "Time", StringValue ("2s"),
 //                             "Speed", StringValue ("Constant:1.0"),
 //                             "Bounds", StringValue ("0|200|0|200"));
+	mobilityNodes.Install(routers);
 
-	mobilityR.Install(routers);
-
-//	MobilityHelper mobilityC;
-//	mobilityC.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-//	mobilityC.SetPositionAllocator ("ns3::GridPositionAllocator",
-//	  "MinX", DoubleValue (50.0),
-//	  "MinY", DoubleValue (50.0),
-//	  "DeltaX", DoubleValue (deltaX),
-//	  "DeltaY", DoubleValue (deltaY),
-//	  "GridWidth", UintegerValue (cols),
-//	  "LayoutType", StringValue ("RowFirst"));
-//
-//	mobilityC.Install(clients);
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 	 	 	 	 	 Mobility Source
+    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	Ptr<ListPositionAllocator> positionAllocS = CreateObject<ListPositionAllocator> ();
 	positionAllocS->Add(Vector(-70.0, -70.0, 0.0));// Source
