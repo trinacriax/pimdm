@@ -931,9 +931,25 @@ MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupP
 }
 
 void
-MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgp)
+MulticastRoutingProtocol::SendPruneInterface(uint32_t interface, SourceGroupPair &sgp)
 {
-	NS_LOG_FUNCTION(this<< destination<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
+	NS_LOG_FUNCTION(this<< interface << sgp.sourceMulticastAddr << sgp.groupMulticastAddr);
+	SourceGroupState *sgState = FindSourceGroupState(interface, sgp, true);
+	if(sgState->upstream && sgState->upstream->SG_PLT.IsRunning()){//the prune timer is not active
+		NS_LOG_DEBUG("Limiting prune on LAN with PLT");
+	}
+	else {
+		PIMHeader msg;
+		ForgeJoinPruneMessage(msg, GetLocalAddress(interface));
+		PIMHeader::MulticastGroupEntry mge;
+		CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
+		AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
+		AddMulticastGroupEntry(msg, mge);
+		Ptr<Packet> packet = Create<Packet> ();
+		Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterInterface, this, packet, msg, interface);
+	}
+}
+
 void
 MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address upstreamNeighbor, SourceGroupPair &sgp)
 {
@@ -1633,8 +1649,8 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 		//	   packet MUST be forwarded to all listed interfaces.  If the list is
 		//	   empty, then the router will conduct a prune process for the (S,G)
 		//	   pair specified in the packet.
-		NS_LOG_DEBUG("RPF check failed: Sending Prune to "<< sender);
-		SendPruneUnicast(sender, sgp);
+//		NS_LOG_DEBUG("RPF check failed: Sending Prune to interface "<< interface);
+//		SendPruneInterface(interface, sgp);
 		return;
 	}
 	///   Packets that fail the RPF check MUST NOT be forwarded, and the router will conduct an assert process for the (S, G) pair specified in the packet.
