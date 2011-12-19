@@ -352,7 +352,7 @@ private:
 	void ForgeHelloMessageStateRefresh (int32_t interface, PIMHeader &msg);
 
 	void ForgeJoinPruneMessage (PIMHeader &msg, Ipv4Address const upstreamNeighbor);
-	void ForgeAssertMessage (int32_t interface, Ipv4Address destination, PIMHeader &msg, SourceGroupPair &sgp);
+	void ForgeAssertMessage (int32_t interface, PIMHeader &msg, SourceGroupPair &sgp);
 	void ForgeAssertCancelMessage (int32_t interface, PIMHeader &msg, SourceGroupPair &sgp);
 	void ForgeGraftMessage (int32_t interface, PIMHeader &msg, SourceGroupPair &sgp, Ipv4Address upstreamNeighbor);
 
