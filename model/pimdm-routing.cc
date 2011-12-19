@@ -877,7 +877,7 @@ MulticastRoutingProtocol::SendHello (int32_t interface)
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
 	ForgeHelloMessage(interface, msg);
-	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, interface);
+	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterInterface, this, packet, msg, interface);
 }
 
 void
@@ -1818,7 +1818,7 @@ MulticastRoutingProtocol::NeighborRestart (int32_t interface, Ipv4Address neighb
 }
 
 void
-MulticastRoutingProtocol::SendPacketPIMRoutersInterface(Ptr<Packet> packet, const PIMHeader &message, int32_t interface)
+MulticastRoutingProtocol::SendPacketPIMRouterInterface(Ptr<Packet> packet, const PIMHeader &message, int32_t interface)
 {
   if(m_stopTx) return;
   packet->AddHeader(message);
@@ -2100,7 +2100,7 @@ MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 				AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
 				AddMulticastGroupEntry(prune, mge);
 				Ptr<Packet> packet = Create<Packet> ();
-				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, prune, interface);
+				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterInterface, this, packet, prune, interface);
 			//	Its purpose is to add additional reliability so that if a Join that should have
 			//	overridden the Prune is lost locally on the LAN, the PruneEcho(S, G) may be received
 			//	and trigger a new Join message.
@@ -2335,7 +2335,7 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp)
 			AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
 			AddMulticastGroupEntry(msg, mge);
 			Ptr<Packet> packet = Create<Packet> ();
-			Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, rpf_i);
+			Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterInterface, this, packet, msg, rpf_i);
 			sgState->upstream->SG_GRT.Cancel();
 			sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 
@@ -3430,7 +3430,7 @@ MulticastRoutingProtocol::ForwardingStateRefresh(PIMHeader::StateRefreshMessage 
 		//set Assert Override of SRMP' to 0;
 		//transmit SRMP' on I;
 		Ptr<Packet> packet;
-		Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, refreshFRW, *i_nbrs);
+		Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterInterface, this, packet, refreshFRW, *i_nbrs);
 	}
 }
 

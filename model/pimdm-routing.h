@@ -401,8 +401,7 @@ private:
 	void RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address senderIfaceAddr, uint16_t senderIfacePort, int32_t interface);
 
 	void SendPacketPIMRouterUnicast (Ptr<Packet> packet, const PIMHeader &message, Ipv4Address destination);
-	void SendPacketPIMRoutersInterface (Ptr<Packet> packet, const PIMHeader &message, int32_t interface);
-	//end
+	void SendPacketPIMRouterInterface (Ptr<Packet> packet, const PIMHeader &message, int32_t interface);
 	void SendPacketInterface(Ptr<Packet> packet, int32_t interface);
 
 	void NeighborRestart (int32_t interface, Ipv4Address neighbor);
