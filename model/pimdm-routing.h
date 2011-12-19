@@ -215,6 +215,9 @@ private:
 	TracedCallback <const PIMHeader &> m_rxPacketTrace;
 	TracedCallback <const PIMHeader &> m_txPacketTrace;
 
+	TracedCallback <const Ptr<Packet> &> m_rxDataPacketTrace;
+	TracedCallback <const Ptr<Packet> &> m_txDataPacketTrace;
+
 	TracedCallback<uint32_t> m_routingTableChanged;
 
 protected:

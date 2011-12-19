@@ -100,12 +100,16 @@ MulticastRoutingProtocol::GetTypeId (void)
 					TimeValue (Seconds (Propagation_Delay)),
 					MakeTimeAccessor (&MulticastRoutingProtocol::m_LanDelay),
 					MakeTimeChecker ())
-    .AddTraceSource ("RoutingTableChanged", "The PIM-DM routing table has changed.",
-		     MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_routingTableChanged))
 	.AddTraceSource ("RxPIM", "Trace PIM packet received.",
 					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxPacketTrace))
 	.AddTraceSource ("TxPIM", "Trace PIM packet sent.",
 					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txPacketTrace))
+    .AddTraceSource ("RxData", "Trace data packet received.",
+					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxDataPacketTrace))
+    .AddTraceSource ("TxData", "Trace data packet sent.",
+					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txDataPacketTrace))
+	.AddTraceSource ("RoutingTableChanged", "The PIM-DM routing table has changed.",
+	   	     	 	MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_routingTableChanged))
 
     ;
   return tid;
@@ -1403,6 +1407,7 @@ MulticastRoutingProtocol::RecvMessage (Ptr<Socket> socket)
 	if (tag || (group.IsMulticast() && group != Ipv4Address(ALL_PIM_ROUTERS4))){//Lookup(ipv4header.GetDestination(),ipv4header.GetSource(),rmt,me)){
 		if(tag) receivedPacket->AddPacketTag(rtag);
 		this->RecvPIMData (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
+		m_rxDataPacketTrace (receivedPacket);
 	}
 	else if (group == Ipv4Address(ALL_PIM_ROUTERS4) || group == GetLocalAddress(interface)){
 		this->RecvPIMDM (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
@@ -1940,6 +1945,8 @@ void
 MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, Ipv4Address destination)
 {
   if(m_stopTx) return;
+  // trace
+  m_txDataPacketTrace (packet);
   // Send
   WiredEquivalentInterface wei = RPF_interface(destination);
   int32_t interface = wei.first >0 ? wei.first : m_ipv4->GetInterfaceForAddress(m_mainAddress);
