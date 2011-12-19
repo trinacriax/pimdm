@@ -2092,11 +2092,11 @@ MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 			Time JP_Override_Interval= nstatus->overrideInterval+nstatus->propagationDelay;
 			Time Delay = nstatus->pruneHoldtime - JP_Override_Interval;
 			Delay = (Delay.GetSeconds()>=0 ? Delay: Seconds(0));
+			NS_LOG_DEBUG ("Pruning Prune_PrunePending -> Prune_PrunePending. Interface " << interface);
 			if(nstatus->neighbors.size()>1){// Prune echo
 			//  A PruneEcho(S, G) MUST be sent on I if I has more than one PIM neighbor.
 			//	A PruneEcho(S, G) is simply a Prune(S, G) message
 			//	multicast by the upstream router to a LAN, with itself as the Upstream Neighbor.
-				int32_t interface = RPF_interface(sgp.sourceMulticastAddr);
 				PIMHeader prune;
 				ForgeJoinPruneMessage(prune, GetLocalAddress(interface));
 				PIMHeader::MulticastGroupEntry mge;
@@ -2105,6 +2105,7 @@ MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 				AddMulticastGroupEntry(prune, mge);
 				Ptr<Packet> packet = Create<Packet> ();
 				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterInterface, this, packet, prune, interface);
+				NS_LOG_DEBUG ("Pruning Prune_PrunePending -> Prune_PrunePending. Interface " << interface);
 			//	Its purpose is to add additional reliability so that if a Join that should have
 			//	overridden the Prune is lost locally on the LAN, the PruneEcho(S, G) may be received
 			//	and trigger a new Join message.
