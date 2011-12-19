@@ -934,16 +934,20 @@ void
 MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgp)
 {
 	NS_LOG_FUNCTION(this<< destination<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
+void
+MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address upstreamNeighbor, SourceGroupPair &sgp)
+{
+	NS_LOG_FUNCTION(this<< upstreamNeighbor<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
 	PIMHeader msg;
-	ForgeJoinPruneMessage(msg, destination);
+	ForgeJoinPruneMessage(msg, upstreamNeighbor);
 	PIMHeader::MulticastGroupEntry mge;
 	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
 	AddMulticastGroupSourceJoin(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
 	AddMulticastGroupEntry(msg, mge);
 //	msg.Print(std::cout);
 	Ptr<Packet> packet = Create<Packet> ();
-	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterUnicast, this, packet, msg, destination);
-	NS_LOG_LOGIC("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
+	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterUnicast, this, packet, msg, upstreamNeighbor);
+	NS_LOG_LOGIC("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< upstreamNeighbor<<"\"");
 }
 
 void
