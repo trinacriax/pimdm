@@ -3904,6 +3904,10 @@ Ipv4Address MulticastRoutingProtocol::RPF_prime (Ipv4Address source, Ipv4Address
 	}
 }
 
+Ipv4Address MulticastRoutingProtocol::RPF_prime (SourceGroupPair sgp) {
+	return RPF_prime(sgp.sourceMulticastAddr,sgp.groupMulticastAddr);
+}
+
 bool MulticastRoutingProtocol::I_Am_Assert_loser (Ipv4Address source, Ipv4Address group, int32_t interface) {
 	SourceGroupState *sgState = FindSourceGroupState (interface, source, group);
 	return (sgState != NULL?sgState->AssertState == Assert_Loser: false);

@@ -584,6 +584,8 @@ private:
 	//  machine (in Section 4.6) for (S,G) on interface I is in the "I am
 	//  Assert Loser" state.
 	Ipv4Address RPF_prime (Ipv4Address source, Ipv4Address group);
+	Ipv4Address RPF_prime (SourceGroupPair sgp);
+
 	bool I_Am_Assert_loser (Ipv4Address source, Ipv4Address group, int32_t interface);
 
 	void CouldAssertCheck (Ipv4Address source, Ipv4Address group, int32_t interface, Ipv4Address destination, bool couldAssert);
