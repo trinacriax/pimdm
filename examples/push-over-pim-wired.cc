@@ -84,6 +84,24 @@ static void NodeStatusChanged(std::string source, Ptr<const mbn::RoutingProtocol
 			<< nodez->GetLocalNodeStatus()<< std::endl;
 }
 
+static void RegisterClientOnNode (Ipv4Address source, Ipv4Address group, int node, int clientIface){
+	std::stringstream ss;
+	ss<< source<< "," << group << "," << clientIface;
+	std::stringstream command;//create a stringstream
+	command<< "NodeList/" << node << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterAsMember";
+	Config::Set(command.str(), StringValue(ss.str()));
+	NS_LOG_DEBUG(command.str()<<"::"<<ss.str());
+}
+
+static void UnRegisterClientOnNode (Ipv4Address source, Ipv4Address group, int node, int clientIface){
+	std::stringstream ss;
+	ss<< source<< "," << group << "," << clientIface;
+	std::stringstream command;//create a stringstream
+	command<< "NodeList/" << node << "/$ns3::pimdm::MulticastRoutingProtocol/UnRegisterAsMember";
+	Config::Set(command.str(), StringValue(ss.str()));
+	NS_LOG_DEBUG(command.str()<<"::"<<ss.str());
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -133,25 +151,19 @@ main (int argc, char *argv[])
 	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
 	int32_t routing = 1;
 	//Seed for random numbers
-	uint32_t seed = 1234567890;
+	uint32_t run = 1;
 	/// Animator filename
 	std::string animFile = "push-over-pim-wired.tr";
 	/// Simulation time, seconds
-	double totalTime = 100;
+	double totalTime = 400;
 	/// Video start
 	double sourceStart = 40;
-	/// Video stop
-	double sourceStop = totalTime-10;
-	/// Client start
-	double clientStart = sourceStart;
-	/// Client stop
-	double clientStop = totalTime;
 	/// Flow Monitor
 	bool enableFlowMonitor = false;
 
 	CommandLine cmd;
 	cmd.AddValue("pcap", "Write PCAP traces.", pcap);
-	cmd.AddValue("seed", "Seed Random.", seed);
+	cmd.AddValue("run", "Run sim.", run);
 	cmd.AddValue("printRoutes", "Print routing table dumps.", printRoutes);
 	cmd.AddValue("sizePim", "Number of PIM nodes.", sizePim);
 	cmd.AddValue("maxClient", "Max number of clients for each PIM router.", maxClient);
@@ -166,7 +178,15 @@ main (int argc, char *argv[])
 	// Here, we will explicitly create four nodes.  In more sophisticated
 	// topologies, we could configure a node factory.
 
-	SeedManager::SetSeed(seed);
+	/// Video stop
+	double sourceStop = totalTime-10;
+	/// Client start
+	double clientStart = sourceStart;
+	/// Client stop
+	double clientStop = totalTime;
+
+	SeedManager::SetRun(run);
+	SeedManager::SetSeed(8453*run);
 
 	NS_LOG_INFO ("Create nodes.");
 	NodeContainer source;
@@ -197,16 +217,16 @@ main (int argc, char *argv[])
 	std::list<NetDeviceContainer> rcDevices;
 	int32_t routersC [10][5]= {
 		//IFACE  0,1,2,3,4,5,6,7,8,9,
-		/*0*/	{0,1,0,0,0},
-		/*1*/	{0,1,0,0,0},
-		/*2*/	{0,1,0,0,0},
-		/*3*/	{0,1,0,0,0},
-		/*4*/	{0,1,0,0,0},
+		/*1*/	{0,-1,0,0,0},
+		/*2*/	{0,-1,0,0,0},
+		/*3*/	{0,-1,0,0,0},
+		/*4*/	{0,-1,0,0,0},
 		/*5*/	{0,1,0,0,0},
-		/*6*/	{0,1,0,0,0},
-		/*7*/	{0,1,0,0,0},
-		/*8*/	{0,1,0,0,0},
-		/*9*/	{0,1,0,0,0}
+		/*6*/	{0,-1,0,0,0},
+		/*7*/	{0,-1,0,0,0},
+		/*8*/	{0,-1,0,0,0},
+		/*9*/	{0,-1,0,0,0},
+		/*10*/	{0,-1,0,0,0}
 		};
 	std::stringstream topo;
 	for (uint32_t n = 0; n < routers.GetN() ; n++){
@@ -231,17 +251,17 @@ main (int argc, char *argv[])
 
 	NS_LOG_DEBUG("Building Routers Topology by Matrix");
 	int32_t routersM [10][10]= {
-		//   0,1,2,3,4,5,6,7,8,9,
-	/*0*/	{0,1,1,0,0,0,0,0,0,0},
-	/*1*/	{1,0,1,1,1,0,0,0,0,0},
-	/*2*/	{1,1,0,1,0,0,0,0,0,1},
-	/*3*/	{0,1,1,0,1,0,0,0,0,0},
-	/*4*/	{0,1,0,1,0,1,0,0,0,0},
-	/*5*/	{0,0,0,0,1,0,1,0,1,0},
-	/*6*/	{0,0,0,0,0,1,0,1,0,0},
-	/*7*/	{0,0,0,0,0,0,1,0,1,0},
-	/*8*/	{0,0,0,0,0,1,0,1,0,1},
-	/*9*/	{0,0,1,0,0,0,0,0,1,0}
+		//   1,2,3,4,5,6,7,8,9,10
+	/*1*/	{0,1,1,0,0,0,0,0,0,0},
+	/*2*/	{0,0,1,1,1,0,0,0,0,0},
+	/*3*/	{0,0,0,1,0,0,0,0,0,1},
+	/*4*/	{0,0,0,0,1,0,0,0,0,0},
+	/*5*/	{0,0,0,0,0,1,0,0,0,0},
+	/*6*/	{0,0,0,0,0,0,1,0,1,0},
+	/*7*/	{0,0,0,0,0,0,0,1,0,0},
+	/*8*/	{0,0,0,0,0,0,0,0,1,0},
+	/*9*/	{0,0,0,0,0,0,0,0,0,1},
+	/*10*/	{0,0,0,0,0,0,0,0,0,0}
 	};
 
 	std::list<NetDeviceContainer> rrDevices;
@@ -387,7 +407,7 @@ main (int argc, char *argv[])
 
 	std::stringstream ss;
 	// source,group,interface
-	ss<< multicastSource<< "," << multicastGroup;// << "," << "1";
+	ss<< multicastSource<< "," << multicastGroup;
 	for (int n = 0;  n < routers.GetN() ; n++){
 		std::stringstream command;//create a stringstream
 		command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterSG";
@@ -396,6 +416,10 @@ main (int argc, char *argv[])
 	for (int n = 0;  n < routers.GetN() ; n++){
 		for (uint32_t c = 0; c < 5 ; c++){
 			if (routersC[n][c] == 0 ) continue;
+			if (routersC[n][c] == -1 ) {
+				NS_LOG_DEBUG("Delayed on " << routers.Get(n)->GetId()<< " Client over "<< c);
+				continue;
+			}
 			ss.str("");
 			ss<< multicastSource<< "," << multicastGroup << "," << c;
 			std::stringstream command;//create a stringstream
@@ -484,6 +508,8 @@ main (int argc, char *argv[])
 
 	Config::ConnectWithoutContext("/NodeList/0/ApplicationList/0/$ns3::VideoPushApplication/Tx",MakeCallback (&AppTx));
 
+	Simulator::Schedule(Seconds(210), &RegisterClientOnNode, multicastSource, multicastGroup , 10, 1);
+	Simulator::Schedule(Seconds(150), &UnRegisterClientOnNode, multicastSource, multicastGroup , 5, 1);
 //	AsciiTraceHelper ascii;
 //	csma.EnableAsciiAll (ascii.CreateFileStream (animFile));
 //	csma.EnablePcapAll ("link12", false);
