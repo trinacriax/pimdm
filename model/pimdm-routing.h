@@ -402,8 +402,9 @@ private:
 
 	void SendPacketPIMUnicast (Ptr<Packet> packet, const PIMHeader &message, Ipv4Address destination);
 	void SendPacketPIMRoutersInterface (Ptr<Packet> packet, const PIMHeader &message, int32_t interface);
-	void SendPacketUnicast (Ptr<Packet> packet, Ipv4Address destination);
 	//end
+	void SendPacketInterface(Ptr<Packet> packet, int32_t interface);
+
 	void NeighborRestart (int32_t interface, Ipv4Address neighbor);
 
 	void UpdateAssertWinner (SourceGroupState *sgState, int32_t interface);

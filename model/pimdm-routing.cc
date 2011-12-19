@@ -1635,9 +1635,9 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	// Forward packet on all interfaces in oiflist.
 	Time delayMS = TransmissionDelay();
 	for(std::set<uint32_t>::iterator out = fwd_list.begin(); out != fwd_list.end(); out++){
-		Ipv4Address localAddr = GetLocalAddress(*out);
-		NS_LOG_DEBUG("DataFwd towards node ("<<*out<<") bytes: " << receivedPacket->GetSize()<< ", delay: "<<delayMS.GetSeconds()<<"ms");
-		Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketUnicast, this, receivedPacket->Copy(), localAddr.GetBroadcast());//todo check
+		int32_t o_iface = (int32_t)*out;
+		NS_LOG_DEBUG("DataFwd towards node ("<<o_iface<<") bytes: " << receivedPacket->GetSize()<< ", delay: "<<delayMS.GetSeconds()<<"ms");
+		Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketInterface, this, receivedPacket->Copy(), o_iface);//todo check
 		delayMS += TransmissionDelay();
 	}
 }
@@ -1870,25 +1870,31 @@ MulticastRoutingProtocol::SendPacketPIMUnicast(Ptr<Packet> packet, const PIMHead
 	}
 }
 
-
 void
-MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, Ipv4Address destination)
+MulticastRoutingProtocol::SendPacketInterface(Ptr<Packet> packet, int32_t interface)
 {
   if(m_stopTx) return;
   // Send
-  uint32_t rpf_i = RPF_interface(destination);
-  int32_t interface = rpf_i >0 ? rpf_i : m_ipv4->GetInterfaceForAddress(m_mainAddress);
-  Ipv4Address local = GetLocalAddress(interface);
+  NS_ASSERT_MSG(interface > 0 && interface < m_ipv4->GetNInterfaces(), "Invalid interface in SendPacketInterface");
+  if(!GetPimInterface(interface)){
+	  NS_LOG_DEBUG("Interface "<<interface<<" is PIM-DISABLED");
+	  return;
+  }
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
         m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
       {
-  	  if(local == i->second.GetLocal () ){
-  		  Ptr<Packet> copy = packet->Copy();
-  		  NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy <<"("<<copy->GetSize() << ") to Destination: " << destination << ", Interface "<<interface<<", Socket "<<i->first);
-  		  i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
-  		  break;
-  	  }
-	}
+	  Ipv4Address local = GetLocalAddress(interface);
+	  Ipv4Address l_sock = i->second.GetLocal();
+	  if(i->second.GetLocal().IsMulticast()) continue;
+	  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
+	  NS_LOG_DEBUG ("Socket ("<<i->first<<") "<< i->second.GetLocal() << " to Destination: " << bcast<< ":"<<PIM_PORT_NUMBER
+			  << ", Local "<< local << ", Device"<<  m_ipv4->GetInterfaceForDevice (i->first->GetBoundNetDevice()));
+	  if(m_ipv4->GetInterfaceForDevice (i->first->GetBoundNetDevice()) == interface && !i->second.GetLocal ().IsMulticast()){
+		  NS_LOG_LOGIC ("Node " << local << " is sending to "<< bcast<<":"<<PIM_PORT_NUMBER<<", Socket "<< i->first);
+		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
+		  break;
+	  }
+      }
 }
 
 bool
