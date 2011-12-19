@@ -2430,10 +2430,10 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp)
 void
 MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp)
 {
-	uint32_t rpf_i = RPF_interface(sgp.sourceMulticastAddr);
+	int32_t rpf_i = (int32_t) RPF_interface(sgp.sourceMulticastAddr);
 	NS_LOG_FUNCTION(this <<  rpf_i);
 //	if(!isValidGateway(rpf_i)) return AskRoute(sgp.sourceMulticastAddr);//TODO FIX for AODV
-	SourceGroupState *sgState = FindSourceGroupState(rpf_i, sgp, true); //todo fix
+	SourceGroupState *sgState = FindSourceGroupState(rpf_i, sgp, true);
 	NS_ASSERT(sgState && sgState->upstream);
 	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
