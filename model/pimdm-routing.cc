@@ -1635,16 +1635,19 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	}
 	///   Packets that fail the RPF check MUST NOT be forwarded, and the router will conduct an assert process for the (S, G) pair specified in the packet.
 	///   Packets for which a route to the source cannot be found MUST be discarded.
-	NS_LOG_DEBUG("Data forwarding towards > "<< fwd_list.size()<<" < interfaces/nodes");
+	std::stringstream ss;
+	ss << "Data forwarding interfaces: ";
 	// Forward packet on all interfaces in oiflist.
 	Time delayMS = TransmissionDelay();
 	for(std::set<uint32_t>::iterator out = fwd_list.begin(); out != fwd_list.end(); out++){
 		int32_t o_iface = (int32_t)*out;
-		NS_LOG_DEBUG("DataFwd towards node ("<<o_iface<<") bytes: " << receivedPacket->GetSize()<< ", delay: "<<delayMS.GetSeconds()<<"ms");
+//		NS_LOG_DEBUG("DataFwd towards interface "<<o_iface<<" : Bytes " << receivedPacket->GetSize()<< " Delay "<<delayMS.GetSeconds()<<"ms");
+		ss<<o_iface<<", ";
 		Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketInterface, this, receivedPacket->Copy(), o_iface);//todo check
 		delayMS += TransmissionDelay();
 	}
-}
+	NS_LOG_DEBUG(ss.str());
+	}
 
 void
 MulticastRoutingProtocol::RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver, int32_t interface)
