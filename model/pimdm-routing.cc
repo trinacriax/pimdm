@@ -2577,23 +2577,19 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 			//This timer is set when a Prune(S, G) is received on the upstream interface where olist(S, G) != NULL.
 			//	When the timer expires, a Join(S, G) message is sent on the upstream interface.  This timer
 			//	is normally set to t_override (see 4.8).
-//			std::set<uint32_t> pruneList = olist(iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress);
-//			for(std::set<uint32_t>::const_iterator iterList = pruneList.begin(); iterList != pruneList.end(); iterList++){
-//				int32_t out_interface = iterList->first;
 				SourceGroupPair sgp (iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress, sender);
-				if(IsUpstream(interface, sgp)){
-					SourceGroupState *sgState = FindSourceGroupState(interface, sgp, true);
-					NS_ASSERT(sgState->upstream);
-					NS_LOG_LOGIC("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
-					if(sgState->upstream->SG_OT.IsRunning())
-						sgState->upstream->SG_OT.Cancel();
-					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
-					sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
-					sgState->upstream->SG_OT.SetArguments(sgp, interface);
-					sgState->upstream->SG_OT.Schedule();
-				}
+//				if(IsUpstream(interface, sgp)){
+//					SourceGroupState *sgState = FindSourceGroupState(interface, sgp, true);
+//					NS_ASSERT(sgState->upstream);
+//					NS_LOG_LOGIC("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
+//					if(sgState->upstream->SG_OT.IsRunning())
+//						sgState->upstream->SG_OT.Cancel();
+//					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
+//					sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
+//					sgState->upstream->SG_OT.SetArguments(sgp, interface);
+//					sgState->upstream->SG_OT.Schedule();
+//				}
 				RecvPrune(jp, sender, receiver, interface, *iterPrune, iter->m_multicastGroupAddr);
-//			}
 		}
 	}
 }
