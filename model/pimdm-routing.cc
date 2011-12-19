@@ -3725,11 +3725,11 @@ void MulticastRoutingProtocol::SetOverrideInterval (int32_t interface, Time inte
 }
 
 void MulticastRoutingProtocol::GetPrinterList (std::string string, std::set<uint32_t > resB){
-	std::cout<<string<<": ";
+	std::cout<<string<<" <";
 	for (std::set<uint32_t >::iterator iter = resB.begin (); iter!= resB.end (); iter++){
-		std::cout<<"("<<*iter<<") ";
+		std::cout<<*iter<<", ";
 	}
-	std::cout<< (resB.begin () == resB.end ()?"-":".")<<"\n";
+	std::cout<< (resB.begin () == resB.end ()?"empty":".>")<<"\n";
 }
 
 void MulticastRoutingProtocol::SetLANDelayEnabled (int32_t interface, bool state) {
