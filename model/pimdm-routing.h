@@ -240,6 +240,7 @@ public:
 	std::vector<RoutingMulticastTable> GetRoutingTableEntries () const;
 
 	void register_member (std::string SGI);
+	void unregister_member (std::string SGI);
 	void register_SG (std::string SG);
 
 	void UpdateMRIB (){}
