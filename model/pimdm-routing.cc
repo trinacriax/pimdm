@@ -1470,28 +1470,28 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 {
 	NS_LOG_FUNCTION(this);
 	NS_ASSERT(interface);
-	Ipv4Address source, group, sender, gateway;
+	Ipv4Address source, group, gateway;
 	Ptr<Packet> copy = receivedPacket->Copy();// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
 	Ipv4Header sourceHeader;
 	RelayTag relayTag;
 	copy->RemoveHeader(sourceHeader);
 	source = sourceHeader.GetSource();
 	group = sourceHeader.GetDestination();
-	sender = senderIfaceAddr;
 	Ptr<Ipv4Route> rpf_route = GetRoute(source);
 	gateway = rpf_route->GetGateway();
-	int32_t gatewayIface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
 	SocketAddressTag satag;
 	copy->RemovePacketTag(satag); // LOOK: it must be removed because will be added again by socket.
 	NS_ASSERT (group.IsMulticast());
-	NS_LOG_LOGIC("Group "<<group<<" Source "<< source<< " Sender ("<< sender<<", " << interface<<") -- Gateway ("<<gateway<< ", " << gatewayIface << ")");
-	NS_LOG_LOGIC("\tLocal "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source)<<" PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
+	int32_t rpf_i = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
+	NS_LOG_LOGIC("("<<source<<", "<<group<<") From I " << interface<<" RPF " << rpf_i<<" RPF' "<<gateway);
+//	NS_LOG_LOGIC("\tLocal "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source)<<" PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
 	NS_ASSERT(group.IsMulticast());
-	SourceGroupPair sgp (source, group, sender);
+	SourceGroupPair sgp (source, group, gateway);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp, true);
 	RPFCheck (sgp);
-	std::set<uint32_t> fwd_list = olist(source, group);
+	std::set<uint32_t> fwd_list;
 	if(IsUpstream(interface, sgp)){ /*sender in on the RPF towards the source*/
+		fwd_list = olist(source, group);
 		switch (sgState->upstream->GraftPrune){
 			//The Upstream(S, G) state machine MUST transition to the Pruned (P)
 			// state, send a Prune(S, G) to RPF'(S), and set PLT(S, G) to t_limit seconds.
@@ -1503,9 +1503,9 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 						sgState->upstream->SG_PLT.Cancel();
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
-					sgState->upstream->SG_PLT.SetArguments(sgp, sender);
+					sgState->upstream->SG_PLT.SetArguments(sgp, gateway);
 					sgState->upstream->SG_PLT.Schedule();
-					SendPruneUnicast(sender, sgp);
+					SendPruneUnicast(gateway, sgp);
 					return;
 					}
 					break;
@@ -1514,9 +1514,9 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 				if(!sgState->upstream->SG_PLT.IsRunning() && gateway != source){
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
-					sgState->upstream->SG_PLT.SetArguments(sgp, sender);
+					sgState->upstream->SG_PLT.SetArguments(sgp, gateway);
 					sgState->upstream->SG_PLT.Schedule();
-					SendPruneUnicast(sender, sgp);
+					SendPruneUnicast(gateway, sgp);
 					return;
 					}
 					break;
@@ -1596,13 +1596,13 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			//	An (S, G) data packet arrived on a downstream interface.
 			//	The Assert state machine remains in the "I am Assert Winner" state.
 			//	The router MUST send an Assert(S, G) to interface I and set the Assert Timer (AT(S, G, I) to Assert_Time.
-				//if(!IsDownstream(interface, sgp)) NS_LOG_ERROR("Packet received on Upstream interface! Assert_NoInfo");//WIRED
+				NS_LOG_DEBUG("AssertNegotiation: Assert_NoInfo -> Assert_Winner. Sending Assert to interface "<<interface);
 				sgState->AssertState = Assert_Winner;
 				UpdateAssertWinner(sgState, interface);
 				PIMHeader assert;
 				ForgeAssertMessage(interface, assert, sgp);
 				Ptr<Packet> packetA = Create<Packet> ();
-				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterUnicast, this, packetA, assert, sender);
+				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterInterface, this, packetA, assert, interface);
 				if(sgState->SG_AT.IsRunning())
 					sgState->SG_AT.Cancel();
 				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
@@ -3182,7 +3182,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 						sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
 						sgState->upstream->SG_PLT.SetArguments(sgp, interface);
 						sgState->upstream->SG_PLT.Schedule();
-						SendPruneUnicast(sender, sgp);
+						SendPruneUnicast(RPF_prime(sgp), sgp);
 					}
 				else if(refresh.m_P){
 					if(sgState->upstream->SG_PLT.IsRunning())
