@@ -1165,6 +1165,7 @@ MulticastRoutingProtocol::SendStateRefreshMessage (int32_t interface, Ipv4Addres
 			sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
 			sgState->SG_PT.SetArguments(sgp, interface);
 			sgState->SG_PT.Schedule();
+			NS_LOG_DEBUG("Schedule PTTimerExpire on interface "<< interface<<".");
 			break;
 		}
 		default:
@@ -1352,6 +1353,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 			//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 			//	The Upstream(S, G) state machine stays in the Pruned (P) state and MUST cancel the PLT(S, G) timer.
 				sgState->upstream->SG_PLT.Cancel();
+				NS_LOG_DEBUG("Cancel Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
 			}
 			if(outlist.size()>0 && sgp.sourceMulticastAddr != gatewayN){
 			//RPF'(S) Changes AND olist(S, G) == non-NULL AND S NOT directly connected
@@ -1359,6 +1361,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 			//	The Upstream(S, G) state machine MUST cancel PLT(S, G), transition to the AckPending (AP) state,
 			//	send a Graft unicast to the new RPF'(S), and set the GraftRetry Timer (GRT(S, G)) to Graft_Retry_Period.
 				sgState->upstream->SG_PLT.Cancel();
+				NS_LOG_DEBUG("Cancel Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
 				sgState->upstream->GraftPrune = GP_AckPending;
 				SendGraftUnicast(gatewayN, sgp);
 				if(sgState->upstream->SG_GRT.IsRunning())
@@ -1536,12 +1539,15 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 				if(fwd_list.size() == 0 && gateway != source && !GetMulticastGroup(group)){
 					olistCheck(sgp, fwd_list);//CHECK: olist is null and S not directly connected
 					sgState->upstream->GraftPrune = GP_Pruned;
-					if(sgState->upstream->SG_PLT.IsRunning())
+					if(sgState->upstream->SG_PLT.IsRunning()){
 						sgState->upstream->SG_PLT.Cancel();
+						NS_LOG_DEBUG("Cancel Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
+					}
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
 					sgState->upstream->SG_PLT.SetArguments(sgp, gateway);
 					sgState->upstream->SG_PLT.Schedule();
+					NS_LOG_DEBUG("Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
 					SendPruneUnicast(gateway, sgp);
 					return;
 					}
@@ -1553,6 +1559,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
 					sgState->upstream->SG_PLT.SetArguments(sgp, gateway);
 					sgState->upstream->SG_PLT.Schedule();
+					NS_LOG_DEBUG("Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
 					SendPruneUnicast(gateway, sgp);
 					return;
 					}
@@ -1753,9 +1760,10 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 			//	The router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
 			case Prune_Pruned:{
 				sgState->PruneState = Prune_NoInfo;
+				NS_LOG_DEBUG ("Grafting Prune_Pruned -> Prune_NoInfo. Ack to "<<sender);
 				SendGraftAckUnicast(sgp, sender);
-				if(sgState->SG_PPT.IsRunning())
-					sgState->SG_PPT.Cancel();
+				if(sgState->SG_PT.IsRunning()) /// was PPT
+					sgState->SG_PT.Cancel();
 				UpstreamStateMachine(sgp);
 				break;
 			}
@@ -1876,6 +1884,7 @@ MulticastRoutingProtocol::NeighborRestart (int32_t interface, Ipv4Address neighb
 			sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
 			sgState->SG_PT.SetArguments(sgState->SGPair, interface);
 			sgState->SG_PT.Schedule();
+			NS_LOG_DEBUG("Schedule PTTimerExpire on interface "<< interface<<". Sending prune to " <<neighbor);
 			Simulator::Schedule (Seconds(0), &MulticastRoutingProtocol::SendPruneUnicast, this, neighbor, sgState->SGPair);
 		}
 	}
@@ -1995,12 +2004,13 @@ MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address dest
 	SourceGroupState *sgState = FindSourceGroupState(rpf_i, sgp);
 	if(!IsUpstream(rpf_i, sgp)) return; // interface changed
 	if(sgState->PruneState == Prune_Pruned) return;
+	NS_LOG_DEBUG ("PLTTimerExpire "<< sgState->PruneState<< " Sending prune to "<<destination);
 	SendPruneUnicast(destination, sgp);
-	if(sgState->upstream->SG_PLT.IsRunning())
-		sgState->upstream->SG_PLT.Cancel();
+	sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 	sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
 	sgState->upstream->SG_PLT.SetArguments(sgp, destination);
 	sgState->upstream->SG_PLT.Schedule();
+	NS_LOG_DEBUG("Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
 }
 
 void
@@ -2206,6 +2216,7 @@ MulticastRoutingProtocol::PTTimerExpire (SourceGroupPair &sgp, int32_t interface
 		//	The Prune(S, G) Downstream state machine on interface I MUST transition to the NoInfo (NI) state.
 		//	The router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
 			sgState->PruneState = Prune_NoInfo;
+			NS_LOG_DEBUG ("PTTimerExpire Prune_Pruned -> Prune_NoInfo.");
 			UpstreamStateMachine(sgp);
 			break;
 		}
@@ -2373,12 +2384,15 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp)
 				sgState ->upstream->GraftPrune = GP_Pruned;
 				Ipv4Address gateway = RPF_prime(sgp.sourceMulticastAddr, sgp.groupMulticastAddr);
 				SendPruneUnicast(gateway, sgp);
-				if(sgState->upstream->SG_PLT.IsRunning())
+				if(sgState->upstream->SG_PLT.IsRunning()){
 					sgState->upstream->SG_PLT.Cancel();
+					NS_LOG_DEBUG("Cancel Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
+				}
 				sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 				sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
 				sgState->upstream->SG_PLT.SetArguments(sgp, gateway);
 				sgState->upstream->SG_PLT.Schedule();
+				NS_LOG_DEBUG("Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
 			}
 			break;
 		}
@@ -2433,9 +2447,12 @@ MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp)
         //   The Upstream(S, G) state machine MUST cancel PLT(S, G), transition to the AckPending (AP) state and unicast a Graft message to RPF'(S).
         //   The Graft Retry Timer (GRT(S, G)) MUST be set to Graft_Retry_Period.
 			Ipv4Address rpf_prime = GetNextHop(sgp.sourceMulticastAddr);
+			NS_ASSERT_MSG(rpf_prime!= sgp.sourceMulticastAddr, "Source's neighbor cannot be pruned!");
 			if(rpf_prime!= sgp.sourceMulticastAddr){
 				sgState->upstream->SG_PLT.Cancel();
+				NS_LOG_DEBUG("Cancel Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
 				sgState->upstream->GraftPrune = GP_AckPending;
+				NS_LOG_DEBUG ("Grafting in olistFull GP_Pruned -> GP_AckPending. Sending graft to "<< rpf_prime);
 				SendGraftUnicast(rpf_prime, sgp);
 				sgState->upstream->SG_GRT.Cancel();
 				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
@@ -2703,12 +2720,15 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 		//	The router MAY reset its PLT(S, G) to the value in the Holdtime field of the received message
 		//	if it is greater than the current value of the PLT(S, G).
 			if(GetNextHop(source.m_sourceAddress) == sender && jp.m_joinPruneMessage.m_holdTime>sgState->upstream->SG_PLT.GetDelay()){
-				if(sgState->upstream->SG_PLT.IsRunning())
+				if(sgState->upstream->SG_PLT.IsRunning()){
 					sgState->upstream->SG_PLT.Cancel();
+					NS_LOG_DEBUG("Cancel Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
+				}
 				sgState->upstream->SG_PLT.SetDelay(jp.m_joinPruneMessage.m_holdTime);
 				sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
 				sgState->upstream->SG_PLT.SetArguments(sgp, sender);
 				sgState->upstream->SG_PLT.Schedule();
+				NS_LOG_DEBUG("Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
 			}
 			break;
 		}
@@ -2784,6 +2804,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 					sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
 					sgState->SG_PT.SetArguments(sgp, interface);
 					sgState->SG_PT.Schedule();
+					NS_LOG_DEBUG("Schedule PTTimerExpire on interface "<< interface<<".");
 				}
 			}
 			break;
@@ -3219,15 +3240,19 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 						sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
 						sgState->upstream->SG_PLT.SetArguments(sgp, interface);
 						sgState->upstream->SG_PLT.Schedule();
+						NS_LOG_DEBUG("Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
 						SendPruneUnicast(RPF_prime(sgp), sgp);
 					}
 				else if(refresh.m_P){
-					if(sgState->upstream->SG_PLT.IsRunning())
+					if(sgState->upstream->SG_PLT.IsRunning()){
 						sgState->upstream->SG_PLT.Cancel();
+						NS_LOG_DEBUG("Cancel Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
+					}
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
 					sgState->upstream->SG_PLT.SetArguments(sgp, interface);
 					sgState->upstream->SG_PLT.Schedule();
+					NS_LOG_DEBUG("Schedule PLT "<< sgState->upstream->SG_PLT.GetDelay());
 				}
 				break;
 			}
