@@ -1947,7 +1947,9 @@ void
 MulticastRoutingProtocol::SendPacketInterface(Ptr<Packet> packet, int32_t interface)
 {
   if(m_stopTx) return;
-  // Send
+  // trace
+  m_txDataPacketTrace (packet);
+  //send
   NS_ASSERT_MSG(interface > 0 && interface < m_ipv4->GetNInterfaces(), "Invalid interface in SendPacketInterface");
   if(!GetPimInterface(interface)){
 	  NS_LOG_DEBUG("Interface "<<interface<<" is PIM-DISABLED");
