@@ -92,6 +92,10 @@ MulticastRoutingProtocol::GetTypeId (void)
 					StringValue("0,0,0"),
 					MakeStringAccessor(&MulticastRoutingProtocol::register_member),
 					MakeStringChecker())
+	.AddAttribute ("UnRegisterAsMember", "UnRegister as a member of the group. Tuple (group, source, interface).",
+					StringValue("0,0,0"),
+					MakeStringAccessor(&MulticastRoutingProtocol::unregister_member),
+					MakeStringChecker())
 	.AddAttribute ("RPFCheckInterval", "RPF check interval.",
 					TimeValue (Seconds (RPF_CHECK)),
 					MakeTimeAccessor (&MulticastRoutingProtocol::m_rpfCheck),
@@ -165,6 +169,33 @@ MulticastRoutingProtocol::GetMetricPreference(int32_t interface)
 	return 1;
 }
 
+void
+MulticastRoutingProtocol::unregister_member (std::string csv){
+	NS_LOG_FUNCTION(this);
+	Ipv4Address group, source;
+	int32_t interface;
+	std::vector<std::string> tokens;
+	Tokenize(csv, tokens, ",");
+	if(tokens.size()!= 3) return;
+	source = Ipv4Address(tokens.at(0).c_str());
+	group = Ipv4Address(tokens.at(1).c_str());
+	interface = atoi(tokens.at(2).c_str());
+	tokens.clear();
+	if(source == group && interface == 0) return;//skip initialization
+	NS_LOG_LOGIC("UnRegister interface with members for ("<<source<<","<<group<<") over interface "<< interface);
+	SourceGroupPair sgp (source,group);
+	if(m_LocalReceiver.find(sgp)->second.find(interface) != m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
+		m_LocalReceiver.find(sgp)->second.erase(interface);
+		NS_LOG_DEBUG("Removing interface " << interface<< " from ("<<source<<","<<group<<")");
+	}
+	if(m_LocalReceiver.find(sgp)!=m_LocalReceiver.end() && m_LocalReceiver.find(sgp)->second.size() == 0){
+		m_LocalReceiver.erase(sgp);
+		NS_LOG_DEBUG("Removing Source-Group ("<<source<<","<<group<<") to the map");
+	}
+	else NS_LOG_DEBUG("No clients on interface " << interface<< " for ("<<source<<","<<group<<")");
+	int32_t sources = m_mrib.find(group)->second.mgroup.size();
+	UpstreamStateMachine(sgp);
+}
 
 void
 MulticastRoutingProtocol::register_member (std::string csv){
