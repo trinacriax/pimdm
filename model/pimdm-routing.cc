@@ -225,6 +225,7 @@ MulticastRoutingProtocol::register_member (std::string csv){
 	else NS_LOG_DEBUG("Interface " << interface<< " already registered for ("<<source<<","<<group<<")");
 	int32_t sources = m_mrib.find(group)->second.mgroup.size();
 	NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< sources << " #Clients "<< m_LocalReceiver.find(sgp)->second.size());
+	UpstreamStateMachine(sgp);
 }
 
 void
