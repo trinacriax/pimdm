@@ -104,12 +104,12 @@ MulticastRoutingProtocol::GetTypeId (void)
 					TimeValue (Seconds (Propagation_Delay)),
 					MakeTimeAccessor (&MulticastRoutingProtocol::m_LanDelay),
 					MakeTimeChecker ())
-	.AddTraceSource ("Rx", "Receive PIM packet.",
-					 MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxPacketTrace))
-	.AddTraceSource ("Tx", "Send PIM packet.",
-					 MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txPacketTrace))
     .AddTraceSource ("RoutingTableChanged", "The PIM-DM routing table has changed.",
 		     MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_routingTableChanged))
+	.AddTraceSource ("RxPIM", "Trace PIM packet received.",
+					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxPacketTrace))
+	.AddTraceSource ("TxPIM", "Trace PIM packet sent.",
+					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txPacketTrace))
 
     ;
   return tid;
