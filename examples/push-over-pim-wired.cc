@@ -123,7 +123,7 @@ main (int argc, char *argv[])
 	/// Print routes if true
 	bool printRoutes = true;
 	/// Number of PIM nodes
-	uint32_t sizePim = 6;
+	uint32_t sizePim = 10;
 	/// Number of client nodes
 	uint32_t maxClient = 5;
 	/// Animator filename
@@ -137,9 +137,9 @@ main (int argc, char *argv[])
 	/// Animator filename
 	std::string animFile = "push-over-pim-wired.tr";
 	/// Simulation time, seconds
-	double totalTime = 80;
+	double totalTime = 100;
 	/// Video start
-	double sourceStart = 30;
+	double sourceStart = 40;
 	/// Video stop
 	double sourceStop = totalTime-10;
 	/// Client start
@@ -189,54 +189,107 @@ main (int argc, char *argv[])
 	CsmaHelper csma;
 	csma.SetChannelAttribute ("DataRate", DataRateValue (DataRate (5000000)));
 	csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
-//	csma.SetDeviceAttribute ("EncapsulationMode", StringValue ("Llc"));
+//	csma.SetDeviceAttribute ("EncapsulationM8ode", StringValue ("Llc"));
 
 	// Defines connections between routers and clients
 
-	NodeContainer join;
+	NS_LOG_DEBUG("Building Clients Topology by Matrix");
 	std::list<NetDeviceContainer> rcDevices;
-	for (uint32_t c = 0; c < routers.GetN() ; c++){
-		uint32_t n_clients = UniformVariable().GetInteger(0,maxClient);
-		NS_LOG_DEBUG("Node "<< c << " has " << n_clients << " clients on interface 1");
-		if( n_clients < 2) continue;
-		NodeContainer nc;
-		nc.Add(routers.Get(c));
-		join.Add(routers.Get(c));
-		NodeContainer clients;
-		clients.Create(n_clients);
-		nc.Add(clients);
-		all_clients.Add(clients);
-		rcDevices.push_back(csma.Install (nc));
+	int32_t routersC [10][5]= {
+		//IFACE  0,1,2,3,4,5,6,7,8,9,
+		/*0*/	{0,1,0,0,0},
+		/*1*/	{0,1,0,0,0},
+		/*2*/	{0,1,0,0,0},
+		/*3*/	{0,1,0,0,0},
+		/*4*/	{0,1,0,0,0},
+		/*5*/	{0,1,0,0,0},
+		/*6*/	{0,1,0,0,0},
+		/*7*/	{0,1,0,0,0},
+		/*8*/	{0,1,0,0,0},
+		/*9*/	{0,1,0,0,0}
+		};
+	std::stringstream topo;
+	for (uint32_t n = 0; n < routers.GetN() ; n++){
+		topo << "Router " << routers.Get(n)->GetId() <<" Clients on interface :";
+		NetDeviceContainer ndc;
+		for (uint32_t c = 0; c < 5 ; c++){
+			if (routersC[n][c] == 0 ) continue;
+			uint32_t n_clients = UniformVariable().GetInteger(1,maxClient);
+			topo<< c <<" (" << n_clients << ")" << ",";
+			NodeContainer clients;
+			clients.Create(n_clients); // create clients
+			NodeContainer nc;
+			nc.Add(routers.Get(n));
+			nc.Add(clients);
+			all_clients.Add(clients); //add all clients
+			ndc = csma.Install (nc); //create the lan covering router and its clients
+			rcDevices.push_back(ndc); // add the NetDeviceContainer in the Routers-Clients device
+		}
+		NS_LOG_DEBUG(topo.str()<< " Devices "<< routers.Get(n)->GetNDevices());
+		topo.str("");
 	}
 
+	NS_LOG_DEBUG("Building Routers Topology by Matrix");
+	int32_t routersM [10][10]= {
+		//   0,1,2,3,4,5,6,7,8,9,
+	/*0*/	{0,1,1,0,0,0,0,0,0,0},
+	/*1*/	{1,0,1,1,1,0,0,0,0,0},
+	/*2*/	{1,1,0,1,0,0,0,0,0,1},
+	/*3*/	{0,1,1,0,1,0,0,0,0,0},
+	/*4*/	{0,1,0,1,0,1,0,0,0,0},
+	/*5*/	{0,0,0,0,1,0,1,0,1,0},
+	/*6*/	{0,0,0,0,0,1,0,1,0,0},
+	/*7*/	{0,0,0,0,0,0,1,0,1,0},
+	/*8*/	{0,0,0,0,0,1,0,1,0,1},
+	/*9*/	{0,0,1,0,0,0,0,0,1,0}
+	};
+
 	std::list<NetDeviceContainer> rrDevices;
-	for (uint32_t n = 0; n < sizePim; n++){
+	for (uint32_t n = 0; n < routers.GetN(); n++){
+		topo << "Node " << routers.Get(n)->GetId() << "(D="<<routers.Get(n)->GetNDevices()<<"): ";
 		NetDeviceContainer ndc;
-		if(n + 1 < sizePim && !((n+1)%cols == 0)){
+		for (uint32_t m = n+1; m < routers.GetN() ; m++){
+			if(routersM[n][m] == 0) continue;
+			topo << routers.Get(m)->GetId() << ",";
 			NodeContainer dx;
-			uint16_t p = n+1;
 			dx.Add(routers.Get(n));
-			dx.Add(routers.Get(p));
+			dx.Add(routers.Get(m));
 			ndc = csma.Install (dx);
-			NS_LOG_DEBUG("Node "<< n << " <--> "<< p << " :: " << ndc.GetN());
 			rrDevices.push_back(ndc);
 		}
-		if(n + cols < sizePim){
-			NodeContainer dw;
-			uint16_t p = n+cols;
-			dw.Add(routers.Get(n));
-			dw.Add(routers.Get(p));
-			ndc = csma.Install (dw);
-			NS_LOG_DEBUG("Node "<< n << " <--> "<< p << " :: " << ndc.GetN());
-			rrDevices.push_back(ndc);
-		}
+		NS_LOG_DEBUG(topo.str()<< " Devices "<< routers.Get(n)->GetNDevices());
+		topo.str("");
 	}
+//	/* GRID TOPOLOGY*/
+//	std::list<NetDeviceContainer> rrDevices;
+//	for (uint32_t n = 0; n < sizePim; n++){
+//		NetDeviceContainer ndc;
+//		if(n + 1 < sizePim && !((n+1)%cols == 0)){
+//			NodeContainer dx;
+//			uint16_t p = n+1;
+//			dx.Add(routers.Get(n));
+//			dx.Add(routers.Get(p));
+//			ndc = csma.Install (dx);
+//			NS_LOG_DEBUG("Node "<< n << " <--> "<< p << " :: " << ndc.GetN());
+//			rrDevices.push_back(ndc);
+//		}
+//		if(n + cols < sizePim){
+//			NodeContainer dw;
+//			uint16_t p = n+cols;
+//			dw.Add(routers.Get(n));
+//			dw.Add(routers.Get(p));
+//			ndc = csma.Install (dw);
+//			NS_LOG_DEBUG("Node "<< n << " <--> "<< p << " :: " << ndc.GetN());
+//			rrDevices.push_back(ndc);
+//		}
+//	}
 
 	// Source 0 -> Node 0
 	NodeContainer s0r0;
 	s0r0.Add(source.Get(0));
 	s0r0.Add(routers.Get(0));
 	NetDeviceContainer ds0dr0 = csma.Install (s0r0);
+	NS_LOG_DEBUG("Node " << routers.Get(0)->GetId() << " Devices "<<routers.Get(0)->GetNDevices());
 
 	// INSTALL INTERNET STACK
 	// Enable AODV
@@ -301,7 +354,7 @@ main (int argc, char *argv[])
 		//evitare il loop
 	}
 
-	base = Ipv4Address(base.Get()+2560);
+	base = Ipv4Address(base.Get()+(256*10));
 	ipv4.SetBase (base, "255.255.255.0");
 	while(!rrDevices.empty()){
 		NS_LOG_DEBUG("IP Base "<<base);
@@ -340,12 +393,15 @@ main (int argc, char *argv[])
 		command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterSG";
 		Config::Set(command.str(), StringValue(ss.str()));
 	}
-	ss.str("");
-	ss<< multicastSource<< "," << multicastGroup << "," << "1";
-	for (int n = 0;  n < join.GetN() ; n++){
-		std::stringstream command;//create a stringstream
-		command<< "NodeList/" << join.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterAsMember";
-		Config::Set(command.str(), StringValue(ss.str()));
+	for (int n = 0;  n < routers.GetN() ; n++){
+		for (uint32_t c = 0; c < 5 ; c++){
+			if (routersC[n][c] == 0 ) continue;
+			ss.str("");
+			ss<< multicastSource<< "," << multicastGroup << "," << c;
+			std::stringstream command;//create a stringstream
+			command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterAsMember";
+			Config::Set(command.str(), StringValue(ss.str()));
+		}
 	}
 	switch(routing){
 			case 1:{
