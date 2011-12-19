@@ -2355,6 +2355,8 @@ MulticastRoutingProtocol::SATTimerExpire (SourceGroupPair &sgp, int32_t interfac
 void MulticastRoutingProtocol::UpstreamStateMachine(SourceGroupPair &sgp){
 	NS_LOG_FUNCTION(this<<sgp);
 	uint32_t rpf_i = RPF_interface(sgp.sourceMulticastAddr);
+	if(rpf_i <0 || rpf_i > m_ipv4->GetNInterfaces())
+		return;
 	std::set<uint32_t> list = olist(sgp.sourceMulticastAddr, sgp.groupMulticastAddr);
 	olistCheck(sgp, list);
 }
