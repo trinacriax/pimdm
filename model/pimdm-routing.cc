@@ -4214,6 +4214,7 @@ std::set<WiredEquivalentInterface > MulticastRoutingProtocol::lost_assert (Ipv4A
 		if (IsLoopInterface (i)) continue;
 		for(std::map<WiredEquivalentInterface, SourceGroupList>::iterator iter = m_IfaceSourceGroup.begin();
 				iter != m_IfaceSourceGroup.end(); iter++){
+			if ( i != iter->first.first) continue;
 			SourceGroupState *sgState = FindSourceGroupState (i, iter->first.second, sgp);
 			if (!sgState) continue;
 			if (lost_assert (source, group, i, iter->first.second))
