@@ -4114,13 +4114,10 @@ std::set<uint32_t > MulticastRoutingProtocol::lost_assert (Ipv4Address source, I
 	SourceGroupPair sgp (source, group);
 	for (int32_t i = 0; i < m_ipv4->GetNInterfaces (); i++) {
 		if (IsLoopInterface (i)) continue;
-		for(std::map<uint32_t, SourceGroupList>::iterator iter = m_IfaceSourceGroup.begin();
-				iter != m_IfaceSourceGroup.end(); iter++){
 			SourceGroupState *sgState = FindSourceGroupState (i, sgp);
 			if (!sgState) continue;
 			if (lost_assert (source, group, i))
-				set.insert (iter->first);
-		}
+				set.insert (i);
 	}
 	return set;
 }
