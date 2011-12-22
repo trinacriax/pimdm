@@ -154,12 +154,13 @@ main (int argc, char *argv[])
 	uint32_t run = 1;
 	/// Animator filename
 	std::string animFile = "push-over-pim-wired.tr";
+	std::string flowFile = "results.xml";
 	/// Simulation time, seconds
 	double totalTime = 400;
 	/// Video start
 	double sourceStart = 40;
 	/// Flow Monitor
-	bool enableFlowMonitor = false;
+	bool enableFlowMonitor = true;
 
 	CommandLine cmd;
 	cmd.AddValue("pcap", "Write PCAP traces.", pcap);
@@ -241,8 +242,8 @@ main (int argc, char *argv[])
 			NodeContainer nc;
 			nc.Add(routers.Get(n));
 			nc.Add(clients);
-			all_clients.Add(clients); //add all clients
-			ndc = csma.Install (nc); //create the lan covering router and its clients
+			all_clients.Add(clients); // add all clients
+			ndc = csma.Install (nc);  // create the lan covering router and its clients
 			rcDevices.push_back(ndc); // add the NetDeviceContainer in the Routers-Clients device
 		}
 		NS_LOG_DEBUG(topo.str()<< " Devices "<< routers.Get(n)->GetNDevices());
@@ -515,12 +516,15 @@ main (int argc, char *argv[])
 //	csma.EnablePcapAll ("link12", false);
 
 	// Flow Monitor
-//	Ptr<FlowMonitor> flowmon;
-//	if (enableFlowMonitor)
-//	{
-//	  FlowMonitorHelper flowmonHelper;
-//	  flowmon = flowmonHelper.InstallAll ();
-//	}
+	Ptr<FlowMonitor> flowmon;
+	if (enableFlowMonitor)
+	{
+	  FlowMonitorHelper flowmonHelper;
+	  flowmon = flowmonHelper.InstallAll ();
+	  flowmon->SetAttribute("DelayBinWidth", DoubleValue(0.001));
+	  flowmon->SetAttribute("JitterBinWidth",DoubleValue(0.001));
+	  flowmon->SetAttribute("PacketSizeBinWidth", DoubleValue(20));
+	}
 
 	NS_LOG_INFO ("Run Simulation.");
 	Simulator::Stop (Seconds (totalTime));
@@ -528,10 +532,10 @@ main (int argc, char *argv[])
 	NS_LOG_INFO ("Done.");
 
 
-//	if (enableFlowMonitor)
-//	{
-//	  flowmon->SerializeToXmlFile (animFile, false, false);
-//	}
+	if (enableFlowMonitor)
+	{
+	  flowmon->SerializeToXmlFile (flowFile, true, true);
+	}
 
 	Simulator::Destroy ();
 	return 0;
