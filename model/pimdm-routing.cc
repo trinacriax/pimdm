@@ -1703,12 +1703,10 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			NS_LOG_DEBUG("DataFwd towards node ("<<out->second <<", "<< out->first <<") bytes: " << fwdPacket->GetSize()<< ", delay: "<<delayMS.GetSeconds()<<"ms");
 			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketUnicast, this, fwdPacket, out->second);
 		}
-//		else{
-//			relyTag.m_rely = 2;//to Clients
-//			fwdPacket->AddPacketTag(relyTag);
-//			NS_LOG_DEBUG("DataFwd towards clients ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
-//			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
-//		}
+		else{
+			NS_LOG_DEBUG("DataFwd towards clients ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
+			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
+		}
 		delayMS += TransmissionDelay();
 	}
 }
@@ -1969,20 +1967,19 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
 {
 	if(m_stopTx) return;
 	NS_LOG_FUNCTION(this);
-	// Send it
-	Ipv4Header senderHeader;
-	UdpHeader udpHeader;
-	packet->RemoveHeader(senderHeader);
-	packet->RemoveHeader(udpHeader);
-	Ipv4Address remote = senderHeader.GetDestination();
+	// Send it ***
 	for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
 	  m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
 	{
 	  NS_LOG_DEBUG("Local "<<i->second.GetLocal()<<", Broad "<<i->second.GetBroadcast()<<", Mask "<<i->second.GetMask());
 	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
 		  packet->AddHeader(ipv4Header);
-		  NS_LOG_LOGIC ("Node " << GetObject<Node> ()->GetId() << " is forwarding packet " << packet <<"("<<packet->GetSize() << ") to Destination "<< ipv4Header.GetDestination() <<", Interface "<< interface<< ", Pid "<< packet->GetUid()<<", Socket "<<i->first);
-		  i->first->SendTo (packet, 0, InetSocketAddress (remote));
+		  RelayTag relayTag;
+		  relayTag.m_sender = i->second.GetLocal();
+		  relayTag.m_receiver = i->second.GetBroadcast();
+		  packet->AddPacketTag(relayTag);
+		  NS_LOG_LOGIC ("Node " << GetObject<Node> ()->GetId() << " is forwarding packet " << packet <<"("<<packet->GetSize() << ") to Destination "<< ipv4Header.GetDestination() << " ("<< relayTag.m_receiver<<") " <<", Interface "<< interface<< ", Pid "<< packet->GetUid()<<", Socket "<<i->first);
+		  i->first->SendTo (packet, 0, InetSocketAddress (i->second.GetBroadcast()));
 		  break; // Just to speedup and avoid the complete loop over all sockets.
 	  }
 	}
