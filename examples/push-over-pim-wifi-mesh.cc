@@ -50,6 +50,7 @@
 #include "ns3/olsr-helper.h"
 
 #include "ns3/pimdm-helper.h"
+#include "ns3/pimdm-packet.h"
 #include "ns3/pimdm-routing.h"
 
 #include "ns3/video-helper.h"
@@ -96,12 +97,32 @@ GetNodeID (std::string context){
 
 static void AppTx (Ptr<const Packet> p)
 {
-std::cout <<"Sending Packet "<< p->GetSize() << " bytes " << std::endl;
+std::cout << Simulator::Now() <<" Sending Packet "<< p->GetSize() << " bytes " << std::endl;
+}
+
+static void PIMControlTx (Ptr<const Packet> p)
+{
+std::cout << Simulator::Now() <<" PIMDM Control TX "<<  p->GetSize()<< " bytes " << std::endl;
+}
+
+static void PIMControlRx (Ptr<const Packet> p)
+{
+std::cout << Simulator::Now() <<" PIMDM Control RX "<<  p->GetSize()<< " bytes " << std::endl;
+}
+
+static void PIMDataTx (Ptr<const Packet> p)
+{
+std::cout << Simulator::Now() <<" PIMDM Data TX "<< p->GetSize()<< " bytes " << std::endl;
+}
+
+static void PIMDataRx (Ptr<const Packet> p)
+{
+std::cout << Simulator::Now() <<" PIMDM Data RX "<< p->GetSize()<< " bytes " << std::endl;
 }
 
 static void PhyTxDrop (Ptr<const Packet> p)
 {
-std::cout <<"Phy Drop Packet "<< p->GetSize() << " bytes " << std::endl;
+std::cout << Simulator::Now() <<" Phy Drop Packet "<< p->GetSize() << " bytes " << std::endl;
 }
 
 static void NodeStatusChanged(std::string source, Ptr<const mbn::RoutingProtocol> nodez) {
@@ -176,7 +197,7 @@ main (int argc, char *argv[])
 	LogComponentEnable ("PushPimWifi", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 	LogComponentEnable ("VideoPushApplication", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("AodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("OlsrRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
@@ -210,13 +231,14 @@ main (int argc, char *argv[])
 	/// Print routes if true
 	bool printRoutes = true;
 	/// Number of PIM nodes
-	uint32_t sizePim = 16;
+	uint32_t sizePim = 1;
 //	/// Number of client nodes
-	uint32_t sizeClient = 2;
+	uint32_t sizeClient = 1;
 	/// Animator filename
 	uint32_t sizeSource = 1;
 	/// grid cols number
-	uint16_t cols = (uint16_t)sqrt(sizePim);
+	uint16_t cols = (uint16_t)ceil(sqrt(sizePim));
+	cols = (cols==0?1:cols);
 	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
 	int32_t routing = 1;
 	//Seed for random numbers
@@ -233,13 +255,6 @@ main (int argc, char *argv[])
 	/// Simulation time, seconds
 	double totalTime = 82;
 	/// Video start
-	double sourceStart = 30;
-	/// Video stop
-	double sourceStop = totalTime-10;
-	/// Client start
-	double clientStart = sourceStart;
-	/// Client stop
-	double clientStop = totalTime;
 	/// Flow Monitor
 	bool enableFlowMonitor = false;
 
@@ -269,6 +284,13 @@ main (int argc, char *argv[])
 	cmd.Parse(argc, argv);
 	// Here, we will explicitly create four nodes.  In more sophisticated
 	// topologies, we could configure a node factory.
+	double sourceStart = 30;
+	/// Video stop
+	double sourceStop = totalTime-10;
+	/// Client start
+	double clientStart = sourceStart;
+	/// Client stop
+	double clientStop = totalTime;
 
 	SeedManager::SetSeed(seed);
 	SeedManager::SetRun(run);
@@ -508,9 +530,9 @@ main (int argc, char *argv[])
 	InetSocketAddress dst = InetSocketAddress (multicastGroup, PUSH_PORT);
 	Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
 	VideoHelper video = VideoHelper ("ns3::UdpSocketFactory", dst);
-	video.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
-	video.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
-	video.SetAttribute ("DataRate", StringValue ("10kb/s"));
+	video.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0)));
+	video.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (sourceStop)));
+	video.SetAttribute ("DataRate", StringValue ("9.6Kb/s"));
 	video.SetAttribute ("PacketSize", UintegerValue (1200));
 	video.SetAttribute ("PeerType", EnumValue (SOURCE));
 	video.SetAttribute ("Local", AddressValue (ipSource.GetAddress(0)));
@@ -579,6 +601,10 @@ main (int argc, char *argv[])
 //		ss.str("");
 //	}
 
+	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxData",MakeCallback (&PIMDataTx));
+	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxData",MakeCallback (&PIMDataRx));
+	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxPIMControl", MakeCallback (&PIMControlTx));
+	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxPIMControl", MakeCallback (&PIMControlRx));
 if(g_verbose){
 	Config::ConnectWithoutContext("/NodeList/0/ApplicationList/0/$ns3::VideoPushApplication/Tx",MakeCallback (&AppTx));
 	Config::ConnectWithoutContext("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/PhyTxDrop",MakeCallback (&PhyTxDrop));
