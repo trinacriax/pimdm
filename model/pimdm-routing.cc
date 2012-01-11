@@ -1504,6 +1504,9 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 		destination = relayTag.m_receiver;
 	}
 	Ptr<Ipv4Route> rpf_route = GetRoute(source);
+	if (rpf_route == NULL) {
+		return AskRoute(source);
+	}
 	gateway = rpf_route->GetGateway();
 	int32_t gatewayIface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
 	bool relay_packet_other = rtag && !IsMyOwnAddress(destination); // has the relay tag and the destination is not this node
