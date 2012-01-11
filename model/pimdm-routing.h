@@ -212,11 +212,11 @@ private:
 	Time m_LanDelay;
 	uint64_t m_latestPacketID;
 
-	TracedCallback <const PIMHeader &> m_rxPacketTrace;
-	TracedCallback <const PIMHeader &> m_txPacketTrace;
+	TracedCallback <Ptr<const Packet> > m_rxControlPacketTrace;
+	TracedCallback <Ptr<const Packet> > m_txControlPacketTrace;
 
-	TracedCallback <const Ptr<Packet> &> m_rxDataPacketTrace;
-	TracedCallback <const Ptr<Packet> &> m_txDataPacketTrace;
+	TracedCallback <Ptr<const Packet> > m_rxDataPacketTrace;
+	TracedCallback <Ptr<const Packet> > m_txDataPacketTrace;
 
 	TracedCallback<uint32_t> m_routingTableChanged;
 

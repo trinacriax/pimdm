@@ -100,10 +100,10 @@ MulticastRoutingProtocol::GetTypeId (void)
 					TimeValue (Seconds (Propagation_Delay)),
 					MakeTimeAccessor (&MulticastRoutingProtocol::m_LanDelay),
 					MakeTimeChecker ())
-	.AddTraceSource ("RxPIM", "Trace PIM packet received.",
-					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxPacketTrace))
-	.AddTraceSource ("TxPIM", "Trace PIM packet sent.",
-					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txPacketTrace))
+	.AddTraceSource ("RxPIMControl", "Trace PIM packet received.",
+					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxControlPacketTrace))
+	.AddTraceSource ("TxPIMControl", "Trace PIM packet sent.",
+					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txControlPacketTrace))
     .AddTraceSource ("RxData", "Trace data packet received.",
 					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxDataPacketTrace))
     .AddTraceSource ("TxData", "Trace data packet sent.",
@@ -1408,7 +1408,6 @@ MulticastRoutingProtocol::RecvMessage (Ptr<Socket> socket)
 	if (tag || (group.IsMulticast() && group != Ipv4Address(ALL_PIM_ROUTERS4))){//Lookup(ipv4header.GetDestination(),ipv4header.GetSource(),rmt,me)){
 		if(tag) receivedPacket->AddPacketTag(rtag);
 		this->RecvPIMData (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
-		m_rxDataPacketTrace (receivedPacket);
 	}
 	else if (group == Ipv4Address(ALL_PIM_ROUTERS4) || group == GetLocalAddress(interface)){
 		this->RecvPIMDM (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
@@ -1424,6 +1423,7 @@ MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address sen
 {
 	NS_LOG_FUNCTION(this);
 	Ptr<Ipv4Route> route = GetRoute (senderIfaceAddr);
+	m_rxControlPacketTrace (receivedPacket);
 	Ipv4Address receiverIfaceAddr = GetLocalAddress(interface);
 	NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
 	NS_ASSERT (interface);
@@ -1480,7 +1480,6 @@ MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address sen
 			break;
 			}
 	}
-	m_rxPacketTrace (pimdmPacket);
 }
 
 void
@@ -1490,14 +1489,16 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	NS_ASSERT(interface);
 	Ipv4Address source, group, sender, destination, gateway;
 	Ptr<Packet> copy = receivedPacket->Copy();// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
-	Ipv4Header sourceHeader;
 	RelayTag relayTag;
+	bool rtag = copy->RemovePacketTag(relayTag); //Remove Tag and count
+	m_rxDataPacketTrace (copy);
+	Ipv4Header sourceHeader;
+
 	copy->RemoveHeader(sourceHeader);
 	source = sourceHeader.GetSource();
 	group = sourceHeader.GetDestination();
 	sender = source;
 	destination = group;
-	bool rtag = copy->RemovePacketTag(relayTag);
 	if(rtag){
 		sender = relayTag.m_sender;
 		destination = relayTag.m_receiver;
@@ -1893,8 +1894,6 @@ MulticastRoutingProtocol::SendPacketPIMRoutersInterface(Ptr<Packet> packet, cons
   packet->AddHeader(message);
   Ipv4Header ipv4header = BuildHeader(GetLocalAddress(interface), Ipv4Address(ALL_PIM_ROUTERS4), PIM_IP_PROTOCOL_NUM, packet->GetSize(), PIMDM_TTL, false);
   packet->AddHeader(ipv4header);
-  // Trace it
-  m_txPacketTrace (message);
   // Send
   if(interface != 0 && !GetPimInterface(interface)){
 	  NS_LOG_DEBUG("Interface "<<interface<<" is PIM-DISABLED");
@@ -1909,6 +1908,8 @@ MulticastRoutingProtocol::SendPacketPIMRoutersInterface(Ptr<Packet> packet, cons
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
 		  NS_LOG_LOGIC ("Node " << GetLocalAddress(interface)<< " is sending to "<< bcast<<":"<<PIM_PORT_NUMBER<<", Socket "<< i->first);
 		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
+		  // Trace it
+		  m_txControlPacketTrace (packet);
 		  break;
 	  }
       }
@@ -1919,8 +1920,6 @@ MulticastRoutingProtocol::SendPacketPIMUnicast(Ptr<Packet> packet, const PIMHead
 {
   if(m_stopTx) return;
   packet->AddHeader(message);
-  // Trace it
-  m_txPacketTrace (message);
   // Send
   WiredEquivalentInterface wei = RPF_interface(destination);
   int32_t interface = wei.first >0 ? wei.first : m_ipv4->GetInterfaceForAddress(m_mainAddress);
@@ -1934,6 +1933,8 @@ MulticastRoutingProtocol::SendPacketPIMUnicast(Ptr<Packet> packet, const PIMHead
 		copy->AddHeader(ipv4Header);
 		NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
 		i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
+		// Trace it
+		m_txControlPacketTrace (packet);
 		break;
 		}
 	}
@@ -1977,6 +1978,7 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
 		  RelayTag relayTag;
 		  relayTag.m_sender = i->second.GetLocal();
 		  relayTag.m_receiver = i->second.GetBroadcast();
+		  m_txDataPacketTrace (packet);
 		  packet->AddPacketTag(relayTag);
 		  NS_LOG_LOGIC ("Node " << GetObject<Node> ()->GetId() << " is forwarding packet " << packet <<"("<<packet->GetSize() << ") to Destination "<< ipv4Header.GetDestination() << " ("<< relayTag.m_receiver<<") " <<", Interface "<< interface<< ", Pid "<< packet->GetUid()<<", Socket "<<i->first);
 		  i->first->SendTo (packet, 0, InetSocketAddress (i->second.GetBroadcast()));
@@ -4063,7 +4065,6 @@ void MulticastRoutingProtocol::AskRoute (Ipv4Address destination){
 	if(m_stopTx) return;
 	packet->AddHeader(msg);
 	// Trace it
-	m_txPacketTrace (msg);
 	// Send
 	Ipv4Address local = GetLocalAddress(interface);
 	for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
@@ -4075,6 +4076,7 @@ void MulticastRoutingProtocol::AskRoute (Ipv4Address destination){
 		copy->AddHeader(ipv4Header);
 		NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
 		i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
+		m_txControlPacketTrace (packet);
 		break;
 		}
 	}
