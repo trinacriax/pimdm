@@ -100,6 +100,10 @@ MulticastRoutingProtocol::GetTypeId (void)
 					TimeValue (Seconds (Propagation_Delay)),
 					MakeTimeAccessor (&MulticastRoutingProtocol::m_LanDelay),
 					MakeTimeChecker ())
+	.AddAttribute ("PeerRole", "Peer role.",
+				   EnumValue(CLIENT),
+				   MakeEnumAccessor(&MulticastRoutingProtocol::m_role),
+				   MakeEnumChecker (CLIENT, "Node is a client.", ROUTER, "Node is a router."))
 	.AddTraceSource ("RxPIMControl", "Trace PIM packet received.",
 					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxControlPacketTrace))
 	.AddTraceSource ("TxPIMControl", "Trace PIM packet sent.",

@@ -212,6 +212,8 @@ private:
 	Time m_LanDelay;
 	uint64_t m_latestPacketID;
 
+	PeerRole m_role;
+
 	TracedCallback <Ptr<const Packet> > m_rxControlPacketTrace;
 	TracedCallback <Ptr<const Packet> > m_txControlPacketTrace;
 
