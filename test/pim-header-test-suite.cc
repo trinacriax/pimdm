@@ -381,6 +381,7 @@ PimDmStateRefreshTestCase::DoRun (void)
   msgIn.SetVersion(2);
   msgIn.SetType(pimdm::PIM_STATE_REF);
   msgIn.SetReserved(0);
+  msgIn.SetChecksum(0);
   pimdm::PIMHeader::StateRefreshMessage &stateIn = msgIn.GetStateRefreshMessage();
   {
 	pimdm::PIMHeader::EncodedGroup eg= {6,5,1,0,0,4,Ipv4Address("192.168.6.3")};
@@ -399,7 +400,7 @@ PimDmStateRefreshTestCase::DoRun (void)
 	stateIn.m_O = 1;
 	stateIn.m_reserved = 0;
 	stateIn.m_interval = 10;
-    packet.AddHeader(msgIn);
+	packet.AddHeader(msgIn);
   }
   {
   pimdm::PIMHeader msgOut;

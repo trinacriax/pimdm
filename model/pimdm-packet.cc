@@ -96,56 +96,66 @@ PIMHeader::GetSerializedSize (void) const
 void
 PIMHeader::Print (std::ostream &os) const
 {
-  os<< "PIM Ver. "<< (uint16_t)m_version << " Type " << (uint16_t)m_type << " Reserved "<< (uint16_t)m_reserved << " Checksum " << m_checksum<<"\n";
+  os<< "PIM Ver. "<< (uint16_t)m_version;
+  os<< " Type " << (uint16_t)m_type ;
+  os << " Reserved "<< (uint16_t)m_reserved;
+  os << " Checksum " << m_checksum<<"\n";
 }
 
 void
 PIMHeader::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
-  //std::cout << "Serialize PIMHeader\n";
+//  std::cout << "Serialize PIMHeader\n";
   uint16_t header = m_version << 12 | m_type << 8 | m_reserved;
+  uint16_t checksum = 0;
   i.WriteHtonU16 (header);
-  i.WriteHtonU16(0);
+  Buffer::Iterator j = i;
+  i.WriteHtonU16 (checksum);
   switch (m_type)
 	{
 	case PIM_HELLO:{
 	  m_pim_message.hello.Serialize(i);
+//	  std::cout << "Serialize H\n";
 	  break;
 	}
 	case PIM_JP:
 	  m_pim_message.joinPrune.Serialize(i);
+//	  std::cout << "Serialize J\n";
 	  break;
 	case PIM_ASSERT:
 	  m_pim_message.assert.Serialize(i);
+//	  std::cout << "Serialize A\n";
 	  break;
 	case PIM_GRAFT:
 	  m_pim_message.graft.Serialize(i);
+//	  std::cout << "Serialize G\n";
 	  break;
 	case PIM_GRAFT_ACK:
 	  m_pim_message.graftAck.Serialize(i);
+//	  std::cout << "Serialize GA\n";
 	  break;
 	case PIM_STATE_REF:
 	  m_pim_message.stateRefresh.Serialize(i);
+//	  std::cout << "Serialize S\n";
 	  break;
 	default:{
 	  NS_ASSERT (false);
 	  break;
 	}
 	}
-  	i = start;
-    uint16_t checksum = i.CalculateIpChecksum(GetSerializedSize());
-    NS_LOG_LOGIC ("checksum=" <<checksum<<"\n");
-    i = start;
-    i.Next (2);
-    i.WriteHtonU16(checksum);
+    uint16_t size = GetSerializedSize();
+    size = (size % 4 == 0 ? (size % 4)*4: size);
+  	checksum = start.CalculateIpChecksum(size);
+    j.WriteHtonU16(checksum);
 }
 
 uint32_t
 PIMHeader::Deserialize (Buffer::Iterator start)
 {
   Buffer::Iterator i = start;
-  //std::cout << "Deserialize PIMHeader\n";
+  m_version = m_reserved = m_checksum = 0;
+//  std::cout << "Deserialize PIMHeader\n";
   uint32_t size = PIM_DM_HEADER_SIZE;
   uint16_t ver_type = i.ReadNtohU16();
   m_version = (uint8_t)((ver_type & 0xf000)>>12); 	// 11110000 00000000
@@ -158,22 +168,22 @@ PIMHeader::Deserialize (Buffer::Iterator start)
   switch (m_type)
   	{
   	case PIM_HELLO:
-  	  size += m_pim_message.hello.Deserialize (i, message_size - PIM_DM_HEADER_SIZE);
+  	  size += m_pim_message.hello.Deserialize (i, message_size - size);
   	  break;
   	case PIM_JP:
-  	  size += m_pim_message.joinPrune.Deserialize (i, message_size - PIM_DM_HEADER_SIZE);
+  	  size += m_pim_message.joinPrune.Deserialize (i, message_size - size);
   	  break;
   	case PIM_ASSERT:
-  	  size += m_pim_message.assert.Deserialize (i, message_size - PIM_DM_HEADER_SIZE);
+  	  size += m_pim_message.assert.Deserialize (i, message_size - size);
   	  break;
   	case PIM_GRAFT:
-  	  size += m_pim_message.graft.Deserialize (i, message_size - PIM_DM_HEADER_SIZE);
+  	  size += m_pim_message.graft.Deserialize (i, message_size - size);
   	  break;
   	case PIM_GRAFT_ACK:
-  	  size += m_pim_message.graftAck.Deserialize (i, message_size - PIM_DM_HEADER_SIZE);
+  	  size += m_pim_message.graftAck.Deserialize (i, message_size - size);
   	  break;
   	case PIM_STATE_REF:
-  	  size += m_pim_message.stateRefresh.Deserialize (i, message_size - PIM_DM_HEADER_SIZE);
+  	  size += m_pim_message.stateRefresh.Deserialize (i, message_size - size);
   	  break;
   	default:{
   	  NS_ASSERT (false);
