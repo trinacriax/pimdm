@@ -371,6 +371,8 @@ private:
 	void AddMulticastGroupSourceJoin (PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedSource source);
 	void AddMulticastGroupSourcePrune (PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedSource source);
 
+	void RecvIgmpReport (PIMHeader::IgmpReportMessage &report, Ipv4Address sender, Ipv4Address receiver, int32_t interface);
+
 	void SendHello (int32_t interface);
 	void SendHelloReply (int32_t interface, Ipv4Address destination);
 	void RecvHello (pimdm::PIMHeader::HelloMessage &hello, Ipv4Address sender, Ipv4Address receiver, int32_t interface);
@@ -436,6 +438,9 @@ private:
 	bool IsUpstream (int32_t interface, Ipv4Address neighbor, Ipv4Address source, Ipv4Address group);
 
 	void SendPacket (Ptr<Packet> packet, const PIMMessageList &containedMessages);
+
+	void RenewTimerExpire (SourceGroupPair sgp);
+	void SendRenew (SourceGroupPair sgp, int32_t interface);
 
 	void HelloTimerExpire (int32_t interface);
 	void OTTimerExpire (SourceGroupPair &sgp, int32_t interface);
