@@ -248,6 +248,8 @@ public:
 
 	void register_member (std::string SGI);
 	void unregister_member (std::string SGI);
+	void registerMember (Ipv4Address source, Ipv4Address group, int32_t interface);
+	void unregisterMember (Ipv4Address source, Ipv4Address group, int32_t interface);
 	void register_SG (std::string SG);
 
 	void UpdateMRIB (){}

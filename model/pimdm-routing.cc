@@ -174,31 +174,69 @@ MulticastRoutingProtocol::GetMetricPreference(int32_t interface)
 }
 
 void
-MulticastRoutingProtocol::unregister_member (std::string csv){
-	NS_LOG_FUNCTION(this);
-	Ipv4Address group, source;
-	int32_t interface;
-	std::vector<std::string> tokens;
-	Tokenize(csv, tokens, ",");
-	if(tokens.size()!= 3) return;
-	source = Ipv4Address(tokens.at(0).c_str());
-	group = Ipv4Address(tokens.at(1).c_str());
-	interface = atoi(tokens.at(2).c_str());
-	tokens.clear();
-	if(source == group && interface == 0) return;//skip initialization
+MulticastRoutingProtocol::registerMember (Ipv4Address source, Ipv4Address group, int32_t interface)
+{
+	NS_LOG_LOGIC("Register interface with members for ("<<source<<","<<group<<") over interface "<< interface);
+	SourceGroupPair sgp (source,group);
+	//TODO IGMP
+	if( m_SGclients.find(sgp) == m_SGclients.end() ){
+		SGState n_sgs(sgp);
+		m_SGclients.insert(std::pair<SourceGroupPair, SGState> (sgp, n_sgs));
+	}
+	if( m_SGclients.find(sgp)->second.sgsInterfaces.find(interface) == m_SGclients.find(sgp)->second.sgsInterfaces.end() ){
+		m_SGclients.find(sgp)->second.sgsInterfaces.insert(interface);
+		}
+	SGState *sgs = &m_SGclients.find(sgp)->second;
+	if(!sgs->sgsRenew.IsRunning()){
+		sgs->sgsRenew.SetDelay(Seconds(IGMP_RENEW));
+		sgs->sgsRenew.SetFunction(&MulticastRoutingProtocol::RenewTimerExpire,this);
+		sgs->sgsRenew.SetArguments(sgp);
+		Simulator::Schedule(Seconds(UniformVariable().GetValue()), &MulticastRoutingProtocol::RenewTimerExpire, this, sgp);
+	}
+
+//	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){//add a new receiver on a specific (source,group) on a given interface
+//		std::set<int32_t> iface;
+//		m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<int32_t> >(sgp,iface));
+//		NS_LOG_DEBUG("Adding Source-Group ("<<source<<","<<group<<") to the map");
+//	}
+//	if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
+//		m_LocalReceiver.find(sgp)->second.insert(interface);
+//		NS_LOG_DEBUG("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
+//	}
+//	else NS_LOG_DEBUG("Interface " << interface<< " already registered for ("<<source<<","<<group<<")");
+//	int32_t sources = m_mrib.find(group)->second.mgroup.size();
+//	NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< sources << " #Clients "<< m_LocalReceiver.find(sgp)->second.size());
+//	UpstreamStateMachine(sgp);
+}
+void
+MulticastRoutingProtocol::unregisterMember (Ipv4Address source, Ipv4Address group, int32_t interface){
 	NS_LOG_LOGIC("UnRegister interface with members for ("<<source<<","<<group<<") over interface "<< interface);
 	SourceGroupPair sgp (source,group);
-	if(m_LocalReceiver.find(sgp)->second.find(interface) != m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
-		m_LocalReceiver.find(sgp)->second.erase(interface);
-		NS_LOG_DEBUG("Removing interface " << interface<< " from ("<<source<<","<<group<<")");
+	if( m_SGclients.find(sgp) == m_SGclients.end() ) return;
+	if( m_SGclients.find(sgp)->second.sgsInterfaces.find(interface) != m_SGclients.find(sgp)->second.sgsInterfaces.end() ){
+		m_SGclients.find(sgp)->second.sgsInterfaces.erase(interface);
 	}
-	if(m_LocalReceiver.find(sgp)!=m_LocalReceiver.end() && m_LocalReceiver.find(sgp)->second.size() == 0){
-		m_LocalReceiver.erase(sgp);
-		NS_LOG_DEBUG("Removing Source-Group ("<<source<<","<<group<<") to the map");
+	SGState *sgs = &m_SGclients.find(sgp)->second;
+	if(m_SGclients.find(sgp)->second.sgsInterfaces.size() == 0){
+		sgs->sgsRenew.Cancel();
 	}
-	else NS_LOG_DEBUG("No clients on interface " << interface<< " for ("<<source<<","<<group<<")");
-	int32_t sources = m_mrib.find(group)->second.mgroup.size();
-	UpstreamStateMachine(sgp);
+	else if(!sgs->sgsRenew.IsRunning()){
+		sgs->sgsRenew.SetDelay(Seconds(IGMP_RENEW));
+		sgs->sgsRenew.SetFunction(&MulticastRoutingProtocol::RenewTimerExpire,this);
+		sgs->sgsRenew.SetArguments(sgp);
+		Simulator::Schedule(Seconds(UniformVariable().GetValue()), &MulticastRoutingProtocol::RenewTimerExpire, this, sgp);
+	}
+//	if(m_LocalReceiver.find(sgp)->second.find(interface) != m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
+//		m_LocalReceiver.find(sgp)->second.erase(interface);
+//		NS_LOG_DEBUG("Removing interface " << interface<< " from ("<<source<<","<<group<<")");
+//	}
+//	if(m_LocalReceiver.find(sgp)!=m_LocalReceiver.end() && m_LocalReceiver.find(sgp)->second.size() == 0){
+//		m_LocalReceiver.erase(sgp);
+//		NS_LOG_DEBUG("Removing Source-Group ("<<source<<","<<group<<") to the map");
+//	}
+//	else NS_LOG_DEBUG("No clients on interface " << interface<< " for ("<<source<<","<<group<<")");
+//	int32_t sources = m_mrib.find(group)->second.mgroup.size();
+//	UpstreamStateMachine(sgp);
 }
 
 void
@@ -215,21 +253,23 @@ MulticastRoutingProtocol::register_member (std::string csv){
 	interface = atoi(tokens.at(2).c_str());
 	tokens.clear();
 	if(source == group && interface == 0) return;//skip initialization
-	NS_LOG_LOGIC("Register interface with members for ("<<source<<","<<group<<") over interface "<< interface);
-	SourceGroupPair sgp (source,group);
-	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){//add a new receiver on a specific (source,group) on a given interface
-		std::set<int32_t> iface;
-		m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<int32_t> >(sgp,iface));
-		NS_LOG_DEBUG("Adding Source-Group ("<<source<<","<<group<<") to the map");
-	}
-	if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
-		m_LocalReceiver.find(sgp)->second.insert(interface);
-		NS_LOG_DEBUG("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
-	}
-	else NS_LOG_DEBUG("Interface " << interface<< " already registered for ("<<source<<","<<group<<")");
-	int32_t sources = m_mrib.find(group)->second.mgroup.size();
-	NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< sources << " #Clients "<< m_LocalReceiver.find(sgp)->second.size());
-	UpstreamStateMachine(sgp);
+	registerMember(source,group,interface);
+}
+
+void
+MulticastRoutingProtocol::unregister_member (std::string csv){
+	NS_LOG_FUNCTION(this);
+	Ipv4Address group, source;
+	int32_t interface;
+	std::vector<std::string> tokens;
+	Tokenize(csv, tokens, ",");
+	if(tokens.size()!= 3) return;
+	source = Ipv4Address(tokens.at(0).c_str());
+	group = Ipv4Address(tokens.at(1).c_str());
+	interface = atoi(tokens.at(2).c_str());
+	tokens.clear();
+	if(source == group && interface == 0) return;//skip initialization
+	unregisterMember(source,group,interface);
 }
 
 void
@@ -247,29 +287,34 @@ MulticastRoutingProtocol::register_SG (std::string csv){
 	NS_LOG_LOGIC("Registering SourceGroup pair ("<<source<<","<<group<<")");
 	SourceGroupPair sgp (source,group);
 	AddEntry(group,source,Ipv4Address::GetLoopback(),-1);//We got an entry from IGMP for this source-group
+	// ADD a new IGMP record
+	if( m_SGclients.find(sgp) == m_SGclients.end() ){
+		SGState n_sgs(sgp);
+		m_SGclients.insert(std::pair<SourceGroupPair, SGState> (sgp, n_sgs));
+	}
 	int32_t sources = m_mrib.find(group)->second.mgroup.size();
 	NS_LOG_DEBUG("Main Addr = "<<  m_mainAddress << ": Group "<<group<<" #Source: "<< sources);
 	if(group == ALL_PIM_ROUTERS4 || sources > 1) return;//Socket already registered for this group
 	for(int32_t i = 0; i < m_ipv4->GetNInterfaces(); i++){
 		if(IsLoopInterface(i))
 			continue;
-	///Registering endpoint for that address... by creating a socket to listen only on this interface
-	Ptr<Socket> socketG = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
-	socketG->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
-	socketG->SetAttribute("IpHeaderInclude", BooleanValue(true));
-	socketG->SetAllowBroadcast (true);
-//	InetSocketAddress inetAddr (group, PIM_PORT_NUMBER);
-	InetSocketAddress inetAddr (group);
-	socketG->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvMessage, this));
-	if (socketG->Bind (inetAddr)){
-		NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<group);
-	}
-	socketG->BindToNetDevice (m_ipv4->GetNetDevice (i));
-	m_socketAddresses[socketG] = m_ipv4->GetAddress (i, 0); //PROBLEM; does not broadcast on local IP, takes the other group-interface
-	NS_LOG_DEBUG("Registering Group Socket = "<<socketG<< " Device = "<<socketG->GetBoundNetDevice()<< ", SocketAddr = "<<m_ipv4->GetAddress (i, 0).GetLocal() <<", I = "<<i);
-	Ipv4InterfaceAddress mgroup(group, Ipv4Mask::GetOnes());	// WIFI OK
-	m_socketAddresses[socketG] = mgroup;						// WIFI OK
-	NS_LOG_DEBUG("Group Socket "<<socketG << " Addr: "<<group<<":AnyPort");
+		///Registering endpoint for that address... by creating a socket to listen only on this interface
+		Ptr<Socket> socketG = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
+		socketG->SetAttribute("Protocol", UintegerValue(UdpL4Protocol::PROT_NUMBER));
+		socketG->SetAttribute("IpHeaderInclude", BooleanValue(true));
+		socketG->SetAllowBroadcast (true);
+	//	InetSocketAddress inetAddr (group, PIM_PORT_NUMBER);
+		InetSocketAddress inetAddr (group);
+		socketG->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvMessage, this));
+		if (socketG->Bind (inetAddr)){
+			NS_FATAL_ERROR ("Failed to bind() PIMDM socket for group "<<group);
+		}
+		socketG->BindToNetDevice (m_ipv4->GetNetDevice (i));
+		m_socketAddresses[socketG] = m_ipv4->GetAddress (i, 0); //PROBLEM; does not broadcast on local IP, takes the other group-interface
+		NS_LOG_DEBUG("Registering Group Socket = "<<socketG<< " Device = "<<socketG->GetBoundNetDevice()<< ", SocketAddr = "<<m_ipv4->GetAddress (i, 0).GetLocal() <<", I = "<<i);
+		Ipv4InterfaceAddress mgroup(group, Ipv4Mask::GetOnes());	// WIFI OK
+		m_socketAddresses[socketG] = mgroup;						// WIFI OK
+		NS_LOG_DEBUG("Group Socket "<<socketG << " Addr: "<<group<<":AnyPort");
 	}
 }
 
@@ -739,6 +784,7 @@ void
 MulticastRoutingProtocol::HelloTimerExpire (int32_t i)
 {
 	  NS_LOG_FUNCTION(this << i);
+	  if (m_role == CLIENT) return;
 	  if (IsLoopInterface(i)) return;
 	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	  Timer &nHelloTimer = m_IfaceNeighbors.find(i)->second.hello_timer;
