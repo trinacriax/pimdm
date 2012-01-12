@@ -197,7 +197,7 @@ main (int argc, char *argv[])
 	LogComponentEnable ("PushPimWifi", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 	LogComponentEnable ("VideoPushApplication", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("AodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("OlsrRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
@@ -218,7 +218,7 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("ArpL3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("ArpCache", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("YansWifiChannel", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable("YansWifiPhy", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_FUNC | LOG_PREFIX_NODE | LOG_PREFIX_TIME));
+//	LogComponentEnable ("YansWifiPhy", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_FUNC | LOG_PREFIX_NODE | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Node", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("InterferenceHelper", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("ArpL3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
@@ -231,7 +231,7 @@ main (int argc, char *argv[])
 	/// Print routes if true
 	bool printRoutes = true;
 	/// Number of PIM nodes
-	uint32_t sizePim = 1;
+	uint32_t sizePim = 16;
 //	/// Number of client nodes
 	uint32_t sizeClient = 1;
 	/// Animator filename
@@ -246,14 +246,14 @@ main (int argc, char *argv[])
 	//Seed Run
 	uint32_t run = 2;
 	//Step in the grid X
-	double deltaX = 80;
+	double deltaX = 100;
 	//Step in the grid Y
-	double deltaY = 80;
+	double deltaY = 100;
 	//Nodes in a row
 	/// Animator filename
 	std::string animFile = "push-over-pim-wireles.tr";
 	/// Simulation time, seconds
-	double totalTime = 82;
+	double totalTime = 100;
 	/// Video start
 	/// Flow Monitor
 	bool enableFlowMonitor = false;
@@ -284,13 +284,13 @@ main (int argc, char *argv[])
 	cmd.Parse(argc, argv);
 	// Here, we will explicitly create four nodes.  In more sophisticated
 	// topologies, we could configure a node factory.
-	double sourceStart = 30;
+	double sourceStart = ceil(totalTime*.15);//after 15% of simulation
 	/// Video stop
-	double sourceStop = totalTime-10;
+	double sourceStop = ceil(totalTime*.70);//after 15% of simulation
 	/// Client start
-	double clientStart = sourceStart;
+	double clientStart = ceil(totalTime*.15);;
 	/// Client stop
-	double clientStop = totalTime;
+	double clientStop = ceil(totalTime*.80);
 
 	SeedManager::SetSeed(seed);
 	SeedManager::SetRun(run);
@@ -405,6 +405,7 @@ main (int argc, char *argv[])
 	InternetStackHelper internetRouters;
 	internetRouters.SetRoutingHelper (listRouters);
 	internetRouters.Install (routers);
+	internetRouters.Install (clients);
 
 	Ipv4ListRoutingHelper listClients;
 	switch(routing){
@@ -427,7 +428,6 @@ main (int argc, char *argv[])
 
 	InternetStackHelper internetClients;
 	internetClients.SetRoutingHelper (listClients);
-	internetClients.Install (clients);
 	internetClients.Install (source);
 
 	// Later, we add IP addresses.
@@ -464,18 +464,26 @@ main (int argc, char *argv[])
 
 	std::stringstream ss;
 	/* source, group, interface*/
-	ss<< multicastSource<< "," << multicastGroup;// << "," << "1";
+	//ROUTERS
 	for (int n = 0;  n < routers.GetN() ; n++){
+		ss<< multicastSource<< "," << multicastGroup;// << "," << "1";
 		std::stringstream command;//create a stringstream
 		command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterSG";
 		Config::Set(command.str(), StringValue(ss.str()));
-	}
-	for (int n = 0;  n < routers.GetN() ; n++){
-		std::stringstream command;//create a stringstream
+		command.str("");
+		command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/PeerRole";
+		Config::Set(command.str(), EnumValue(pimdm::ROUTER));
 		ss.str("");
+	}
+	// CLIENTS
+	for (int n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
+		std::stringstream command;
 		ss<< multicastSource<< "," << multicastGroup << "," << "1";
-		command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterAsMember";
+		command<< "NodeList/" << clients.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterAsMember";
 		Config::Set(command.str(), StringValue(ss.str()));
+		command.str("");
+		command<< "/NodeList/" << clients.Get(n)->GetId()<<"/$ns3::pimdm::MulticastRoutingProtocol/PeerRole";
+		Config::Set(command.str(), EnumValue(pimdm::CLIENT));
 	}
 
 	switch(routing){
@@ -530,8 +538,8 @@ main (int argc, char *argv[])
 	InetSocketAddress dst = InetSocketAddress (multicastGroup, PUSH_PORT);
 	Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
 	VideoHelper video = VideoHelper ("ns3::UdpSocketFactory", dst);
-	video.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0)));
-	video.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (sourceStop)));
+//	video.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0)));
+//	video.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (sourceStop)));
 	video.SetAttribute ("DataRate", StringValue ("9.6Kb/s"));
 	video.SetAttribute ("PacketSize", UintegerValue (1200));
 	video.SetAttribute ("PeerType", EnumValue (SOURCE));
@@ -548,8 +556,8 @@ main (int argc, char *argv[])
 		InetSocketAddress dstC = InetSocketAddress (multicastGroup, PUSH_PORT);
 		Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
 		VideoHelper videoC = VideoHelper ("ns3::UdpSocketFactory", dstC);
-		videoC.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
-		videoC.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
+//		videoC.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
+//		videoC.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (clientStop)));
 //		videoC.SetAttribute ("DataRate", StringValue ("10kb/s"));
 //		videoC.SetAttribute ("PacketSize", UintegerValue (1200));
 		videoC.SetAttribute ("PeerType", EnumValue (PEER));
