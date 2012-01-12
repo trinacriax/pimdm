@@ -31,6 +31,7 @@
 #define __PIM_DM_STRUCTURE_H__
 
 #include <list>
+#include <set>
 #include <iostream>
 #include <stdio.h>
 #include "ns3/ipv4-address.h"
@@ -396,6 +397,40 @@ struct NeighborhoodStatus{
 };
 
 typedef std::pair<int32_t, Ipv4Address> WiredEquivalentInterface ;	///< Neighbor List.
+
+/*** IGMP LIKE ***/
+#define IGMP_RENEW 5
+
+enum PeerRole {
+	CLIENT,
+	ROUTER
+};
+
+struct SGState{
+	/// SourceGroup pair.
+	SourceGroupPair sgsPair;
+	/// Source-Group Renew Timer.
+	Timer sgsRenew;
+	/// Active interface for such source-group;
+	std::set<int32_t> sgsInterfaces;
+
+	SGState(SourceGroupPair sgp):
+		sgsPair(sgp),
+		sgsRenew(Timer::CANCEL_ON_DESTROY)
+	{sgsInterfaces.clear();}
+	~SGState(){
+		sgsRenew.Cancel();
+		sgsInterfaces.clear();
+	}
+
+
+};
+
+static inline bool
+operator == (const SGState &a, const SGState &b){
+	return (a.sgsPair == b.sgsPair);
+}
+/*** IGMP LIKE ***/
 
 }}; // namespace ns3, pimdm
 
