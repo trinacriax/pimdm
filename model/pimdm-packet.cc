@@ -84,6 +84,9 @@ PIMHeader::GetSerializedSize (void) const
       case PIM_STATE_REF:
 		  size += m_pim_message.stateRefresh.GetSerializedSize ();
 		  break;
+      case PIM_IGMP_REPORT:
+		  size += m_pim_message.igmpReport.GetSerializedSize ();
+		  break;
       default:{
         NS_ASSERT (false);
         break;
@@ -139,6 +142,10 @@ PIMHeader::Serialize (Buffer::Iterator start) const
 	  m_pim_message.stateRefresh.Serialize(i);
 //	  std::cout << "Serialize S\n";
 	  break;
+	case PIM_IGMP_REPORT:
+	  m_pim_message.igmpReport.Serialize(i);
+//	  std::cout << "Serialize I\n";
+	  break;
 	default:{
 	  NS_ASSERT (false);
 	  break;
@@ -160,7 +167,8 @@ PIMHeader::Deserialize (Buffer::Iterator start)
   uint16_t ver_type = i.ReadNtohU16();
   m_version = (uint8_t)((ver_type & 0xf000)>>12); 	// 11110000 00000000
   m_type = PIMType((ver_type & 0xf00)>>8); // 00001111 00000000
-  NS_ASSERT (m_type >= PIM_HELLO && m_type<=PIM_STATE_REF);
+  NS_ASSERT (m_type >= PIM_HELLO && m_type<=PIM_IGMP_REPORT);
+//  NS_ASSERT (m_type >= PIM_HELLO && m_type<=PIM_STATE_REF);
   m_reserved = (uint8_t)(ver_type & 0xff);		// 00000000 11111111
   m_checksum = i.ReadNtohU16();			// 00000000 00000000 11111111 11111111
   uint32_t message_size = i.GetSize();
@@ -184,6 +192,9 @@ PIMHeader::Deserialize (Buffer::Iterator start)
   	  break;
   	case PIM_STATE_REF:
   	  size += m_pim_message.stateRefresh.Deserialize (i, message_size - size);
+  	  break;
+  	case PIM_IGMP_REPORT:
+  	  size += m_pim_message.igmpReport.Deserialize (i, message_size - size);
   	  break;
   	default:{
   	  NS_ASSERT (false);
@@ -928,6 +939,52 @@ PIMHeader::StateRefreshMessage::Deserialize (Buffer::Iterator start, uint32_t me
 //  std::cout << "\n";
   return size;
 }
+
+/* TODO REMOVE WITH IGMP*/
+uint32_t
+PIMHeader::IgmpReportMessage::GetSerializedSize (void) const
+{
+  return 4*4;
+}
+
+void
+PIMHeader::IgmpReportMessage::Print (std::ostream &os) const
+{
+    os <<  " Group = " << m_multicastGroupAddr<<
+    		" Source = " << m_sourceAddr<<
+    		" Upstream = " << m_upstreamAddr <<"\n";
+}
+
+void
+PIMHeader::IgmpReportMessage::Serialize (Buffer::Iterator start) const
+{
+  Buffer::Iterator i = start;
+  i.WriteHtonU32(m_multicastGroupAddr.Get());
+  i.WriteHtonU32(m_sourceAddr.Get());
+  i.WriteHtonU32(m_upstreamAddr.Get());
+//  std::cout << "IgmpReportMessage SE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
+}
+
+uint32_t
+PIMHeader::IgmpReportMessage::Deserialize (Buffer::Iterator start, uint32_t messageSize)
+{
+  Buffer::Iterator i = start;
+  NS_ASSERT (messageSize == this->GetSerializedSize());
+  uint32_t size;
+  m_multicastGroupAddr = Ipv4Address(i.ReadNtohU32());
+  size +=4;
+  m_sourceAddr = Ipv4Address(i.ReadNtohU32());
+  size +=4;
+  m_upstreamAddr = Ipv4Address(i.ReadNtohU32());
+  size +=4;
+//  std::cout << "IgmpReportMessage DE\n";
+//  Print(std::cout);
+//  std::cout << "\n";
+  return size;
+}
+/* END TODO*/
 
 } // namespace pidm
 } // namespace ns3

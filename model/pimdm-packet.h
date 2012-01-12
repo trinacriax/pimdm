@@ -72,7 +72,8 @@ enum PIMType
   PIM_GRAFT = 6,
   PIM_GRAFT_ACK = 7,
 //  PIM_CANDIDATE_RP_ADV = 8,//!< (PIM-SM only)
-  PIM_STATE_REF = 9
+  PIM_STATE_REF = 9,
+  PIM_IGMP_REPORT = 11 // WORKAROND FOR IGMP!! //TODO Remove when IGMP is ready
 };
 
 /**
@@ -496,6 +497,7 @@ struct MulticastGroupEntry {
 //	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //
 
+
 struct JoinPruneGraftMessage {
 	/// Upstream Neighbor Address
 	///   The address of the upstream neighbor.  The format for this address
@@ -728,6 +730,34 @@ struct StateRefreshMessage {
 	uint32_t Deserialize (Buffer::Iterator start, uint32_t messageSize);
 };
 
+/* TODO REMOVE WITH IGMP*/
+
+//	0               1               2               3
+//	0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
+//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//	|PIM Ver| Type  |   Reserved    |           Checksum            |   GENERIC
+//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//	|               Multicast group address                         |
+//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//	|                Unicast source address                         |
+//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//	|                Upstream node address                          |
+//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//
+
+struct IgmpReportMessage {
+	Ipv4Address m_multicastGroupAddr;
+	Ipv4Address m_sourceAddr;
+	Ipv4Address m_upstreamAddr;
+
+	void Print (std::ostream &os) const;
+	uint32_t GetSerializedSize (void) const;
+	void Serialize (Buffer::Iterator start) const;
+	uint32_t Deserialize (Buffer::Iterator start, uint32_t messageSize);
+};
+
+/* END TODO*/
+
 private:
 	struct{
 		HelloMessage hello;
@@ -736,6 +766,7 @@ private:
 		GraftMessage graft;
 		GraftAckMessage graftAck;
 		StateRefreshMessage stateRefresh;
+		IgmpReportMessage igmpReport;
 	} m_pim_message;
 
 public:
@@ -816,6 +847,19 @@ public:
         NS_ASSERT (m_type == PIM_STATE_REF);
       }
     return m_pim_message.stateRefresh;
+  }
+
+  IgmpReportMessage& GetIgmpReportMessage()
+  {
+    if (m_type == 0)
+      {
+    	m_type = PIM_IGMP_REPORT;
+      }
+    else
+      {
+        NS_ASSERT (m_type == PIM_IGMP_REPORT);
+      }
+    return m_pim_message.igmpReport;
   }
 
 };
