@@ -232,13 +232,10 @@ main (int argc, char *argv[])
 	bool printRoutes = true;
 	/// Number of PIM nodes
 	uint32_t sizePim = 16;
-//	/// Number of client nodes
+	/// Number of client nodes
 	uint32_t sizeClient = 1;
 	/// Animator filename
 	uint32_t sizeSource = 1;
-	/// grid cols number
-	uint16_t cols = (uint16_t)ceil(sqrt(sizePim));
-	cols = (cols==0?1:cols);
 	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
 	int32_t routing = 1;
 	//Seed for random numbers
@@ -257,6 +254,8 @@ main (int argc, char *argv[])
 	/// Video start
 	/// Flow Monitor
 	bool enableFlowMonitor = false;
+	/// grid cols number
+	uint16_t cols;
 
 //
 //	double onOffStart = 14;
@@ -282,6 +281,9 @@ main (int argc, char *argv[])
 	cmd.AddValue("animFile", "File Name for Animation Output", animFile);
 
 	cmd.Parse(argc, argv);
+
+	cols = (uint16_t)ceil(sqrt(sizePim));
+	cols = (cols==0?1:cols);
 	// Here, we will explicitly create four nodes.  In more sophisticated
 	// topologies, we could configure a node factory.
 	double sourceStart = ceil(totalTime*.15);//after 15% of simulation
