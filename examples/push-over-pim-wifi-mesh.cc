@@ -677,11 +677,12 @@ if(g_verbose){
 	mobilityR.Install(routers);
 
 	int deltaXmin, deltaXmax, deltaYmin, deltaYmax;
-	deltaXmin = 0;
+	deltaXmin = 0-deltaX;
 	deltaXmax = floor (deltaX * cols);
-	deltaYmin = 0;
+	deltaYmin = 0-deltaY;
 	deltaYmax = deltaY * floor (sizePim / cols);
 
+	NS_LOG_DEBUG("X "<<deltaX << " cols "<< cols);
 	NS_LOG_DEBUG ("Arranging clients between ["<<deltaXmin<<","<< deltaYmin<<"] - [" <<deltaXmax<<","<<deltaYmax<<"]");
 
 	MobilityHelper mobilityC;
