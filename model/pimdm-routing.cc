@@ -2822,13 +2822,8 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 		//JOIN sources' addresses
 		for(std::vector<PIMHeader::EncodedSource>::iterator iterJoin = iter->m_joinedSourceAddrs.begin();
 			iterJoin != iter->m_joinedSourceAddrs.end(); iterJoin++){
-//			std::set<WiredEquivalentInterface> joinList = olist(iterJoin->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress);
-			//Interfaces interested in JOIN
-//			for(std::set<WiredEquivalentInterface>::const_iterator iterList = joinList.begin(); iterList != joinList.end(); iterList++){
-//				int32_t out_interface = iterList->first;
 				// Upstream state machine
 				RecvJoin(jp, sender, receiver, interface, *iterJoin, iter->m_multicastGroupAddr);
-//			}
 		}
 		//PRUNE
 //		A Prune(S,G) is received on interface I with the upstream
@@ -2844,9 +2839,6 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 			//This timer is set when a Prune(S, G) is received on the upstream interface where olist(S, G) != NULL.
 			//	When the timer expires, a Join(S, G) message is sent on the upstream interface.  This timer
 			//	is normally set to t_override (see 4.8).
-//			std::set<WiredEquivalentInterface> pruneList = olist(iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress);
-//			for(std::set<WiredEquivalentInterface>::const_iterator iterList = pruneList.begin(); iterList != pruneList.end(); iterList++){
-//				int32_t out_interface = iterList->first;
 				SourceGroupPair sgp (iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress, sender);
 				if(IsUpstream(interface, sender, sgp)){
 					SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
@@ -2860,7 +2852,6 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 					sgState->upstream->SG_OT.Schedule();
 				}
 				RecvPrune(jp, sender, receiver, interface, *iterPrune, iter->m_multicastGroupAddr);
-//			}
 		}
 	}
 }
@@ -3616,7 +3607,6 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					CreateMulticastGroupEntry(mge, ForgeEncodedGroup(refresh.m_multicastGroupAddr.m_groupAddress));
 					AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(refresh.m_sourceAddr.m_unicastAddress));
 					AddMulticastGroupEntry(prune, mge);
-//					prune.GetJoinPruneMessage().m_joinPruneMessage.m_holdTime = sgState->SG_AT.GetDelay(); \\ TODO check
 					Ptr<Packet> packet = Create<Packet> ();
 					Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, prune, refresh.m_originatorAddr.m_unicastAddress);
 				}
