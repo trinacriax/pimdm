@@ -4361,7 +4361,7 @@ std::set<WiredEquivalentInterface > MulticastRoutingProtocol::pim_exclude (Ipv4A
 	return exclude;
 }
 
-bool MulticastRoutingProtocol::IsLoopInterface (int32_t interface){
+inline bool MulticastRoutingProtocol::IsLoopInterface (int32_t interface){
 	return GetLocalAddress(interface) == Ipv4Address::GetLoopback();
 }
 
