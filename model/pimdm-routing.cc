@@ -2746,6 +2746,8 @@ void
 MulticastRoutingProtocol::CouldAssertCheck (Ipv4Address source, Ipv4Address group, int32_t interface, Ipv4Address destination, bool couldAssert) {
 	SourceGroupPair sgp (source, group, destination);
 	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);//true
+	// could assert = true -> Is a downstream interface
+	// could assert = false -> Is an upstream interface
 	switch (sgState->AssertState){
 		case  Assert_NoInfo:{
 			break;
@@ -4538,3 +4540,4 @@ return !(gw == Ipv4Address::GetAny() || gw == Ipv4Address::GetLoopback());
 //* When a PIM router takes an interface down or changes IP address, a Hello message with a zero Hold Time SHOULD be
 //		sent immediately (with the old IP address if the IP address is changed) to cause any PIM neighbors to remove the old information immediately.
 //* Packets TTL
+//* OT timer should get a WiredEquivalentInterface
