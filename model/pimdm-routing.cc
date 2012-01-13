@@ -4234,37 +4234,51 @@ std::set<WiredEquivalentInterface > MulticastRoutingProtocol::olist (Ipv4Address
 void MulticastRoutingProtocol::AskRoute (Ipv4Address destination){
 	//TODO: We don't know the next hop towards the source: first node finds it, then it relies packets.
 	NS_LOG_FUNCTION(this<< destination);
-	int size = 0;
-	if(m_role==CLIENT) size = 100;
-	PIMHeader msg;
-	Ptr<Packet> packet = Create<Packet> (size); //forge a hello reply
-	int32_t interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);
-	ForgeHelloMessage(interface, msg);
 	if(m_stopTx) return;
-	if(m_role==ROUTER)
-		packet->AddHeader(msg);
-	// Trace it
-	// Send
-	Ipv4Address local = GetLocalAddress(interface);
-	for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
-			m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
-	{
-	  if(local == i->second.GetLocal () ){
-		Ptr<Packet> copy = packet->Copy();
-		Ipv4Header ipv4Header;
-		if(m_role==ROUTER)
-			ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, copy->GetSize(), 1, false);
-		else
-			ipv4Header = BuildHeader(i->second.GetLocal (), destination, 2, copy->GetSize(), 1, false);
-		copy->AddHeader(ipv4Header);
-		NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
-		if(m_role==ROUTER)
-			i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
-		else
-			i->first->SendTo (copy, 0, InetSocketAddress (destination, 7));
-		m_txControlPacketTrace (packet);
-		break;
+	int size = 0;
+	switch (m_role){
+	case CLIENT:{
+		Ptr<Packet> packet = Create<Packet> (size); //forge a hello reply
+		int32_t interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);
+		Ipv4Address local = GetLocalAddress(interface);
+		for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i = m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
+		{
+			if(local == i->second.GetLocal () ){
+				Ptr<Packet> copy = packet->Copy();
+				Ipv4Header ipv4Header;
+				ipv4Header = BuildHeader(i->second.GetLocal (), destination, 2, copy->GetSize(), 1, false);
+				copy->AddHeader(ipv4Header);
+				NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
+				i->first->SendTo (copy, 0, InetSocketAddress (destination, 7));
+				// Trace it
+				m_txControlPacketTrace (packet);
+				break;
+			}
 		}
+		break;
+	}
+	case ROUTER:{
+		PIMHeader msg;
+		Ptr<Packet> packet = Create<Packet> (); //forge a hello reply
+		int32_t interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);
+		ForgeHelloMessage(interface, msg);
+		packet->AddHeader(msg);
+		// Trace it
+		Ipv4Address local = GetLocalAddress(interface);
+		for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i = m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
+		{
+			if(local == i->second.GetLocal () ){
+				Ptr<Packet> copy = packet->Copy();
+				Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, copy->GetSize(), 1, false);
+				copy->AddHeader(ipv4Header);
+				NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
+				i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
+				m_txControlPacketTrace (packet);
+				break;
+			}
+		}
+		break;
+	}
 	}
 }
 
