@@ -438,7 +438,7 @@ MulticastRoutingProtocol::AddEntry (const Ipv4Address group, const Ipv4Address s
   // Creates a new rt entry with specified values
   RoutingMulticastTable &entry = m_mrib[group];//DEBUG
   m_mrib[group].groupAddr = group;
-  MulticastEntry *me = &m_mrib[group].mgroup[source];//DEBUG
+//  MulticastEntry *me = &m_mrib[group].mgroup[source];//DEBUG
   m_mrib[group].mgroup[source].sourceAddr = source;
   m_mrib[group].mgroup[source].interface = interface;
   m_mrib[group].mgroup[source].nextAddr = next;
@@ -788,8 +788,7 @@ MulticastRoutingProtocol::HelloTimerExpire (int32_t i)
 	  if (IsLoopInterface(i)) return;
 	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	  Timer &nHelloTimer = m_IfaceNeighbors.find(i)->second.hello_timer;
-	  NS_LOG_DEBUG("Interface "<< i<< " [ E "<< nHelloTimer.IsExpired() <<
-			  ", R " <<nHelloTimer.IsRunning()<<", S:" << nHelloTimer.IsSuspended()<<"].");
+//	  NS_LOG_DEBUG("Interface "<< i<< " [ E "<< nHelloTimer.IsExpired() << ", R " <<nHelloTimer.IsRunning()<<", S:" << nHelloTimer.IsSuspended()<<"].");
 	  if(!nHelloTimer.IsRunning()){
 		  nHelloTimer.SetFunction(&MulticastRoutingProtocol::HelloTimerExpire, this);
 		  nHelloTimer.SetArguments(i);
@@ -803,8 +802,7 @@ MulticastRoutingProtocol::RenewTimerExpire (SourceGroupPair sgp)
 {
 	  NS_LOG_FUNCTION(this << m_role<< GetObject<Node>()->GetId()<<sgp);
 	  SGState *sgs = &m_SGclients.find(sgp)->second;
-	  NS_LOG_DEBUG("SG "<< sgp << " [ E "<< sgs->sgsRenew.IsExpired() <<
-			  ", R " <<sgs->sgsRenew.IsRunning()<<", S:" << sgs->sgsRenew.IsSuspended()<<"].");
+//	  NS_LOG_DEBUG("SG "<< sgp << " [ E "<< sgs->sgsRenew.IsExpired() << ", R " <<sgs->sgsRenew.IsRunning()<<", S:" << sgs->sgsRenew.IsSuspended()<<"].");
 	  // olny clients
 	  switch(m_role){
 		  case CLIENT:
@@ -1089,7 +1087,6 @@ MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupP
 	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
 	AddMulticastGroupSourceJoin(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
 	AddMulticastGroupEntry(msg, mge);
-//	msg.Print(std::cout);
 	Ptr<Packet> packet = Create<Packet> ();
 	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
 	NS_LOG_LOGIC("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
@@ -2067,8 +2064,8 @@ MulticastRoutingProtocol::SendPacketPIMRoutersInterface(Ptr<Packet> packet, cons
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i =
         m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
       {
-	  NS_LOG_DEBUG ("Socket ("<<i->first<<") "<< i->second.GetLocal() << " to Destination: " << ALL_PIM_ROUTERS4 << ":"<<PIM_PORT_NUMBER
-			  << ", Local "<<GetLocalAddress(interface)<< ", If "<<  m_ipv4->GetInterfaceForDevice (i->first->GetBoundNetDevice()));
+//	  NS_LOG_DEBUG ("Socket ("<<i->first<<") "<< i->second.GetLocal() << " to Destination: " << ALL_PIM_ROUTERS4 << ":"<<PIM_PORT_NUMBER
+//			  << ", Local "<<GetLocalAddress(interface)<< ", If "<<  m_ipv4->GetInterfaceForDevice (i->first->GetBoundNetDevice()));
 	  if(m_ipv4->GetInterfaceForDevice (i->first->GetBoundNetDevice()) == interface && !i->second.GetLocal ().IsMulticast()){
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
 		  NS_LOG_LOGIC ("Node " << GetLocalAddress(interface)<< " is sending to "<< bcast<<":"<<PIM_PORT_NUMBER<<", Socket "<< i->first);
@@ -2803,10 +2800,10 @@ void
 MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address sender, Ipv4Address receiver, int32_t interface)
 {
 	NS_LOG_FUNCTION(this << sender << receiver << interface << jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress);
-	NS_LOG_DEBUG("Node  "<<receiver <<" receives JP from "<<sender);
+//	NS_LOG_DEBUG("Node  "<<receiver <<" receives JP from "<<sender);
 	uint16_t groups = jp.m_joinPruneMessage.m_numGroups;
 	Time HoldTime = jp.m_joinPruneMessage.m_holdTime;
-	NS_LOG_LOGIC("Upstream Neighbor "<< jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress << ", Groups = " << groups << ", HoldTime = " << HoldTime.GetSeconds());
+//	NS_LOG_LOGIC("Upstream Neighbor "<< jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress << ", Groups = " << groups << ", HoldTime = " << HoldTime.GetSeconds());
 //	Receive Join(S,G)
 //	   A Join(S,G) is received on interface I with the upstream neighbor
 //	   field set to the router's address on I.  The Prune(S,G)
