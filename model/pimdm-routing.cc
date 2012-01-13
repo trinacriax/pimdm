@@ -1082,7 +1082,7 @@ MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupP
 void
 MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgp)
 {
-	NS_LOG_FUNCTION(this<< destination<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
+	NS_LOG_FUNCTION(this<< destination<<sgp);
 	PIMHeader msg;
 	ForgeJoinPruneMessage(msg, destination);
 	PIMHeader::MulticastGroupEntry mge;
@@ -1091,13 +1091,13 @@ MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupP
 	AddMulticastGroupEntry(msg, mge);
 	Ptr<Packet> packet = Create<Packet> ();
 	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
-	NS_LOG_LOGIC("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
+	NS_LOG_LOGIC(sgp <<" UpstreamNeighbor \""<< destination<<"\"");
 }
 
 void
 MulticastRoutingProtocol::ForgeAssertMessage (int32_t interface, Ipv4Address destination, PIMHeader &msg, SourceGroupPair &sgp)
 {
-	NS_LOG_FUNCTION(this << interface << destination<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
+	NS_LOG_FUNCTION(this << interface << destination<<sgp);
 	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
 	ForgeHeaderMessage(PIM_ASSERT, msg);
 	PIMHeader::AssertMessage &assertMessage = msg.GetAssertMessage();
@@ -1155,7 +1155,7 @@ MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination, SourceGroup
 	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
 	AddMulticastGroupSourceJoin(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
 	AddMulticastGroupEntry(msg, mge);
-	NS_LOG_LOGIC("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
+	NS_LOG_LOGIC(sgp <<" via UpstreamNeighbor \""<< destination<<"\"");
 	// Send the packet toward the RPF(S)
 	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
 }
@@ -1183,7 +1183,7 @@ MulticastRoutingProtocol::SendGraftAckUnicast(SourceGroupPair &sgp, const Ipv4Ad
 	PIMHeader msg; // Create the graft packet
 	ForgeGraftAckMessage(msg, destination);
 	AddMulticastGroupEntry(msg, mge);
-	NS_LOG_LOGIC("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination);
+	NS_LOG_LOGIC(sgp << " via UpstreamNeighbor \""<< destination);
 	// Send the packet toward the RPF(S)
 	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
 }
@@ -1294,7 +1294,7 @@ MulticastRoutingProtocol::SendStateRefreshMessage (int32_t interface, Ipv4Addres
 void
 MulticastRoutingProtocol::RPFCheckAll()
 {
-	NS_LOG_FUNCTION(this);
+	NS_LOG_FUNCTION_NOARGS();
 	for(std::map<WiredEquivalentInterface, SourceGroupList>::iterator sgList = m_IfaceSourceGroup.begin();
 			sgList != m_IfaceSourceGroup.end();  sgList++){
 		int32_t interface = sgList->first.first;
@@ -1313,7 +1313,7 @@ MulticastRoutingProtocol::RPFCheckAll()
 void
 MulticastRoutingProtocol::RPFCheck (SourceGroupPair sgp)
 {
-	NS_LOG_DEBUG("("<<sgp.sourceMulticastAddr<<","<<sgp.groupMulticastAddr<<")");
+	NS_LOG_DEBUG(sgp);
 	RoutingMulticastTable entry;
 	MulticastEntry me;
 	WiredEquivalentInterface wei = RPF_interface(sgp.sourceMulticastAddr);
@@ -1345,7 +1345,7 @@ MulticastRoutingProtocol::RPFCheck (SourceGroupPair sgp)
 void
 MulticastRoutingProtocol::RPF_Changes(SourceGroupPair &sgp, int32_t oldInterface, Ipv4Address oldGateway, int32_t newInterface, Ipv4Address newGateway)
 {
-	NS_LOG_FUNCTION(this<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr<<oldInterface<<oldGateway<<newInterface<<newGateway);
+	NS_LOG_FUNCTION(sgp<<oldInterface<<oldGateway<<newInterface<<newGateway);
 	bool couldAssert = CouldAssert(sgp.sourceMulticastAddr, sgp.groupMulticastAddr, oldInterface, oldGateway);
 	CouldAssertCheck(sgp.sourceMulticastAddr, sgp.groupMulticastAddr, oldInterface, oldGateway, couldAssert);
 	SourceGroupState *sgStateO = FindSourceGroupState(oldInterface, oldGateway, sgp);
@@ -1517,9 +1517,9 @@ MulticastRoutingProtocol::RecvMessage (Ptr<Socket> socket)
 	RelayTag rtag;
 	bool tag = receivedPacket->RemovePacketTag(rtag);
 	Ipv4Address group = ipv4header.GetDestination();
-	NS_LOG_LOGIC("Node "<<receiverIfaceAddr<< ": Sender "<< senderIfaceAddr << " Port " << senderIfacePort<< " Group "<< group<<  " Tag "<<tag);
+//	NS_LOG_LOGIC("Receiver "<<receiverIfaceAddr<< " Sender "<< senderIfaceAddr << " Port " << senderIfacePort<< " Group "<< group<<  " Tag "<< tag);
 	receivedPacket->AddHeader(ipv4header);
-	if (tag || (group.IsMulticast() && group != Ipv4Address(ALL_PIM_ROUTERS4))){//Lookup(ipv4header.GetDestination(),ipv4header.GetSource(),rmt,me)){
+	if (tag || (group.IsMulticast() && group != Ipv4Address(ALL_PIM_ROUTERS4))){
 		if(tag) receivedPacket->AddPacketTag(rtag);
 		this->RecvPIMData (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
 	}
@@ -2113,7 +2113,7 @@ MulticastRoutingProtocol::SendPacketPIMUnicast(Ptr<Packet> packet, const PIMHead
 void
 MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, Ipv4Address destination)
 {
-	NS_LOG_FUNCTION(this);
+  NS_LOG_FUNCTION(this);
   if(m_stopTx) return;
   // trace
   if (m_role == CLIENT) return;
@@ -2328,7 +2328,7 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 void
 MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination)
 {
-	NS_LOG_FUNCTION(this << sgp.sourceMulticastAddr << sgp.groupMulticastAddr << interface<<GetLocalAddress(interface) << destination);
+	NS_LOG_FUNCTION(sgp<< interface<<GetLocalAddress(interface) << destination);
 	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
 	NS_ASSERT_MSG(sgState,"PPTTimerExpire sgState is null");
 	switch (sgState->PruneState) {
@@ -2899,9 +2899,9 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 		//	If OT(S, G) is not running, the router MUST set OT(S, G) to t_override seconds.
 		//	The Upstream(S, G) state machine remains in Forwarding (F) state.
 			if(GetNextHop(source.m_sourceAddress) != source.m_sourceAddress && !sgState->upstream->SG_OT.IsRunning()){
+//				NS_LOG_LOGIC("Setting TIMER OT "<< sgp<<", "<<interface<<sender);
 				sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
-				NS_LOG_LOGIC("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
 				sgState->upstream->SG_OT.SetArguments(sgp, interface);
 				sgState->upstream->SG_OT.Schedule();
 				}
@@ -2929,9 +2929,9 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 		//	If OT(S, G) is not running, the router MUST set OT(S, G) to t_override seconds.
 		//	The Upstream(S, G) state machine remains in AckPending (AP) state.
 			if(!sgState->upstream->SG_OT.IsRunning()){
+//				NS_LOG_LOGIC("Setting TIMER OT "<< sgp<<", "<<interface<<sender);
 				sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
-				NS_LOG_LOGIC("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
 				sgState->upstream->SG_OT.SetArguments(sgp, interface);
 				sgState->upstream->SG_OT.Schedule();
 			}
@@ -3345,7 +3345,6 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 			break;
 		}
 	}
-//	NS_LOG_DEBUG("Sender "<< sender <<" ("<<received<<") Receiver "<<receiver<<" ("<<myMetric<<")");
 }
 
 void
