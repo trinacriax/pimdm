@@ -1517,7 +1517,6 @@ MulticastRoutingProtocol::RecvMessage (Ptr<Socket> socket)
 	RelayTag rtag;
 	bool tag = receivedPacket->RemovePacketTag(rtag);
 	Ipv4Address group = ipv4header.GetDestination();
-//	NS_LOG_LOGIC("Receiver "<<receiverIfaceAddr<< " Sender "<< senderIfaceAddr << " Port " << senderIfacePort<< " Group "<< group<<  " Tag "<< tag);
 	receivedPacket->AddHeader(ipv4header);
 	if (tag || (group.IsMulticast() && group != Ipv4Address(ALL_PIM_ROUTERS4))){
 		if(tag) receivedPacket->AddPacketTag(rtag);
@@ -2075,9 +2074,9 @@ MulticastRoutingProtocol::SendPacketPIMRoutersInterface(Ptr<Packet> packet, cons
 	  if(m_ipv4->GetInterfaceForDevice (i->first->GetBoundNetDevice()) == interface && !i->second.GetLocal ().IsMulticast()){
 		  Ipv4Address bcast = i->second.GetLocal ().GetSubnetDirectedBroadcast (i->second.GetMask ());
 		  NS_LOG_LOGIC ("Node " << GetLocalAddress(interface)<< " is sending to "<< bcast<<":"<<PIM_PORT_NUMBER<<", Socket "<< i->first);
-		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
 		  // Trace it
 		  m_txControlPacketTrace (packet);
+		  i->first->SendTo (packet, 0, InetSocketAddress (bcast, PIM_PORT_NUMBER));
 		  break;
 	  }
       }
@@ -2101,9 +2100,9 @@ MulticastRoutingProtocol::SendPacketPIMUnicast(Ptr<Packet> packet, const PIMHead
 		Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, copy->GetSize(), 1, false);
 		copy->AddHeader(ipv4Header);
 		NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
-		i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
 		// Trace it
-		m_txControlPacketTrace (packet);
+		m_txControlPacketTrace (copy);
+		i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
 		break;
 		}
 	}
@@ -2117,7 +2116,6 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, Ipv4Address dest
   if(m_stopTx) return;
   // trace
   if (m_role == CLIENT) return;
-  m_txDataPacketTrace (packet);
   // Send
   WiredEquivalentInterface wei = RPF_interface(destination);
   int32_t interface = wei.first >0 ? wei.first : m_ipv4->GetInterfaceForAddress(m_mainAddress);
@@ -2127,6 +2125,7 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, Ipv4Address dest
   	  if(local == i->second.GetLocal () ){
   		  Ptr<Packet> copy = packet->Copy();
   		  NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy <<"("<<copy->GetSize() << ") to Destination: " << destination << ", Interface "<<interface<<", Socket "<<i->first);
+  		  m_txDataPacketTrace (copy);
   		  i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
   		  break;
   	  }
@@ -4240,9 +4239,9 @@ void MulticastRoutingProtocol::AskRoute (Ipv4Address destination){
 				ipv4Header = BuildHeader(i->second.GetLocal (), destination, 2, copy->GetSize(), 1, false);
 				copy->AddHeader(ipv4Header);
 				NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
-				i->first->SendTo (copy, 0, InetSocketAddress (destination, 7));
 				// Trace it
-				m_txControlPacketTrace (packet);
+				m_txControlPacketTrace (copy);
+				i->first->SendTo (copy, 0, InetSocketAddress (destination, 7));
 				break;
 			}
 		}
@@ -4263,8 +4262,8 @@ void MulticastRoutingProtocol::AskRoute (Ipv4Address destination){
 				Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, copy->GetSize(), 1, false);
 				copy->AddHeader(ipv4Header);
 				NS_LOG_LOGIC ("Node " << local << " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
+				m_txControlPacketTrace (copy);
 				i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
-				m_txControlPacketTrace (packet);
 				break;
 			}
 		}
