@@ -786,8 +786,8 @@ void
 MulticastRoutingProtocol::HelloTimerExpire (int32_t i)
 {
 	  NS_LOG_FUNCTION(this << i);
-	  if (m_role == CLIENT) return;
-	  if (IsLoopInterface(i)) return;
+//	  if (m_role == CLIENT) return;
+	  if (m_role == CLIENT || IsLoopInterface(i)) return;
 	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	  Timer &nHelloTimer = m_IfaceNeighbors.find(i)->second.hello_timer;
 //	  NS_LOG_DEBUG("Interface "<< i<< " [ E "<< nHelloTimer.IsExpired() << ", R " <<nHelloTimer.IsRunning()<<", S:" << nHelloTimer.IsSuspended()<<"].");
@@ -1885,6 +1885,10 @@ MulticastRoutingProtocol::RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address
 			if(!IsUpstream(interface, sender, msource->m_sourceAddress, mgroup->m_multicastGroupAddr.m_groupAddress)){
 				RecvGraftDownstream (graft, sender, receiver, *msource, mgroup->m_multicastGroupAddr, interface);
 			}
+			else {
+				SourceGroupPair sgp (msource->m_sourceAddress, mgroup->m_multicastGroupAddr.m_groupAddress);
+				RPFCheck(sgp);
+			}
 		}
 	}
 }
@@ -1911,7 +1915,8 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 			//	message to the Graft originator.  The PrunePending Timer (PPT(S, G, I)) MUST be cancelled.
 				sgState->PruneState = Prune_NoInfo;
 				SendGraftAckUnicast(sgp, sender);
-				sgState->SG_PPT.Cancel();
+				if(sgState->SG_PPT.IsRunning())
+					sgState->SG_PPT.Cancel();
 				break;
 			}
 			//Receive Graft(S, G). A Graft(S, G) is received on interface I with the upstream neighbor field
@@ -2189,8 +2194,8 @@ MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address dest
 	SendPruneUnicast(destination, sgp);
 	if(sgState->upstream->SG_PLT.IsRunning())
 		sgState->upstream->SG_PLT.Cancel();
-	sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
-	sgState->upstream->SG_PLT.SetArguments(sgp, destination);
+//	sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
+//	sgState->upstream->SG_PLT.SetArguments(sgp, destination);
 	sgState->upstream->SG_PLT.Schedule();
 }
 
@@ -2238,9 +2243,9 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, int32_t interface
 	if(!isValidGateway(gateway)){
 		if(sgState->upstream){
 			sgState->upstream->SG_OT.Cancel();
-			sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
-			sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
-			sgState->upstream->SG_OT.SetArguments(sgp, interface);
+//			sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
+//			sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
+//			sgState->upstream->SG_OT.SetArguments(sgp, interface);
 			sgState->upstream->SG_OT.Schedule();
 		}
 		return AskRoute(gateway);
@@ -2304,9 +2309,9 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 				SendGraftUnicast(destination, sgp);
 				if(sgState->upstream->SG_GRT.IsRunning())
 					sgState->upstream->SG_GRT.Cancel();
-				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
-				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-				sgState->upstream->SG_GRT.SetArguments(sgp, interface, destination);
+//				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
+//				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
+//				sgState->upstream->SG_GRT.SetArguments(sgp, interface, destination);
 				sgState->upstream->SG_GRT.Schedule();
 			}else{
 				ns->neighborGraftRetry[0] = 0;//reset counter retries
@@ -2445,9 +2450,9 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 			//	sent over I. Otherwise, the Prune-Indicator bit MUST be set to 0.
 				if(sgState->upstream->SG_SRT.IsRunning())
 					sgState->upstream->SG_SRT.Cancel();
-				sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
-				sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
-				sgState->upstream->SG_SRT.SetArguments(sgp, interface);
+//				sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
+//				sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
+//				sgState->upstream->SG_SRT.SetArguments(sgp, interface);
 				sgState->upstream->SG_SRT.Schedule();
 				PIMHeader refresh;
 				ForgeStateRefresh(interface, destination, sgp, refresh);
@@ -2597,8 +2602,12 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp)
 			AddMulticastGroupEntry(msg, mge);
 			Ptr<Packet> packet = Create<Packet> ();
 			Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, wei.second);
-			sgState->upstream->SG_GRT.Cancel();
+			if(sgState->upstream->SG_PLT.IsRunning())
+				sgState->upstream->SG_PLT.Cancel();
 			sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
+			sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
+			sgState->upstream->SG_PLT.SetArguments(sgp, wei.second);
+			sgState->upstream->SG_PLT.Schedule();
 
 			break;
 		}
@@ -3982,13 +3991,11 @@ void MulticastRoutingProtocol::EraseNeighborState (int32_t interface, const Neig
 }
 
 void MulticastRoutingProtocol::SetPropagationDelay (int32_t interface, Time delay) {
-	NeighborhoodStatus *in = FindNeighborhoodStatus (interface);
-	in->propagationDelay = delay;
+	FindNeighborhoodStatus (interface)->propagationDelay = delay;
 }
 
 void MulticastRoutingProtocol::SetOverrideInterval (int32_t interface, Time interval) {
-	NeighborhoodStatus *in = FindNeighborhoodStatus (interface);
-	in->overrideInterval = interval;
+	FindNeighborhoodStatus (interface)->overrideInterval = interval;
 }
 
 void MulticastRoutingProtocol::GetPrinterList (std::string string, std::set<WiredEquivalentInterface > resB){
@@ -4007,20 +4014,21 @@ void MulticastRoutingProtocol::SetLANDelayEnabled (int32_t interface, bool state
 void MulticastRoutingProtocol::EnablePimInterface(int32_t interface){
 	if(m_IfacePimEnabled.find(interface) == m_IfacePimEnabled.end())
 		m_IfacePimEnabled.insert(std::pair<int32_t,bool>(interface,true));
-	else m_IfacePimEnabled.find(interface)->second = true;
+	else
+		m_IfacePimEnabled.find(interface)->second = true;
 }
 
 void MulticastRoutingProtocol::DisablePimInterface(int32_t interface){
 	if(m_IfacePimEnabled.find(interface) == m_IfacePimEnabled.end())
 		m_IfacePimEnabled.insert(std::pair<int32_t,bool>(interface,false));
-	else m_IfacePimEnabled.find(interface)->second = false;
+	else
+		m_IfacePimEnabled.find(interface)->second = false;
 }
 
 bool MulticastRoutingProtocol::GetPimInterface(int32_t interface){
-	if(m_IfacePimEnabled.find(interface) == m_IfacePimEnabled.end())
-		return false;
-	else
+	if(m_IfacePimEnabled.find(interface) != m_IfacePimEnabled.end())
 		return m_IfacePimEnabled.find(interface)->second;
+	return false;
 }
 
 void MulticastRoutingProtocol::SetHelloHoldTime (uint16_t holdt){
@@ -4131,13 +4139,13 @@ double MulticastRoutingProtocol::t_override (int32_t interface){
 }
 
 double MulticastRoutingProtocol::OverrideInterval (int32_t interface){
-		NeighborhoodStatus *ns = FindNeighborhoodStatus (interface);
-		bool LPDO = true;
-		for (std::list<NeighborState>::iterator iter = ns->neighbors.begin (); iter!=ns->neighbors.end () && LPDO; iter++){
-			LPDO = LPDO && (iter->neighborOverrideInterval.GetSeconds ()>0);
-			ns->overrideInterval = Max (ns->overrideInterval ,iter->neighborOverrideInterval);
-		}
-		return (LPDO?ns->overrideInterval.GetSeconds ():Override_Interval);
+	NeighborhoodStatus *ns = FindNeighborhoodStatus (interface);
+	bool LPDO = true;
+	for (std::list<NeighborState>::iterator iter = ns->neighbors.begin (); iter!=ns->neighbors.end () && LPDO; iter++){
+		LPDO = LPDO && (iter->neighborOverrideInterval.GetSeconds ()>0);
+		ns->overrideInterval = Max (ns->overrideInterval ,iter->neighborOverrideInterval);
+	}
+	return (LPDO?ns->overrideInterval.GetSeconds ():Override_Interval);
 }
 
 PIMHeader::EncodedUnicast MulticastRoutingProtocol::ForgeEncodedUnicast (Ipv4Address unicast){
