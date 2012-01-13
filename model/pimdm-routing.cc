@@ -279,7 +279,7 @@ MulticastRoutingProtocol::register_SG (std::string csv){
 	Ipv4Address group, source;
 	std::vector<std::string> tokens;
 	Tokenize(csv, tokens, ",");
-	if(tokens.size()!= 2) return;
+	NS_ASSERT_MSG (tokens.size()== 2,"Provide \"source-ip,group-ip\"");
 	source = Ipv4Address(tokens.at(0).c_str());
 	group = Ipv4Address(tokens.at(1).c_str());
 	tokens.clear();
