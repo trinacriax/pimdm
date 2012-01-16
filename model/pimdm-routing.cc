@@ -3702,6 +3702,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 	NS_LOG_LOGIC("Sender = "<< sender<< " Receiver = "<< receiver);
 	uint16_t entry = 0;
 	NeighborState *tmp = new NeighborState (sender, receiver);
+//	NeighborState tmp (sender, receiver);
 	NeighborState *ns = FindNeighborState(interface, *tmp);
 	if(!ns){// Hello message received from a new neighbor
 		InsertNeighborState(interface, *tmp);
@@ -3791,6 +3792,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 		};
 		entry++;
  	}
+	delete tmp;
 	NeighborTimeout(interface);//just on this interface
 }
 
