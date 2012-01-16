@@ -3966,17 +3966,28 @@ NeighborState* MulticastRoutingProtocol::FindNeighborState (int32_t interface, c
 }
 
 void MulticastRoutingProtocol::InsertNeighborState(int32_t interface, const NeighborState ns) {
+	NS_LOG_FUNCTION(this<<interface<<ns);
 	if (!FindNeighborState(interface, ns)) {
 		NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
 		NS_ASSERT(nstatus!=NULL);
-		nstatus->neighbors.push_back(ns);
+		NeighborState nso (ns.neighborIfaceAddr, ns.receivingIfaceAddr);
+		nstatus->neighbors.push_back(nso);
 		NeighborState *neighbor = FindNeighborState(interface, ns);
-		NS_ASSERT(neighbor!=NULL);
-		if(neighbor->neigborNLT.IsRunning())
-			neighbor->neigborNLT.Cancel();
+		NS_ASSERT (neighbor!=NULL);
+//		neighbor->neigborNLT.Cancel();
+		neighbor->neigborNLT.SetFunction(&MulticastRoutingProtocol::NLTTimerExpire, this);
+		neighbor->neigborNLT.SetArguments(neighbor->neighborIfaceAddr, neighbor->receivingIfaceAddr, interface);
+//		Ipv4Address one, two;
+//		one = neighbor->neighborIfaceAddr;
+//		two = neighbor->receivingIfaceAddr;
+//		int32_t three = interface;
+//		neighbor->neigborNLT.SetArguments(one, two, three);
 		neighbor->neighborCreation = Simulator::Now();
-		neighbor->neighborTimeout = neighbor->neighborCreation;
+		neighbor->neighborHoldTime = Seconds(Hold_Time_Default);
+		neighbor->neighborRefresh = Seconds(Hello_Period);
+		neighbor->neighborTimeout = neighbor->neighborCreation+neighbor->neighborRefresh;
 		neighbor->neighborTimeoutB = true;
+		NS_LOG_FUNCTION(this<<interface<<*neighbor);
 	}
 }
 
