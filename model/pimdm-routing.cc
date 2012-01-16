@@ -3736,7 +3736,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 						ns->neigborNLT.SetArguments(ns->neighborIfaceAddr, ns->receivingIfaceAddr, interface);
 						ns->neigborNLT.Schedule();
 						if(ns->neighborTimeoutB)
-							ns->neighborTimeout += Seconds(value.GetSeconds());
+							ns->neighborTimeout = Simulator::Now()+value;
 					}
 				break;
 				}
