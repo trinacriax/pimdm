@@ -3982,7 +3982,8 @@ void MulticastRoutingProtocol::InsertNeighborState(int32_t interface, const Neig
 
 void MulticastRoutingProtocol::EraseNeighborState (int32_t interface, const NeighborState &ns) {
 	NeighborhoodStatus *nstatus = FindNeighborhoodStatus (interface);
-	if(nstatus)	nstatus->neighbors.remove(ns);
+	NeighborState nso (ns.neighborIfaceAddr, ns.receivingIfaceAddr);
+	if(nstatus)	nstatus->neighbors.remove(nso);
 }
 
 void MulticastRoutingProtocol::SetPropagationDelay (int32_t interface, Time delay) {
