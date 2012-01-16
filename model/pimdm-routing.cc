@@ -3732,12 +3732,10 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 						if(ns->neigborNLT.IsRunning()){
 							ns->neigborNLT.Cancel();
 						}
-						ns->neigborNLT.SetDelay(value);
-						ns->neigborNLT.SetFunction(&MulticastRoutingProtocol::NLTTimerExpire, this);
-						ns->neigborNLT.SetArguments(ns->neighborIfaceAddr, ns->receivingIfaceAddr, interface);
+						ns->neigborNLT.SetDelay(Seconds(value));
 						ns->neigborNLT.Schedule();
 						if(ns->neighborTimeoutB)
-							ns->neighborTimeout = Simulator::Now()+value;
+							ns->neighborTimeout = Seconds( Simulator::Now()+Seconds(value));
 					}
 				break;
 				}
