@@ -367,7 +367,8 @@ static inline std::ostream&
 operator << (std::ostream &os, const NeighborState &a){
 	os << "NeighborState( neighborIface = "<< a.neighborIfaceAddr<< ", receivingIface = " << a.receivingIfaceAddr<<
 			", Creation = " << a.neighborCreation.GetSeconds() <<", Refresh = "<<a.neighborRefresh.GetSeconds()<<
-			", HoldTime = " << a.neighborHoldTime.GetSeconds() << ", Timeout ="<<a.neighborTimeout.GetSeconds()<<")";
+			", HoldTime = " << a.neighborHoldTime.GetSeconds() << ", Timeout ="<<a.neighborTimeout.GetSeconds()<<
+			", NLT = "<<a.neigborNLT.GetDelay()<< ")";
 	return os;
 }
 
