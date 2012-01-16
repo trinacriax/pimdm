@@ -164,9 +164,9 @@ struct SourceGroupState{
 		SG_DATA_TTL(0)
 	{upstream = NULL;}
 	~SourceGroupState(){
-		SG_AT.Cancel();
-		SG_PT.Cancel();
-		SG_PPT.Cancel();
+//		SG_AT.Cancel();
+//		SG_PT.Cancel();
+//		SG_PPT.Cancel();
 	}
 	/// SourceGroup pair.
 	struct SourceGroupPair SGPair;
@@ -218,11 +218,11 @@ struct UpstreamState{
 		origination(NotOriginator)
 	{}
 	~UpstreamState(){
-		SG_GRT.Cancel();
-		SG_OT.Cancel();
-		SG_PLT.Cancel();
-		SG_SAT.Cancel();
-		SG_GRT.Cancel();
+//		SG_GRT.Cancel();
+//		SG_OT.Cancel();
+//		SG_PLT.Cancel();
+//		SG_SAT.Cancel();
+//		SG_GRT.Cancel();
 	}
 	///< Upstream interface-specific:
 	/// Graft/Prune State.
@@ -280,7 +280,7 @@ typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 			neighborRefresh(Seconds(0)),
 			neighborTimeout(Seconds(0)),
 			neighborTimeoutB(false),
-			neigborNLT(Timer::REMOVE_ON_DESTROY),
+			neigborNLT(Timer::CANCEL_ON_DESTROY),
 			neighborHoldTime(Seconds(0)),
 			neighborT(0),
 			neighborPropagationDelay(Seconds(0)),
@@ -301,7 +301,7 @@ typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 			neighborRefresh(Seconds(0)),
 			neighborTimeout(Seconds(0)),
 			neighborTimeoutB(false),
-			neigborNLT(Timer::REMOVE_ON_DESTROY),
+			neigborNLT(Timer::CANCEL_ON_DESTROY),
 			neighborHoldTime(Seconds(0)),
 			neighborT(0),
 			neighborPropagationDelay(Seconds(0)),
@@ -315,7 +315,7 @@ typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 			neighborGraftRetry[1] = MaxGraftRetry;
 		}
 		~NeighborState(){
-			neigborNLT.Cancel();
+//			neigborNLT.Cancel();
 		}
 		/// Interface address of the neighbor node.
 		Ipv4Address neighborIfaceAddr;
@@ -393,7 +393,7 @@ struct NeighborhoodStatus{
 	Time pruneHoldtime;
 	NeighborList neighbors; ///< Neighbor State
 	~NeighborhoodStatus(){
-		hello_timer.Cancel();
+//		hello_timer.Cancel();
 	}
 };
 
@@ -420,7 +420,7 @@ struct SGState{
 		sgsRenew(Timer::CANCEL_ON_DESTROY)
 	{sgsInterfaces.clear();}
 	~SGState(){
-		sgsRenew.Cancel();
+//		sgsRenew.Cancel();
 		sgsInterfaces.clear();
 	}
 
