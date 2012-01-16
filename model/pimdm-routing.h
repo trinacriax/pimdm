@@ -471,6 +471,7 @@ private:
 	void InsertNeighborState(int32_t interface, const NeighborState ns);
 	NeighborState* FindNeighborState (int32_t interface, const NeighborState ns);
 	NeighborState* FindNeighborState (int32_t interface, const NeighborState ns, bool append);
+	NeighborState* FindNeighborState (int32_t interface, const Ipv4Address neighbor, const Ipv4Address local);
 
 	void EraseNeighborState (int32_t interface, const NeighborState &ns);
 

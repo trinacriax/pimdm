@@ -3940,13 +3940,16 @@ void MulticastRoutingProtocol::EraseNeighborhoodStatus (const int32_t interface)
 }
 
 NeighborState* MulticastRoutingProtocol::FindNeighborState (int32_t interface, const NeighborState ns) {
+	return FindNeighborState (interface, ns.neighborIfaceAddr, ns.receivingIfaceAddr);
+}
+
+NeighborState* MulticastRoutingProtocol::FindNeighborState (int32_t interface, const Ipv4Address neighbor, const Ipv4Address local) {
 	NeighborhoodStatus *status = FindNeighborhoodStatus (interface);
 	if (!status)
 		return NULL;
 	NeighborList *list = &status->neighbors;
 	for (NeighborList::iterator iter = list->begin (); iter != list->end (); iter++) {
-		NeighborState *no = & (*iter);
-		if (*iter == ns)
+		if (iter->neighborIfaceAddr.Get() == neighbor.Get() && iter->receivingIfaceAddr.Get() == local.Get())
 			return & (*iter);
 	}
 	return NULL;
