@@ -204,7 +204,7 @@ private:
 
 	/// A list of pending messages which are buffered awaiting for being sent.
 	pimdm::PIMHeader m_queuedMessages;
-	Timer m_queuedMessagesTimer; // timer for throttling outgoing messages
+//	Timer m_queuedMessagesTimer; // timer for throttling outgoing messages
 
 	Time m_rpfCheck;
 	Timer m_rpfChecker;
@@ -449,7 +449,7 @@ private:
 	void ATTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
 	void PPTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
 	void PTTimerExpire (SourceGroupPair &sgp, int32_t interface);
-	void NLTTimerExpire (Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr, int32_t interface);
+	void NLTTimerExpire (int32_t interface, Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr);
 	void SRTTimerExpire (SourceGroupPair &sgp, int32_t interface);
 	void SATTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
 

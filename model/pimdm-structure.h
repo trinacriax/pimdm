@@ -132,23 +132,6 @@ operator << (std::ostream &os, const SourceGroupPair &a){
 }
 
 struct SourceGroupState{
-//	SourceGroupState():
-//		members(false),
-//		lastStateRefresh(Seconds(0)),
-//		LocalMembership(Local_NoInfo),
-//		AssertState(Assert_NoInfo),
-//		AssertWinner(),
-//		SG_AT(Timer::CANCEL_ON_DESTROY),
-//		PruneState(Prune_NoInfo),
-//		SG_PT(Timer::CANCEL_ON_DESTROY),
-//		SG_PPT(Timer::CANCEL_ON_DESTROY),
-////		SGAW("0.0.0.0"),
-//		SGAM(0),
-//		SG_SR_TTL(0),
-//		SG_DATA_TTL(0)
-//	{
-//		upstream = NULL;
-//	}
 	SourceGroupState(SourceGroupPair sgp):
 		SGPair(sgp),
 		LocalMembership(Local_NoInfo),
@@ -163,11 +146,8 @@ struct SourceGroupState{
 		SG_SR_TTL(0),
 		SG_DATA_TTL(0)
 	{upstream = NULL;}
-	~SourceGroupState(){
-//		SG_AT.Cancel();
-//		SG_PT.Cancel();
-//		SG_PPT.Cancel();
-	}
+	~SourceGroupState(){}
+
 	/// SourceGroup pair.
 	struct SourceGroupPair SGPair;
 	/// Local membership.
@@ -217,13 +197,8 @@ struct UpstreamState{
 		SG_SRT(Timer::CANCEL_ON_DESTROY),
 		origination(NotOriginator)
 	{}
-	~UpstreamState(){
-//		SG_GRT.Cancel();
-//		SG_OT.Cancel();
-//		SG_PLT.Cancel();
-//		SG_SAT.Cancel();
-//		SG_GRT.Cancel();
-	}
+	~UpstreamState(){}
+
 	///< Upstream interface-specific:
 	/// Graft/Prune State.
 	enum GraftPruneState GraftPrune;///< 4.1.2. State: One of {"NoInfo" (NI), "Pruned" (P), "Forwarding" (F),"AckPending" (AP) }
@@ -273,27 +248,25 @@ struct UpstreamState{
 typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 
 	struct NeighborState {//one for each neighbor
-		NeighborState():
-			neighborIfaceAddr("0.0.0.0"),
-			receivingIfaceAddr("0.0.0.0"),
-			neighborCreation(Seconds(0)),
-			neighborRefresh(Seconds(0)),
-			neighborTimeout(Seconds(0)),
-			neighborTimeoutB(false),
-			neigborNLT(Timer::CANCEL_ON_DESTROY),
-			neighborHoldTime(Seconds(0)),
-			neighborT(0),
-			neighborPropagationDelay(Seconds(0)),
-			neighborOverrideInterval(Seconds(0)),
-			neighborGenerationID(0),
-			neighborVersion(0),
-			neighborInterval(RefreshInterval)
-//			neighborReserved(0),
-//			neighborGraftRetry(0)
-		{
-			neighborGraftRetry[0] = 0;
-			neighborGraftRetry[1] = MaxGraftRetry;
-		}
+//		NeighborState():
+//			neighborIfaceAddr("0.0.0.0"),
+//			receivingIfaceAddr("0.0.0.0"),
+//			neighborCreation(Seconds(0)),
+//			neighborRefresh(Seconds(0)),
+//			neighborTimeout(Seconds(0)),
+//			neighborTimeoutB(false),
+//			neigborNLT(Timer::CANCEL_ON_DESTROY),
+//			neighborHoldTime(Seconds(0)),
+//			neighborT(0),
+//			neighborPropagationDelay(Seconds(0)),
+//			neighborOverrideInterval(Seconds(0)),
+//			neighborGenerationID(0),
+//			neighborVersion(0),
+//			neighborInterval(RefreshInterval)
+//		{
+//			neighborGraftRetry[0] = 0;
+//			neighborGraftRetry[1] = MaxGraftRetry;
+//		}
 		NeighborState(Ipv4Address neighbor, Ipv4Address rec):
 			neighborIfaceAddr(neighbor),
 			receivingIfaceAddr(rec),
@@ -309,14 +282,12 @@ typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 			neighborGenerationID(0),
 			neighborVersion(0),
 			neighborInterval(RefreshInterval)
-//			neighborReserved(0),
 		{
 			neighborGraftRetry[0] = 0;
 			neighborGraftRetry[1] = MaxGraftRetry;
 		}
-		~NeighborState(){
-//			neigborNLT.Cancel();
-		}
+		~NeighborState(){}
+
 		/// Interface address of the neighbor node.
 		Ipv4Address neighborIfaceAddr;
 		/// Interface address of the local node to the neighbor
@@ -392,9 +363,7 @@ struct NeighborhoodStatus{
 	Time stateRefreshInterval;///< Router's configured state refresh
 	Time pruneHoldtime;
 	NeighborList neighbors; ///< Neighbor State
-	~NeighborhoodStatus(){
-//		hello_timer.Cancel();
-	}
+	~NeighborhoodStatus(){}
 };
 
 typedef std::pair<int32_t, Ipv4Address> WiredEquivalentInterface ;	///< Neighbor List.
@@ -420,8 +389,7 @@ struct SGState{
 		sgsRenew(Timer::CANCEL_ON_DESTROY)
 	{sgsInterfaces.clear();}
 	~SGState(){
-//		sgsRenew.Cancel();
-		sgsInterfaces.clear();
+//		sgsInterfaces.clear();
 	}
 
 
