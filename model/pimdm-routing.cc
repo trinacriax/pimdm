@@ -3956,9 +3956,21 @@ void MulticastRoutingProtocol::InsertSourceGroupList (int32_t interface, Ipv4Add
 	SourceGroupList *sgl = new SourceGroupList ();
 	std::pair<WiredEquivalentInterface , SourceGroupList> i_s (i_n, *sgl);
 	m_IfaceSourceGroup.insert (i_s);
+}
+
 void MulticastRoutingProtocol::EraseSourceGroupList (int32_t interface, Ipv4Address neighbor) {
 	NS_LOG_FUNCTION(this<<interface<<neighbor);
-	m_IfaceSourceGroup.erase (WiredEquivalentInterface(interface,neighbor));
+	for (std::map<WiredEquivalentInterface, SourceGroupList>::iterator sgl = m_IfaceSourceGroup.begin();
+			sgl !=  m_IfaceSourceGroup.end() ; sgl++){
+		if (sgl->first.first == interface && sgl->first.second == neighbor){
+			for (std::list<SourceGroupState>::iterator sgs = sgl->second.begin(); sgs !=  sgl->second.end() ; sgs++){
+				EraseSourceGroupState(interface, neighbor, sgs->SGPair.sourceMulticastAddr, sgs->SGPair.groupMulticastAddr);
+			}
+			m_IfaceSourceGroup.erase(sgl);
+			break;
+		}
+
+	}
 }
 
 NeighborhoodStatus* MulticastRoutingProtocol::FindNeighborhoodStatus (int32_t interface) {
