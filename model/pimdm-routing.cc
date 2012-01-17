@@ -53,7 +53,7 @@ NS_LOG_COMPONENT_DEFINE ("PIMDMMulticastRouting");
 NS_OBJECT_ENSURE_REGISTERED (MulticastRoutingProtocol);
 
 MulticastRoutingProtocol::MulticastRoutingProtocol() :
-		m_routingTableAssociation(0), m_ipv4 (0), m_lo(0)
+		m_routingTableAssociation(0), m_ipv4 (0), m_lo(0), m_rpfChecker(Timer::CANCEL_ON_DESTROY)
 {
 	m_RoutingTable = Create<Ipv4StaticRouting> ();
 	m_IfaceNeighbors.clear();
