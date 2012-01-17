@@ -3866,25 +3866,6 @@ void MulticastRoutingProtocol::UpdateAssertWinner (SourceGroupState *sgState, ui
 	sgState->AssertWinner.IPAddress = winner;
 }
 
-SourceGroupList* MulticastRoutingProtocol::FindSourceGroupList (int32_t interface, Ipv4Address neighbor) {
-	NS_LOG_FUNCTION(this<<interface<<neighbor);
-	std::map<WiredEquivalentInterface, SourceGroupList>::iterator iter =
-			m_IfaceSourceGroup.find (WiredEquivalentInterface(interface,neighbor));
-	return (iter == m_IfaceSourceGroup.end () ? NULL : &iter->second);
-}
-
-void MulticastRoutingProtocol::InsertSourceGroupList (int32_t interface, Ipv4Address neighbor) {
-	NS_LOG_FUNCTION(this<<interface<<neighbor);
-	WiredEquivalentInterface i_n (interface,neighbor);
-	std::map<WiredEquivalentInterface, SourceGroupList>::iterator iter =
-			m_IfaceSourceGroup.find (i_n);
-	if (iter != m_IfaceSourceGroup.end ())
-		return;
-	SourceGroupList *sgl = new SourceGroupList ();
-	std::pair<WiredEquivalentInterface , SourceGroupList> i_s (i_n, *sgl);
-	m_IfaceSourceGroup.insert (i_s);
-}
-
 void MulticastRoutingProtocol::InsertSourceGroupState (int32_t interface, Ipv4Address neighbor, SourceGroupPair sgp) {
 	NS_LOG_FUNCTION(this<<interface<<neighbor<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
 	SourceGroupState *sgState = FindSourceGroupState (interface, neighbor, sgp);
@@ -3958,6 +3939,23 @@ void MulticastRoutingProtocol::EraseSourceGroupState (int32_t interface, Ipv4Add
 	sgl->remove(*sgs);
 }
 
+SourceGroupList* MulticastRoutingProtocol::FindSourceGroupList (int32_t interface, Ipv4Address neighbor) {
+	NS_LOG_FUNCTION(this<<interface<<neighbor);
+	std::map<WiredEquivalentInterface, SourceGroupList>::iterator iter =
+			m_IfaceSourceGroup.find (WiredEquivalentInterface(interface,neighbor));
+	return (iter == m_IfaceSourceGroup.end () ? NULL : &iter->second);
+}
+
+void MulticastRoutingProtocol::InsertSourceGroupList (int32_t interface, Ipv4Address neighbor) {
+	NS_LOG_FUNCTION(this<<interface<<neighbor);
+	WiredEquivalentInterface i_n (interface,neighbor);
+	std::map<WiredEquivalentInterface, SourceGroupList>::iterator iter =
+			m_IfaceSourceGroup.find (i_n);
+	if (iter != m_IfaceSourceGroup.end ())
+		return;
+	SourceGroupList *sgl = new SourceGroupList ();
+	std::pair<WiredEquivalentInterface , SourceGroupList> i_s (i_n, *sgl);
+	m_IfaceSourceGroup.insert (i_s);
 void MulticastRoutingProtocol::EraseSourceGroupList (int32_t interface, Ipv4Address neighbor) {
 	NS_LOG_FUNCTION(this<<interface<<neighbor);
 	m_IfaceSourceGroup.erase (WiredEquivalentInterface(interface,neighbor));
