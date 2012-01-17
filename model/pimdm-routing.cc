@@ -3821,10 +3821,10 @@ MulticastRoutingProtocol::NeighborTimeout(int32_t interface)
 	{
 	  if(pred(*it))
 	  {
-//	    myOtherList.push_back(*it);
-		it->neigborNLT.Remove();
 		NS_LOG_DEBUG("Erasing "<< *it);
-	    it = nl->neighbors.erase(it);
+		EraseNeighborState(interface,*it);
+//		it->neigborNLT.Remove();
+//	    it = nl->neighbors.erase(it);
 	  }
 	  else
 	  {
