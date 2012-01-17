@@ -197,7 +197,7 @@ main (int argc, char *argv[])
 	LogComponentEnable ("PushPimWifi", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 	LogComponentEnable ("VideoPushApplication", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("AodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("OlsrRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
@@ -233,7 +233,7 @@ main (int argc, char *argv[])
 	/// Number of PIM nodes
 	uint32_t sizePim = 16;
 	/// Number of client nodes
-	uint32_t sizeClient = 1;
+	uint32_t sizeClient = 5;
 	/// Animator filename
 	uint32_t sizeSource = 1;
 	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
@@ -243,9 +243,9 @@ main (int argc, char *argv[])
 	//Seed Run
 	uint32_t run = 2;
 	//Step in the grid X
-	double deltaX = 100;
+	double deltaX = 68;
 	//Step in the grid Y
-	double deltaY = 100;
+	double deltaY = 68;
 	//Nodes in a row
 	/// Animator filename
 	std::string animFile = "push-over-pim-wireles.tr";
@@ -478,9 +478,9 @@ main (int argc, char *argv[])
 		ss.str("");
 	}
 	// CLIENTS
+	ss<< multicastSource<< "," << multicastGroup << "," << "1";
 	for (int n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
 		std::stringstream command;
-		ss<< multicastSource<< "," << multicastGroup << "," << "1";
 		command<< "NodeList/" << clients.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterAsMember";
 		Config::Set(command.str(), StringValue(ss.str()));
 		command.str("");
