@@ -4030,10 +4030,9 @@ void MulticastRoutingProtocol::InsertNeighborState(int32_t interface, const Ipv4
 		NS_LOG_DEBUG("Updating: size "<< nstatus->neighbors.size());
 		neighborState = FindNeighborState(interface, neighbor, local);
 		NS_ASSERT (neighborState!=NULL);
-//		neighborState->neigborNLT.Cancel();
+		neighborState->neigborNLT.Cancel();
 		neighborState->neigborNLT.SetFunction(&MulticastRoutingProtocol::NLTTimerExpire, this);
 		neighborState->neigborNLT.SetArguments(interface, neighbor, local);
-		neighborState->neigborNLT.SetDelay(Seconds(Hello_Period)); // just to check
 		neighborState->neighborCreation = Simulator::Now();
 		neighborState->neighborHoldTime = Seconds(Hold_Time_Default);
 		neighborState->neighborRefresh = Seconds(Hello_Period);
