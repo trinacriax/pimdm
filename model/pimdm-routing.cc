@@ -2199,6 +2199,7 @@ MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address dest
 void
 MulticastRoutingProtocol::NLTTimerExpire (int32_t interface, Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr)
 {
+	NS_LOG_FUNCTION(this);
 	SourceGroupList *sgList= FindSourceGroupList(interface, neighborIfaceAddr); // get all the S, G pair
 	for (SourceGroupList::iterator sgState = sgList->begin(); sgState != sgList->end() ; sgState++){
 		if(sgState->AssertWinner.IPAddress == neighborIfaceAddr){// Find the assert winner
@@ -4010,6 +4011,7 @@ void MulticastRoutingProtocol::InsertNeighborState(int32_t interface, const Ipv4
 }
 
 void MulticastRoutingProtocol::EraseNeighborState (int32_t interface, const NeighborState &ns) {
+	NS_LOG_FUNCTION(this<<interface<<ns.neighborIfaceAddr<<ns.receivingIfaceAddr);
 	NeighborhoodStatus *nstatus = FindNeighborhoodStatus (interface);
 	NeighborState nso (ns.neighborIfaceAddr, ns.receivingIfaceAddr);
 	if(nstatus)	nstatus->neighbors.remove(nso);
