@@ -3941,6 +3941,23 @@ SourceGroupState* MulticastRoutingProtocol::FindSourceGroupState (int32_t interf
 	return FindSourceGroupState (interface, neighbor, *sgp);
 }
 
+void MulticastRoutingProtocol::EraseSourceGroupState (int32_t interface, Ipv4Address neighbor, const SourceGroupPair &sgp)
+{
+	EraseSourceGroupState (interface, neighbor, sgp.sourceMulticastAddr, sgp.groupMulticastAddr);
+}
+
+void MulticastRoutingProtocol::EraseSourceGroupState (int32_t interface, Ipv4Address neighbor, const Ipv4Address source, const Ipv4Address group)
+{
+	SourceGroupList *sgl = FindSourceGroupList (interface, neighbor);
+	NS_ASSERT(sgl);
+	SourceGroupState *sgs = FindSourceGroupState(interface, neighbor, source, group);
+	NS_ASSERT(sgs);
+	sgs->SG_AT.Remove();
+	sgs->SG_PPT.Remove();
+	sgs->SG_PT.Remove();
+	sgl->remove(*sgs);
+}
+
 void MulticastRoutingProtocol::EraseSourceGroupList (int32_t interface, Ipv4Address neighbor) {
 	NS_LOG_FUNCTION(this<<interface<<neighbor);
 	m_IfaceSourceGroup.erase (WiredEquivalentInterface(interface,neighbor));
