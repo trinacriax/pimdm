@@ -4046,6 +4046,7 @@ void MulticastRoutingProtocol::InsertNeighborState(int32_t interface, const Ipv4
 void MulticastRoutingProtocol::EraseNeighborState (int32_t interface, const NeighborState &ns) {
 	NS_LOG_FUNCTION(this<<interface<<ns.neighborIfaceAddr<<ns.receivingIfaceAddr);
 	NeighborhoodStatus *nstatus = FindNeighborhoodStatus (interface);
+	NS_ASSERT(nstatus);
 	NeighborState *nso = FindNeighborState(interface, ns);
 	nso->neigborNLT.Remove();
 	if(nstatus)	nstatus->neighbors.remove(*nso);
