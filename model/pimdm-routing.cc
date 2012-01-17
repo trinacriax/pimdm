@@ -1422,7 +1422,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 				NeighborState tmp(gatewayN, GetLocalAddress(interfaceN));
 				NeighborState *ns = FindNeighborState(interfaceN, tmp);
 				if(!ns){// RPF_Prime changed with a new neighbor we didn't know before...
-					InsertNeighborState(interfaceN, tmp);//add it and send a Hello...
+					InsertNeighborState(interfaceN, gatewayN, GetLocalAddress(interfaceN));//add it and send a Hello...
 					ns = FindNeighborState(interfaceN, tmp);
 					NeighborhoodStatus *nst = FindNeighborhoodStatus(interfaceN);
 					// If a Hello message is received from a new neighbor, the receiving router SHOULD send its own Hello message
@@ -3704,9 +3704,9 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 //	NeighborState tmp (sender, receiver);
 	NeighborState *ns = FindNeighborState(interface, *tmp);
 	if(!ns){// Hello message received from a new neighbor
-		InsertNeighborState(interface, *tmp);
 		ns = FindNeighborState(interface, *tmp);
 		NeighborhoodStatus *nst = FindNeighborhoodStatus(interface);
+		InsertNeighborState(interface, sender, receiver);
 		// If a Hello message is received from a new neighbor, the receiving router SHOULD send its own Hello message
 		//    after a random delay between 0 and Triggered_Hello_Delay.
 		Time delay = Seconds(UniformVariable().GetValue(0, Triggered_Hello_Delay));
@@ -3745,7 +3745,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 					// Generation ID changed The Generation ID is regenerated whenever PIM
 					//   forwarding is started or restarted on the interface.
 					EraseNeighborState(interface, *tmp);
-					InsertNeighborState(interface, *tmp);
+					InsertNeighborState(interface, sender, receiver);
 					NeighborRestart(interface, sender);
 				}
 				break;
@@ -3954,36 +3954,33 @@ NeighborState* MulticastRoutingProtocol::FindNeighborState (int32_t interface, c
 NeighborState* MulticastRoutingProtocol::FindNeighborState (int32_t interface, const NeighborState ns, bool append) {
 	if(append) {
 		InsertNeighborhoodStatus(interface);
-		InsertNeighborState(interface,ns);
+		InsertNeighborState(interface, ns.neighborIfaceAddr, ns.receivingIfaceAddr);
 	}
 	return FindNeighborState(interface, ns);
 }
 
-void MulticastRoutingProtocol::InsertNeighborState(int32_t interface, const NeighborState ns) {
-	NS_LOG_FUNCTION(this<<interface<<ns);
-	if (!FindNeighborState(interface, ns)) {
+void MulticastRoutingProtocol::InsertNeighborState(int32_t interface, const Ipv4Address neighbor, const Ipv4Address local) {
+//void MulticastRoutingProtocol::InsertNeighborState(int32_t interface, const NeighborState ns) {
+	NS_LOG_FUNCTION(this<<interface<<neighbor<<local);
+	if (!FindNeighborState(interface, neighbor, local)) {
 		NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
-		NS_LOG_DEBUG("Found nstats "<< " size "<< nstatus->neighbors.size());
+		NS_LOG_DEBUG("Found: size "<< nstatus->neighbors.size());
 		NS_ASSERT(nstatus!=NULL);
-		const NeighborState nso (ns.neighborIfaceAddr, ns.receivingIfaceAddr);
-		nstatus->neighbors.push_front(nso);
-		NS_LOG_DEBUG("Updating nstats "<< " size "<< nstatus->neighbors.size());
-		NeighborState *neighbor = FindNeighborState(interface, ns);
-		NS_ASSERT (neighbor!=NULL);
-		neighbor->neigborNLT.Cancel();
-		neighbor->neigborNLT.SetFunction(&MulticastRoutingProtocol::NLTTimerExpire, this);
-//		neighbor->neigborNLT.SetArguments(neighbor->neighborIfaceAddr, neighbor->receivingIfaceAddr, interface);
-		Ipv4Address one, two;
-		one = neighbor->neighborIfaceAddr;
-		two = neighbor->receivingIfaceAddr;
-		int32_t three = interface;
-		neighbor->neigborNLT.SetArguments(three, one, two);
-		neighbor->neighborCreation = Simulator::Now();
-		neighbor->neighborHoldTime = Seconds(Hold_Time_Default);
-		neighbor->neighborRefresh = Seconds(Hello_Period);
-		neighbor->neighborTimeout = neighbor->neighborCreation;
-		neighbor->neighborTimeoutB = true;
-		NS_LOG_FUNCTION(this<<interface<<*neighbor);
+		NeighborState *neighborState = new NeighborState (neighbor, local);
+		nstatus->neighbors.push_front(*neighborState);
+		NS_LOG_DEBUG("Updating: size "<< nstatus->neighbors.size());
+		neighborState = FindNeighborState(interface, neighbor, local);
+		NS_ASSERT (neighborState!=NULL);
+//		neighborState->neigborNLT.Cancel();
+		neighborState->neigborNLT.SetFunction(&MulticastRoutingProtocol::NLTTimerExpire, this);
+		neighborState->neigborNLT.SetArguments(interface, neighbor, local);
+		neighborState->neigborNLT.SetDelay(Seconds(Hello_Period)); // just to check
+		neighborState->neighborCreation = Simulator::Now();
+		neighborState->neighborHoldTime = Seconds(Hold_Time_Default);
+		neighborState->neighborRefresh = Seconds(Hello_Period);
+		neighborState->neighborTimeout = Seconds(Hello_Period);// todo check here
+		neighborState->neighborTimeoutB = true;
+		NS_LOG_FUNCTION(this<<interface<<neighbor<<local);
 	}
 }
 
