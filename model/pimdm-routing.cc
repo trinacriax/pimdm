@@ -3822,9 +3822,8 @@ MulticastRoutingProtocol::NeighborTimeout(int32_t interface)
 	  if(pred(*it))
 	  {
 		NS_LOG_DEBUG("Erasing "<< *it);
-		EraseNeighborState(interface,*it);
-//		it->neigborNLT.Remove();
-//	    it = nl->neighbors.erase(it);
+		it->neigborNLT.Remove();
+	    it = nl->neighbors.erase(it); // EraseNeighborState(interface,*it);
 	  }
 	  else
 	  {
