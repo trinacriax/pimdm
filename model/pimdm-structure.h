@@ -369,7 +369,7 @@ struct NeighborhoodStatus{
 typedef std::pair<int32_t, Ipv4Address> WiredEquivalentInterface ;	///< Neighbor List.
 
 /*** IGMP LIKE ***/
-#define IGMP_RENEW 5
+#define IGMP_RENEW 3
 
 enum PeerRole {
 	CLIENT,
