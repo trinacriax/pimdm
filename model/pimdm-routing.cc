@@ -3730,7 +3730,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 						ns->neighborTimeoutB=false;
 						break;
 					case 0://Removing old information
-						EraseNeighborState(interface, *tmp);
+						EraseNeighborState(interface, *ns);
 						break;
 					default:
 						ns->neigborNLT.Cancel();
@@ -3749,7 +3749,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 				else if(ns->neighborGenerationID != hello.m_optionList[entry].m_optionValue.generationID.m_generatioID){///< Sec. 4.3.4.
 					// Generation ID changed The Generation ID is regenerated whenever PIM
 					//   forwarding is started or restarted on the interface.
-					EraseNeighborState(interface, *tmp);
+					EraseNeighborState(interface, *ns);
 					InsertNeighborState(interface, sender, receiver);
 					NeighborRestart(interface, sender);
 				}
@@ -3792,7 +3792,6 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 		};
 		entry++;
  	}
-	delete tmp;
 	NeighborTimeout(interface);//just on this interface
 }
 
