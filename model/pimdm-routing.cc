@@ -1419,11 +1419,10 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 			if(outlist.size()>0 && sgp.sourceMulticastAddr != gatewayN){
 				sgState->upstream->GraftPrune = GP_AckPending;
 				SendGraftUnicast(gatewayN, sgp);
-				NeighborState tmp(gatewayN, GetLocalAddress(interfaceN));
-				NeighborState *ns = FindNeighborState(interfaceN, tmp);
+				NeighborState *ns = FindNeighborState(interfaceN, gatewayN, GetLocalAddress(interfaceN));
 				if(!ns){// RPF_Prime changed with a new neighbor we didn't know before...
 					InsertNeighborState(interfaceN, gatewayN, GetLocalAddress(interfaceN));//add it and send a Hello...
-					ns = FindNeighborState(interfaceN, tmp);
+					ns = FindNeighborState(interfaceN, gatewayN, GetLocalAddress(interfaceN));
 					NeighborhoodStatus *nst = FindNeighborhoodStatus(interfaceN);
 					// If a Hello message is received from a new neighbor, the receiving router SHOULD send its own Hello message
 					//    after a random delay between 0 and Triggered_Hello_Delay.
@@ -3700,13 +3699,13 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 {
 	NS_LOG_LOGIC("Sender = "<< sender<< " Receiver = "<< receiver);
 	uint16_t entry = 0;
-	NeighborState *tmp = new NeighborState (sender, receiver);
+//	NeighborState *tmp = new NeighborState (sender, receiver);
 //	NeighborState tmp (sender, receiver);
-	NeighborState *ns = FindNeighborState(interface, *tmp);
+	NeighborState *ns = FindNeighborState(interface, sender, receiver);
 	if(!ns){// Hello message received from a new neighbor
-		ns = FindNeighborState(interface, *tmp);
 		NeighborhoodStatus *nst = FindNeighborhoodStatus(interface);
 		InsertNeighborState(interface, sender, receiver);
+		ns = FindNeighborState(interface, sender, receiver);
 		// If a Hello message is received from a new neighbor, the receiving router SHOULD send its own Hello message
 		//    after a random delay between 0 and Triggered_Hello_Delay.
 		Time delay = Seconds(UniformVariable().GetValue(0, Triggered_Hello_Delay));
@@ -3715,6 +3714,7 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 		SourceGroupList *sgl = FindSourceGroupList(interface, sender);
 		if(!sgl) InsertSourceGroupList(interface, sender);
 	}
+//	ns = FindNeighborState(interface, sender, receiver);
 	while(entry < hello.m_optionList.size()){
 		switch (hello.m_optionList[entry].m_optionType){
 			case PIMHeader::HelloMessage::HelloHoldTime:{///< Sec. 4.3.2.
@@ -3956,7 +3956,7 @@ NeighborState* MulticastRoutingProtocol::FindNeighborState (int32_t interface, c
 		InsertNeighborhoodStatus(interface);
 		InsertNeighborState(interface, ns.neighborIfaceAddr, ns.receivingIfaceAddr);
 	}
-	return FindNeighborState(interface, ns);
+	return FindNeighborState(interface, ns.neighborIfaceAddr, ns.receivingIfaceAddr);
 }
 
 void MulticastRoutingProtocol::InsertNeighborState(int32_t interface, const Ipv4Address neighbor, const Ipv4Address local) {
