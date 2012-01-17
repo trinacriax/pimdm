@@ -3986,6 +3986,13 @@ void MulticastRoutingProtocol::InsertNeighborhoodStatus (const int32_t interface
 }
 
 void MulticastRoutingProtocol::EraseNeighborhoodStatus (const int32_t interface) {
+	std::map<int32_t, NeighborhoodStatus>::iterator iter = m_IfaceNeighbors.find(interface);
+	NS_ASSERT (iter != m_IfaceNeighbors.end());
+	NeighborhoodStatus *ns = &(m_IfaceNeighbors.find(interface)->second);
+	NS_ASSERT (ns != NULL);
+	ns->hello_timer.Remove();
+	for (std::list<NeighborState>::iterator iter = ns->neighbors.begin (); iter!=ns->neighbors.end (); iter++)
+		iter->neigborNLT.Remove();
 	m_IfaceNeighbors.erase (interface);
 }
 
