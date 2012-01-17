@@ -3703,7 +3703,12 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 //	NeighborState tmp (sender, receiver);
 	NeighborState *ns = FindNeighborState(interface, sender, receiver);
 	if(!ns){// Hello message received from a new neighbor
+		NS_LOG_DEBUG("Adding new neighbor= "<< sender << " on interface "<<interface);
 		NeighborhoodStatus *nst = FindNeighborhoodStatus(interface);
+		if (nst == NULL){
+			InsertNeighborhoodStatus(interface);
+			nst = FindNeighborhoodStatus(interface);
+		}
 		InsertNeighborState(interface, sender, receiver);
 		ns = FindNeighborState(interface, sender, receiver);
 		// If a Hello message is received from a new neighbor, the receiving router SHOULD send its own Hello message
