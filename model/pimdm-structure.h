@@ -339,7 +339,7 @@ operator << (std::ostream &os, const NeighborState &a){
 	os << "NeighborState( neighborIface = "<< a.neighborIfaceAddr<< ", receivingIface = " << a.receivingIfaceAddr<<
 			", Creation = " << a.neighborCreation.GetSeconds() <<", Refresh = "<<a.neighborRefresh.GetSeconds()<<
 			", HoldTime = " << a.neighborHoldTime.GetSeconds() << ", Timeout ="<<a.neighborTimeout.GetSeconds()<<
-			", NLT = "<<a.neigborNLT.GetDelay()<< ")";
+			", NLT = "<<a.neigborNLT.GetDelay()<< " DL " << a.neigborNLT.GetDelayLeft()<< ")";
 	return os;
 }
 
