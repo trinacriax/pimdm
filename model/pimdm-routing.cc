@@ -3795,7 +3795,11 @@ struct IsExpired
 {
   bool operator() (const NeighborState & ns) const
   {
-    return (ns.neighborTimeoutB && ns.neighborTimeout < Simulator::Now());
+    if (ns.neighborTimeoutB && ns.neighborTimeout < Simulator::Now()){
+    	NS_LOG_DEBUG(ns);
+    	return true;
+    }
+    return false;
   }
 };
 
@@ -3806,7 +3810,24 @@ MulticastRoutingProtocol::NeighborTimeout(int32_t interface)
 	NeighborhoodStatus *nl = FindNeighborhoodStatus(interface);
 	int32_t size = nl->neighbors.size();
 	IsExpired pred;
-	nl->neighbors.erase (std::remove_if (nl->neighbors.begin (), nl->neighbors.end (), pred), nl->neighbors.end ());
+	NeighborList other;
+	std::list<NeighborState>::iterator it = nl->neighbors.begin();
+	while (it != nl->neighbors.end())
+	{
+	  if(pred(*it))
+	  {
+//	    myOtherList.push_back(*it);
+		it->neigborNLT.Remove();
+		NS_LOG_DEBUG("Erasing "<< *it);
+	    it = nl->neighbors.erase(it);
+	  }
+	  else
+	  {
+	    ++it;
+	  }
+	}
+
+//	nl->neighbors.erase (std::remove_if (nl->neighbors.begin (), nl->neighbors.end (), pred), nl->neighbors.end ());
 	NS_LOG_LOGIC("Clean neighbors list on interface "<< interface<<": "<< size << " -> "<< nl->neighbors.size());
 }
 
