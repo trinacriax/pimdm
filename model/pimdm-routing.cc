@@ -4013,8 +4013,9 @@ void MulticastRoutingProtocol::InsertNeighborState(int32_t interface, const Ipv4
 void MulticastRoutingProtocol::EraseNeighborState (int32_t interface, const NeighborState &ns) {
 	NS_LOG_FUNCTION(this<<interface<<ns.neighborIfaceAddr<<ns.receivingIfaceAddr);
 	NeighborhoodStatus *nstatus = FindNeighborhoodStatus (interface);
-	NeighborState nso (ns.neighborIfaceAddr, ns.receivingIfaceAddr);
-	if(nstatus)	nstatus->neighbors.remove(nso);
+	NeighborState *nso = FindNeighborState(interface, ns);
+	nso->neigborNLT.Remove();
+	if(nstatus)	nstatus->neighbors.remove(*nso);
 }
 
 void MulticastRoutingProtocol::SetPropagationDelay (int32_t interface, Time delay) {
