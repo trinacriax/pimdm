@@ -226,6 +226,19 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("Packet", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("DefaultSimulatorImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 #endif
+
+	Config::SetDefault("ns3::WifiRemoteStationManager::FragmentationThreshold", StringValue("2200"));
+	Config::SetDefault("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue("2200"));
+	Config::SetDefault("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue(30.0));
+	Config::SetDefault("ns3::LogDistancePropagationLossModel::Exponent", DoubleValue(3.0));
+	Config::SetDefault("ns3::YansWifiPhy::TxGain",DoubleValue(0.0));
+	Config::SetDefault("ns3::YansWifiPhy::RxGain",DoubleValue(0.0));
+	Config::SetDefault("ns3::YansWifiPhy::TxPowerStart",DoubleValue(17.0));
+	Config::SetDefault("ns3::YansWifiPhy::TxPowerEnd",DoubleValue(17.0));
+	Config::SetDefault("ns3::YansWifiPhy::TxPowerLevels",UintegerValue(1));
+	Config::SetDefault("ns3::YansWifiPhy::EnergyDetectionThreshold",DoubleValue(-95));///17.3.10.1 Receiver minimum input sensitivity
+	Config::SetDefault("ns3::YansWifiPhy::CcaMode1Threshold",DoubleValue(-62));///17.3.10.5 CCA sensitivity
+
 	/// Write per-device PCAP traces if true
 	bool pcap = true;
 	/// Print routes if true
@@ -325,42 +338,52 @@ main (int argc, char *argv[])
 	/* WIFI STANDARD */
 
 	WifiHelper wifi = WifiHelper::Default ();
-	wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
-//	wifi.SetStandard (WIFI_PHY_STANDARD_80211g);
+//	wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
+	wifi.SetStandard (WIFI_PHY_STANDARD_80211g);
 
-	Ptr<YansWifiChannel> channel = CreateObject<YansWifiChannel> ();
-	Ptr<ConstantSpeedPropagationDelayModel> delayModel = CreateObject<ConstantSpeedPropagationDelayModel> ();
-	channel->SetPropagationDelayModel (delayModel);
-	Ptr<LogDistancePropagationLossModel> lossModel = CreateObject<LogDistancePropagationLossModel> ();
-	channel->SetPropagationLossModel (lossModel);
+//	Ptr<YansWifiChannel> channel = CreateObject<YansWifiChannel> ();
+//	Ptr<ConstantSpeedPropagationDelayModel> delayModel = CreateObject<ConstantSpeedPropagationDelayModel> ();
+//	channel->SetPropagationDelayModel (delayModel);
+//	Ptr<LogDistancePropagationLossModel> lossModel = CreateObject<LogDistancePropagationLossModel> ();
+//	channel->SetPropagationLossModel (lossModel);
+
+
+	YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
+//	wifiChannel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");//ARE DEFAULT
+//	wifiChannel.AddPropagationLoss("ns3::LogDistancePropagationLossModel"); //ARE DEFAULT
 
 	YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
-	phy.SetChannel (channel);
+//	phy.SetChannel (channel);
+	phy.SetChannel (wifiChannel.Create());
 	Ptr<ErrorRateModel> error = CreateObject<YansErrorRateModel> ();
 	phy.SetErrorRateModel("ns3::YansErrorRateModel");
-	phy.Set("TxGain",DoubleValue(0.0));
-	phy.Set("RxGain",DoubleValue(1.0));
+//	phy.Set("TxGain",DoubleValue(0.0));
+//	phy.Set("RxGain",DoubleValue(1.0));
+//	phy.Set("TxPowerStart",DoubleValue(14.0));
+//	phy.Set("TxPowerEnd",DoubleValue(14.0));
+//	phy.Set("EnergyDetectionThreshold",DoubleValue(-96));
+//	phy.Set("CcaMode1Threshold",DoubleValue(-86));
 
 	 // Add a non-QoS upper mac, and disable rate control
 	NqosWifiMacHelper mac = NqosWifiMacHelper::Default ();
 
-	//802.11b
-	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
-		"DataMode", WifiModeValue (WifiPhy::GetDsssRate2Mbps())
-		,"ControlMode",WifiModeValue (WifiPhy::GetDsssRate5_5Mbps())
-//		,"NonUnicastMode", WifiModeValue (WifiPhy::GetDsssRate1Mbps())
-		);
-
-	//802.11g
-//	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
-//		"DataMode", WifiModeValue (WifiPhy::GetErpOfdmRate6Mbps()),
-//		"ControlMode",WifiModeValue (WifiPhy::GetErpOfdmRate6Mbps()),
-//		"NonUnicastMode", WifiModeValue (WifiPhy::GetErpOfdmRate6Mbps())
-//		);
-
-
 	// Set it to adhoc mode
 	mac.SetType ("ns3::AdhocWifiMac");
+
+	//802.11b
+//	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
+//		"DataMode", WifiModeValue (WifiPhy::GetDsssRate5_5Mbps())
+//		,"ControlMode",WifiModeValue (WifiPhy::GetDsssRate5_5Mbps())
+//		,"NonUnicastMode", WifiModeValue (WifiPhy::GetDsssRate1Mbps())
+//		);
+
+	//802.11g
+	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
+		"DataMode", WifiModeValue (WifiPhy::GetErpOfdmRate54Mbps())
+//		,"ControlMode",WifiModeValue (WifiPhy::GetErpOfdmRate6Mbps())
+		,"NonUnicastMode", WifiModeValue (WifiPhy::GetErpOfdmRate54Mbps())
+		);
+
 
 	//add csma
 	CsmaHelper csma;
