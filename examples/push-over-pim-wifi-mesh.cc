@@ -566,7 +566,7 @@ main (int argc, char *argv[])
 	VideoHelper video = VideoHelper ("ns3::UdpSocketFactory", dst);
 //	video.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0)));
 //	video.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (sourceStop)));
-	video.SetAttribute ("DataRate", StringValue ("9.6Kb/s"));
+	video.SetAttribute ("DataRate", DataRateValue (DataRate (1000000)));
 	video.SetAttribute ("PacketSize", UintegerValue (1200));
 	video.SetAttribute ("PeerType", EnumValue (SOURCE));
 	video.SetAttribute ("Local", AddressValue (ipSource.GetAddress(0)));
