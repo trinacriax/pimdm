@@ -1852,6 +1852,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	NS_LOG_DEBUG("Data forwarding towards > "<< fwd_list.size()<<" < interfaces/nodes");
 	// Forward packet on all interfaces in oiflist.
 	Time delayMS = TransmissionDelay();
+	double min = 0.0;
 	for(std::set<WiredEquivalentInterface>::iterator out = fwd_list.begin(); out != fwd_list.end(); out++){
 		Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
 		//add a header
@@ -1867,7 +1868,8 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			NS_LOG_DEBUG("DataFwd towards clients ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
 			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
 		}
-		delayMS += TransmissionDelay();
+		min = ceil (fwdPacket->GetSize()*8 / 10^6)*1.2;
+		delayMS += TransmissionDelay(min,min*1.8, Time::US);
 	}
 }
 
