@@ -284,15 +284,16 @@ main (int argc, char *argv[])
 
 	cols = (uint16_t)ceil(sqrt(sizePim));
 	cols = (cols==0?1:cols);
+
 	// Here, we will explicitly create four nodes.  In more sophisticated
 	// topologies, we could configure a node factory.
-	double sourceStart = ceil(totalTime*.15);//after 15% of simulation
+	double sourceStart = ceil(totalTime*.25);//after 25% of simulation
 	/// Video stop
-	double sourceStop = ceil(totalTime*.70);//after 15% of simulation
+	double sourceStop = ceil(totalTime*.90);//after 90% of simulation
 	/// Client start
-	double clientStart = ceil(totalTime*.15);;
+	double clientStart = ceil(totalTime*.23);;
 	/// Client stop
-	double clientStop = ceil(totalTime*.80);
+	double clientStop = ceil(totalTime*.95);
 
 	SeedManager::SetSeed(seed);
 	SeedManager::SetRun(run);
