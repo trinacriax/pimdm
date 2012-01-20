@@ -387,7 +387,7 @@ main (int argc, char *argv[])
 
 	//add csma
 	CsmaHelper csma;
-	csma.SetChannelAttribute ("DataRate", DataRateValue (DataRate (5000000)));
+	csma.SetChannelAttribute ("DataRate", DataRateValue (DataRate (10000000)));
 	csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
 
 //	NetDeviceContainer sourceNetDev = wifi.Install(phy, mac, source);
