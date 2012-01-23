@@ -629,10 +629,10 @@ main (int argc, char *argv[])
 //		ss.str("");
 //	}
 
-	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxData",MakeCallback (&PIMDataTx));
-	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxData",MakeCallback (&PIMDataRx));
-	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxPIMControl", MakeCallback (&PIMControlTx));
-	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxPIMControl", MakeCallback (&PIMControlRx));
+//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxData",MakeCallback (&PIMDataTx));
+//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxData",MakeCallback (&PIMDataRx));
+//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxPIMControl", MakeCallback (&PIMControlTx));
+//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxPIMControl", MakeCallback (&PIMControlRx));
 if(g_verbose){
 	Config::ConnectWithoutContext("/NodeList/0/ApplicationList/0/$ns3::VideoPushApplication/Tx",MakeCallback (&AppTx));
 	Config::ConnectWithoutContext("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/PhyTxDrop",MakeCallback (&PhyTxDrop));
