@@ -251,9 +251,9 @@ main (int argc, char *argv[])
 	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
 	int32_t routing = 1;
 	//Seed for random numbers
-	uint32_t seed = 4001254589;
+//	uint32_t seed = 4001254589;
 	//Seed Run
-	uint32_t run = 2;
+//	uint32_t run = 2;
 	//Step in the grid X
 	double deltaX = 68;
 	//Step in the grid Y
@@ -276,8 +276,8 @@ main (int argc, char *argv[])
 //	double sinkStop = totalTime-1;
 
 	CommandLine cmd;
-	cmd.AddValue("seed", "Seed Random.", seed);
-	cmd.AddValue("run", "Seed Run.", run);
+//	cmd.AddValue("seed", "Seed Random.", seed);
+//	cmd.AddValue("run", "Seed Run.", run);
 
 	cmd.AddValue("sizePim", "Number of PIM nodes.", sizePim);
 	cmd.AddValue("sizeClient", "Number of PIM nodes.", sizeClient);
@@ -307,8 +307,8 @@ main (int argc, char *argv[])
 	/// Client stop
 	double clientStop = ceil(totalTime*.95);
 
-	SeedManager::SetSeed(seed);
-	SeedManager::SetRun(run);
+//	SeedManager::SetSeed(seed);
+//	SeedManager::SetRun(run);
 	NS_LOG_INFO ("Create nodes.");
 	NodeContainer source;
 	source.Create(sizeSource);
