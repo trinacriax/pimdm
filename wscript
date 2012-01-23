@@ -1,7 +1,7 @@
 ## -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 def build(bld):
-    module = bld.create_ns3_module('pimdm', ['internet', 'point-to-point', 'wifi', 'mobility', 'applications', 'csma',  'virtual-net-device', 'aodv', 'mbn-aodv', 'olsr'])
+    module = bld.create_ns3_module('pimdm', ['internet', 'point-to-point', 'wifi', 'mobility', 'applications', 'csma',  'virtual-net-device', 'visualizer', 'aodv', 'mbn-aodv', 'olsr'])
     module.includes = '.'
     module.source = [
         'model/pimdm-packet.cc',
