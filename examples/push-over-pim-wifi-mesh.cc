@@ -373,9 +373,9 @@ main (int argc, char *argv[])
 
 	//802.11g
 	wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
-		"DataMode", WifiModeValue (WifiPhy::GetErpOfdmRate54Mbps())
-//		,"ControlMode",WifiModeValue (WifiPhy::GetErpOfdmRate6Mbps())
-		,"NonUnicastMode", WifiModeValue (WifiPhy::GetErpOfdmRate54Mbps())
+		"DataMode", StringValue ("ErpOfdmRate54Mbps")
+//		,"ControlMode", StringValue ("ErpOfdmRate54Mbps")
+		,"NonUnicastMode", StringValue ("ErpOfdmRate54Mbps")
 		);
 
 
