@@ -355,13 +355,8 @@ main (int argc, char *argv[])
 //	phy.SetChannel (channel);
 	phy.SetChannel (wifiChannel.Create());
 	Ptr<ErrorRateModel> error = CreateObject<YansErrorRateModel> ();
-	phy.SetErrorRateModel("ns3::YansErrorRateModel");
-//	phy.Set("TxGain",DoubleValue(0.0));
-//	phy.Set("RxGain",DoubleValue(1.0));
-//	phy.Set("TxPowerStart",DoubleValue(14.0));
-//	phy.Set("TxPowerEnd",DoubleValue(14.0));
-//	phy.Set("EnergyDetectionThreshold",DoubleValue(-96));
-//	phy.Set("CcaMode1Threshold",DoubleValue(-86));
+//	phy.SetErrorRateModel("ns3::YansErrorRateModel");
+	phy.SetErrorRateModel("ns3::NistErrorRateModel");
 
 	 // Add a non-QoS upper mac, and disable rate control
 	NqosWifiMacHelper mac = NqosWifiMacHelper::Default ();
