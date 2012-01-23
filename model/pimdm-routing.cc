@@ -716,6 +716,15 @@ MulticastRoutingProtocol::GetLocalAddress (int32_t interface)
 
 void MulticastRoutingProtocol::DoDispose ()
 	{
+	//	if(m_txControlPacketTrace){
+	  std::string plotFileName = m_txControlPacketFile + ".plt";
+	  // Open the plot file.
+	  std::ofstream plotFile (plotFileName.c_str());
+	  // Write the plot file.
+	  m_txControlPacketPlot->GenerateOutput (plotFile);
+	  // Close the plot file.
+	  plotFile.close ();
+//	}
 	m_ipv4 = 0;
 	m_RoutingTable = 0;
 	m_routingTableAssociation = 0;
@@ -766,6 +775,23 @@ void MulticastRoutingProtocol::DoStart ()
 	m_rpfChecker.SetFunction(&MulticastRoutingProtocol::RPFCheckAll, this);
 	m_rpfChecker.SetDelay(m_rpfCheck);
 	m_rpfChecker.Schedule();
+
+//	if(m_txControlPacketTrace)
+//	{
+		m_txControlPacketFile = "control_packets_TX";
+		std::string graphicsFileName = m_txControlPacketFile + ".eps";
+		std::string plotTitle = "PDF TX Control Packets";
+		std::string plotTerminal = "postscript enhanced color eps font \"Courier,16\"";
+		std::string dataTitle = "PDF TX Control Packets";
+		m_txControlPacketPlot = new Gnuplot (graphicsFileName.c_str(),plotTitle.c_str());
+//		m_txControlPacketPlot.SetTitle(plotTitle);
+		m_txControlPacketPlot->SetTerminal(plotTerminal);
+		m_txControlPacketPlot->SetLegend("Seconds", "KBps");
+		m_txControlPacketPlot->AppendExtra("set auto x");
+		m_txControlPacketPlot->AppendExtra("set yrange [0:100]");
+		m_txControlPacketData.SetTitle(dataTitle);
+		m_txControlPacketData.SetStyle(Gnuplot2dDataset::LINES);
+//	}
 }
 
 
@@ -813,6 +839,7 @@ MulticastRoutingProtocol::RenewTimerExpire (SourceGroupPair sgp)
 			  if(!sgs->sgsRenew.IsRunning() && sgs->sgsInterfaces.size()>0){
 					  sgs->sgsRenew.Schedule();
 				  }
+			  AskRoute(sgs->sgsPair.sourceMulticastAddr);
 			  break;
 		  }
 		  case ROUTER:

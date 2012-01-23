@@ -117,7 +117,9 @@
 #include "ns3/olsr-routing-protocol.h"
 #include "ns3/dsdv-rtable.h"
 #include "ns3/dsdv-routing-protocol.h"
+#include "ns3/gnuplot.h"
 
+#include <fstream>
 #include <vector>
 #include <map>
 #include <set>
@@ -223,6 +225,10 @@ private:
 	TracedCallback <Ptr<const Packet> > m_txDataPacketTrace;
 
 	TracedCallback<uint32_t> m_routingTableChanged;
+
+	Gnuplot *m_txControlPacketPlot;
+	Gnuplot2dDataset m_txControlPacketData;
+	std::string m_txControlPacketFile;
 
 protected:
 	virtual void DoStart (void);
