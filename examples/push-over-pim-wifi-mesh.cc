@@ -724,7 +724,7 @@ if(g_verbose){
 	mobilityC.Install(clients);
 
 	Ptr<ListPositionAllocator> positionAllocS = CreateObject<ListPositionAllocator> ();
-	positionAllocS->Add(Vector(-70.0, -70.0, 0.0));// Source
+	positionAllocS->Add(Vector(-10.0, -10.0, 0.0));// Source
 	MobilityHelper mobilityS;
 	mobilityS.SetPositionAllocator(positionAllocS);
 	mobilityS.SetMobilityModel("ns3::ConstantPositionMobilityModel");
