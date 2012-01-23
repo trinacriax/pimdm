@@ -520,9 +520,9 @@ main (int argc, char *argv[])
 		}
 		case 3:{
 			Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localWeightFunction",EnumValue(mbn::W_NODE_RND));
-//			if(g_verbose){
+			if(g_verbose){
 				Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
-//			}
+			}
 
 //			for (int n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
 //				std::stringstream command;
