@@ -379,12 +379,12 @@ main (int argc, char *argv[])
 		);
 
 
-	//add csma
-	CsmaHelper csma;
+	/* Source Node to Gateway */
+	CsmaHelper csma; //Wired
 	csma.SetChannelAttribute ("DataRate", DataRateValue (DataRate (10000000)));
 	csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
+//	NetDeviceContainer sourceNetDev = wifi.Install(phy, mac, source); // WiFi source
 
-//	NetDeviceContainer sourceNetDev = wifi.Install(phy, mac, source);
 	NetDeviceContainer routersNetDev = wifi.Install(phy, mac, routers);
 	NetDeviceContainer clientsNetDev = wifi.Install(phy, mac, clients);
 
