@@ -394,8 +394,6 @@ main (int argc, char *argv[])
 	NetDeviceContainer ds0dr0 = csma.Install (s0r0);
 
 	// INSTALL INTERNET STACK
-	// Enable AODV
-	NS_LOG_INFO ("Enabling AODV Routing.");
 	OlsrHelper olsr;
 	AodvHelper aodv;
 	MbnAodvHelper mbnaodv;
@@ -408,14 +406,17 @@ main (int argc, char *argv[])
 	listRouters.Add (staticRouting, 0);
 	switch(routing){
 			case 1:{
+				NS_LOG_INFO ("Enabling OLSR Routing.");
 				listRouters.Add (olsr, 10);
 				break;
 			}
 			case 2:{
+				NS_LOG_INFO ("Enabling AODV Routing.");
 				listRouters.Add (aodv, 10);
 				break;
 			}
 			case 3:{
+				NS_LOG_INFO ("Enabling MBN-AODV Routing.");
 				listRouters.Add (mbnaodv, 10);
 				break;
 			}
@@ -430,14 +431,17 @@ main (int argc, char *argv[])
 	Ipv4ListRoutingHelper listClients;
 	switch(routing){
 		case 1:{
+			NS_LOG_INFO ("Enabling OLSR Routing.");
 			listClients.Add (olsr, 10);
 			break;
 		}
 		case 2:{
+			NS_LOG_INFO ("Enabling AODV Routing.");
 			listClients.Add (aodv, 10);
 			break;
 		}
 		case 3:{
+			NS_LOG_INFO ("Enabling MBN-AODV Routing.");
 			listClients.Add (mbnaodv, 10);
 			break;
 		}
