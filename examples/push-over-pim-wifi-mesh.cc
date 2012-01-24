@@ -348,8 +348,10 @@ main (int argc, char *argv[])
 
 
 	YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
-//	wifiChannel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");//ARE DEFAULT
-//	wifiChannel.AddPropagationLoss("ns3::LogDistancePropagationLossModel"); //ARE DEFAULT
+	//	wifiChannel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel"); //default
+	//	wifiChannel.AddPropagationLoss("ns3::LogDistancePropagationLossModel",//default
+	//		"Exponent", DoubleValue(0.5), "ReferenceLoss", DoubleValue (0));
+	//	wifiChannel.AddPropagationLoss("ns3::RangePropagationLossModel", "MaxRange", DoubleValue(28));
 
 	YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
 //	phy.SetChannel (channel);
