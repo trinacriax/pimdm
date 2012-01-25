@@ -774,7 +774,7 @@ MulticastRoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) co
 void MulticastRoutingProtocol::DoStart ()
 {
 	if(m_generationID==0)
-		m_generationID = UniformVariable().GetInteger(1, INT_MAX);///force value > 0
+		m_generationID = UniformVariable().GetInteger(1, UINT_MAX);///force value > 0
 	m_startTime = Simulator::Now();
 	m_rpfChecker.Cancel();
 	m_rpfChecker.SetFunction(&MulticastRoutingProtocol::RPFCheckAll, this);
