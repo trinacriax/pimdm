@@ -159,8 +159,8 @@ private:
 	// static routing table
 	Ptr<Ipv4StaticRouting> m_RoutingTable;
 
-	typedef std::list<Ipv4MulticastRoutingTableEntry *> MulticastRoutes;
-  MulticastRoutes m_multicastRoutes;
+//	typedef std::list<Ipv4MulticastRoutingTableEntry *> MulticastRoutes;
+//	MulticastRoutes m_multicastRoutes;
 
 	///\name Protocol fields;
 	//\{
@@ -205,14 +205,14 @@ private:
 	//}
 
 	/// A list of pending messages which are buffered awaiting for being sent.
-	pimdm::PIMHeader m_queuedMessages;
+//	pimdm::PIMHeader m_queuedMessages;
 //	Timer m_queuedMessagesTimer; // timer for throttling outgoing messages
 
 	Time m_rpfCheck;
 	Timer m_rpfChecker;
 
 	Time m_LanDelay;
-	uint64_t m_latestPacketID;
+//	uint64_t m_latestPacketID;
 
 	PeerRole m_role;
 
