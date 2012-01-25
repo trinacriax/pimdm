@@ -112,10 +112,8 @@ PIMHeader::Serialize (Buffer::Iterator start) const
   Buffer::Iterator i = start;
 //  std::cout << "Serialize PIMHeader\n";
   uint16_t header = m_version << 12 | m_type << 8 | m_reserved;
-  uint16_t checksum = 0;
   i.WriteHtonU16 (header);
-  Buffer::Iterator j = i;
-  i.WriteHtonU16 (checksum);
+  i.WriteHtonU16 (0); // checksum disabled
   switch (m_type)
 	{
 	case PIM_HELLO:{
@@ -152,10 +150,14 @@ PIMHeader::Serialize (Buffer::Iterator start) const
 	  break;
 	}
 	}
-    uint16_t size = GetSerializedSize();
-    size = (size % 4 == 0 ? (size % 4)*4: size);
-  	checksum = start.CalculateIpChecksum(size);
-    j.WriteHtonU16(checksum);
+  	// checksum disabled
+//	i = start;
+//	uint16_t size = GetSerializedSize();
+//	size = (size % 4 == 0 ? (size % 4)*4: size);
+//	uint16_t checksum = i.CalculateIpChecksum(GetSerializedSize());
+//	i = start;
+//	i.Next (2);
+//	i.WriteHtonU16(checksum);
 }
 
 uint32_t
