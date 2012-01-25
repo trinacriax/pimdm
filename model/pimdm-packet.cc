@@ -38,7 +38,8 @@ NS_LOG_COMPONENT_DEFINE ("PIMDMHeader");
 
 NS_OBJECT_ENSURE_REGISTERED (PIMHeader);
 
-PIMHeader::PIMHeader ()
+PIMHeader::PIMHeader ():
+		m_version(0), m_type(PIM_HELLO), m_reserved(0), m_checksum (0)
 {}
 
 PIMHeader::~PIMHeader ()
