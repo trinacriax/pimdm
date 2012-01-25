@@ -1592,7 +1592,7 @@ MulticastRoutingProtocol::RecvIgmpReport (PIMHeader::IgmpReportMessage &report, 
 		sgs->sgsRenew.Cancel();
 	if(sgs->sgsInterfaces.size() > 0)
 	{//TODO CHECK
-		Time delay = Seconds(ceil(IGMP_RENEW*1.5));
+		Time delay = Seconds(ceil(IGMP_RENEW*UniformVariable().GetValue(0.9,1.2)));
 		sgs->sgsRenew.SetDelay(delay);
 		sgs->sgsRenew.SetFunction(&MulticastRoutingProtocol::RenewTimerExpire, this);
 		sgs->sgsRenew.SetArguments(sgp);
