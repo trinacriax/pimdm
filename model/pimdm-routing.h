@@ -226,9 +226,9 @@ private:
 
 	TracedCallback<uint32_t> m_routingTableChanged;
 
-	Gnuplot *m_txControlPacketPlot;
-	Gnuplot2dDataset m_txControlPacketData;
-	std::string m_txControlPacketFile;
+//	Gnuplot *m_txControlPacketPlot;
+//	Gnuplot2dDataset m_txControlPacketData;
+//	std::string m_txControlPacketFile;
 
 protected:
 	virtual void DoStart (void);
