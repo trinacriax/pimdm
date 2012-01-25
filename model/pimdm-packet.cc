@@ -977,7 +977,7 @@ PIMHeader::IgmpReportMessage::Deserialize (Buffer::Iterator start, uint32_t mess
   NS_ASSERT (messageSize == this->GetSerializedSize());
   uint32_t size;
   m_multicastGroupAddr = Ipv4Address(i.ReadNtohU32());
-  size +=4;
+  size =4;
   m_sourceAddr = Ipv4Address(i.ReadNtohU32());
   size +=4;
   m_upstreamAddr = Ipv4Address(i.ReadNtohU32());
