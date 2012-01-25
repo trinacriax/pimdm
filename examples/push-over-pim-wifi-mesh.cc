@@ -413,17 +413,17 @@ main (int argc, char *argv[])
 	listRouters.Add (staticRouting, 0);
 	switch(routing){
 			case 1:{
-				NS_LOG_INFO ("Enabling OLSR Routing.");
+				NS_LOG_INFO ("Routers: Enabling OLSR Routing.");
 				listRouters.Add (olsr, 10);
 				break;
 			}
 			case 2:{
-				NS_LOG_INFO ("Enabling AODV Routing.");
+				NS_LOG_INFO ("Routers: Enabling AODV Routing.");
 				listRouters.Add (aodv, 10);
 				break;
 			}
 			case 3:{
-				NS_LOG_INFO ("Enabling MBN-AODV Routing.");
+				NS_LOG_INFO ("Routers: Enabling MBN-AODV Routing.");
 				listRouters.Add (mbnaodv, 10);
 				break;
 			}
@@ -438,17 +438,17 @@ main (int argc, char *argv[])
 	Ipv4ListRoutingHelper listClients;
 	switch(routing){
 		case 1:{
-			NS_LOG_INFO ("Enabling OLSR Routing.");
+			NS_LOG_INFO ("Clients: Enabling OLSR Routing.");
 			listClients.Add (olsr, 10);
 			break;
 		}
 		case 2:{
-			NS_LOG_INFO ("Enabling AODV Routing.");
+			NS_LOG_INFO ("Clients: Enabling AODV Routing.");
 			listClients.Add (aodv, 10);
 			break;
 		}
 		case 3:{
-			NS_LOG_INFO ("Enabling MBN-AODV Routing.");
+			NS_LOG_INFO ("Clients: Enabling MBN-AODV Routing.");
 			listClients.Add (mbnaodv, 10);
 			break;
 		}
@@ -746,7 +746,7 @@ if(g_verbose){
 	for(int i = 0; i < allNodes.GetN(); i++){
 		  Ptr<MobilityModel> mobility = allNodes.Get(i)->GetObject<MobilityModel> ();
 	      Vector pos = mobility->GetPosition (); // Get position
-	      NS_LOG_DEBUG("Position Node ["<<i<<"] = ("<< pos.x << ", " << pos.y<<", "<<pos.z<<")");
+	      NS_LOG_INFO("Position Node ["<<i<<"] = ("<< pos.x << ", " << pos.y<<", "<<pos.z<<")");
 	}
 
 
