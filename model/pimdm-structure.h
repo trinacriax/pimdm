@@ -85,11 +85,14 @@ operator > (const AssertMetric &a, const AssertMetric &b){
 	result = result || ((a.metricPreference == b.metricPreference) && (a.routeMetric == b.routeMetric) && (a.IPAddress != b.IPAddress) && !(a.IPAddress < b.IPAddress));
 	return result;
 }
-
-static inline bool
-operator < (const AssertMetric &a, const AssertMetric &b){
-	return b > a;
-}
+//
+//static inline bool
+//operator < (const AssertMetric &a, const AssertMetric &b){
+//	bool result = (a.metricPreference > b.metricPreference);
+//	result = result || ((a.metricPreference == b.metricPreference) && (a.routeMetric > b.routeMetric));
+//	result = result || ((a.metricPreference == b.metricPreference) && (a.routeMetric == b.routeMetric) && (a.IPAddress != b.IPAddress) && !(a.IPAddress > b.IPAddress));
+//	return result;
+//}
 
 /// (S,G) Pair. Source S and destination group G associated with an IP packet.
 struct SourceGroupPair{
