@@ -187,15 +187,22 @@ WifiPhy::State state)
    }
 }
 
+static void ArpDiscard (std::string context, Ptr<const Packet> p)
+{
+	 std::cout<< Simulator::Now() << " Node "<< GetNodeID(context) <<" Arp discards packet "<< p->GetUid() << " of "<<p->GetSize() << " bytes " << std::endl;
+}
+
 int
 main (int argc, char *argv[])
-{
+	{
 // Users may find it convenient to turn on explicit debugging
 // for selected modules; the below lines suggest how to do this
 #if 1
 //	LogComponentEnable ("SimpleGlobalRoutingExample", LOG_LEVEL_INFO);
-	LogComponentEnable ("PushPimWifi", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	LogComponentEnable ("VideoPushApplication", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("PushPimWifi", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("PushPimWifi", LogLevel(LOG_INFO | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("VideoPushApplication", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("VideoPushApplication", LogLevel(LOG_INFO | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("ChunkBuffer", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
