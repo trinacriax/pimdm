@@ -53,14 +53,19 @@ NS_LOG_COMPONENT_DEFINE ("PIMDMMulticastRouting");
 NS_OBJECT_ENSURE_REGISTERED (MulticastRoutingProtocol);
 
 MulticastRoutingProtocol::MulticastRoutingProtocol() :
-		m_routingTableAssociation(0), m_ipv4 (0), m_lo(0), m_rpfChecker(Timer::CANCEL_ON_DESTROY)
+		m_mainInterface(0), m_generationID(0),  m_startTime(0), m_mainAddress(Ipv4Address()),
+		m_stopTx(false), m_routingTableAssociation(0), m_ipv4 (0), m_identification(0),
+		m_routingProtocol(0), m_lo(0), m_rpfChecker(Timer::CANCEL_ON_DESTROY)
 {
 	m_RoutingTable = Create<Ipv4StaticRouting> ();
 	m_IfaceNeighbors.clear();
-	m_IfacePimEnabled.clear();
 	m_IfaceSourceGroup.clear();
 	m_LocalReceiver.clear();
+	m_IfacePimEnabled.clear();
 	m_mrib.clear();
+	m_interfaceExclusions.clear();
+	m_socketAddresses.clear();
+	m_SGclients.clear();
 }
 
 MulticastRoutingProtocol::~MulticastRoutingProtocol()
@@ -770,7 +775,6 @@ void MulticastRoutingProtocol::DoStart ()
 {
 	if(m_generationID==0)
 		m_generationID = UniformVariable().GetInteger(1, INT_MAX);///force value > 0
-	m_latestPacketID = 0;
 	m_startTime = Simulator::Now();
 	m_rpfChecker.Cancel();
 	m_rpfChecker.SetFunction(&MulticastRoutingProtocol::RPFCheckAll, this);
