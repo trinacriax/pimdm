@@ -222,7 +222,7 @@ MulticastRoutingProtocol::unregisterMember (Ipv4Address source, Ipv4Address grou
 		m_SGclients.find(sgp)->second.sgsInterfaces.erase(interface);
 	}
 	SGState *sgs = &m_SGclients.find(sgp)->second;
-	if(m_SGclients.find(sgp)->second.sgsInterfaces.size() == 0){
+	if(m_SGclients.find(sgp)->second.sgsInterfaces.empty()){
 		sgs->sgsRenew.Cancel();
 	}
 	else if(!sgs->sgsRenew.IsRunning()){
@@ -235,7 +235,7 @@ MulticastRoutingProtocol::unregisterMember (Ipv4Address source, Ipv4Address grou
 //		m_LocalReceiver.find(sgp)->second.erase(interface);
 //		NS_LOG_DEBUG("Removing interface " << interface<< " from ("<<source<<","<<group<<")");
 //	}
-//	if(m_LocalReceiver.find(sgp)!=m_LocalReceiver.end() && m_LocalReceiver.find(sgp)->second.size() == 0){
+//	if(m_LocalReceiver.find(sgp)!=m_LocalReceiver.end() && m_LocalReceiver.find(sgp)->second.empty()){
 //		m_LocalReceiver.erase(sgp);
 //		NS_LOG_DEBUG("Removing Source-Group ("<<source<<","<<group<<") to the map");
 //	}
@@ -861,7 +861,7 @@ MulticastRoutingProtocol::RenewTimerExpire (SourceGroupPair sgp)
 					m_LocalReceiver.find(sgp)->second.erase(*interface);
 					NS_LOG_DEBUG( "Removing interface " << *interface<< " from ("<<source<<","<<group<<")");
 				}
-				if (m_LocalReceiver.find(sgp) != m_LocalReceiver.end() && m_LocalReceiver.find(sgp)->second.size() == 0) {
+				if (m_LocalReceiver.find(sgp) != m_LocalReceiver.end() && m_LocalReceiver.find(sgp)->second.empty()) {
 					m_LocalReceiver.erase(sgp);
 					NS_LOG_DEBUG("Removing Source-Group ("<<source<<","<<group<<") to the map");
 				} else
@@ -1442,14 +1442,14 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 		//RPF'(S) Changes AND olist(S, G) is NULL
 		//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 		//	The Upstream(S, G) state machine MUST transition to the Pruned (P) state.
-			if(outlist.size()==0){
+			if(outlist.empty()){
 				sgState->upstream->GraftPrune = GP_Pruned;
 			}
 		//RPF'(S) Changes AND olist(S, G) is non-NULL AND S NOT directly connected
 		//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 		//	The Upstream(S, G) state machine MUST transition to the AckPending (AP) state,
 		//	unicast a Graft to the new RPF'(S), and set the GraftRetry Timer (GRT(S, G)) to Graft_Retry_Period.
-			if(outlist.size()>0 && sgp.sourceMulticastAddr != gatewayN){
+			if(!outlist.empty() && sgp.sourceMulticastAddr != gatewayN){
 				sgState->upstream->GraftPrune = GP_AckPending;
 				SendGraftUnicast(gatewayN, sgp);
 				NeighborState *ns = FindNeighborState(interfaceN, gatewayN, GetLocalAddress(interfaceN));
@@ -1473,7 +1473,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 			break;
 		}
 		case GP_Pruned:{
-			if(outlist.size()==0 && sgp.sourceMulticastAddr != gatewayN){
+			if(outlist.empty() && sgp.sourceMulticastAddr != gatewayN){
 			//RPF'(S) Changes AND olist(S, G) == NULL AND S NOT directly connected
 			//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 			//	The Upstream(S, G) state machine stays in the Pruned (P) state and MUST cancel the PLT(S, G) timer.
@@ -1497,7 +1497,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 			break;
 		}
 		case GP_AckPending:{
-			if(outlist.size()==0 && sgp.sourceMulticastAddr != gatewayN){
+			if(outlist.empty() && sgp.sourceMulticastAddr != gatewayN){
 			//RPF'(S) Changes AND olist(S, G) == NULL AND S NOT directly connected
 			//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 			//	The Upstream(S, G) state machine MUST transition to the Pruned (P) state.
@@ -1506,7 +1506,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 				if(sgState->upstream->SG_GRT.IsRunning())
 					sgState->upstream->SG_GRT.Cancel();
 			}
-			if(outlist.size()>0 && sgp.sourceMulticastAddr != gatewayN){
+			if(!outlist.empty() && sgp.sourceMulticastAddr != gatewayN){
 				//RPF'(S) Changes AND olist(S, G) does not become NULL AND S NOT directly connected
 				//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 				//	The Upstream(S, G) state machine stays in the AckPending (AP) state.
@@ -1723,7 +1723,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			//The Upstream(S, G) state machine MUST transition to the Pruned (P)
 			// state, send a Prune(S, G) to RPF'(S), and set PLT(S, G) to t_limit seconds.
 			case GP_Forwarding:{
-				if(fwd_list.size() == 0 && gateway != source && !GetMulticastGroup(group)){
+				if(fwd_list.empty() && gateway != source && !GetMulticastGroup(group)){
 					olistCheck(sgp, fwd_list);//CHECK: olist is null and S not directly connected
 					sgState->upstream->GraftPrune = GP_Pruned;
 					if(sgState->upstream->SG_PLT.IsRunning())
@@ -2586,7 +2586,7 @@ void
 MulticastRoutingProtocol::olistCheck(SourceGroupPair &sgp, std::set<WiredEquivalentInterface> &list)
 {
 	NS_LOG_FUNCTION(this);
-	if(list.size() == 0)
+	if(list.empty())
 		olistEmpty(sgp);
 	else
 		olistFull(sgp);
