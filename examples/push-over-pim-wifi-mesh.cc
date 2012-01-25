@@ -135,7 +135,7 @@ DevTxTrace (std::string context, Ptr<const Packet> p)
 {
  if (g_verbose)
    {
-     std::cout<< "  Node "<< GetNodeID(context) << " TX p: " << *p << std::endl;
+     std::cout<< "  Node "<< GetNodeID(context) << " TX p: " << p->GetUid() << std::endl;
    }
 }
 void
@@ -143,7 +143,7 @@ DevRxTrace (std::string context, Ptr<const Packet> p)
 {
  if (g_verbose)
    {
-     std::cout<< "  Node "<< GetNodeID(context) << " RX p: " << *p << std::endl;
+     std::cout<< "  Node "<< GetNodeID(context) << " RX p: " << p->GetUid() << std::endl;
    }
 }
 void
