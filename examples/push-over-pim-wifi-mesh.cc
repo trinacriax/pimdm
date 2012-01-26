@@ -243,10 +243,6 @@ main (int argc, char *argv[])
 	Config::SetDefault("ns3::YansWifiPhy::EnergyDetectionThreshold",DoubleValue(-95));///17.3.10.1 Receiver minimum input sensitivity
 	Config::SetDefault("ns3::YansWifiPhy::CcaMode1Threshold",DoubleValue(-62));///17.3.10.5 CCA sensitivity
 
-	/// Write per-device PCAP traces if true
-	bool pcap = true;
-	/// Print routes if true
-	bool printRoutes = true;
 	/// Number of PIM nodes
 	uint32_t sizePim = 16;
 	/// Number of client nodes
@@ -256,21 +252,13 @@ main (int argc, char *argv[])
 	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
 	int32_t routing = 1;
 	//Seed for random numbers
-//	uint32_t seed = 4001254589;
+	uint32_t seed = 4001254589;
 	//Seed Run
-//	uint32_t run = 2;
+	uint32_t run = 1;
 	//Step in the grid X
-	double deltaX = 68;
-	//Step in the grid Y
-	double deltaY = 68;
-	//Nodes in a row
-	/// Animator filename
-	std::string animFile = "push-over-pim-wireles.tr";
+	double range = 30;
 	/// Simulation time, seconds
 	double totalTime = 100;
-	/// Video start
-	/// Flow Monitor
-	bool enableFlowMonitor = false;
 	/// grid cols number
 	uint16_t cols;
 
@@ -281,21 +269,15 @@ main (int argc, char *argv[])
 //	double sinkStop = totalTime-1;
 
 	CommandLine cmd;
-//	cmd.AddValue("seed", "Seed Random.", seed);
-//	cmd.AddValue("run", "Seed Run.", run);
-
-	cmd.AddValue("sizePim", "Number of PIM nodes.", sizePim);
-	cmd.AddValue("sizeClient", "Number of PIM nodes.", sizeClient);
-	cmd.AddValue("sizeSource", "Number of PIM nodes.", sizeSource);
-	cmd.AddValue("routing", "Routing protocol to use.", routing);
-	cmd.AddValue("time", "Simulation time, s.", totalTime);
-	cmd.AddValue("deltaY", "Grid step Y", deltaY);
-	cmd.AddValue("deltaX", "Grid step X", deltaX);
-	cmd.AddValue("cols", "Grid width ", cols);
-
-	cmd.AddValue("printRoutes", "Print routing table dumps.", printRoutes);
-	cmd.AddValue("pcap", "Write PCAP traces.", pcap);
-	cmd.AddValue("animFile", "File Name for Animation Output", animFile);
+	cmd.AddValue ("seed", "Seed Random.", seed);
+	cmd.AddValue ("run", "Seed Run.", run);
+	cmd.AddValue ("sizePim", "Number of PIM nodes.", sizePim);
+	cmd.AddValue ("sizeClient", "Number of Clients.", sizeClient);
+	cmd.AddValue ("sizeSource", "Number of Sources.", sizeSource);
+	cmd.AddValue ("routing", "Routing protocol used.", routing);
+	cmd.AddValue ("range", "Cover range in meters.", range);
+	cmd.AddValue ("cols", "Grid width ", cols);
+	cmd.AddValue ("time", "Simulation time, s.", totalTime);
 
 	cmd.Parse(argc, argv);
 
@@ -312,8 +294,8 @@ main (int argc, char *argv[])
 	/// Client stop
 	double clientStop = ceil(totalTime*.95);
 
-//	SeedManager::SetSeed(seed);
-//	SeedManager::SetRun(run);
+	SeedManager::SetSeed(seed);
+	SeedManager::SetRun(run);
 	NS_LOG_INFO ("Create nodes.");
 	NodeContainer source;
 	source.Create(sizeSource);
@@ -691,8 +673,8 @@ if(g_verbose){
 	mobilityR.SetPositionAllocator ("ns3::GridPositionAllocator",
 	  "MinX", DoubleValue (0.0),
 	  "MinY", DoubleValue (0.0),
-	  "DeltaX", DoubleValue (deltaX),
-	  "DeltaY", DoubleValue (deltaY),
+	  "DeltaX", DoubleValue (range),
+	  "DeltaY", DoubleValue (range),
 	  "GridWidth", UintegerValue (cols),
 	  "LayoutType", StringValue ("RowFirst"));
 //  mobility.SetPositionAllocator ("ns3::RandomDiscPositionAllocator",
@@ -708,12 +690,12 @@ if(g_verbose){
 	mobilityR.Install(routers);
 
 	double deltaXmin, deltaXmax, deltaYmin, deltaYmax;
-	deltaXmin = 0-deltaX;
-	deltaXmax = floor (deltaX * cols)*.7;
-	deltaYmin = 0-deltaY;
-	deltaYmax = deltaY * floor (sizePim / cols)*.7;
+	deltaXmin = 0-range;
+	deltaXmax = floor (range * cols)*.7;
+	deltaYmin = 0-range;
+	deltaYmax = range * floor (sizePim / cols)*.7;
 
-	NS_LOG_DEBUG("X "<<deltaX << " cols "<< cols);
+	NS_LOG_DEBUG("X "<<range << " cols "<< range);
 	NS_LOG_DEBUG ("Arranging clients between ["<<deltaXmin<<","<< deltaYmin<<"] - [" <<deltaXmax<<","<<deltaYmax<<"]");
 
 	MobilityHelper mobilityC;
