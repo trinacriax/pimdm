@@ -3922,9 +3922,9 @@ void MulticastRoutingProtocol::UpdateAssertWinner (SourceGroupState *sgState, ui
 
 void MulticastRoutingProtocol::InsertSourceGroupState (int32_t interface, Ipv4Address neighbor, SourceGroupPair sgp) {
 	NS_LOG_FUNCTION(this<<interface<<neighbor<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
-	SourceGroupState *sgState = FindSourceGroupState (interface, neighbor, sgp);
+//	SourceGroupState *sgState = FindSourceGroupState (interface, neighbor, sgp);
 	NS_ASSERT(interface >0 && interface <m_ipv4->GetNInterfaces());
-	if (!sgState) {
+//	if (!sgState) {
 		SourceGroupState *sgs = new SourceGroupState (sgp);
 		sgs->SGPair.nextMulticastAddr = neighbor;
 		sgs->LocalMembership = Local_NoInfo;
@@ -3937,11 +3937,11 @@ void MulticastRoutingProtocol::InsertSourceGroupState (int32_t interface, Ipv4Ad
 		NS_ASSERT(m_IfaceSourceGroup.find(key) != m_IfaceSourceGroup.end());
 		m_IfaceSourceGroup.find(key)->second.push_back(*sgs);
 		NS_ASSERT(m_IfaceSourceGroup.find(key)->second.size() > 0);
-		sgState = FindSourceGroupState (interface, neighbor, sgp);
+		SourceGroupState *sgState = FindSourceGroupState (interface, neighbor, sgp);
 		if(IsUpstream(interface,neighbor,sgp) && !sgState->upstream){
 			sgState->upstream = new UpstreamState ();
 		}
-		}
+//		}
 	}
 
 SourceGroupState* MulticastRoutingProtocol::FindSourceGroupState (int32_t interface, Ipv4Address neighbor, const SourceGroupPair &sgp) {
