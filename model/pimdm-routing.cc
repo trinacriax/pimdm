@@ -3922,27 +3922,22 @@ void MulticastRoutingProtocol::UpdateAssertWinner (SourceGroupState *sgState, ui
 
 void MulticastRoutingProtocol::InsertSourceGroupState (int32_t interface, Ipv4Address neighbor, SourceGroupPair sgp) {
 	NS_LOG_FUNCTION(this<<interface<<neighbor<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
-//	SourceGroupState *sgState = FindSourceGroupState (interface, neighbor, sgp);
 	NS_ASSERT(interface >0 && interface <m_ipv4->GetNInterfaces());
-//	if (!sgState) {
-		SourceGroupState *sgs = new SourceGroupState (sgp);
-		sgs->SGPair.nextMulticastAddr = neighbor;
-		sgs->LocalMembership = Local_NoInfo;
-		sgs->PruneState = Prune_NoInfo;
-		sgs->AssertState = Assert_NoInfo;
-		WiredEquivalentInterface key(interface,neighbor);
-		SourceGroupList *sgl = new SourceGroupList ();
-		std::pair<WiredEquivalentInterface,SourceGroupList> k_pair(key,*sgl);
-		m_IfaceSourceGroup.insert(k_pair);
-		NS_ASSERT(m_IfaceSourceGroup.find(key) != m_IfaceSourceGroup.end());
-		m_IfaceSourceGroup.find(key)->second.push_back(*sgs);
-		NS_ASSERT(m_IfaceSourceGroup.find(key)->second.size() > 0);
-		SourceGroupState *sgState = FindSourceGroupState (interface, neighbor, sgp);
-		if(IsUpstream(interface,neighbor,sgp) && !sgState->upstream){
-			sgState->upstream = new UpstreamState ();
-		}
-//		}
-	}
+	SourceGroupState sgs (sgp);
+	sgs.SGPair.nextMulticastAddr = neighbor;
+	sgs.LocalMembership = Local_NoInfo;
+	sgs.PruneState = Prune_NoInfo;
+	sgs.AssertState = Assert_NoInfo;
+	if(IsUpstream(interface,neighbor,sgp))
+		sgs.upstream = new UpstreamState ();
+	WiredEquivalentInterface key(interface,neighbor);
+	SourceGroupList sgl;
+	std::pair<WiredEquivalentInterface,SourceGroupList> k_pair(key,sgl);
+	m_IfaceSourceGroup.insert(k_pair);
+	NS_ASSERT(m_IfaceSourceGroup.find(key) != m_IfaceSourceGroup.end());
+	m_IfaceSourceGroup.find(key)->second.push_front(sgs);
+	NS_ASSERT(!m_IfaceSourceGroup.find(key)->second.empty());
+}
 
 SourceGroupState* MulticastRoutingProtocol::FindSourceGroupState (int32_t interface, Ipv4Address neighbor, const SourceGroupPair &sgp) {
 	NS_LOG_FUNCTION(this<<interface<<neighbor<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
