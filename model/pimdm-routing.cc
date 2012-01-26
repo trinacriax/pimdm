@@ -3960,9 +3960,11 @@ SourceGroupState* MulticastRoutingProtocol::FindSourceGroupState (int32_t interf
 	NS_LOG_FUNCTION(this<<interface<<neighbor<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
 	if (add) //&& !FindSourceGroupList(interface, neighbor))
 		InsertSourceGroupList(interface, neighbor);
-	if (add && !FindSourceGroupState(interface, neighbor, sgp))
-		InsertSourceGroupState(interface, neighbor, sgp);
 	SourceGroupState *sgState = FindSourceGroupState(interface, neighbor, sgp);
+	if (add && !sgState){
+		InsertSourceGroupState(interface, neighbor, sgp);
+		sgState = FindSourceGroupState(interface, neighbor, sgp);
+	}
 	if(add //&& IsUpstream(interface, neighbor, sgp)
 			&& sgState->upstream == NULL){
 		sgState->upstream = new UpstreamState ();
