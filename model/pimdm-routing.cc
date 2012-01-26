@@ -441,12 +441,28 @@ MulticastRoutingProtocol::AddEntry (const Ipv4Address group, const Ipv4Address s
 {
 //  NS_LOG_FUNCTION (this << "Group: "<< group << " Source: "<< source <<" Next: "<< next << " RPF_I: "<< interface << " MainAddress: "<< m_mainAddress);
   // Creates a new rt entry with specified values
-  RoutingMulticastTable &entry = m_mrib[group];//DEBUG
-  m_mrib[group].groupAddr = group;
-//  MulticastEntry *me = &m_mrib[group].mgroup[source];//DEBUG
-  m_mrib[group].mgroup[source].sourceAddr = source;
-  m_mrib[group].mgroup[source].interface = interface;
-  m_mrib[group].mgroup[source].nextAddr = next;
+  RoutingMulticastTable r_entry;
+  if (m_mrib.find(group) == m_mrib.end() )
+	  m_mrib.insert(std::pair<Ipv4Address, RoutingMulticastTable> (group, r_entry));
+  RoutingMulticastTable &tr_entry = m_mrib.find(group)->second;
+  tr_entry.groupAddr = group;
+  MulticastEntry m_entry;
+  if(tr_entry.mgroup.find(source) == tr_entry.mgroup.end())
+	  tr_entry.mgroup.insert(std::pair<Ipv4Address, MulticastEntry> (source, m_entry));
+  MulticastEntry &tm_entry = tr_entry.mgroup.find(source)->second;
+  tm_entry.sourceAddr = source;
+  tm_entry.interface = interface;
+  tm_entry.nextAddr = next;
+//  RoutingMulticastTable r_entry;
+//  if (m_mrib.find(group) == m_mrib.end() )
+//	  m_mrib.insert(std::pair<Ipv4Address, RoutingMulticastTable> (group, r_entry));
+//  m_mrib.find(group)->second.groupAddr = group;
+//    MulticastEntry m_entry;
+//  if(m_mrib.find(group)->second.mgroup.find(source) == m_mrib.find(group)->second.mgroup.end())
+//	  m_mrib.find(group)->second.mgroup.insert(std::pair<Ipv4Address, MulticastEntry> (source, m_entry));
+//  m_mrib.find(group)->second.mgroup.find(source)->second.sourceAddr = source;
+//  m_mrib.find(group)->second.mgroup.find(source)->second.interface = interface;
+//  m_mrib.find(group)->second.mgroup.find(source)->second.nextAddr = next;
 }
 
 ///
@@ -4159,7 +4175,7 @@ bool MulticastRoutingProtocol::GetStopTx (){
 }
 
 bool MulticastRoutingProtocol::GetMulticastGroup (Ipv4Address group){
-	return (group.IsMulticast () && m_mrib.find (group)!=m_mrib.end ());
+	return (group.IsMulticast () && m_mrib.find (group) != m_mrib.end ());
 }
 
 void MulticastRoutingProtocol::DelMulticastGroup (Ipv4Address group){
