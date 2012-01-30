@@ -261,7 +261,7 @@ main (int argc, char *argv[])
 	int32_t routing = 1;
 	//Seed for random numbers
 	uint32_t seed = 4001254589;
-	//Seed Run
+	//Seed Run -> 10 runs!
 	uint32_t run = 1;
 	//Step in the grid X
 	double range = 30;
