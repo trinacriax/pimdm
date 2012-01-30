@@ -233,8 +233,16 @@ main (int argc, char *argv[])
 
 	Config::SetDefault("ns3::WifiRemoteStationManager::FragmentationThreshold", StringValue("2200"));
 	Config::SetDefault("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue("2200"));
+
 	Config::SetDefault("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue(30.0));
 	Config::SetDefault("ns3::LogDistancePropagationLossModel::Exponent", DoubleValue(3.5));
+
+	Config::SetDefault("ns3::NakagamiPropagationLossModel::Distance1", DoubleValue(30));
+	Config::SetDefault("ns3::NakagamiPropagationLossModel::Distance2", DoubleValue(50));
+	Config::SetDefault("ns3::NakagamiPropagationLossModel::m0", DoubleValue(1));
+	Config::SetDefault("ns3::NakagamiPropagationLossModel::m1", DoubleValue(1));
+//	Config::SetDefault("ns3::NakagamiPropagationLossModel::m2", DoubleValue(.75));
+
 	Config::SetDefault("ns3::YansWifiPhy::TxGain",DoubleValue(0.0));
 	Config::SetDefault("ns3::YansWifiPhy::RxGain",DoubleValue(0.0));
 	Config::SetDefault("ns3::YansWifiPhy::TxPowerStart",DoubleValue(16.0));
