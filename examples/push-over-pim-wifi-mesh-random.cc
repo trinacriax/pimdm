@@ -677,15 +677,15 @@ if(g_verbose){
 
 
 
-	MobilityHelper mobilityR;
-	mobilityR.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-	mobilityR.SetPositionAllocator ("ns3::GridPositionAllocator",
-	  "MinX", DoubleValue (0.0),
-	  "MinY", DoubleValue (0.0),
-	  "DeltaX", DoubleValue (range),
-	  "DeltaY", DoubleValue (range),
-	  "GridWidth", UintegerValue (cols),
-	  "LayoutType", StringValue ("RowFirst"));
+//	MobilityHelper mobilityR;
+//	mobilityR.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+//	mobilityR.SetPositionAllocator ("ns3::GridPositionAllocator",
+//	  "MinX", DoubleValue (0.0),
+//	  "MinY", DoubleValue (0.0),
+//	  "DeltaX", DoubleValue (range),
+//	  "DeltaY", DoubleValue (range),
+//	  "GridWidth", UintegerValue (cols),
+//	  "LayoutType", StringValue ("RowFirst"));
 //  mobility.SetPositionAllocator ("ns3::RandomDiscPositionAllocator",
 //								 "X", StringValue ("100.0"),
 //								 "Y", StringValue ("100.0"),
@@ -695,20 +695,117 @@ if(g_verbose){
 //                             "Time", StringValue ("2s"),
 //                             "Speed", StringValue ("Constant:1.0"),
 //                             "Bounds", StringValue ("0|200|0|200"));
+	MobilityHelper mobilityS;
+	Ptr<ListPositionAllocator> positionAllocS = CreateObject<ListPositionAllocator> ();
 
-	mobilityR.Install(routers);
-
-	double deltaXmin, deltaXmax, deltaYmin, deltaYmax;
-	deltaXmin = 0-range;
-	deltaXmax = floor (range * cols)*.7;
-	deltaYmin = 0-range;
-	deltaYmax = range * floor (sizePim / cols)*.7;
-
-	NS_LOG_DEBUG("X "<<range << " cols "<< range);
-	NS_LOG_DEBUG ("Arranging clients between ["<<deltaXmin<<","<< deltaYmin<<"] - [" <<deltaXmax<<","<<deltaYmax<<"]");
+	MobilityHelper mobilityR;
+	Ptr<ListPositionAllocator> positionAllocR = CreateObject<ListPositionAllocator> ();
 
 	MobilityHelper mobilityC;
+	Ptr<ListPositionAllocator> positionAllocC = CreateObject<ListPositionAllocator> ();
+
+	std::list<Vector> r_id;
+	double rx,ry,rz;
+	rz = 0;
+	rx = UniformVariable().GetInteger(0,100);
+	ry = UniformVariable().GetInteger(0,100);
+	positionAllocR->Add(Vector(rx, ry, rz));
+	positionAllocS->Add(Vector(rx, ry, rz));
+
+	r_id.push_back(Vector(rx,ry,rz));
+	uint32_t max_r, max_c;
+	max_r = 4;
+	max_c = (int)log(sizeClient);
+	uint32_t r_neighbors, c_clients, r_cnt, c_cnt;
+	r_neighbors = c_clients = 0;
+	r_cnt = c_cnt = 0;
+	++r_cnt; //we have alread added the first router.
+	NS_LOG_DEBUG("R ["<<r_cnt<<"] = (" << rx <<","<< ry <<"," <<rz<<")");
+//	std::cout <<"set object " <<r_cnt<< " circle at "<< rx<<","<<ry<<" radius " << range <<" fc lt "<<  r_cnt <<"\t#0\n";
+//	std::cout <<rx<<"\t"<<ry<<"\t" << rz<<" w p lw 2 lc "<< r_cnt<<"\t#1\n";
+	double rho = range; //radius
+	while (!r_id.empty() && r_cnt < sizePim){
+		Vector base = r_id.front();
+		r_id.pop_front();
+		r_neighbors = UniformVariable().GetInteger(1,max_r); // number of routers to add;
+		r_neighbors = (r_cnt+r_neighbors<=sizePim?r_neighbors: sizePim-r_cnt);
+		NS_LOG_DEBUG("R ["<<r_cnt<<"] Neighbors: " << r_neighbors);
+		rx = base.x;
+		ry = base.y;
+
+		while(r_neighbors-- >0){
+			UniformVariable r (-rho, rho);
+			double x,y;
+			do
+			{
+				x = r.GetValue ();
+				y = r.GetValue ();
+			}
+			while (sqrt (x*x + y*y) > rho);
+			positionAllocR->Add(Vector(rx+x,ry+y,rz));
+			r_id.push_back(Vector(rx+x,ry+y,rz));
+			r_cnt++;
+//			std::cout <<"set object " <<r_cnt<< " circle at "<< rx+x<<","<<ry+y<<" radius " << range <<" fc lt "<<  r_cnt <<"\t#1\n";
+//			std::cout <<x+rx<<"\t"<<y+ry<<"\t" << rz<<" w p lw 2 lc "<< r_cnt<<"\t#1\n";
+			NS_LOG_DEBUG("R ["<<r_cnt<<"] = (" << rx+x <<","<< ry+y <<"," <<rz<<")");
+		}
+		c_clients = UniformVariable().GetInteger(1,max_c);
+		c_clients = (r_cnt == sizePim) ? sizeClient - c_cnt: c_clients;
+		NS_LOG_DEBUG("R ["<<r_cnt<<"] Clients: " << c_clients);
+		while(c_cnt< sizeClient && c_clients-- >0){
+			UniformVariable r (-rho, rho);
+			double x,y;
+			do
+			{
+				x = r.GetValue ();
+				y = r.GetValue ();
+			}
+			while (sqrt (x*x + y*y) > rho);
+			positionAllocC->Add(Vector(rx+x,ry+y,rz));
+			c_cnt++;
+			NS_LOG_DEBUG("C ["<<c_cnt<<"] = (" << rx+x <<","<< ry+y <<"," <<rz<<")");
+//			std::cout <<x+rx<<"\t"<<y+ry<<"\t" << rz<<"\t#2\n";
+		}
+	}
+	r_id.clear();
+
+	NS_LOG_DEBUG("Placed " << r_cnt << " routers and " << c_cnt << " clients");
+	mobilityR.SetPositionAllocator (positionAllocR);
+	mobilityR.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+	mobilityR.Install(routers);
+
+	mobilityS.SetPositionAllocator (positionAllocS);
+	mobilityS.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+	mobilityS.Install(source);
+
+	mobilityC.SetPositionAllocator (positionAllocC);
 	mobilityC.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+	mobilityC.Install(clients);
+
+
+	for(int i = 0; i < allNodes.GetN(); i++){
+		  Ptr<MobilityModel> mobility = allNodes.Get(i)->GetObject<MobilityModel> ();
+	      Vector pos = mobility->GetPosition (); // Get position
+	      if( i < source.GetN() )
+	    	  NS_LOG_INFO("Position Source ["<<i<<"] = ("<< pos.x << ", " << pos.y<<", "<<pos.z<<")");
+	      else if(i >= source.GetN() && i <= routers.GetN() )
+	      	  NS_LOG_INFO("Position Router ["<<i<<"] = ("<< pos.x << ", " << pos.y<<", "<<pos.z<<")");
+	      else
+	    	  NS_LOG_INFO("Position Client ["<<i<<"] = ("<< pos.x << ", " << pos.y<<", "<<pos.z<<")");
+	}
+
+//
+//	double deltaXmin, deltaXmax, deltaYmin, deltaYmax;
+//	deltaXmin = 0-range;
+//	deltaXmax = floor (range * cols)*.7;
+//	deltaYmin = 0-range;
+//	deltaYmax = range * floor (sizePim / cols)*.7;
+
+//	NS_LOG_DEBUG("X "<<range << " cols "<< range);
+//	NS_LOG_DEBUG ("Arranging clients between ["<<deltaXmin<<","<< deltaYmin<<"] - [" <<deltaXmax<<","<<deltaYmax<<"]");
+
+//	MobilityHelper mobilityC;
+//	mobilityC.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 //	mobilityC.SetPositionAllocator ("ns3::RandomRectanglePositionAllocator",
 //	  "MinX", DoubleValue (50.0),
 //	  "MinY", DoubleValue (50.0),
@@ -716,29 +813,24 @@ if(g_verbose){
 //	  "DeltaY", DoubleValue (deltaY),
 //	  "GridWidth", UintegerValue (cols),
 //	  "LayoutType", StringValue ("RowFirst"));
-	mobilityC.SetPositionAllocator("ns3::RandomBoxPositionAllocator",
-		"X",RandomVariableValue(UniformVariable(deltaXmin,deltaXmax)),
-		"Y",RandomVariableValue(UniformVariable(deltaYmin,deltaYmax)),
-		"Z",RandomVariableValue(ConstantVariable(0)));
+//	mobilityC.SetPositionAllocator("ns3::RandomBoxPositionAllocator",
+//		"X",RandomVariableValue(UniformVariable(deltaXmin,deltaXmax)),
+//		"Y",RandomVariableValue(UniformVariable(deltaYmin,deltaYmax)),
+//		"Z",RandomVariableValue(ConstantVariable(0)));
 
 	//	mobilityC.SetMobilityModel("ns3::RandomDirection2dMobilityModel",
 //	"Bounds", RectangleValue (Rectangle (deltaXmin,deltaXmax,deltaYmin,deltaYmax)),
 //	"Speed", RandomVariableValue (ConstantVariable(5)));
 
-	mobilityC.Install(clients);
+//	mobilityC.Install(clients);
 
-	Ptr<ListPositionAllocator> positionAllocS = CreateObject<ListPositionAllocator> ();
-	positionAllocS->Add(Vector(-10.0, -10.0, 0.0));// Source
-	MobilityHelper mobilityS;
-	mobilityS.SetPositionAllocator(positionAllocS);
-	mobilityS.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-	mobilityS.Install(source);
+//	Ptr<ListPositionAllocator> positionAllocS = CreateObject<ListPositionAllocator> ();
+//	positionAllocS->Add(Vector(-10.0, -10.0, 0.0));// Source
+//	MobilityHelper mobilityS;
+//	mobilityS.SetPositionAllocator(positionAllocS);
+//	mobilityS.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+//	mobilityS.Install(source);
 
-	for(int i = 0; i < allNodes.GetN(); i++){
-		  Ptr<MobilityModel> mobility = allNodes.Get(i)->GetObject<MobilityModel> ();
-	      Vector pos = mobility->GetPosition (); // Get position
-	      NS_LOG_INFO("Position Node ["<<i<<"] = ("<< pos.x << ", " << pos.y<<", "<<pos.z<<")");
-	}
 
 
 //	AsciiTraceHelper ascii;
