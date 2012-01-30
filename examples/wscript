@@ -25,6 +25,12 @@ def build(bld):
     obj = bld.create_ns3_program('push-over-pim-wifi-mesh',
     		['internet', 'olsr', 'mbn-aodv', 'aodv', 'pimdm', 'video-push', 'wifi'])
     obj.source = 'push-over-pim-wifi-mesh.cc'
+    obj = bld.create_ns3_program('push-over-pim-wifi-mesh-grid',
+    		['internet', 'olsr', 'mbn-aodv', 'aodv', 'pimdm', 'video-push', 'wifi'])
+    obj.source = 'push-over-pim-wifi-mesh-grid.cc'
+    obj = bld.create_ns3_program('push-over-pim-wifi-mesh-random',
+    		['internet', 'olsr', 'mbn-aodv', 'aodv', 'pimdm', 'video-push', 'wifi'])
+    obj.source = 'push-over-pim-wifi-mesh-random.cc'
     obj = bld.create_ns3_program('push-over-pim-wired',
 			['point-to-point', 'internet', 'olsr', 'mbn-aodv', 'aodv', 'pimdm', 'video-push', 'csma', 'flow-monitor'])
     obj.source = 'push-over-pim-wired.cc'
