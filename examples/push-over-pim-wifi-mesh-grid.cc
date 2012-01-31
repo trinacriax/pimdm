@@ -299,8 +299,8 @@ main (int argc, char *argv[])
 	Config::SetDefault("ns3::WifiRemoteStationManager::FragmentationThreshold", StringValue("2200"));
 	Config::SetDefault("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue("2200"));
 
-	Config::SetDefault("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue(30.0));
-	Config::SetDefault("ns3::LogDistancePropagationLossModel::Exponent", DoubleValue(3.5));
+	Config::SetDefault("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue(PLref));
+	Config::SetDefault("ns3::LogDistancePropagationLossModel::Exponent", DoubleValue(PLexp));
 
 //	Config::SetDefault("ns3::NakagamiPropagationLossModel::Distance1", DoubleValue(30));
 //	Config::SetDefault("ns3::NakagamiPropagationLossModel::Distance2", DoubleValue(50));
@@ -310,11 +310,11 @@ main (int argc, char *argv[])
 
 	Config::SetDefault("ns3::YansWifiPhy::TxGain",DoubleValue(0.0));
 	Config::SetDefault("ns3::YansWifiPhy::RxGain",DoubleValue(0.0));
-	Config::SetDefault("ns3::YansWifiPhy::TxPowerStart",DoubleValue(16.0));
-	Config::SetDefault("ns3::YansWifiPhy::TxPowerEnd",DoubleValue(16.0));
-	Config::SetDefault("ns3::YansWifiPhy::TxPowerLevels",UintegerValue(1));
-	Config::SetDefault("ns3::YansWifiPhy::EnergyDetectionThreshold",DoubleValue(-95));///17.3.10.1 Receiver minimum input sensitivity
-	Config::SetDefault("ns3::YansWifiPhy::CcaMode1Threshold",DoubleValue(-62));///17.3.10.5 CCA sensitivity
+	Config::SetDefault("ns3::YansWifiPhy::TxPowerStart",DoubleValue(TxStart));
+	Config::SetDefault("ns3::YansWifiPhy::TxPowerEnd",DoubleValue(TxEnd));
+	Config::SetDefault("ns3::YansWifiPhy::TxPowerLevels",UintegerValue(TxLevels));
+	Config::SetDefault("ns3::YansWifiPhy::EnergyDetectionThreshold",DoubleValue(EnergyDet));///17.3.10.1 Receiver minimum input sensitivity
+	Config::SetDefault("ns3::YansWifiPhy::CcaMode1Threshold",DoubleValue(CCAMode1));///17.3.10.5 CCA sensitivity
 
 	SeedManager::SetSeed(seed);
 	SeedManager::SetRun(run);
