@@ -3023,6 +3023,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 				sgState->SG_PPT.SetFunction(&MulticastRoutingProtocol::PPTTimerExpire, this);
 				sgState->SG_PPT.SetArguments(sgp, interface, sender);
 				sgState->SG_PPT.Schedule();
+				NS_ASSERT(sender != Ipv4Address::GetLoopback());
 			}
 			break;
 		}
