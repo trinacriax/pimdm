@@ -105,6 +105,10 @@ MulticastRoutingProtocol::GetTypeId (void)
 					TimeValue (Seconds (Propagation_Delay)),
 					MakeTimeAccessor (&MulticastRoutingProtocol::m_LanDelay),
 					MakeTimeChecker ())
+	.AddAttribute ("StartDelay", "PIM start delay.",
+					TimeValue (Seconds (0)),
+					MakeTimeAccessor (&MulticastRoutingProtocol::m_startDelay),
+					MakeTimeChecker ())
 	.AddAttribute ("PeerRole", "Peer role.",
 				   EnumValue(CLIENT),
 				   MakeEnumAccessor(&MulticastRoutingProtocol::m_role),
@@ -196,7 +200,7 @@ MulticastRoutingProtocol::registerMember (Ipv4Address source, Ipv4Address group,
 		sgs->sgsRenew.SetFunction(&MulticastRoutingProtocol::RenewTimerExpire,this);
 		sgs->sgsRenew.SetArguments(sgp);
 		sgs->sgsRenew.SetDelay(Seconds(IGMP_RENEW));
-		Simulator::Schedule(Time::FromDouble(UniformVariable().GetValue(), Time::MS), &MulticastRoutingProtocol::RenewTimerExpire, this, sgp);
+		Simulator::Schedule(m_startDelay + Time::FromDouble(UniformVariable().GetValue(), Time::MS), &MulticastRoutingProtocol::RenewTimerExpire, this, sgp);
 	}
 
 //	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){//add a new receiver on a specific (source,group) on a given interface
@@ -706,7 +710,7 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t j, Ipv4InterfaceAddress add
 	NS_LOG_DEBUG ("Neighborhood ("<<i<<"): PD " << ns->propagationDelay.GetSeconds() <<"s OI "<< ns->overrideInterval.GetSeconds() <<
 			"s SRI "<< ns->stateRefreshInterval.GetSeconds()<<"s PHT "<< ns->pruneHoldtime.GetSeconds()<<"s LDE "<<ns->LANDelayEnabled<<
 			"s SRC "<< ns->stateRefreshCapable);
-	Time rndHello = TransmissionDelay(0, Triggered_Hello_Delay);
+	Time rndHello = m_startDelay + TransmissionDelay(0, Triggered_Hello_Delay);
 	Simulator::Schedule (rndHello, &MulticastRoutingProtocol::HelloTimerExpire, this, i);
 	ns->hello_timer.SetDelay(m_helloTime);
 	ns->hello_timer.SetFunction(&MulticastRoutingProtocol::HelloTimerExpire, this);
@@ -795,7 +799,7 @@ void MulticastRoutingProtocol::DoStart ()
 	m_rpfChecker.Cancel();
 	m_rpfChecker.SetFunction(&MulticastRoutingProtocol::RPFCheckAll, this);
 	m_rpfChecker.SetDelay(m_rpfCheck);
-	m_rpfChecker.Schedule();
+	Simulator::Schedule(m_startDelay,&MulticastRoutingProtocol::RPFCheckAll, this);
 
 //	if(m_txControlPacketTrace)
 //	{

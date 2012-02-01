@@ -214,6 +214,8 @@ private:
 	Time m_LanDelay;
 //	uint64_t m_latestPacketID;
 
+	Time m_startDelay;
+
 	PeerRole m_role;
 
 	std::map<SourceGroupPair, SGState> m_SGclients;
