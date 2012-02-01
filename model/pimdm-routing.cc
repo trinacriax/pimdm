@@ -875,8 +875,8 @@ MulticastRoutingProtocol::RenewTimerExpire (SourceGroupPair sgp)
 			  source = sgp.sourceMulticastAddr;
 			  group = sgp.groupMulticastAddr;
 			  for (std::set<int32_t>::iterator interface = sgs->sgsInterfaces.begin(); interface != sgs->sgsInterfaces.end(); interface++) {
-				if (m_LocalReceiver.find(sgp)->second.find(*interface) != m_LocalReceiver.find(sgp)->second.end()
-						&& *interface > 0 && *interface < m_ipv4->GetNInterfaces()) {
+				NS_ASSERT (*interface > 0 && *interface < m_ipv4->GetNInterfaces());
+				if (m_LocalReceiver.find(sgp)->second.find(*interface) != m_LocalReceiver.find(sgp)->second.end()) {
 					m_LocalReceiver.find(sgp)->second.erase(*interface);
 					NS_LOG_INFO ("Removing interface " << *interface<< " from ("<<source<<","<<group<<")");
 				}
