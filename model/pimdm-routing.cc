@@ -1587,6 +1587,7 @@ void
 MulticastRoutingProtocol::RecvIgmpReport (PIMHeader::IgmpReportMessage &report, Ipv4Address sender, Ipv4Address receiver, int32_t interface)
 {
 	NS_LOG_FUNCTION(this<< sender << receiver<< interface);
+	NS_ASSERT (interface >0 && interface<m_ipv4->GetNInterfaces());
 	Ipv4Address source, group, next;
 	source = report.m_sourceAddr;
 	group = report.m_multicastGroupAddr;
@@ -1602,16 +1603,20 @@ MulticastRoutingProtocol::RecvIgmpReport (PIMHeader::IgmpReportMessage &report, 
 			m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<int32_t> >(sgp,iface));
 			NS_LOG_INFO ("Adding Source-Group ("<<source<<","<<group<<") to the map");
 		}
-		if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
-			m_LocalReceiver.find(sgp)->second.insert(interface);
-			NS_LOG_DEBUG("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
+//		if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
+//			m_LocalReceiver.find(sgp)->second.insert(interface);
 //			NS_LOG_INFO ("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
+//		}
+		std::set<int32_t> &element = m_LocalReceiver.find(sgp)->second;
+		if(element.find(interface) == element.end()){
+			element.insert(interface);
 			NS_LOG_INFO ("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
 		}
 		else NS_LOG_INFO ("Interface " << interface<< " already registered for ("<<source<<","<<group<<")");
 		int32_t sources = m_mrib.find(group)->second.mgroup.size();
-		NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< sources << " #Clients "<< m_LocalReceiver.find(sgp)->second.size());
+		NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< sources << " #Clients "<< element.size());
 		UpstreamStateMachine(sgp);
+		NS_ASSERT(m_LocalReceiver.find(sgp)->second.size() == element.size()); //to remove
 	}
 	if (sgs->sgsRenew.IsRunning())
 		sgs->sgsRenew.Cancel();
