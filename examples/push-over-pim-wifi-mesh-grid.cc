@@ -439,30 +439,30 @@ main (int argc, char *argv[])
 	internetRouters.Install (routers);
 	internetRouters.Install (clients);
 
-	Ipv4ListRoutingHelper listClients;
+	Ipv4ListRoutingHelper listSource;
 	switch(routing){
 		case 1:{
 			NS_LOG_INFO ("Clients: Enabling OLSR Routing.");
-			listClients.Add (olsr, 10);
+			listSource.Add (olsr, 10);
 			break;
 		}
 		case 2:{
 			NS_LOG_INFO ("Clients: Enabling AODV Routing.");
-			listClients.Add (aodv, 10);
+			listSource.Add (aodv, 10);
 			break;
 		}
 		case 3:{
 			NS_LOG_INFO ("Clients: Enabling MBN-AODV Routing.");
-			listClients.Add (mbnaodv, 10);
+			listSource.Add (mbnaodv, 10);
 			break;
 		}
 	}
-	listClients.Add (staticRouting, 11);
+	listSource.Add (staticRouting, 11);
 
-	Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+//	Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
 	InternetStackHelper internetClients;
-	internetClients.SetRoutingHelper (listClients);
+	internetClients.SetRoutingHelper (listSource);
 	internetClients.Install (source);
 
 	// Later, we add IP addresses.
