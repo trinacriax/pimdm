@@ -442,7 +442,13 @@ main (int argc, char *argv[])
 	InternetStackHelper internetRouters;
 	internetRouters.SetRoutingHelper (listRouters);
 	internetRouters.Install (routers);
-	internetRouters.Install (clients);
+
+	Ipv4ListRoutingHelper listClients;
+	listClients.Add (staticRouting, 0);
+	listClients.Add (pimdm, 11);
+	InternetStackHelper internetClients;
+	internetClients.SetRoutingHelper (listClients);
+	internetClients.Install (clients);
 
 	Ipv4ListRoutingHelper listSource;
 	switch(routing){
@@ -466,9 +472,9 @@ main (int argc, char *argv[])
 
 //	Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
-	InternetStackHelper internetClients;
-	internetClients.SetRoutingHelper (listSource);
-	internetClients.Install (source);
+	InternetStackHelper internetSource;
+	internetSource.SetRoutingHelper (listSource);
+	internetSource.Install (source);
 
 	// Later, we add IP addresses.
 	NS_LOG_INFO ("Assign IP Addresses.");
