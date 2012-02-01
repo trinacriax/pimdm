@@ -866,14 +866,11 @@ MulticastRoutingProtocol::RenewTimerExpire (SourceGroupPair sgp)
 			  if(!sgs->sgsRenew.IsRunning() && sgs->sgsInterfaces.size()>0){
 					  sgs->sgsRenew.Schedule();
 				  }
-			  AskRoute(sgs->sgsPair.sourceMulticastAddr);
 			  break;
 		  }
 		  case ROUTER:
 		  {
 			  NS_LOG_INFO ("RenewTimerExpire ROUTER");
-			  sgs->sgsInterfaces.clear();
-			  sgs->sgsRenew.Cancel();
 			  Ipv4Address source,group;
 			  source = sgp.sourceMulticastAddr;
 			  group = sgp.groupMulticastAddr;
@@ -892,6 +889,8 @@ MulticastRoutingProtocol::RenewTimerExpire (SourceGroupPair sgp)
 				int32_t sources = m_mrib.find(group)->second.mgroup.size();
 				UpstreamStateMachine(sgp);
 			  }
+			  sgs->sgsRenew.Cancel();
+			  sgs->sgsInterfaces.clear();
 			  break;
 		  }
 		  default:
