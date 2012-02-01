@@ -1602,7 +1602,7 @@ MulticastRoutingProtocol::RecvIgmpReport (PIMHeader::IgmpReportMessage &report, 
 		if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){//add a new receiver on a specific (source,group) on a given interface
 			std::set<int32_t> iface;
 			m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<int32_t> >(sgp,iface));
-			NS_LOG_INFO ("Adding Source-Group ("<<source<<","<<group<<") to the map");
+			NS_LOG_INFO ("Adding Source-Group ("<<source<<","<<group<<") to the map "<<sender);
 		}
 //		if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
 //			m_LocalReceiver.find(sgp)->second.insert(interface);
@@ -1611,23 +1611,27 @@ MulticastRoutingProtocol::RecvIgmpReport (PIMHeader::IgmpReportMessage &report, 
 		std::set<int32_t> &element = m_LocalReceiver.find(sgp)->second;
 		if(element.find(interface) == element.end()){
 			element.insert(interface);
-			NS_LOG_INFO ("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
+			NS_LOG_INFO ("Adding interface " << interface<< " to ("<<source<<","<<group<<") " <<sender);
 		}
-		else NS_LOG_INFO ("Interface " << interface<< " already registered for ("<<source<<","<<group<<")");
+		else NS_LOG_INFO ("Interface " << interface<< " already registered for ("<<source<<","<<group<<") "<< sender);
 		int32_t sources = m_mrib.find(group)->second.mgroup.size();
 		NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< sources << " #Clients "<< element.size());
 		UpstreamStateMachine(sgp);
 		NS_ASSERT(m_LocalReceiver.find(sgp)->second.size() == element.size()); //to remove
+		if (!sgs->sgsRenew.IsRunning() && sgs->sgsInterfaces.size() > 0){
+			NS_LOG_INFO ("Activating Timer on interface "<< interface<< " for ("<<source<<","<<group<<") "<< sender);
+			sgs->sgsRenew.SetDelay(Seconds(IGMP_RENEW*2));
+			sgs->sgsRenew.SetFunction(&MulticastRoutingProtocol::RenewTimerExpire, this);
+			sgs->sgsRenew.SetArguments(sgp);
+		}
 	}
 	if (sgs->sgsRenew.IsRunning())
 		sgs->sgsRenew.Cancel();
-	if(sgs->sgsInterfaces.size() > 0){
-		NS_LOG_INFO ("Activating Timer on interface "<< interface<< " for ("<<source<<","<<group<<")");
-		sgs->sgsRenew.SetDelay(Seconds(IGMP_RENEW*2));
-		sgs->sgsRenew.SetFunction(&MulticastRoutingProtocol::RenewTimerExpire, this);
-		sgs->sgsRenew.SetArguments(sgp);
+	if (sgs->sgsInterfaces.size() > 0){
 		sgs->sgsRenew.Schedule();
+		NS_LOG_INFO ("Refreshing Timer on interface "<< interface<< " for ("<<source<<","<<group<<") "<<sender);
 	}
+
 }
 
 
