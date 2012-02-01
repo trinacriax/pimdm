@@ -1615,10 +1615,9 @@ MulticastRoutingProtocol::RecvIgmpReport (PIMHeader::IgmpReportMessage &report, 
 	}
 	if (sgs->sgsRenew.IsRunning())
 		sgs->sgsRenew.Cancel();
-	if(sgs->sgsInterfaces.size() > 0)
-	{//TODO CHECK
-		Time delay = Seconds(ceil(IGMP_RENEW*UniformVariable().GetValue(0.9,1.2)));
-		sgs->sgsRenew.SetDelay(delay);
+	if(sgs->sgsInterfaces.size() > 0){
+		NS_LOG_INFO ("Activating Timer on interface "<< interface<< " for ("<<source<<","<<group<<")");
+		sgs->sgsRenew.SetDelay(Seconds(IGMP_RENEW*2));
 		sgs->sgsRenew.SetFunction(&MulticastRoutingProtocol::RenewTimerExpire, this);
 		sgs->sgsRenew.SetArguments(sgp);
 		sgs->sgsRenew.Schedule();
