@@ -711,14 +711,15 @@ if(g_verbose){
 
 	mobilityR.Install(routers);
 
+	double rangino = range*0.5;
 	double deltaXmin, deltaXmax, deltaYmin, deltaYmax;
-	deltaXmin = 0-range;
-	deltaXmax = floor (range * cols)*.7;
-	deltaYmin = 0-range;
-	deltaYmax = range * floor (sizePim / cols)*.7;
+	deltaYmin = deltaXmin = 0-rangino;
+	deltaXmax = floor (range * (cols-1)) + rangino;
+	int rows = (int)floor (sizePim / cols);
+	deltaYmax = range * (rows - 1) + rangino;
 
-	NS_LOG_DEBUG("X "<<range << " cols "<< range);
-	NS_LOG_DEBUG ("Arranging clients between ["<<deltaXmin<<","<< deltaYmin<<"] - [" <<deltaXmax<<","<<deltaYmax<<"]");
+//	NS_LOG_DEBUG("X "<<range << " cols "<< range);
+	NS_LOG_INFO ("Arranging clients between ["<<deltaXmin<<","<< deltaYmin<<"] - [" <<deltaXmax<<","<<deltaYmax<<"]");
 
 	MobilityHelper mobilityC;
 	mobilityC.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
