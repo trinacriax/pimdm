@@ -1306,7 +1306,7 @@ MulticastRoutingProtocol::SendStateRefreshMessage (int32_t interface, Ipv4Addres
 			if(sgState->SG_PT.IsRunning())
 				sgState->SG_PT.Cancel();
 			sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
-			sgState->SG_PT.SetArguments(sgp, interface);
+			sgState->SG_PT.SetArguments(sgp, interface, destination);
 			sgState->SG_PT.SetDelay(FindNeighborhoodStatus(interface)->pruneHoldtime);
 			sgState->SG_PT.Schedule();
 			break;
@@ -2101,7 +2101,7 @@ MulticastRoutingProtocol::NeighborRestart (int32_t interface, Ipv4Address neighb
 				sgState->SG_PT.Cancel();
 			sgState->SG_PT.SetDelay(Seconds(2*RefreshInterval));
 			sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
-			sgState->SG_PT.SetArguments(sgState->SGPair);
+			sgState->SG_PT.SetArguments(sgState->SGPair, interface, neighbor);
 			sgState->SG_PT.Schedule();
 			Simulator::ScheduleNow (&MulticastRoutingProtocol::SendPruneUnicast, this, neighbor, sgState->SGPair);
 		}
@@ -2438,11 +2438,11 @@ MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 }
 
 void
-MulticastRoutingProtocol::PTTimerExpire (SourceGroupPair &sgp, int32_t interface)
+MulticastRoutingProtocol::PTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination)
 {
 	NS_LOG_FUNCTION(this<<interface<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
-	Ipv4Address nexthop = GetNextHop(sgp.sourceMulticastAddr);
-	SourceGroupState *sgState = FindSourceGroupState(interface, nexthop, sgp);
+//	Ipv4Address nexthop = GetNextHop(sgp.sourceMulticastAddr);
+	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
 	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
 			// nothing
@@ -3039,7 +3039,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 						sgState->SG_PT.Cancel();
 					sgState->SG_PT.SetDelay(jp.m_joinPruneMessage.m_holdTime);
 					sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
-					sgState->SG_PT.SetArguments(sgp, interface);
+					sgState->SG_PT.SetArguments(sgp, interface, sender);
 					sgState->SG_PT.Schedule();
 				}
 			}

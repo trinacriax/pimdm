@@ -454,7 +454,7 @@ private:
 	void PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address destination);
 	void ATTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
 	void PPTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
-	void PTTimerExpire (SourceGroupPair &sgp, int32_t interface);
+	void PTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
 	void NLTTimerExpire (int32_t interface, Ipv4Address neighborIfaceAddr, Ipv4Address receivingIfaceAddr);
 	void SRTTimerExpire (SourceGroupPair &sgp, int32_t interface);
 	void SATTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
