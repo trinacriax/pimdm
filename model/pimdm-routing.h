@@ -216,10 +216,6 @@ private:
 
 	Time m_startDelay;
 
-	PeerRole m_role;
-
-	std::map<SourceGroupPair, SGState> m_SGclients;
-
 	TracedCallback <Ptr<const Packet> > m_rxControlPacketTrace;
 	TracedCallback <Ptr<const Packet> > m_txControlPacketTrace;
 

@@ -65,7 +65,6 @@ MulticastRoutingProtocol::MulticastRoutingProtocol() :
 	m_mrib.clear();
 	m_interfaceExclusions.clear();
 	m_socketAddresses.clear();
-	m_SGclients.clear();
 }
 
 MulticastRoutingProtocol::~MulticastRoutingProtocol()
@@ -109,10 +108,6 @@ MulticastRoutingProtocol::GetTypeId (void)
 					TimeValue (Seconds (0)),
 					MakeTimeAccessor (&MulticastRoutingProtocol::m_startDelay),
 					MakeTimeChecker ())
-	.AddAttribute ("PeerRole", "Peer role.",
-				   EnumValue(CLIENT),
-				   MakeEnumAccessor(&MulticastRoutingProtocol::m_role),
-				   MakeEnumChecker (CLIENT, "Node is a client.", ROUTER, "Node is a router."))
 	.AddTraceSource ("RxPIMControl", "Trace PIM packet received.",
 					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxControlPacketTrace))
 	.AddTraceSource ("TxPIMControl", "Trace PIM packet sent.",
@@ -187,22 +182,7 @@ MulticastRoutingProtocol::registerMember (Ipv4Address source, Ipv4Address group,
 {
 	NS_LOG_DEBUG("Register interface with members for ("<<source<<","<<group<<") over interface "<< interface);
 	SourceGroupPair sgp (source,group);
-	//TODO IGMP
-	if( m_SGclients.find(sgp) == m_SGclients.end() ){
-		SGState n_sgs(sgp);
-		m_SGclients.insert(std::pair<SourceGroupPair, SGState> (sgp, n_sgs));
-	}
-	if( m_SGclients.find(sgp)->second.sgsInterfaces.find(interface) == m_SGclients.find(sgp)->second.sgsInterfaces.end() ){
-		m_SGclients.find(sgp)->second.sgsInterfaces.insert(interface);
-		}
-	SGState *sgs = &m_SGclients.find(sgp)->second;
-	if(!sgs->sgsRenew.IsRunning()){
-		sgs->sgsRenew.SetFunction(&MulticastRoutingProtocol::RenewTimerExpire,this);
-		sgs->sgsRenew.SetArguments(sgp);
-		sgs->sgsRenew.SetDelay(Seconds(IGMP_RENEW));
-		Simulator::Schedule(m_startDelay + Time::FromDouble(UniformVariable().GetValue(), Time::MS), &MulticastRoutingProtocol::RenewTimerExpire, this, sgp);
-	}
-
+//	//TODO IGMP
 //	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){//add a new receiver on a specific (source,group) on a given interface
 //		std::set<int32_t> iface;
 //		m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<int32_t> >(sgp,iface));
@@ -217,24 +197,11 @@ MulticastRoutingProtocol::registerMember (Ipv4Address source, Ipv4Address group,
 //	NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< sources << " #Clients "<< m_LocalReceiver.find(sgp)->second.size());
 //	UpstreamStateMachine(sgp);
 }
+
 void
 MulticastRoutingProtocol::unregisterMember (Ipv4Address source, Ipv4Address group, int32_t interface){
 	NS_LOG_DEBUG("UnRegister interface with members for ("<<source<<","<<group<<") over interface "<< interface);
 	SourceGroupPair sgp (source,group);
-	if( m_SGclients.find(sgp) == m_SGclients.end() ) return;
-	if( m_SGclients.find(sgp)->second.sgsInterfaces.find(interface) != m_SGclients.find(sgp)->second.sgsInterfaces.end() ){
-		m_SGclients.find(sgp)->second.sgsInterfaces.erase(interface);
-	}
-	SGState *sgs = &m_SGclients.find(sgp)->second;
-	if(m_SGclients.find(sgp)->second.sgsInterfaces.empty()){
-		sgs->sgsRenew.Cancel();
-	}
-	else if(!sgs->sgsRenew.IsRunning()){
-		sgs->sgsRenew.SetFunction(&MulticastRoutingProtocol::RenewTimerExpire,this);
-		sgs->sgsRenew.SetDelay(Seconds(IGMP_RENEW));
-		sgs->sgsRenew.SetArguments(sgp);
-		Simulator::Schedule(Seconds(UniformVariable().GetValue()), &MulticastRoutingProtocol::RenewTimerExpire, this, sgp);
-	}
 //	if(m_LocalReceiver.find(sgp)->second.find(interface) != m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
 //		m_LocalReceiver.find(sgp)->second.erase(interface);
 //		NS_LOG_DEBUG("Removing interface " << interface<< " from ("<<source<<","<<group<<")");
@@ -297,10 +264,6 @@ MulticastRoutingProtocol::register_SG (std::string csv){
 	SourceGroupPair sgp (source,group);
 	AddEntry(group,source,Ipv4Address::GetLoopback(),-1);//We got an entry from IGMP for this source-group
 	// ADD a new IGMP record
-	if( m_SGclients.find(sgp) == m_SGclients.end() ){
-		SGState n_sgs(sgp);
-		m_SGclients.insert(std::pair<SourceGroupPair, SGState> (sgp, n_sgs));
-	}
 	int32_t sources = m_mrib.find(group)->second.mgroup.size();
 	NS_LOG_DEBUG("Main Addr = "<<  m_mainAddress << ": Group "<<group<<" #Source: "<< sources);
 	if(group == ALL_PIM_ROUTERS4 || sources > 1) return;//Socket already registered for this group
@@ -837,8 +800,7 @@ void
 MulticastRoutingProtocol::HelloTimerExpire (int32_t i)
 {
 	  NS_LOG_FUNCTION(this << i);
-//	  if (m_role == CLIENT) return;
-	  if (m_role == CLIENT || IsLoopInterface(i)) return;
+	  if (IsLoopInterface(i)) return;
 	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	  Timer &nHelloTimer = m_IfaceNeighbors.find(i)->second.hello_timer;
 //	  NS_LOG_DEBUG("Interface "<< i<< " [ E "<< nHelloTimer.IsExpired() << ", R " <<nHelloTimer.IsRunning()<<", S:" << nHelloTimer.IsSuspended()<<"].");
@@ -848,75 +810,6 @@ MulticastRoutingProtocol::HelloTimerExpire (int32_t i)
 		  nHelloTimer.Schedule();
 	  }
 	  SendHello (i);
-}
-
-void
-MulticastRoutingProtocol::RenewTimerExpire (SourceGroupPair sgp)
-{
-	  NS_LOG_FUNCTION(this << m_role<< GetObject<Node>()->GetId()<<sgp);
-	  SGState *sgs = &m_SGclients.find(sgp)->second;
-//	  NS_LOG_DEBUG("SG "<< sgp << " [ E "<< sgs->sgsRenew.IsExpired() << ", R " <<sgs->sgsRenew.IsRunning()<<", S:" << sgs->sgsRenew.IsSuspended()<<"].");
-	  // olny clients
-	  switch(m_role){
-		  case CLIENT:
-		  {
-			  NS_LOG_INFO ("RenewTimerExpire PEER");
-			  for (std::set<int32_t>::iterator iter = sgs->sgsInterfaces.begin(); iter != sgs->sgsInterfaces.end(); iter++)
-				  SendRenew (sgp, *iter);
-			  if(!sgs->sgsRenew.IsRunning() && sgs->sgsInterfaces.size()>0){
-					  sgs->sgsRenew.Schedule();
-				  }
-			  break;
-		  }
-		  case ROUTER:
-		  {
-			  NS_LOG_INFO ("RenewTimerExpire ROUTER");
-			  Ipv4Address source,group;
-			  source = sgp.sourceMulticastAddr;
-			  group = sgp.groupMulticastAddr;
-			  for (std::set<int32_t>::iterator interface = sgs->sgsInterfaces.begin(); interface != sgs->sgsInterfaces.end(); interface++) {
-				NS_ASSERT (*interface > 0 && *interface < m_ipv4->GetNInterfaces());
-				NS_ASSERT (m_LocalReceiver.find(sgp) != m_LocalReceiver.end());
-				if (m_LocalReceiver.find(sgp)->second.find(*interface) != m_LocalReceiver.find(sgp)->second.end()) {
-					m_LocalReceiver.find(sgp)->second.erase(*interface);
-					NS_LOG_INFO ("Removing interface " << *interface<< " from ("<<source<<","<<group<<")");
-				}
-				if (m_LocalReceiver.find(sgp)->second.empty()) {
-					m_LocalReceiver.erase(sgp);
-					NS_LOG_INFO ("Removing Source-Group ("<<source<<","<<group<<") to the map");
-				}
-				else
-					NS_LOG_INFO ( "Clients on interface " << *interface<< " for ("<<source<<","<<group<<") are "<< m_LocalReceiver.find(sgp)->second.size() );
-				int32_t sources = m_mrib.find(group)->second.mgroup.size();
-				UpstreamStateMachine(sgp);
-			  }
-			  sgs->sgsRenew.Cancel();
-			  sgs->sgsInterfaces.clear();
-			  break;
-		  }
-		  default:
-			  NS_ASSERT(false);
-			  break;
-	  }
-}
-
-void MulticastRoutingProtocol::SendRenew (SourceGroupPair sgp, int32_t interface)
-{
-	NS_LOG_FUNCTION(this << sgp << interface);
-	Ipv4Address gateway = GetNextHop(sgp.sourceMulticastAddr);
-	if (gateway == Ipv4Address::GetLoopback())
-	{
-		return AskRoute(sgp.sourceMulticastAddr);
-	}
-	Ptr<Packet> packet = Create<Packet> ();
-	PIMHeader renew;
-	ForgeHeaderMessage(PIM_IGMP_REPORT, renew);
-	PIMHeader::IgmpReportMessage &igmpReport = renew.GetIgmpReportMessage();
-	igmpReport.m_multicastGroupAddr = sgp.groupMulticastAddr;
-	igmpReport.m_sourceAddr = sgp.sourceMulticastAddr;
-	igmpReport.m_upstreamAddr = GetNextHop(sgp.sourceMulticastAddr);
-	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, renew, gateway);
-	NS_LOG_INFO (GetLocalAddress(interface)<< " to "<<gateway);
 }
 
 bool
@@ -1584,56 +1477,6 @@ MulticastRoutingProtocol::RecvMessage (Ptr<Socket> socket)
 		NS_LOG_ERROR("Unexpected message "<< receivedPacket);
 }
 
-void
-MulticastRoutingProtocol::RecvIgmpReport (PIMHeader::IgmpReportMessage &report, Ipv4Address sender, Ipv4Address receiver, int32_t interface)
-{
-	NS_LOG_FUNCTION(this<< sender << receiver<< interface);
-	NS_ASSERT (interface >0 && interface<m_ipv4->GetNInterfaces());
-	Ipv4Address source, group, next;
-	source = report.m_sourceAddr;
-	group = report.m_multicastGroupAddr;
-	next =  report.m_upstreamAddr;
-	SourceGroupPair sgp (source,group);
-	NS_LOG_INFO("IGMP Report ("<< source<<","<<group<<") from "<< sender << " to "<<receiver << "("<<next<<")");
-	NS_ASSERT(m_SGclients.find(sgp)!=m_SGclients.end());
-	SGState *sgs = &m_SGclients.find(sgp)->second;
-	if (sgs->sgsInterfaces.find(interface) == sgs->sgsInterfaces.end()){
-		sgs->sgsInterfaces.insert(interface);
-		if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){//add a new receiver on a specific (source,group) on a given interface
-			std::set<int32_t> iface;
-			m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<int32_t> >(sgp,iface));
-			NS_LOG_INFO ("Adding Source-Group ("<<source<<","<<group<<") to the map "<<sender);
-		}
-//		if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
-//			m_LocalReceiver.find(sgp)->second.insert(interface);
-//			NS_LOG_INFO ("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
-//		}
-		std::set<int32_t> &element = m_LocalReceiver.find(sgp)->second;
-		if(element.find(interface) == element.end()){
-			element.insert(interface);
-			NS_LOG_INFO ("Adding interface " << interface<< " to ("<<source<<","<<group<<") " <<sender);
-		}
-		else NS_LOG_INFO ("Interface " << interface<< " already registered for ("<<source<<","<<group<<") "<< sender);
-		int32_t sources = m_mrib.find(group)->second.mgroup.size();
-		NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< sources << " #Clients "<< element.size());
-		UpstreamStateMachine(sgp);
-		NS_ASSERT(m_LocalReceiver.find(sgp)->second.size() == element.size()); //to remove
-		if (!sgs->sgsRenew.IsRunning() && sgs->sgsInterfaces.size() > 0){
-			NS_LOG_INFO ("Activating Timer on interface "<< interface<< " for ("<<source<<","<<group<<") "<< sender);
-			sgs->sgsRenew.SetDelay(Seconds(IGMP_RENEW*2));
-			sgs->sgsRenew.SetFunction(&MulticastRoutingProtocol::RenewTimerExpire, this);
-			sgs->sgsRenew.SetArguments(sgp);
-		}
-	}
-	if (sgs->sgsRenew.IsRunning())
-		sgs->sgsRenew.Cancel();
-	if (sgs->sgsInterfaces.size() > 0){
-		sgs->sgsRenew.Schedule();
-		NS_LOG_INFO ("Refreshing Timer on interface "<< interface<< " for ("<<source<<","<<group<<") "<<sender);
-	}
-
-}
-
 
 void
 MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address senderIfaceAddr, uint16_t senderIfacePort, int32_t interface)
@@ -1667,7 +1510,6 @@ MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address sen
 //		NS_LOG_DEBUG ("PIM-DM No running timer: discarded");
 //		return;
 //	}
-	if(m_role == CLIENT && pimdmPacket.GetType() != PIM_IGMP_REPORT) return;
 	switch (pimdmPacket.GetType()){
 		case PIM_HELLO:{
 			RecvHello(pimdmPacket.GetHelloMessage(), senderIfaceAddr, receiverIfaceAddr, interface);
@@ -1693,10 +1535,6 @@ MulticastRoutingProtocol::RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address sen
 			RecvStateRefresh(pimdmPacket.GetStateRefreshMessage(), senderIfaceAddr, receiverIfaceAddr, interface);
 			break;
 			}
-		case PIM_IGMP_REPORT:{
-			RecvIgmpReport(pimdmPacket.GetIgmpReportMessage(), senderIfaceAddr, receiverIfaceAddr, interface);
-			break;
-			}
 		default:{
 			NS_LOG_ERROR("Packet unrecognized.... "<< receivedPacket<<"Sender "<< senderIfaceAddr<<", Destination "<< receiverIfaceAddr);
 			break;
@@ -1708,7 +1546,6 @@ void
 MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address senderIfaceAddr, uint16_t senderIfacePort, int32_t interface)
 {
 	NS_LOG_FUNCTION(this);
-	if(m_role == CLIENT) return;
 	NS_ASSERT(interface);
 	Ipv4Address source, group, sender, destination, gateway;
 	Ptr<Packet> copy = receivedPacket->Copy();// Ipv4Header, UdpHeader and SocketAddressTag must be removed.
@@ -2125,7 +1962,6 @@ MulticastRoutingProtocol::SendPacketPIMRoutersInterface(Ptr<Packet> packet, cons
 {
   NS_LOG_FUNCTION(this);
   if (m_stopTx) return;
-  if (m_role == CLIENT) return;
   // Send
   if(interface != 0 && !GetPimInterface(interface)){
 	  NS_LOG_DEBUG("Interface "<<interface<<" is PIM-DISABLED");
@@ -2154,7 +1990,6 @@ MulticastRoutingProtocol::SendPacketPIMUnicast(Ptr<Packet> packet, const PIMHead
 {
 	NS_LOG_FUNCTION(this);
   if(m_stopTx) return;
-  if (m_role == CLIENT && message.GetType() != PIM_IGMP_REPORT) return;
   packet->AddHeader(message);
   WiredEquivalentInterface wei = RPF_interface(destination);
   int32_t interface = wei.first >0 ? wei.first : m_ipv4->GetInterfaceForAddress(m_mainAddress);
@@ -2181,8 +2016,6 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, Ipv4Address dest
 {
   NS_LOG_FUNCTION(this);
   if(m_stopTx) return;
-  // trace
-  if (m_role == CLIENT) return;
   // Send
   WiredEquivalentInterface wei = RPF_interface(destination);
   int32_t interface = wei.first >0 ? wei.first : m_ipv4->GetInterfaceForAddress(m_mainAddress);
@@ -2204,7 +2037,6 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
 {
 	NS_LOG_FUNCTION(this);
 	if(m_stopTx) return;
-	if (m_role == CLIENT) return;
 	// Send it ***
 	for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i = m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
 	{
@@ -4368,28 +4200,6 @@ void MulticastRoutingProtocol::AskRoute (Ipv4Address destination){
 	NS_LOG_INFO (this<<" "<< destination);
 	if(m_stopTx) return;
 	int size = 0;
-	switch (m_role){
-	case CLIENT:{
-		Ptr<Packet> packet = Create<Packet> (size); //forge a hello reply
-		int32_t interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);
-		Ipv4Address local = GetLocalAddress(interface);
-		for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i = m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
-		{
-			if(local == i->second.GetLocal () ){
-				Ptr<Packet> copy = packet->Copy();
-				Ipv4Header ipv4Header;
-				ipv4Header = BuildHeader(i->second.GetLocal (), destination, 2, copy->GetSize(), 1, false);
-				copy->AddHeader(ipv4Header);
-				NS_LOG_DEBUG ("Node " << local << " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
-				// Trace it
-				m_txControlPacketTrace (copy);
-				i->first->SendTo (copy, 0, InetSocketAddress (destination, 7));
-				break;
-			}
-		}
-		break;
-	}
-	case ROUTER:{
 		PIMHeader msg;
 		Ptr<Packet> packet = Create<Packet> (); //forge a hello reply
 		int32_t interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);
@@ -4409,9 +4219,6 @@ void MulticastRoutingProtocol::AskRoute (Ipv4Address destination){
 				break;
 			}
 		}
-		break;
-	}
-	}
 }
 
 /// \brief There are receivers for the given SourceGroup pair.
