@@ -100,6 +100,11 @@ static void AppTx (Ptr<const Packet> p)
 std::cout << Simulator::Now() <<" Sending Packet "<< p->GetSize() << " bytes " << std::endl;
 }
 
+static void TableChanged (std::string context, uint32_t size)
+{
+std::cout << Simulator::Now() << "  Node "<< GetNodeID(context) <<" Table changed "<< size  << " entries " << std::endl;
+}
+
 static void PIMControlTx (Ptr<const Packet> p)
 {
 std::cout << Simulator::Now() <<" PIMDM Control TX "<<  p->GetSize()<< " bytes " << std::endl;
@@ -651,6 +656,7 @@ main (int argc, char *argv[])
 if(g_verbose){
 	Config::ConnectWithoutContext("/NodeList/0/ApplicationList/0/$ns3::VideoPushApplication/Tx",MakeCallback (&AppTx));
 	Config::ConnectWithoutContext("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/PhyTxDrop",MakeCallback (&PhyTxDrop));
+
 	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacTx", MakeCallback (&DevTxTrace));
 	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacRx",	MakeCallback (&DevRxTrace));
 	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/RxOk",	MakeCallback (&PhyRxOkTrace));
@@ -658,6 +664,7 @@ if(g_verbose){
 	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/Tx",	MakeCallback (&PhyTxTrace));
 	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/State", MakeCallback (&PhyStateTrace));
 	Config::Connect ("/NodeList/*/$ns3::ArpL3Protocol/Drop", MakeCallback (&ArpDiscard));
+	Config::Connect ("/NodeList/*/$ns3::olsr::RoutingProtocol/RoutingTableChanged",MakeCallback (&TableChanged));
 }
 
 //	Config::ConnectWithoutContext ("/NodeList/[5-8]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&SinkRx));
