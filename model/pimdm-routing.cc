@@ -88,14 +88,6 @@ MulticastRoutingProtocol::GetTypeId (void)
 					StringValue("0,0"),
 					MakeStringAccessor(&MulticastRoutingProtocol::register_SG),
 					MakeStringChecker())
-	.AddAttribute ("RegisterAsMember", "Register as a member of the group. Tuple (group, source, interface).",
-					StringValue("0,0,0"),
-					MakeStringAccessor(&MulticastRoutingProtocol::register_member),
-					MakeStringChecker())
-	.AddAttribute ("UnRegisterAsMember", "UnRegister as a member of the group. Tuple (group, source, interface).",
-					StringValue("0,0,0"),
-					MakeStringAccessor(&MulticastRoutingProtocol::unregister_member),
-					MakeStringChecker())
 	.AddAttribute ("RPFCheckInterval", "RPF check interval.",
 					TimeValue (Seconds (RPF_CHECK)),
 					MakeTimeAccessor (&MulticastRoutingProtocol::m_rpfCheck),
@@ -182,70 +174,36 @@ MulticastRoutingProtocol::registerMember (Ipv4Address source, Ipv4Address group,
 {
 	NS_LOG_DEBUG("Register interface with members for ("<<source<<","<<group<<") over interface "<< interface);
 	SourceGroupPair sgp (source,group);
-//	//TODO IGMP
-//	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){//add a new receiver on a specific (source,group) on a given interface
-//		std::set<int32_t> iface;
-//		m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<int32_t> >(sgp,iface));
-//		NS_LOG_DEBUG("Adding Source-Group ("<<source<<","<<group<<") to the map");
-//	}
-//	if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
-//		m_LocalReceiver.find(sgp)->second.insert(interface);
-//		NS_LOG_DEBUG("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
-//	}
-//	else NS_LOG_DEBUG("Interface " << interface<< " already registered for ("<<source<<","<<group<<")");
-//	int32_t sources = m_mrib.find(group)->second.mgroup.size();
-//	NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< sources << " #Clients "<< m_LocalReceiver.find(sgp)->second.size());
-//	UpstreamStateMachine(sgp);
+	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){//add a new receiver on a specific (source,group) on a given interface
+		std::set<int32_t> iface;
+		m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<int32_t> >(sgp,iface));
+		NS_LOG_DEBUG("Adding Source-Group ("<<source<<","<<group<<") to the map");
+	}
+	if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
+		m_LocalReceiver.find(sgp)->second.insert(interface);
+		NS_LOG_DEBUG("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
+	}
+	else NS_LOG_DEBUG("Interface " << interface<< " already registered for ("<<source<<","<<group<<")");
+	int32_t sources = m_mrib.find(group)->second.mgroup.size();
+	NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< sources << " #Clients "<< m_LocalReceiver.find(sgp)->second.size());
+	UpstreamStateMachine(sgp);
 }
 
 void
 MulticastRoutingProtocol::unregisterMember (Ipv4Address source, Ipv4Address group, int32_t interface){
 	NS_LOG_DEBUG("UnRegister interface with members for ("<<source<<","<<group<<") over interface "<< interface);
 	SourceGroupPair sgp (source,group);
-//	if(m_LocalReceiver.find(sgp)->second.find(interface) != m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
-//		m_LocalReceiver.find(sgp)->second.erase(interface);
-//		NS_LOG_DEBUG("Removing interface " << interface<< " from ("<<source<<","<<group<<")");
-//	}
-//	if(m_LocalReceiver.find(sgp)!=m_LocalReceiver.end() && m_LocalReceiver.find(sgp)->second.empty()){
-//		m_LocalReceiver.erase(sgp);
-//		NS_LOG_DEBUG("Removing Source-Group ("<<source<<","<<group<<") to the map");
-//	}
-//	else NS_LOG_DEBUG("No clients on interface " << interface<< " for ("<<source<<","<<group<<")");
-//	int32_t sources = m_mrib.find(group)->second.mgroup.size();
-//	UpstreamStateMachine(sgp);
-}
-
-void
-MulticastRoutingProtocol::register_member (std::string csv){
-	/***************** TODO: TO REMOVE WITH IGMP *****************/
-	NS_LOG_FUNCTION(this);
-	Ipv4Address group, source;
-	int32_t interface;
-	std::vector<std::string> tokens;
-	Tokenize(csv, tokens, ",");
-	if(tokens.size()!= 3) return;
-	source = Ipv4Address(tokens.at(0).c_str());
-	group = Ipv4Address(tokens.at(1).c_str());
-	interface = atoi(tokens.at(2).c_str());
-	tokens.clear();
-	if(source == group && interface == 0) return;//skip initialization
-	registerMember(source,group,interface);
-}
-
-void
-MulticastRoutingProtocol::unregister_member (std::string csv){
-	NS_LOG_FUNCTION(this);
-	Ipv4Address group, source;
-	int32_t interface;
-	std::vector<std::string> tokens;
-	Tokenize(csv, tokens, ",");
-	if(tokens.size()!= 3) return;
-	source = Ipv4Address(tokens.at(0).c_str());
-	group = Ipv4Address(tokens.at(1).c_str());
-	interface = atoi(tokens.at(2).c_str());
-	tokens.clear();
-	if(source == group && interface == 0) return;//skip initialization
-	unregisterMember(source,group,interface);
+	if(m_LocalReceiver.find(sgp)->second.find(interface) != m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
+		m_LocalReceiver.find(sgp)->second.erase(interface);
+		NS_LOG_DEBUG("Removing interface " << interface<< " from ("<<source<<","<<group<<")");
+	}
+	if(m_LocalReceiver.find(sgp)!=m_LocalReceiver.end() && m_LocalReceiver.find(sgp)->second.empty()){
+		m_LocalReceiver.erase(sgp);
+		NS_LOG_DEBUG("Removing Source-Group ("<<source<<","<<group<<") to the map");
+	}
+	else NS_LOG_DEBUG("No clients on interface " << interface<< " for ("<<source<<","<<group<<")");
+	int32_t sources = m_mrib.find(group)->second.mgroup.size();
+	UpstreamStateMachine(sgp);
 }
 
 void
