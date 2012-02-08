@@ -1241,6 +1241,7 @@ MulticastRoutingProtocol::RPFCheck (SourceGroupPair sgp)
 			UpdateEntry (sgp.groupMulticastAddr, sgp.sourceMulticastAddr, wei.second, wei.first);//continue from here: problem is that in the second roung it
 			RPF_Changes (sgp, interfaceO, gatewayO, wei.first, wei.second);
 			RPF_primeChanges (sgp, me.interface, me.nextAddr, wei.first, wei.second);//check interface old is right
+			sgp.nextMulticastAddr = wei.second;
 //			if(FindSourceGroupState (interfaceN, gatewayN, sgp)->upstream && !FindSourceGroupState(me.interface , me.nextAddr, sgp)->upstream)//RPF prime change succeed
 //				UpdateEntry (sgp.groupMulticastAddr,sgp.sourceMulticastAddr,gatewayN,interfaceN);
 //			else
