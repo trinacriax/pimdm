@@ -1952,6 +1952,9 @@ MulticastRoutingProtocol::SendPacketPIMUnicast(Ptr<Packet> packet, const PIMHead
   packet->AddHeader(message);
   WiredEquivalentInterface wei = RPF_interface(destination);
   int32_t interface = wei.first >0 ? wei.first : m_ipv4->GetInterfaceForAddress(m_mainAddress);
+  if (wei.first < 0 ){
+  	  AskRoute(destination);
+  }
   Ipv4Address local = GetLocalAddress(interface);
   // Send
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i = m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
@@ -1977,6 +1980,8 @@ MulticastRoutingProtocol::SendPacketUnicast(Ptr<Packet> packet, Ipv4Address dest
   if(m_stopTx) return;
   // Send
   WiredEquivalentInterface wei = RPF_interface(destination);
+  if (wei.first < 0 )
+	  AskRoute(destination);
   int32_t interface = wei.first >0 ? wei.first : m_ipv4->GetInterfaceForAddress(m_mainAddress);
   Ipv4Address local = GetLocalAddress(interface);
   for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i = m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
