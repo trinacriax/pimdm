@@ -1652,7 +1652,6 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			//	An (S, G) data packet arrived on a downstream interface.
 			//	The Assert state machine remains in the "I am Assert Winner" state.
 			//	The router MUST send an Assert(S, G) to interface I and set the Assert Timer (AT(S, G, I) to Assert_Time.
-				//if(!IsDownstream(interface, sgp)) NS_LOG_ERROR("Packet received on Upstream interface! Assert_NoInfo");//WIRED
 				sgState->AssertState = Assert_Winner;
 				UpdateAssertWinner(sgState, interface);
 				PIMHeader assert;
