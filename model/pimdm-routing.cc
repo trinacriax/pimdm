@@ -1746,7 +1746,7 @@ MulticastRoutingProtocol::RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address
 				RecvGraftDownstream (graft, sender, receiver, *msource, mgroup->m_multicastGroupAddr, interface);
 			}
 			else {
-				SourceGroupPair sgp (msource->m_sourceAddress, mgroup->m_multicastGroupAddr.m_groupAddress);
+				SourceGroupPair sgp (msource->m_sourceAddress, mgroup->m_multicastGroupAddr.m_groupAddress, sender);
 				RPFCheck(sgp);
 			}
 		}
