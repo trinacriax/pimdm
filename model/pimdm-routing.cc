@@ -2111,6 +2111,7 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, int32_t interface
 		}
 		return AskRoute(gateway);
 	}
+	if (sgp.nextMulticastAddr.Get() != gateway.Get() ) return;
 	sgState = FindSourceGroupState(interface, gateway, sgp, true);
 	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
