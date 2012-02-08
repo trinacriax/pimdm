@@ -1717,7 +1717,6 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	for(std::set<WiredEquivalentInterface>::iterator out = fwd_list.begin(); out != fwd_list.end(); out++){
 		Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
 		//add a header
-		delayMS += TransmissionDelay();
 		if(!IsMyOwnAddress(out->second)) {//to PIM neighbors
 			Ipv4Address localAddr = GetLocalAddress(out->first);
 			RelayTag relayF (localAddr, out->second);
@@ -1727,12 +1726,10 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketUnicast, this, fwdPacket, out->second);
 		}
 		else{
-			Time dataMS = TransmissionDelay(1,100,Time::US);
-			NS_LOG_INFO("DataFwd towards clients ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<dataMS.GetSeconds());
-			Simulator::Schedule(dataMS, &MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
+			NS_LOG_INFO("DataFwd towards clients ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
+			Simulator::Schedule(delayMS, &MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
 		}
-//		min = ceil (fwdPacket->GetSize() * 8 / 10^6)*1.1;
-//		delayMS += TransmissionDelay(min,min*1.3, Time::US);
+//		delayMS += TransmissionDelay();
 	}
 }
 
