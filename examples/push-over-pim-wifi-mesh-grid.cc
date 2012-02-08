@@ -76,6 +76,32 @@ NS_LOG_COMPONENT_DEFINE ("PushPimWifi");
 
 static bool g_verbose = false;
 
+struct mycontext{
+	uint32_t id;
+	std::string callback;
+};
+
+//0x6be458 "/NodeList/10/$ns3::igmpx::IGMPXRoutingProtocol/TxIgmpxControl"
+struct mycontext GetContextInfo (std::string context){
+	struct mycontext mcontext;
+	int p2 = context.find("/");
+	int p1 = context.find("/",p2+1);
+	p2 = context.find("/",p1+1);
+	mcontext.id = atoi(context.substr(p1+1, (p2-p1)-1).c_str());
+//	std::cout<<"P1 = "<<p1<< " P2 = "<< p2 << " ID: " <<mcontext.id;
+	p1 = context.find_last_of("/");
+	p2 = context.length() - p2;
+	mcontext.callback = context.substr(p1+1, p2).c_str();
+//	std::cout<<"; P1 = "<<p1<< " P2 = "<< p2<< " CALL: "<< mcontext.callback<<"\n";
+	return mcontext;
+}
+
+static void GenericPacketTrace (std::string context, Ptr<const Packet> p)
+{
+	struct mycontext mc = GetContextInfo (context);
+	std::cout << Simulator::Now() << " Node "<< mc.id << " "<< mc.callback << " " << p->GetSize()  <<  std::endl;
+}
+
 int
 GetNodeID (std::string context){
 	int p3 = 0;
@@ -646,13 +672,13 @@ main (int argc, char *argv[])
 //		ss.str("");
 //	}
 
-//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxData",MakeCallback (&PIMDataTx));
-//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxData",MakeCallback (&PIMDataRx));
-//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxPIMControl", MakeCallback (&PIMControlTx));
-//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxPIMControl", MakeCallback (&PIMControlRx));
 if(g_verbose){
 	Config::ConnectWithoutContext("/NodeList/0/ApplicationList/0/$ns3::VideoPushApplication/Tx",MakeCallback (&AppTx));
 	Config::ConnectWithoutContext("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/PhyTxDrop",MakeCallback (&PhyTxDrop));
+	Config::Connect ("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxPimData",MakeCallback (&GenericPacketTrace));
+	Config::Connect ("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxPimData",MakeCallback (&GenericPacketTrace));
+	Config::Connect ("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxPimControl", MakeCallback (&GenericPacketTrace));
+	Config::Connect ("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxPimControl", MakeCallback (&GenericPacketTrace));
 
 	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacTx", MakeCallback (&DevTxTrace));
 	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacRx",	MakeCallback (&DevRxTrace));

@@ -75,121 +75,35 @@ using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("PushPimWifi");
 
 static bool g_verbose = false;
+struct mycontext{
+	uint32_t id;
+	std::string callback;
+};
 
-int
-GetNodeID (std::string context){
-	int p3 = 0;
-	if(g_verbose){
-		int p2 = context.find("/");
-		int p1 = context.find("/",p2+1);
-		p2 = context.find("/",p1+1);
-		std::string str = context.substr(p1+1, (p2-p1)-1);
-		p3 = atoi(str.c_str());
-//		std::cout<<"P1 = "<<p1<< " P2 = "<< p2<< "?"<<p3<< " ID "<< context.substr(p1, (p2-p1))<<" -- " << context<<"\n";
-	}
-	return p3;
+//0x6be458 "/NodeList/10/$ns3::igmpx::IGMPXRoutingProtocol/TxIgmpxControl"
+struct mycontext GetContextInfo (std::string context){
+	struct mycontext mcontext;
+	int p2 = context.find("/");
+	int p1 = context.find("/",p2+1);
+	p2 = context.find("/",p1+1);
+	mcontext.id = atoi(context.substr(p1+1, (p2-p1)-1).c_str());
+//	std::cout<<"P1 = "<<p1<< " P2 = "<< p2 << " ID: " <<mcontext.id;
+	p1 = context.find_last_of("/");
+	p2 = context.length() - p2;
+	mcontext.callback = context.substr(p1+1, p2).c_str();
+//	std::cout<<"; P1 = "<<p1<< " P2 = "<< p2<< " CALL: "<< mcontext.callback<<"\n";
+	return mcontext;
 }
 
-//static void SinkRx (Ptr<const Packet> p, const Address &ad)
-//{
-//std::cout <<"Received Packet "<< p->GetSize() << " bytes from "<<InetSocketAddress::ConvertFrom (ad).GetIpv4()<< std::endl;
-//}
-
-static void AppTx (Ptr<const Packet> p)
+static void GenericTrace (std::string context, Ptr<const Packet> p)
 {
-std::cout << Simulator::Now() <<" Sending Packet "<< p->GetSize() << " bytes " << std::endl;
-}
-
-static void PIMControlTx (Ptr<const Packet> p)
-{
-std::cout << Simulator::Now() <<" PIMDM Control TX "<<  p->GetSize()<< " bytes " << std::endl;
-}
-
-static void PIMControlRx (Ptr<const Packet> p)
-{
-std::cout << Simulator::Now() <<" PIMDM Control RX "<<  p->GetSize()<< " bytes " << std::endl;
-}
-
-static void PIMDataTx (Ptr<const Packet> p)
-{
-std::cout << Simulator::Now() <<" PIMDM Data TX "<< p->GetSize()<< " bytes " << std::endl;
-}
-
-static void PIMDataRx (Ptr<const Packet> p)
-{
-std::cout << Simulator::Now() <<" PIMDM Data RX "<< p->GetSize()<< " bytes " << std::endl;
-}
-
-static void PhyTxDrop (Ptr<const Packet> p)
-{
-std::cout << Simulator::Now() <<" Phy Drop Packet "<< p->GetSize() << " bytes " << std::endl;
+	struct mycontext mc = GetContextInfo (context);
+	std::cout << Simulator::Now() << " Node "<< mc.id << " "<< mc.callback << " " << p->GetSize()  <<  std::endl;
 }
 
 static void NodeStatusChanged(std::string source, Ptr<const mbn::RoutingProtocol> nodez) {
 	std::cout << Simulator::Now()<< " Node Status Changed: " << source << ", new status: "
 			<< nodez->GetLocalNodeStatus()<< std::endl;
-}
-
-void
-DevTxTrace (std::string context, Ptr<const Packet> p)
-{
- if (g_verbose)
-   {
-     std::cout<< "  Node "<< GetNodeID(context) << " TX p: " << p->GetUid() << std::endl;
-   }
-}
-void
-DevRxTrace (std::string context, Ptr<const Packet> p)
-{
- if (g_verbose)
-   {
-     std::cout<< "  Node "<< GetNodeID(context) << " RX p: " << p->GetUid() << std::endl;
-   }
-}
-void
-PhyRxOkTrace (std::string context, Ptr<const Packet> packet, double
-snr, WifiMode mode, enum WifiPreamble preamble)
-{
- if (g_verbose)
-   {
-     std::cout<< "  Node "<< GetNodeID(context) << " PHYRXOK mode=" << mode << " snr=" << snr << " " <<
-*packet << std::endl;
-   }
-}
-void
-PhyRxErrorTrace (std::string context, Ptr<const Packet> packet, double
-snr)
-{
- if (g_verbose)
-   {
-     std::cout<< "  Node "<< GetNodeID(context) << " PHYRXERROR snr=" << snr << " " << *packet <<
-std::endl;
-   }
-}
-void
-PhyTxTrace (std::string context, Ptr<const Packet> packet, WifiMode
-mode, WifiPreamble preamble, uint8_t txPower)
-{
- if (g_verbose)
-   {
-	 std::cout<< "  Node "<< GetNodeID(context) << " PHYTX mode=" << mode << " " << *packet <<
-std::endl;
-   }
-}
-
-void
-PhyStateTrace (std::string context, Time start, Time duration, enum
-WifiPhy::State state)
-{
- if (g_verbose)
-   {
-	 std::cout<< "  Node "<< GetNodeID(context) << " state=" << state << " start=" << start << " duration=" << duration << std::endl;
-   }
-}
-
-static void ArpDiscard (std::string context, Ptr<const Packet> p)
-{
-	 std::cout<< Simulator::Now() << " Node "<< GetNodeID(context) <<" Arp discards packet "<< p->GetUid() << " of "<<p->GetSize() << " bytes " << std::endl;
 }
 
 int
@@ -584,91 +498,14 @@ main (int argc, char *argv[])
 		appC.Stop (Seconds (clientStop));
 	}
 
-
-	/* ROUTERS ARE ALSO CLIENTS */
-//	for(uint32_t n = 0; n < routers.GetN() ; n++){
-//		InetSocketAddress dstR = InetSocketAddress (multicastGroup, PUSH_PORT);
-//		Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
-//		VideoHelper videoR = VideoHelper ("ns3::UdpSocketFactory", dstR);
-//		videoR.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
-//		videoR.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
-////		videoC.SetAttribute ("DataRate", StringValue ("10kb/s"));
-////		videoC.SetAttribute ("PacketSize", UintegerValue (1200));
-//		videoR.SetAttribute ("PeerType", EnumValue (PEER));
-//		videoR.SetAttribute ("Local", AddressValue(ipRouter.GetAddress(n)));
-//		videoR.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
-//		videoR.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
-//
-////		Ipv4StaticRoutingHelper multicast;
-////		multicast.AddMulticastRoute (routers.Get(n), multicastSource, multicastGroup, routersNetDev.Get (n), routersNetDev.Get (n));
-//
-//		ApplicationContainer appR = videoR.Install (routers.Get(n));
-//		appR.Start (Seconds (clientStart));
-//		appR.Stop (Seconds (clientStop));
-//	}
-
-//	NS_LOG_INFO ("Create Sink.");
-//	PacketSinkHelper sink = PacketSinkHelper ("ns3::UdpSocketFactory", dst);
-//	apps = sink.Install (clients);
-//	apps.Start (Seconds (sinkStart));
-//	apps.Stop (Seconds (sinkStop));
-
-
-	//sink callback
-//	for(int i = source.GetN()+routers.GetN(); i < (source.GetN()+routers.GetN()+clients.GetN()); i++){
-//		std::stringstream ss;
-//		ss << "/NodeList/"<<i<<"/ApplicationList/0/$ns3::PacketSink/Rx";
-//		Config::ConnectWithoutContext(ss.str(),MakeCallback (&SinkRx));
-//		ss.str("");
-//	}
-
-//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxData",MakeCallback (&PIMDataTx));
-//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxData",MakeCallback (&PIMDataRx));
-//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxPIMControl", MakeCallback (&PIMControlTx));
-//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxPIMControl", MakeCallback (&PIMControlRx));
 if(g_verbose){
-	Config::ConnectWithoutContext("/NodeList/0/ApplicationList/0/$ns3::VideoPushApplication/Tx",MakeCallback (&AppTx));
-	Config::ConnectWithoutContext("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/PhyTxDrop",MakeCallback (&PhyTxDrop));
-	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacTx", MakeCallback (&DevTxTrace));
-	Config::Connect ("/NodeList/*/DeviceList/*/Mac/MacRx",	MakeCallback (&DevRxTrace));
-	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/RxOk",	MakeCallback (&PhyRxOkTrace));
-	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/RxError",	MakeCallback (&PhyRxErrorTrace));
-	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/Tx",	MakeCallback (&PhyTxTrace));
-	Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/State", MakeCallback (&PhyStateTrace));
-	Config::Connect ("/NodeList/*/$ns3::ArpL3Protocol/Drop", MakeCallback (&ArpDiscard));
+	Config::Connect ("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxPimData",MakeCallback (&GenericTrace));
+	Config::Connect ("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxPimData",MakeCallback (&GenericTrace));
+	Config::Connect ("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxPimControl", MakeCallback (&GenericTrace));
+	Config::Connect ("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxPimControl", MakeCallback (&GenericTrace));
 }
 
-//	Config::ConnectWithoutContext ("/NodeList/[5-8]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&SinkRx));
-//
-//	MobilityHelper mobilityR;
-//	Ptr<ListPositionAllocator> positionAllocR = CreateObject<ListPositionAllocator> ();
-//	positionAllocR->Add(Vector(250.0, 310.0, 0.0));// 0
-//	positionAllocR->Add(Vector(190.0, 250.0, 0.0));// 1
-//	positionAllocR->Add(Vector(250.0, 190.0, 0.0));// 2
-//	positionAllocR->Add(Vector(320.0, 250.0, 0.0));// 3
-//	mobilityR.SetPositionAllocator(positionAllocR);
-//	mobilityR.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-//	mobilityR.Install(routers);
-//
-//	Ptr<ListPositionAllocator> positionAllocS = CreateObject<ListPositionAllocator> ();
-//	positionAllocS->Add(Vector(250.0, 380.0, 0.0));// Source
-//	MobilityHelper mobilityS;
-//	mobilityS.SetPositionAllocator(positionAllocS);
-//	mobilityS.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-//	mobilityS.Install(source);
-
-//	MobilityHelper mobilityC;
-//	Ptr<ListPositionAllocator> positionAllocC = CreateObject<ListPositionAllocator> ();
-//	positionAllocC->Add(Vector(130.0, 250.0, 0.0));// 1C
-//	positionAllocC->Add(Vector(250.0, 120.0, 0.0));// 2C
-//	positionAllocC->Add(Vector(380.0, 250.0, 0.0));// 3C
-//	mobilityC.SetPositionAllocator(positionAllocC);
-//	mobilityC.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-//	mobilityC.Install(client);
-
-
-
-	MobilityHelper mobilityR;
+MobilityHelper mobilityR;
 	mobilityR.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 	mobilityR.SetPositionAllocator ("ns3::GridPositionAllocator",
 	  "MinX", DoubleValue (0.0),

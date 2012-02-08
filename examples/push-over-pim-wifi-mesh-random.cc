@@ -100,26 +100,6 @@ static void AppTx (Ptr<const Packet> p)
 std::cout << Simulator::Now() <<" Sending Packet "<< p->GetSize() << " bytes " << std::endl;
 }
 
-static void PIMControlTx (Ptr<const Packet> p)
-{
-std::cout << Simulator::Now() <<" PIMDM Control TX "<<  p->GetSize()<< " bytes " << std::endl;
-}
-
-static void PIMControlRx (Ptr<const Packet> p)
-{
-std::cout << Simulator::Now() <<" PIMDM Control RX "<<  p->GetSize()<< " bytes " << std::endl;
-}
-
-static void PIMDataTx (Ptr<const Packet> p)
-{
-std::cout << Simulator::Now() <<" PIMDM Data TX "<< p->GetSize()<< " bytes " << std::endl;
-}
-
-static void PIMDataRx (Ptr<const Packet> p)
-{
-std::cout << Simulator::Now() <<" PIMDM Data RX "<< p->GetSize()<< " bytes " << std::endl;
-}
-
 static void PhyTxDrop (Ptr<const Packet> p)
 {
 std::cout << Simulator::Now() <<" Phy Drop Packet "<< p->GetSize() << " bytes " << std::endl;
@@ -128,6 +108,33 @@ std::cout << Simulator::Now() <<" Phy Drop Packet "<< p->GetSize() << " bytes " 
 static void NodeStatusChanged(std::string source, Ptr<const mbn::RoutingProtocol> nodez) {
 	std::cout << Simulator::Now()<< " Node Status Changed: " << source << ", new status: "
 			<< nodez->GetLocalNodeStatus()<< std::endl;
+}
+
+
+struct mycontext{
+	uint32_t id;
+	std::string callback;
+};
+
+//0x6be458 "/NodeList/10/$ns3::igmpx::IGMPXRoutingProtocol/TxIgmpxControl"
+struct mycontext GetContextInfo (std::string context){
+	struct mycontext mcontext;
+	int p2 = context.find("/");
+	int p1 = context.find("/",p2+1);
+	p2 = context.find("/",p1+1);
+	mcontext.id = atoi(context.substr(p1+1, (p2-p1)-1).c_str());
+//	std::cout<<"P1 = "<<p1<< " P2 = "<< p2 << " ID: " <<mcontext.id;
+	p1 = context.find_last_of("/");
+	p2 = context.length() - p2;
+	mcontext.callback = context.substr(p1+1, p2).c_str();
+//	std::cout<<"; P1 = "<<p1<< " P2 = "<< p2<< " CALL: "<< mcontext.callback<<"\n";
+	return mcontext;
+}
+
+static void GenericPacketTrace (std::string context, Ptr<const Packet> p)
+{
+	struct mycontext mc = GetContextInfo (context);
+	std::cout << Simulator::Now() << " Node "<< mc.id << " "<< mc.callback << " " << p->GetSize()  <<  std::endl;
 }
 
 void
@@ -622,10 +629,10 @@ main (int argc, char *argv[])
 //		ss.str("");
 //	}
 
-//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxData",MakeCallback (&PIMDataTx));
-//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxData",MakeCallback (&PIMDataRx));
-//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxPIMControl", MakeCallback (&PIMControlTx));
-//	Config::ConnectWithoutContext("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxPIMControl", MakeCallback (&PIMControlRx));
+//	Config::Connect ("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxPimData",MakeCallback (&GenericPacketTrace));
+//	Config::Connect ("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxPimData",MakeCallback (&GenericPacketTrace));
+//	Config::Connect ("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/TxPimControl", MakeCallback (&GenericPacketTrace));
+//	Config::Connect ("/NodeList/*/$ns3::pimdm::MulticastRoutingProtocol/RxPimControl", MakeCallback (&GenericPacketTrace));
 if(g_verbose){
 	Config::ConnectWithoutContext("/NodeList/0/ApplicationList/0/$ns3::VideoPushApplication/Tx",MakeCallback (&AppTx));
 	Config::ConnectWithoutContext("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/PhyTxDrop",MakeCallback (&PhyTxDrop));
