@@ -1664,6 +1664,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 				sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
 				sgState->SG_AT.SetArguments(sgp, interface, sender);
 				sgState->SG_AT.Schedule();
+				NS_LOG_DEBUG("Send Assert to "<<sender << " for "<<sgp);
 				break;
 			}
 			case Assert_Loser:{
