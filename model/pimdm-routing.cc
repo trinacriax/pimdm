@@ -4183,13 +4183,18 @@ void MulticastRoutingProtocol::SetPruneState (int32_t interface, Ipv4Address nei
 /// \param group Multicast group IPv4 address
 std::set<WiredEquivalentInterface > MulticastRoutingProtocol::olist (Ipv4Address source, Ipv4Address group) {
 	std::set<WiredEquivalentInterface > _olist = immediate_olist (source, group);
-	// GetPrinterList ("olist", _olist);
+//	GetPrinterList ("olist", _olist);
 	_olist.erase (RPF_interface(source, group));
-	// GetPrinterList ("olist-RPF interface",_olist);
+	GetPrinterList ("olist-RPF interface",_olist);
 	return _olist;
 }
 
 void MulticastRoutingProtocol::AskRoute (Ipv4Address destination){
+	//TODO: We don't know the next hop towards the source: first node finds it, then it relies packets.
+	Simulator::Schedule(TransmissionDelay(), &MulticastRoutingProtocol::AskRoutez, this, destination);
+}
+
+void MulticastRoutingProtocol::AskRoutez (Ipv4Address destination){
 	//TODO: We don't know the next hop towards the source: first node finds it, then it relies packets.
 	NS_LOG_INFO (this<<" "<< destination);
 	if(m_stopTx) return;

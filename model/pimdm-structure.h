@@ -144,6 +144,7 @@ struct SourceGroupState{
 		PruneState(Prune_NoInfo),
 		SG_PT(Timer::CANCEL_ON_DESTROY),
 		SG_PPT(Timer::CANCEL_ON_DESTROY),
+		SG_PLTD(Timer::CANCEL_ON_DESTROY),
 		lastStateRefresh(Seconds(0)),
 		SGAM(0),
 		SG_SR_TTL(0),
@@ -173,6 +174,11 @@ struct SourceGroupState{
 	/// the PrunePending Timer (PPT(S,G,I)) causes the interface to
 	/// transition to the Pruned state.
 	Timer SG_PPT;/// Prune Pending Timer (PPT)
+	/// *AX*: Prune Limit Timer (PLT). This timer is used to rate-limit Prunes on a LAN.
+	///  It is only used when the Downstream(S,G) state machine is in the Pruned state.
+	/// A Prune cannot be sent if this timer is running.
+	/// This timer is normally set to t_limit (see 4.8).
+	Timer SG_PLTD;
 	/// Pointer to upstream data
 	struct UpstreamState *upstream;
 	/// Time of the last received StateRefresh(S,G)
