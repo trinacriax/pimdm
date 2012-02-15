@@ -4417,7 +4417,7 @@ std::set<WiredEquivalentInterface > MulticastRoutingProtocol::immediate_olist (I
 }
 
 Time MulticastRoutingProtocol::TransmissionDelay (){
-	return TransmissionDelay(5, 30, Time::US);
+	return TransmissionDelay(40, 150, Time::US);
 }
 
 Time MulticastRoutingProtocol::TransmissionDelay (double l, double u){
