@@ -2215,6 +2215,7 @@ MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 	NS_ASSERT_MSG(sgState,"PPTTimerExpire sgState is null");
 	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
+			NS_LOG_DEBUG ("Node "<< GetLocalAddress(interface) << " No Info "<< interface << ","<<destination);
 			// nothing
 			break;
 		}
@@ -2252,9 +2253,11 @@ MulticastRoutingProtocol::PPTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 			//	In addition, the router MUST evaluate any possible transitions in the Upstream(S, G) state machine.
 				UpstreamStateMachine(sgp);
 			}
+			NS_LOG_DEBUG ("Node "<< GetLocalAddress(interface) << " Pending->Pruned "<< interface << ","<<destination);
 			break;
 		}
 		case Prune_Pruned:{
+			NS_LOG_DEBUG ("Node "<< GetLocalAddress(interface) << " is already Pruned for "<< interface << ","<<destination);
 			//nothing
 			break;
 		}
@@ -2837,8 +2840,10 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 				sgState->PruneState = Prune_PrunePending;
 				NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
 				Time delay = Seconds(0);
-				if(nstatus->neighbors.size() == 1 )
+				if(nstatus->neighbors.size() == 1 ){
 					sgState->PruneState = Prune_Pruned;
+					NS_LOG_DEBUG ("Node "<< GetLocalAddress(interface) << " Recv Prune NoInfo -> Pruned "<< interface << ","<<sender);
+				}
 				if(nstatus->neighbors.size()>1)
 					delay = Seconds(nstatus->overrideInterval.GetSeconds()+nstatus->propagationDelay.GetSeconds());
 				NS_LOG_DEBUG("Neighbor size "<< nstatus->neighbors.size()<< " Delay "<<delay.GetSeconds()<<"sec");
@@ -3070,6 +3075,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
 				sgState->SG_AT.SetArguments(sgp, interface, sender);
 				sgState->SG_AT.Schedule();
+				NS_LOG_DEBUG ("Node " << GetLocalAddress(interface) << " Recv Assert from " << sender << " NoInfo -> Winner");
 			}
 			else{
 				//Receive Preferred Assert or State Refresh.
@@ -3089,6 +3095,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
 				sgState->SG_AT.SetArguments(sgp, interface, sender);
 				sgState->SG_AT.Schedule();
+				NS_LOG_DEBUG ("Node " << GetLocalAddress(interface) << " Recv Assert from " << sender << " NoInfo -> Loser");
 				if(couldAssert){
 					//If CouldAssert(S, G, I) == TRUE,
 					//	the router MUST also multicast a Prune(S, G) to the Assert winner
@@ -3128,6 +3135,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
 				sgState->SG_AT.SetArguments(sgp, interface, sender);
 				sgState->SG_AT.Schedule();
+				NS_LOG_DEBUG ("Node " << GetLocalAddress(interface) << " Recv Assert from " << sender << " Winner -> Winner");
 			}
 			else{
 				//Receive Preferred Assert or State Refresh
@@ -3150,6 +3158,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
 				sgState->SG_AT.SetArguments(sgp, interface, sender);
 				sgState->SG_AT.Schedule();
+				NS_LOG_DEBUG ("Node " << GetLocalAddress(interface) << " Recv Assert from " << sender << " Winner -> Loser");
 				//TODO previously commented out
 				PIMHeader prune;
 				ForgeJoinPruneMessage(prune, sender);
@@ -3182,6 +3191,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 					sgState->SG_AT.Cancel();
 				UpdateAssertWinner(sgState, infinite_assert_metric());
 				UpstreamStateMachine(sgp);
+				NS_LOG_DEBUG ("Node " << GetLocalAddress(interface) << " Recv Assert from " << sender << " Winner -> NoInfo ");
 			}
 			else if(received > sgState->AssertWinner) {
 				//Receive Preferred Assert or State Refresh
@@ -3204,6 +3214,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				sgState->SG_AT.SetArguments(sgp, interface, sender);
 				sgState->SG_AT.Schedule();
 				UpdateAssertWinner(sgState, assert.m_metricPreference, assert.m_metric, sender);
+				NS_LOG_DEBUG ("Node " << GetLocalAddress(interface) << " Recv Assert from " << sender << " Winner -> Loser");
 				if(couldAssert){
 					PIMHeader prune;
 					ForgeJoinPruneMessage(prune, sender);
