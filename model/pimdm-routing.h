@@ -527,6 +527,7 @@ private:
 	/// \brief Find the route for on-demand routing protocols.
 	/// \param destination Node to lookup.
 	void AskRoute (Ipv4Address destination);
+	void AskRoutez (Ipv4Address destination);
 
 	/// \brief There are receivers for the given SourceGroup pair.
 	/// \param sgp source-group pair.
