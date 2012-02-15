@@ -1708,7 +1708,14 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 		//	   empty, then the router will conduct a prune process for the (S,G)
 		//	   pair specified in the packet.
 		NS_LOG_INFO ("RPF check failed: Sending Prune to "<< sender);
-		SendPruneUnicast(sender, sgp);
+		if (!sgState->SG_PLTD.IsRunning()){
+			SendPruneUnicast(sender, sgp); // limiti the downstream prune.
+			sgState->SG_PLTD.Cancel();
+			sgState->SG_PLTD.SetFunction (&MulticastRoutingProtocol::PLTTimerExpireDownstream, this);
+			sgState->SG_PLTD.SetArguments (sgp, (uint32_t)interface, destination);
+			sgState->SG_PLTD.SetDelay (Seconds(Hello_Period));
+			sgState->SG_PLTD.Schedule ();
+		}
 		return;
 	}
 	///   Packets that fail the RPF check MUST NOT be forwarded, and the router will conduct an assert process for the (S, G) pair specified in the packet.
@@ -2061,6 +2068,15 @@ MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address dest
 	sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
 	sgState->upstream->SG_PLT.SetArguments(sgp, destination);
 	sgState->upstream->SG_PLT.Schedule();
+}
+
+
+void
+MulticastRoutingProtocol::PLTTimerExpireDownstream (SourceGroupPair &sgp, uint32_t interface, Ipv4Address destination) //AX
+{
+	NS_LOG_FUNCTION(this);
+	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
+	sgState->SG_PLTD.Cancel();
 }
 
 void
