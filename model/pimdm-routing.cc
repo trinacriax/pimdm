@@ -1652,19 +1652,21 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			//	An (S, G) data packet arrived on a downstream interface.
 			//	The Assert state machine remains in the "I am Assert Winner" state.
 			//	The router MUST send an Assert(S, G) to interface I and set the Assert Timer (AT(S, G, I) to Assert_Time.
-				sgState->AssertState = Assert_Winner;
-				UpdateAssertWinner(sgState, interface);
-				PIMHeader assert;
-				ForgeAssertMessage(interface, sender, assert, sgp);
-				Ptr<Packet> packetA = Create<Packet> ();
-				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packetA, assert, sender);
-				if(sgState->SG_AT.IsRunning())
-					sgState->SG_AT.Cancel();
-				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
-				sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
-				sgState->SG_AT.SetArguments(sgp, interface, sender);
-				sgState->SG_AT.Schedule();
-				NS_LOG_DEBUG("Send Assert to "<<sender << " for "<<sgp);
+				if (sgState->AssertState != Assert_Winner || !sgState->SG_AT.IsRunning()){
+					sgState->AssertState = Assert_Winner;
+					UpdateAssertWinner(sgState, interface);
+					PIMHeader assert;
+					ForgeAssertMessage(interface, sender, assert, sgp);
+					Ptr<Packet> packetA = Create<Packet> ();
+					Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packetA, assert, sender);
+					if(sgState->SG_AT.IsRunning())
+						sgState->SG_AT.Cancel();
+					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
+					sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
+					sgState->SG_AT.SetArguments(sgp, interface, sender);
+					sgState->SG_AT.Schedule();
+					NS_LOG_DEBUG("Send Assert to "<<sender << " for "<<sgp);
+				}
 				break;
 			}
 			case Assert_Loser:{
