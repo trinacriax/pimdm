@@ -1530,13 +1530,13 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 		return AskRoute(source);
 	}
 	int32_t gatewayIface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
-	bool relay_packet_other = rtag && !IsMyOwnAddress(destination); // has the relay tag and the destination is not this node
+	Ipv4Address subnetBroadcast = GetLocalAddress(interface).GetSubnetDirectedBroadcast (m_ipv4->GetAddress (interface, 0).GetMask ());
+	bool relay_packet_other = rtag && destination.Get() != subnetBroadcast.Get(); // has the relay tag and the destination is not this node
 	bool not_source_packet = !rtag && destination.IsMulticast() && gateway != source; // no relay tag and destination is multicast and was not issued by the source
 	if(relay_packet_other || not_source_packet){
 		NS_LOG_INFO ("Drop packet "<< copy->GetUid()<< ", is for someone else [S:"<< source<<"; G:"<<gateway<<"; D:"<<  destination << "] Tag: ["<< relayTag.m_sender << ","<<relayTag.m_receiver<<"]");
 		return;
 	}
-	NS_ASSERT(IsMyOwnAddress(destination));//useless
 	SocketAddressTag satag;
 	copy->RemovePacketTag(satag); // LOOK: it must be removed because will be added again by socket.
 	NS_ASSERT (group.IsMulticast());
@@ -1715,22 +1715,24 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	// Forward packet on all interfaces in oiflist.
 	Time delayMS = TransmissionDelay();
 	double min = 0.0;
-	for(std::set<WiredEquivalentInterface>::iterator out = fwd_list.begin(); out != fwd_list.end(); out++){
+	bool fwd_neighbors = false;
+	bool fwd_clients = false;
+	for(std::set<WiredEquivalentInterface>::iterator out = fwd_list.begin(); out != fwd_list.end() && !(fwd_neighbors && fwd_clients) ; out++){
 		Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
-		//add a header
-		if(!IsMyOwnAddress(out->second)) {//to PIM neighbors
+		if(!IsMyOwnAddress(out->second) && !fwd_neighbors) {//to PIM neighbors
+			fwd_neighbors = true;
 			Ipv4Address localAddr = GetLocalAddress(out->first);
-			RelayTag relayF (localAddr, out->second);
-			fwdPacket->AddPacketTag(relayF);
-			fwdPacket->AddHeader(sourceHeader);
-			NS_LOG_INFO("DataFwd towards node ("<<out->second <<", "<< out->first <<") bytes: " << fwdPacket->GetSize()<< ", delay: "<<delayMS.GetSeconds()<<"ms");
-			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketUnicast, this, fwdPacket, out->second);
+			Ipv4Address subnet = out->second.GetSubnetDirectedBroadcast (m_ipv4->GetAddress (interface, 0).GetMask ());
+//			RelayTag relayF (localAddr, subnet );
+//			fwdPacket->AddPacketTag(relayF);
+			NS_LOG_INFO("DataFwd towards node ("<<subnet <<", "<< out->first <<") bytes: " << fwdPacket->GetSize()<< ", delay: "<<delayMS.GetSeconds()<<"ms");
+			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
 		}
-		else{
+		else if(IsMyOwnAddress(out->second) ) {
+			fwd_clients = true;
 			NS_LOG_INFO("DataFwd towards clients ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
 			Simulator::Schedule(delayMS, &MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
 		}
-//		delayMS += TransmissionDelay();
 	}
 }
 
