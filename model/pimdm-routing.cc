@@ -1526,15 +1526,15 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 		return AskRoute(source);
 	}
 	gateway = rpf_route->GetGateway();
+	if(!isValidGateway(gateway) ){
+		return AskRoute(source);
+	}
 	int32_t gatewayIface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
 	bool relay_packet_other = rtag && !IsMyOwnAddress(destination); // has the relay tag and the destination is not this node
 	bool not_source_packet = !rtag && destination.IsMulticast() && gateway != source; // no relay tag and destination is multicast and was not issued by the source
 	if(relay_packet_other || not_source_packet){
 		NS_LOG_INFO ("Drop packet "<< copy->GetUid()<< ", is for someone else [S:"<< source<<"; G:"<<gateway<<"; D:"<<  destination << "] Tag: ["<< relayTag.m_sender << ","<<relayTag.m_receiver<<"]");
 		return;
-	}
-	if(!isValidGateway(gateway) && IsMyOwnAddress(destination)){
-		return AskRoute(source);
 	}
 	NS_ASSERT(IsMyOwnAddress(destination));//useless
 	SocketAddressTag satag;
