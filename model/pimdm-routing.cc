@@ -1712,7 +1712,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			SendPruneUnicast(sender, sgp); // limiti the downstream prune.
 			sgState->SG_PLTD.Cancel();
 			sgState->SG_PLTD.SetFunction (&MulticastRoutingProtocol::PLTTimerExpireDownstream, this);
-			sgState->SG_PLTD.SetArguments (sgp, (uint32_t)interface, destination);
+			sgState->SG_PLTD.SetArguments (sgp, (uint32_t)interface, sender);
 			sgState->SG_PLTD.SetDelay (Seconds(Hello_Period));
 			sgState->SG_PLTD.Schedule ();
 		}
