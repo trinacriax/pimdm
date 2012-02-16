@@ -672,6 +672,14 @@ void MulticastRoutingProtocol::DoDispose ()
 //	  // Close the plot file.
 //	  plotFile.close ();
 //	}
+
+	for (std::map<WiredEquivalentInterface, SourceGroupList>::iterator iter = m_IfaceSourceGroup.begin();
+			iter != m_IfaceSourceGroup.end(); iter++ ){
+		for(std::list<SourceGroupState>::iterator iter2 = iter->second.begin(); iter2!= iter->second.end(); iter2++){
+			if(!iter2->upstream)
+				delete (iter2->upstream);
+		}
+	}
 	m_ipv4 = 0;
 	m_RoutingTable = 0;
 	m_routingTableAssociation = 0;

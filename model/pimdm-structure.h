@@ -150,7 +150,10 @@ struct SourceGroupState{
 		SG_SR_TTL(0),
 		SG_DATA_TTL(0)
 	{upstream = NULL;}
-	~SourceGroupState(){}
+	~SourceGroupState(){
+		if(!upstream)
+			free (upstream);
+	}
 
 	/// SourceGroup pair.
 	struct SourceGroupPair SGPair;
