@@ -2072,11 +2072,12 @@ MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address dest
 
 
 void
-MulticastRoutingProtocol::PLTTimerExpireDownstream (SourceGroupPair &sgp, uint32_t interface, Ipv4Address destination) //AX
+MulticastRoutingProtocol::PLTTimerExpireDownstream (SourceGroupPair &sgp, uint32_t interface, Ipv4Address neighbor) //AX
 {
 	NS_LOG_FUNCTION(this);
-	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
-	sgState->SG_PLTD.Cancel();
+	SourceGroupState *sgState = FindSourceGroupState(interface, neighbor, sgp);
+	if(sgState->SG_PLTD.IsRunning())
+		sgState->SG_PLTD.Cancel();
 }
 
 void
