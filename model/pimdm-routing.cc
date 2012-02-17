@@ -4196,7 +4196,7 @@ std::set<WiredEquivalentInterface > MulticastRoutingProtocol::olist (Ipv4Address
 	std::set<WiredEquivalentInterface > _olist = immediate_olist (source, group);
 //	GetPrinterList ("olist", _olist);
 	_olist.erase (RPF_interface(source, group));
-	GetPrinterList ("olist-RPF interface",_olist);
+//	GetPrinterList ("olist-RPF interface",_olist);
 	return _olist;
 }
 
