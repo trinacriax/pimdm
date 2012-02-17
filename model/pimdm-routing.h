@@ -86,6 +86,10 @@
 //  of time. The period of randomization is configurable and has a
 //  default value of 3 seconds.
 #define JoinDelay 3 //Prune override
+/// Prune downstream //AX.
+#define PRUNE_DOWN 10
+
+
 #define TTL_SAMPLE .2
 #define PIMDM_TTL 1
 #define PIM_RESERVED 0
