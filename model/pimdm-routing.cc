@@ -4210,25 +4210,24 @@ void MulticastRoutingProtocol::AskRoutez (Ipv4Address destination){
 	NS_LOG_INFO (this<<" "<< destination);
 	if(m_stopTx) return;
 	int size = 0;
-		PIMHeader msg;
-		Ptr<Packet> packet = Create<Packet> (); //forge a hello reply
-		int32_t interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);
-		ForgeHelloMessage(interface, msg);
-		packet->AddHeader(msg);
-		// Trace it
-		Ipv4Address local = GetLocalAddress(interface);
-		for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i = m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
-		{
-			if(local == i->second.GetLocal () ){
-				Ptr<Packet> copy = packet->Copy();
-				Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, copy->GetSize(), 1, false);
-				copy->AddHeader(ipv4Header);
-				NS_LOG_DEBUG ("Node " << local << " is sending packet "<<copy  <<"("<<copy->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
+	PIMHeader msg;
+	Ptr<Packet> packet = Create<Packet> (); //forge a hello reply
+	int32_t interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);
+	ForgeHelloMessage(interface, msg);
+	packet->AddHeader(msg);
+	// Trace it
+	Ipv4Address local = GetLocalAddress(interface);
+	for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i = m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
+	{
+		if(local == i->second.GetLocal () ){
+			Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, packet->GetSize(), 1, false);
+			packet->AddHeader(ipv4Header);
+			NS_LOG_DEBUG ("Node " << local << " is sending packet "<<packet  <<"("<<packet->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
 //				m_txControlPacketTrace (copy);
-				i->first->SendTo (copy, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
-				break;
-			}
+			i->first->SendTo (packet, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));
+			break;
 		}
+	}
 }
 
 /// \brief There are receivers for the given SourceGroup pair.
