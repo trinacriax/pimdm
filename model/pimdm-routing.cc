@@ -1732,24 +1732,28 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	// Forward packet on all interfaces in oiflist.
 	Time delayMS = TransmissionDelay();
 	double min = 0.0;
-	bool fwd_neighbors = false;
-	bool fwd_clients = false;
-	for(std::set<WiredEquivalentInterface>::iterator out = fwd_list.begin(); out != fwd_list.end() && !(fwd_neighbors && fwd_clients) ; out++){
+//	bool fwd_neighbors = false;
+//	bool fwd_clients = false;
+//	if (!fwd_list.empty())
+	for(std::set<WiredEquivalentInterface>::iterator out = fwd_list.begin(); out != fwd_list.end(); out++)//&& !(fwd_neighbors && fwd_clients) ; out++)
+		{
 		Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
-		if(!IsMyOwnAddress(out->second) && !fwd_neighbors) {//to PIM neighbors
-			fwd_neighbors = true;
-			Ipv4Address localAddr = GetLocalAddress(out->first);
-			Ipv4Address subnet = out->second.GetSubnetDirectedBroadcast (m_ipv4->GetAddress (interface, 0).GetMask ());
-//			RelayTag relayF (localAddr, subnet );
-//			fwdPacket->AddPacketTag(relayF);
-			NS_LOG_INFO("DataFwd towards node ("<<subnet <<", "<< out->first <<") bytes: " << fwdPacket->GetSize()<< ", delay: "<<delayMS.GetSeconds()<<"ms");
-			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
-		}
-		else if(IsMyOwnAddress(out->second) ) {
-			fwd_clients = true;
-			NS_LOG_INFO("DataFwd towards clients ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
+//		if(!IsMyOwnAddress(out->second) && !fwd_neighbors) {//to PIM neighbors
+//			fwd_neighbors = true;
+//			Ipv4Address localAddr = GetLocalAddress(out->first);
+//			Ipv4Address subnet = out->second.GetSubnetDirectedBroadcast (m_ipv4->GetAddress (interface, 0).GetMask ());
+////			RelayTag relayF (localAddr, subnet );
+////			fwdPacket->AddPacketTag(relayF);
+//			NS_LOG_INFO("DataFwd towards node ("<<subnet <<", "<< out->first <<") bytes: " << fwdPacket->GetSize()<< ", delay: "<<delayMS.GetSeconds()<<"ms");
+//			Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
+//		}
+//		else if(IsMyOwnAddress(out->second) ) {
+//			fwd_clients = true;
+//			NS_LOG_INFO("DataFwd towards clients ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
+			NS_LOG_INFO("DataFwd ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
 			Simulator::Schedule(delayMS, &MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
-		}
+			break;
+//		}
 	}
 }
 
