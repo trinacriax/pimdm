@@ -1703,7 +1703,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 
 	///   First, an RPF check MUST be performed to determine whether the packet should be accepted based on TIB state
 	///      and the interface on which that the packet arrived.
-	if(IsUpstream(interface, sender, sgp) && sgState->PruneState != Prune_Pruned ){
+	if(IsUpstream(interface, sender, sgp) && sgState->PruneState != Prune_Pruned){
 		/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
 		/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
 //		fwd_list = olist(source, group);
@@ -1731,7 +1731,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	NS_LOG_DEBUG("Data forwarding towards > "<< fwd_list.size()<<" < interfaces/nodes");
 	// Forward packet on all interfaces in oiflist.
 	Time delayMS = TransmissionDelay();
-	double min = 0.0;
+//	double min = 0.0;
 //	bool fwd_neighbors = false;
 //	bool fwd_clients = false;
 //	if (!fwd_list.empty())
@@ -2761,9 +2761,11 @@ MulticastRoutingProtocol::RecvPrune (PIMHeader::JoinPruneMessage &jp, Ipv4Addres
 {
 	NS_LOG_FUNCTION(this << sender << receiver << interface << source.m_sourceAddress << group.m_groupAddress);
 	NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
-	nstatus->pruneHoldtime = Time(jp.m_joinPruneMessage.m_holdTime);
-	// The node is not directly connected to S.
-	if(IsUpstream(interface, sender, source.m_sourceAddress, group.m_groupAddress))
+	nstatus->pruneHoldtime = Time(jp.m_joinPruneMessage.m_holdTime);// The node is not directly connected to S.
+	Ipv4Address nexthop = GetNextHop(source.m_sourceAddress);
+	if (jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == receiver && sender == nexthop)
+		return;
+	else if(IsUpstream(interface, sender, source.m_sourceAddress, group.m_groupAddress))
 		RecvPruneUpstream(jp, sender, receiver, interface, source, group);
 	else
 		RecvPruneDownstream(jp, sender, receiver, interface, source, group);
@@ -2780,6 +2782,8 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 {
 	NS_LOG_FUNCTION(this << sender<<receiver<<interface<<source.m_sourceAddress<<group.m_groupAddress);
 	SourceGroupPair sgp (source.m_sourceAddress, group.m_groupAddress, sender);
+	WiredEquivalentInterface wei = RPF_interface(source.m_sourceAddress);
+	if( wei.first != interface || wei.second != sender) return;
 	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
 	// The node is not directly connected to S.
 	switch (sgState->upstream->GraftPrune) {
@@ -4467,7 +4471,7 @@ std::set<WiredEquivalentInterface > MulticastRoutingProtocol::immediate_olist (I
 }
 
 Time MulticastRoutingProtocol::TransmissionDelay (){
-	return TransmissionDelay(40, 150, Time::US);
+	return TransmissionDelay(50, 200, Time::US);
 }
 
 Time MulticastRoutingProtocol::TransmissionDelay (double l, double u){
