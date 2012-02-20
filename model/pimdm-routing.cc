@@ -2127,11 +2127,10 @@ MulticastRoutingProtocol::NLTTimerExpire (int32_t interface, Ipv4Address neighbo
 }
 
 void
-MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, int32_t interface)
+MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address gateway)
 {
 	NS_LOG_FUNCTION(this);
-	Ipv4Address gateway = RPF_prime(sgp.sourceMulticastAddr, sgp.groupMulticastAddr);
-	SourceGroupState *sgState = FindSourceGroupState(interface, sgp.nextMulticastAddr, sgp);
+	SourceGroupState *sgState = FindSourceGroupState(interface, gateway, sgp);
 	NS_ASSERT(sgState);
 	NS_ASSERT(sgState->upstream);
 	if(!isValidGateway(gateway)){
@@ -2139,13 +2138,13 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, int32_t interface
 			sgState->upstream->SG_OT.Cancel();
 			sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 			sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
-			sgState->upstream->SG_OT.SetArguments(sgp, interface);
+			sgState->upstream->SG_OT.SetArguments(sgp, interface, gateway);
 			sgState->upstream->SG_OT.Schedule();
 		}
 		return AskRoute(gateway);
 	}
-	if (sgp.nextMulticastAddr.Get() != gateway.Get() ) return;
-	sgState = FindSourceGroupState(interface, gateway, sgp, true);
+	if (gateway.Get() != GetNextHop(sgp.sourceMulticastAddr).Get()) return;
+//	sgState = FindSourceGroupState(interface, gateway, sgp, true);
 	switch (sgState->upstream->GraftPrune){
 		case GP_Forwarding:{
 			//    OT(S,G) Expires AND S NOT directly connected
@@ -2740,17 +2739,17 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 			//	When the timer expires, a Join(S, G) message is sent on the upstream interface.  This timer
 			//	is normally set to t_override (see 4.8).
 				SourceGroupPair sgp (iterPrune->m_sourceAddress, iter->m_multicastGroupAddr.m_groupAddress, sender);
-				if(IsUpstream(interface, sender, sgp)){
-					SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
-					NS_ASSERT(sgState->upstream);
-					NS_LOG_DEBUG("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
-					if(sgState->upstream->SG_OT.IsRunning())
-						sgState->upstream->SG_OT.Cancel();
-					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
-					sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
-					sgState->upstream->SG_OT.SetArguments(sgp, interface);
-					sgState->upstream->SG_OT.Schedule();
-				}
+//				if(IsUpstream(interface, sender, sgp)){
+//					SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
+//					NS_ASSERT(sgState->upstream);
+//					NS_LOG_DEBUG("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
+//					if(sgState->upstream->SG_OT.IsRunning())
+//						sgState->upstream->SG_OT.Cancel();
+//					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
+//					sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
+//					sgState->upstream->SG_OT.SetArguments(sgp, interface, jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress );
+//					sgState->upstream->SG_OT.Schedule();
+//				}
 				RecvPrune(jp, sender, receiver, interface, *iterPrune, iter->m_multicastGroupAddr);
 		}
 	}
@@ -2782,9 +2781,11 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 {
 	NS_LOG_FUNCTION(this << sender<<receiver<<interface<<source.m_sourceAddress<<group.m_groupAddress);
 	SourceGroupPair sgp (source.m_sourceAddress, group.m_groupAddress, sender);
-	WiredEquivalentInterface wei = RPF_interface(source.m_sourceAddress);
-	if( wei.first != interface || wei.second != sender) return;
-	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
+//	WiredEquivalentInterface wei = RPF_interface(source.m_sourceAddress);
+//	if( wei.first != interface || wei.second != sender) return;
+//	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
+	Ipv4Address upstream = jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress;
+	SourceGroupState *sgState = FindSourceGroupState(interface, upstream, sgp, true);
 	// The node is not directly connected to S.
 	switch (sgState->upstream->GraftPrune) {
 		case GP_Forwarding:{
@@ -2795,11 +2796,12 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 		//	The Upstream(S, G) state machine remains in Forwarding (F) state.
 			if(GetNextHop(source.m_sourceAddress) != source.m_sourceAddress && !sgState->upstream->SG_OT.IsRunning()){
 //				NS_LOG_INFO("Setting TIMER OT "<< sgp<<", "<<interface<<sender);
-				sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
+				Time delay = Seconds(t_override(interface));
+				sgState->upstream->SG_OT.SetDelay(delay);
 				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
-				sgState->upstream->SG_OT.SetArguments(sgp, interface);
+				sgState->upstream->SG_OT.SetArguments(sgp, interface, upstream);
 				sgState->upstream->SG_OT.Schedule();
-				}
+			}
 			break;
 		}
 		case GP_Pruned:{
@@ -2827,7 +2829,7 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 //				NS_LOG_INFO("Setting TIMER OT "<< sgp<<", "<<interface<<sender);
 				sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
-				sgState->upstream->SG_OT.SetArguments(sgp, interface);
+				sgState->upstream->SG_OT.SetArguments(sgp, interface, upstream);
 				sgState->upstream->SG_OT.Schedule();
 			}
 			break;
@@ -3308,7 +3310,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 					sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
 					NS_LOG_DEBUG("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
-					sgState->upstream->SG_OT.SetArguments(sgp, interface);
+					sgState->upstream->SG_OT.SetArguments(sgp, interface, gateway);
 					sgState->upstream->SG_OT.Schedule();
 					}
 				}
@@ -3345,7 +3347,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 						sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 						sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
 						NS_LOG_DEBUG("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
-						sgState->upstream->SG_OT.SetArguments(sgp, interface);
+						sgState->upstream->SG_OT.SetArguments(sgp, interface, gateway);
 						sgState->upstream->SG_OT.Schedule();
 					}
 				}
