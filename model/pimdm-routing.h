@@ -28,7 +28,7 @@
 #define __PIM_DM_ROUTING_H__
 
 /// Time default value for RPF check.
-#define RPF_CHECK 5
+#define RPF_CHECK 10
 /// Timer Name: Hello Timer (HT). Periodic interval for hello messages.
 #define Hello_Period 30
 /// Timer Name: Hello Timer (HT). Random interval for initial Hello message on bootup or triggered Hello message to a rebooting neighbor.
