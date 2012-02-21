@@ -2838,7 +2838,8 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 		//	The Upstream(S, G) state machine remains in AckPending (AP) state.
 			if(!sgState->upstream->SG_OT.IsRunning()){
 //				NS_LOG_INFO("Setting TIMER OT "<< sgp<<", "<<interface<<sender);
-				sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
+				Time delay = Seconds(t_override(interface));
+				sgState->upstream->SG_OT.SetDelay(delay);
 				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
 				sgState->upstream->SG_OT.SetArguments(sgp, interface, upstream);
 				sgState->upstream->SG_OT.Schedule();
