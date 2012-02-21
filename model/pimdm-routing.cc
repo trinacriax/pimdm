@@ -2763,9 +2763,10 @@ MulticastRoutingProtocol::RecvPrune (PIMHeader::JoinPruneMessage &jp, Ipv4Addres
 	NeighborhoodStatus *nstatus = FindNeighborhoodStatus(interface);
 	nstatus->pruneHoldtime = Time(jp.m_joinPruneMessage.m_holdTime);// The node is not directly connected to S.
 	Ipv4Address nexthop = GetNextHop(source.m_sourceAddress);
-	if (jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == receiver && sender == nexthop)
+	Ipv4Address upstream = jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress;
+	if (upstream == receiver && sender == nexthop)
 		return;
-	else if(IsUpstream(interface, sender, source.m_sourceAddress, group.m_groupAddress))
+	else if(IsUpstream(interface, sender, source.m_sourceAddress, group.m_groupAddress) && upstream == sender)//prune echo
 		RecvPruneUpstream(jp, sender, receiver, interface, source, group);
 	else
 		RecvPruneDownstream(jp, sender, receiver, interface, source, group);
