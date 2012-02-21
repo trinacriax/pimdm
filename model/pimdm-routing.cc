@@ -990,6 +990,7 @@ MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupP
 		AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
 		AddMulticastGroupEntry(msg, mge);
 		Ptr<Packet> packet = Create<Packet> ();
+		NS_LOG_DEBUG ("Sending Prune to upstream "<< destination);
 		Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
 	}
 }
@@ -1717,7 +1718,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 		//	   pair specified in the packet.
 		NS_LOG_INFO ("RPF check failed: Sending Prune to "<< sender);
 		if (!sgState->SG_PLTD.IsRunning()){
-			SendPruneUnicast(sender, sgp); // limiti the downstream prune.
+			SendPruneUnicast(sender, sgp); // limit the downstream prune.
 			sgState->SG_PLTD.Cancel();
 			sgState->SG_PLTD.SetFunction (&MulticastRoutingProtocol::PLTTimerExpireDownstream, this);
 			sgState->SG_PLTD.SetArguments (sgp, (uint32_t)interface, sender);
