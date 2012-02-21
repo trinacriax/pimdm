@@ -2764,8 +2764,17 @@ MulticastRoutingProtocol::RecvPrune (PIMHeader::JoinPruneMessage &jp, Ipv4Addres
 	nstatus->pruneHoldtime = Time(jp.m_joinPruneMessage.m_holdTime);// The node is not directly connected to S.
 	Ipv4Address nexthop = GetNextHop(source.m_sourceAddress);
 	Ipv4Address upstream = jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress;
+	/*
+	 * This is the case when the node send the msg which is received even by it's RPF.
+	 * The RPF will send a prune, since it has received the packet from a downstream node.
+	 * The node will receive the prune addressed to it, discarding the message.
+	 */
 	if (upstream == receiver && sender == nexthop)
 		return;
+	/*
+	 * The node has received a prune from the upstream node, it's a prune echo since has the upstream node's IP in the upstream field
+	 * The node will evaluate to override the prune or not.
+	 */
 	else if(IsUpstream(interface, sender, source.m_sourceAddress, group.m_groupAddress) && upstream == sender)//prune echo
 		RecvPruneUpstream(jp, sender, receiver, interface, source, group);
 	else
