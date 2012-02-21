@@ -2867,13 +2867,13 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 				if(nstatus->neighbors.size()>1)
 					delay = Seconds(nstatus->overrideInterval.GetSeconds()+nstatus->propagationDelay.GetSeconds());
 				NS_LOG_DEBUG("Neighbor size "<< nstatus->neighbors.size()<< " Delay "<<delay.GetSeconds()<<"sec");
-				if(sgState->SG_PPT.IsRunning())
-					sgState->SG_PPT.Cancel();
-				sgState->SG_PPT.SetDelay(delay);
-				sgState->SG_PPT.SetFunction(&MulticastRoutingProtocol::PPTTimerExpire, this);
-				sgState->SG_PPT.SetArguments(sgp, interface, sender);
-				sgState->SG_PPT.Schedule();
-				NS_ASSERT(sender != Ipv4Address::GetLoopback());
+				if(!sgState->SG_PPT.IsRunning()){
+					sgState->SG_PPT.SetDelay(delay);
+					sgState->SG_PPT.SetFunction(&MulticastRoutingProtocol::PPTTimerExpire, this);
+					sgState->SG_PPT.SetArguments(sgp, interface, sender);
+					sgState->SG_PPT.Schedule();
+					NS_ASSERT(sender != Ipv4Address::GetLoopback());
+				}
 			}
 			break;
 		}
