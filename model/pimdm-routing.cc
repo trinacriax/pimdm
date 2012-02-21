@@ -978,6 +978,7 @@ MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupP
 	if (wei.first< 1 || !isValidGateway(wei.second)){
 		return AskRoute(destination);
 	} //just send it out, it will find its path
+	uint32_t interface = wei.first;
 	SourceGroupState *sgState = FindSourceGroupState(RPF_interface(destination).first, destination, sgp, true);
 	if(sgState->upstream && sgState->upstream->SG_PLT.IsRunning()){//the prune timer is not active
 		NS_LOG_DEBUG("Limiting prune on LAN with PLT");
@@ -991,7 +992,7 @@ MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupP
 		AddMulticastGroupEntry(msg, mge);
 		Ptr<Packet> packet = Create<Packet> ();
 		NS_LOG_DEBUG ("Sending Prune to upstream "<< destination);
-		Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
+		Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, interface);
 	}
 }
 
