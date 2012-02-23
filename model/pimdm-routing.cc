@@ -140,6 +140,7 @@ MulticastRoutingProtocol::GetRouteMetric(int32_t interface, Ipv4Address source)
 	  else if (DynamicCast<aodv::RoutingProtocol> (temp))
 	  		{
 	  		  aodv_Gw = DynamicCast<aodv::RoutingProtocol> (temp);
+	  		  return aodv_Gw->GetRouteMetric(source);
 //	  		  aodv::RoutingTableEntry aodv_rte;
 //	  		  aodv_Gw->m_routingTable.LookupRoute(source,aodv_rte);
 //	  		  return aodv_rte.GetHop();

@@ -260,6 +260,8 @@ public:
 
 	void UpdateMRIB (){}
 
+	/// The cost metric of the unicast route to the source. The metric is in units applicable to the unicast routing protocol used.
+	uint16_t GetRouteMetric (int32_t interface, Ipv4Address source);
 
 private:
 	void Clear ();
@@ -324,9 +326,6 @@ private:
 	uint16_t GetMetricPreference (int32_t interface);
 
 	void SetMetricPreference (int32_t interface, uint16_t metric){}
-
-	/// The cost metric of the unicast route to the source. The metric is in units applicable to the unicast routing protocol used.
-	uint16_t GetRouteMetric (int32_t interface, Ipv4Address source);
 
 	void SetRouteMetric (int32_t interface, uint16_t metric){}
 
