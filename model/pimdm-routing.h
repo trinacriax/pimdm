@@ -634,6 +634,45 @@ private:
 	Time TransmissionDelay  ();
 };
 
+struct IdTag : public Tag
+{
+	uint32_t m_id;
+	IdTag (uint32_t id = 0) : Tag(), m_id (id){}
+
+  static TypeId GetTypeId()
+  {
+	  static TypeId tid = TypeId ("ns3::IdTag").SetParent<Tag>();
+	  return tid;
+  }
+
+  TypeId GetInstanceTypeId (void) const
+  {
+	  return GetTypeId();
+  }
+
+  uint32_t GetSerializedSize (void) const
+  {
+	  return sizeof(m_id);
+  }
+
+  void Serialize (TagBuffer i) const
+  {
+	  i.WriteU32 (m_id);
+  }
+
+  void Deserialize (TagBuffer i)
+  {
+	  m_id = i.ReadU32();
+  }
+
+  void Print (std::ostream &os) const
+  {
+	  os<<" IdTag: id "<< m_id;
+  }
+
+};
+
+
 struct RelayTag : public Tag
 {
 	Ipv4Address m_sender;

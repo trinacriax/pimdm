@@ -1950,6 +1950,8 @@ MulticastRoutingProtocol::SendPacketPIMRoutersInterface(Ptr<Packet> packet, cons
 	  NS_LOG_DEBUG("Interface "<<interface<<" is PIM-DISABLED");
 	  return;
   }
+  IdTag tag (message.GetType());
+  packet->AddPacketTag(tag);
   packet->AddHeader(message);
   Ipv4Header ipv4header = BuildHeader(GetLocalAddress(interface), Ipv4Address(ALL_PIM_ROUTERS4), PIM_IP_PROTOCOL_NUM, packet->GetSize(), PIMDM_TTL, false);
   packet->AddHeader(ipv4header);
@@ -1973,6 +1975,8 @@ MulticastRoutingProtocol::SendPacketPIMUnicast(Ptr<Packet> packet, const PIMHead
 {
 	NS_LOG_FUNCTION(this);
   if(m_stopTx) return;
+  IdTag tag (message.GetType());
+  packet->AddPacketTag(tag);
   packet->AddHeader(message);
   WiredEquivalentInterface wei = RPF_interface(destination);
   int32_t interface = wei.first >0 ? wei.first : m_ipv4->GetInterfaceForAddress(m_mainAddress);
