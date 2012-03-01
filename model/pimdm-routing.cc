@@ -166,7 +166,11 @@ MulticastRoutingProtocol::GetRouteMetric(int32_t interface, Ipv4Address source)
 
 uint16_t
 MulticastRoutingProtocol::GetMetricPreference(int32_t interface)
-{//TODO: The preference value assigned to the unicast routing protocol that provided the route to the source
+{
+	/*
+	 * The preference value is used in the case the upstream routers run different unicast routing protocols.
+	 * The smaller value is always preferred
+	 * */
 	return 1;
 }
 
