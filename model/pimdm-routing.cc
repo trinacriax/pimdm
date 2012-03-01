@@ -2982,7 +2982,7 @@ MulticastRoutingProtocol::RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp, Ipv4
 			//	If the OT(S, G) is running, then it means that the router had scheduled a Join to override a previously received Prune.
 			//	Another router has responded more quickly with a Join, so the local router SHOULD cancel its OT(S, G), if it is running.
 			//	The Upstream(S, G) state machine remains in the Forwarding (F) state.
-				if(sender == RPF_prime(source.m_sourceAddress, group.m_groupAddress) && sgState->upstream->SG_OT.IsRunning()){ //HERE
+				if(sgState->upstream->SG_OT.IsRunning()){ //HERE
 					sgState->upstream->SG_OT.Cancel();
 				}
 				break;
@@ -2997,7 +2997,7 @@ MulticastRoutingProtocol::RecvJoinUpstream(PIMHeader::JoinPruneMessage &jp, Ipv4
 			//	If the OT(S, G) is running, then it means that the router had scheduled a Join to override a previously received Prune.
 			//	Another router has responded more quickly with a Join, so the local router SHOULD cancel its OT(S, G), if it is running.
 			//	The Upstream(S, G) state machine remains in the AckPending (AP) state.
-				if(receiver == GetNextHop(source.m_sourceAddress) && sgState->upstream->SG_OT.IsRunning()){
+				if(sgState->upstream->SG_OT.IsRunning()){
 					sgState->upstream->SG_OT.Cancel();
 				}
 				break;
