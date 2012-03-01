@@ -2787,8 +2787,14 @@ MulticastRoutingProtocol::RecvPrune (PIMHeader::JoinPruneMessage &jp, Ipv4Addres
 	 */
 	else if(IsUpstream(interface, sender, source.m_sourceAddress, group.m_groupAddress) && upstream == sender)//prune echo
 		RecvPruneUpstream(jp, sender, receiver, interface, source, group);
-	else
+	else if (IsDownstream(interface, sender, source.m_sourceAddress, group.m_groupAddress) && receiver == upstream)
+		/*
+		 * The node receives a prune from a downstream node, with its IP address as upstream node.
+		 */
 		RecvPruneDownstream(jp, sender, receiver, interface, source, group);
+	else  ;
+
+	nstatus->pruneHoldtime = Time(jp.m_joinPruneMessage.m_holdTime);// The node is not directly connected to S.
 }
 
 //4.4.  PIM-DM Prune, Join, and Graft Messages
