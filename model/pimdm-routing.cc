@@ -3027,7 +3027,6 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp, Ip
 			if(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
 				sgState->PruneState = Prune_NoInfo;
 				sgState->SG_PPT.Cancel();
-				sgState->SG_PPT.Remove();
 			}
 			break;
 		}
