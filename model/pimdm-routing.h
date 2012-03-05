@@ -399,6 +399,7 @@ private:
 
 	void SendAssertUnicast(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination);
 	void RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Address sender,Ipv4Address receiver, int32_t interface);
+	void UpdateAssertTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination);
 
 	void SendGraftUnicast (Ipv4Address destination,SourceGroupPair pair);
 

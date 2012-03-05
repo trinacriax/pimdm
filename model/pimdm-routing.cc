@@ -1122,6 +1122,18 @@ MulticastRoutingProtocol::SendAssertUnicast(SourceGroupPair &sgp, int32_t interf
 }
 
 void
+MulticastRoutingProtocol::UpdateAssertTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination)
+{
+	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
+	if(sgState->SG_AT.IsRunning())
+		sgState->SG_AT.Cancel();
+	sgState->SG_AT.SetDelay(Seconds(Assert_Time));
+	sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
+	sgState->SG_AT.SetArguments(sgp, interface, destination);
+	sgState->SG_AT.Schedule();
+}
+
+void
 MulticastRoutingProtocol::ForgeStateRefresh (int32_t interface, Ipv4Address destination, SourceGroupPair &sgp, PIMHeader &msg)
 {
 	NS_LOG_FUNCTION(this);
@@ -1683,13 +1695,17 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 					NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " Assert_Winner -> Assert_Winner");
 					UpdateAssertWinner (sgState, interface);
 					SendAssertUnicast (sgp, interface, sender);
-					if(sgState->SG_AT.IsRunning())
-						sgState->SG_AT.Cancel();
-					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
-					sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
-					sgState->SG_AT.SetArguments(sgp, interface, sender);
-					sgState->SG_AT.Schedule();
-					NS_LOG_DEBUG("Send Assert to "<<sender << " for "<<sgp);
+					UpdateAssertTimer (sgp, interface, sender);
+//					PIMHeader assert;
+//					ForgeAssertMessage(interface, sender, assert, sgp);
+//					Ptr<Packet> packetA = Create<Packet> ();
+//					Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packetA, assert, sender);
+//					if(sgState->SG_AT.IsRunning())
+//						sgState->SG_AT.Cancel();
+//					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
+//					sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
+//					sgState->SG_AT.SetArguments(sgp, interface, sender);
+//					sgState->SG_AT.Schedule();
 					NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " send Assert to "<<sender << " for "<<sgp);
 				}
 				break;
@@ -3128,13 +3144,17 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 				sgState->AssertState = Assert_Winner;
 				UpdateAssertWinner (sgState, myMetric);
 				SendAssertUnicast (sgp, interface, sender);
-				if(sgState->SG_AT.IsRunning())
-					sgState->SG_AT.Cancel();
-				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
-				sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
-				sgState->SG_AT.SetArguments(sgp, interface, sender);
-				sgState->SG_AT.Schedule();
-				NS_LOG_DEBUG ("Node " << GetLocalAddress(interface) << " Recv Assert from " << sender << " NoInfo -> Winner");
+				UpdateAssertTimer (sgp, interface, sender);
+//				PIMHeader assertR;
+//				ForgeAssertMessage(interface, sender, assertR, sgp);
+//				Ptr<Packet> packet = Create<Packet> ();
+//				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, sender);
+//				if(sgState->SG_AT.IsRunning())
+//					sgState->SG_AT.Cancel();
+//				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
+//				sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
+//				sgState->SG_AT.SetArguments(sgp, interface, sender);
+//				sgState->SG_AT.Schedule();
 			}
 			else{
 				//Receive Preferred Assert or State Refresh.
@@ -3416,12 +3436,17 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					sgState->AssertState = Assert_Winner;
 					UpdateAssertWinner (sgState, interface);
 					SendAssertUnicast (sgp, interface, sender);
-					if(sgState->SG_AT.IsRunning())
-						sgState->SG_AT.Cancel();
-					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
-					sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
-					sgState->SG_AT.SetArguments(sgp, interface, sender);
-					sgState->SG_AT.Schedule();
+					UpdateAssertTimer (sgp, interface, sender);
+//					PIMHeader assertR;
+//					ForgeAssertMessage(interface, sender, assertR, sgp);
+//					Ptr<Packet> packet = Create<Packet> ();
+//					Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, sender);
+//					if(sgState->SG_AT.IsRunning())
+//						sgState->SG_AT.Cancel();
+//					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
+//					sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
+//					sgState->SG_AT.SetArguments(sgp, interface, sender);
+//					sgState->SG_AT.Schedule();
 				}
 				else{
 					//Receive Preferred Assert or State Refresh.
