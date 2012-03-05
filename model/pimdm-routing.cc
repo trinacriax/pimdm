@@ -1368,9 +1368,9 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 		//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 		//	The Upstream(S, G) state machine MUST transition to the AckPending (AP) state,
 		//	unicast a Graft to the new RPF'(S), and set the GraftRetry Timer (GRT(S, G)) to Graft_Retry_Period.
-			if(!outlist.empty() && sgp.sourceMulticastAddr != gatewayN){
-				sgState->upstream->GraftPrune = GP_AckPending;
+			else if(!outlist.empty() && sgp.sourceMulticastAddr != gatewayN){
 				SendGraftUnicast(gatewayN, sgp);
+				sgState->upstream->GraftPrune = GP_AckPending;
 				NS_LOG_INFO ("Node " << m_mainAddress <<" GP_Forwarding -> GP_AckPending");
 				NeighborState *ns = FindNeighborState(interfaceN, gatewayN, GetLocalAddress(interfaceN));
 				if(!ns){// RPF_Prime changed with a new neighbor we didn't know before...
