@@ -2406,7 +2406,7 @@ void
 MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp, int32_t interface)
 {
 	NS_LOG_FUNCTION(this<<interface<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
-	Ipv4Address gw = RPF_interface(sgp.sourceMulticastAddr).second;
+	Ipv4Address gw = GetNextHop(sgp.sourceMulticastAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface, gw, sgp);
 	if(!sgState)return AskRoute(sgp.sourceMulticastAddr);
 	for(NeighborList::iterator iter = m_IfaceNeighbors.find(interface)->second.neighbors.begin();
