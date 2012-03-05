@@ -1111,6 +1111,17 @@ MulticastRoutingProtocol::SendGraftAckUnicast(SourceGroupPair &sgp, const Ipv4Ad
 }
 
 void
+MulticastRoutingProtocol::SendAssertUnicast(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination)
+{
+	NS_LOG_FUNCTION(this);
+	PIMHeader assertR;
+	ForgeAssertMessage(interface, destination, assertR, sgp);
+	Ptr<Packet> packet = Create<Packet> ();
+	NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " send Assert to "<<destination << " for "<<sgp);
+	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, destination);
+}
+
+void
 MulticastRoutingProtocol::ForgeStateRefresh (int32_t interface, Ipv4Address destination, SourceGroupPair &sgp, PIMHeader &msg)
 {
 	NS_LOG_FUNCTION(this);
@@ -1669,11 +1680,9 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			//	The router MUST send an Assert(S, G) to interface I and set the Assert Timer (AT(S, G, I) to Assert_Time.
 				if (sgState->AssertState != Assert_Winner || !sgState->SG_AT.IsRunning()){
 					sgState->AssertState = Assert_Winner;
-					UpdateAssertWinner(sgState, interface);
-					PIMHeader assert;
-					ForgeAssertMessage(interface, sender, assert, sgp);
-					Ptr<Packet> packetA = Create<Packet> ();
-					Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packetA, assert, sender);
+					NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " Assert_Winner -> Assert_Winner");
+					UpdateAssertWinner (sgState, interface);
+					SendAssertUnicast (sgp, interface, sender);
 					if(sgState->SG_AT.IsRunning())
 						sgState->SG_AT.Cancel();
 					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
@@ -1681,6 +1690,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 					sgState->SG_AT.SetArguments(sgp, interface, sender);
 					sgState->SG_AT.Schedule();
 					NS_LOG_DEBUG("Send Assert to "<<sender << " for "<<sgp);
+					NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " send Assert to "<<sender << " for "<<sgp);
 				}
 				break;
 			}
@@ -1844,10 +1854,12 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 				//	the receiving interface I to initiate an Assert negotiation.  The
 				//	Assert state machine remains in the Assert Loser(L) state.  If a
 				//	Graft(S, G) was received, the router MUST respond with a GraftAck(S, G).
-				PIMHeader assertR;
-				ForgeAssertMessage(interface, sender, assertR, sgp);
-				Ptr<Packet> packet = Create<Packet> ();
-				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, sender);
+				NS_LOG_INFO ("Node "<< receiver <<" receives GraftDownstream from "<< sender << " Assert_Loser -> Assert_Loser");
+				SendAssertUnicast(sgp, interface, sender);
+//				PIMHeader assertR;
+//				ForgeAssertMessage(interface, sender, assertR, sgp);
+//				Ptr<Packet> packet = Create<Packet> ();
+//				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, sender);
 				SendGraftAckUnicast(sgp, sender);
 //				sgState->AssertState = Assert_Winner; ***
 //				UpdateAssertWinner(sgState, interface);
@@ -2946,11 +2958,13 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 			//	Assert state machine remains in the Assert Loser(L) state.  If a
 			//	Graft(S, G) was received, the router MUST respond with a GraftAck(S, G).
 			if(IsMyOwnAddress(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress)){
-				PIMHeader assertR;
-				SourceGroupPair sgp (source.m_sourceAddress, group.m_groupAddress, sender);
-				ForgeAssertMessage(interface, sender, assertR, sgp);
-				Ptr<Packet> packet = Create<Packet> ();
-				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, sender);
+				NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvPrune by downstream Assert_Loser -> Assert_Loser");
+				SendAssertUnicast(sgp, interface, sender);
+//				PIMHeader assertR;
+//				SourceGroupPair sgp (source.m_sourceAddress, group.m_groupAddress, sender);
+//				ForgeAssertMessage(interface, sender, assertR, sgp);
+//				Ptr<Packet> packet = Create<Packet> ();
+//				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, sender);
 			}
 			//An Assert loser that receives a Prune(S, G), Join(S, G), or
 			//  Graft(S, G) directed to it initiates a new Assert negotiation so
@@ -3070,12 +3084,15 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp, Ip
 			//	the receiving interface I to initiate an Assert negotiation.  The
 			//	Assert state machine remains in the Assert Loser(L) state.  If a
 			//	Graft(S, G) was received, the router MUST respond with a GraftAck(S, G).
+			NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvJoinDownstream from "<< sender);
 			if(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
-				PIMHeader assertR;
-				SourceGroupPair sgp (source.m_sourceAddress, group.m_groupAddress, sender);
-				ForgeAssertMessage(interface, sender, assertR, sgp);
-				Ptr<Packet> packet = Create<Packet> ();
-				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, sender);
+				SendAssertUnicast(sgp, interface, sender);
+//				PIMHeader assertR;
+//				SourceGroupPair sgp (source.m_sourceAddress, group.m_groupAddress, sender);
+//				ForgeAssertMessage(interface, sender, assertR, sgp);
+//				Ptr<Packet> packet = Create<Packet> ();
+//				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, sender);
+				NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " send Assert to "<< sender << " Assert_Loser -> Assert_Loser");
 			}
 			//An Assert loser that receives a Prune(S, G), Join(S, G), or
 			//  Graft(S, G) directed to it initiates a new Assert negotiation so
@@ -3109,11 +3126,8 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 			myMetric = my_assert_metric(assert.m_sourceAddr.m_unicastAddress, assert.m_multicastGroupAddr.m_groupAddress, interface, sender);
 			if(myMetric > received && couldAssert){
 				sgState->AssertState = Assert_Winner;
-				UpdateAssertWinner(sgState, myMetric);
-				PIMHeader assertR;
-				ForgeAssertMessage(interface, sender, assertR, sgp);
-				Ptr<Packet> packet = Create<Packet> ();
-				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, sender);
+				UpdateAssertWinner (sgState, myMetric);
+				SendAssertUnicast (sgp, interface, sender);
 				if(sgState->SG_AT.IsRunning())
 					sgState->SG_AT.Cancel();
 				sgState->SG_AT.SetDelay(Seconds(Assert_Time));
@@ -3400,11 +3414,8 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				if(my_assert_metric(refresh.m_sourceAddr.m_unicastAddress, refresh.m_multicastGroupAddr.m_groupAddress, interface, sender) > received
 						&& CouldAssert(refresh.m_sourceAddr.m_unicastAddress, refresh.m_multicastGroupAddr.m_groupAddress, interface, sender)){
 					sgState->AssertState = Assert_Winner;
-					UpdateAssertWinner(sgState, interface);
-					PIMHeader assertR;
-					ForgeAssertMessage(interface, sender, assertR, sgp);
-					Ptr<Packet> packet = Create<Packet> ();
-					Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, sender);
+					UpdateAssertWinner (sgState, interface);
+					SendAssertUnicast (sgp, interface, sender);
 					if(sgState->SG_AT.IsRunning())
 						sgState->SG_AT.Cancel();
 					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
