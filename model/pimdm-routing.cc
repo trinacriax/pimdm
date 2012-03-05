@@ -1451,7 +1451,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 		}
 	}
 	if(!isValidGateway(gatewayN))
-		return AskRoute(sgp.sourceMulticastAddr);//find the gateway before change RPF_prime!
+		AskRoute(sgp.sourceMulticastAddr);//find the gateway before change RPF_prime!
 }
 
 void
