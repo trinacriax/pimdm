@@ -1428,7 +1428,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 				if(sgState->upstream->SG_GRT.IsRunning())
 					sgState->upstream->SG_GRT.Cancel();
 			}
-			if(!outlist.empty() && sgp.sourceMulticastAddr != gatewayN){
+			else if(!outlist.empty() && sgp.sourceMulticastAddr != gatewayN){
 				//RPF'(S) Changes AND olist(S, G) does not become NULL AND S NOT directly connected
 				//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 				//	The Upstream(S, G) state machine stays in the AckPending (AP) state.
