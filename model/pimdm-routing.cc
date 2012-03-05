@@ -1383,12 +1383,12 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 					Simulator::Schedule (delay, &MulticastRoutingProtocol::SendHelloReply, this, interfaceN, gatewayN);
 					NS_LOG_DEBUG("Neighbors = "<< nst->neighbors.size() << ", reply at "<<(Simulator::Now()+delay).GetSeconds());
 				}
-				if(sgState->upstream->SG_GRT.IsRunning())
-					sgState->upstream->SG_GRT.Cancel();
-				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
-				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-				sgState->upstream->SG_GRT.SetArguments(sgp, interfaceN, gatewayN);
-				sgState->upstream->SG_GRT.Schedule();
+				if(!sgState->upstream->SG_GRT.IsRunning()){
+					sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
+					sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
+					sgState->upstream->SG_GRT.SetArguments(sgp, interfaceN, gatewayN);
+					sgState->upstream->SG_GRT.Schedule();
+				}
 			}
 			break;
 		}
