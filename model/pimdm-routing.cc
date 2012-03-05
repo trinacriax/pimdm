@@ -1776,11 +1776,15 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 
 	///   First, an RPF check MUST be performed to determine whether the packet should be accepted based on TIB state
 	///      and the interface on which that the packet arrived.
-	if(IsUpstream(interface, sender, sgp) && sgState->PruneState != Prune_Pruned){
-		/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
-		/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
-//		fwd_list = olist(source, group);
-		olistCheck(sgp, fwd_list);
+	if(IsUpstream(interface, sender, sgp)){
+		if(sgState->PruneState != Prune_Pruned){
+			/// If the RPF check has been passed, an outgoing interface list is constructed for the packet.
+			/// If this list is not empty, then the packet MUST be forwarded to all listed interfaces.
+//			fwd_list = olist(source, group);
+			olistCheck(sgp, fwd_list);
+		}
+		else
+			NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " is in Prune_Pruned for "<<sgp);
 	}
 	else {
 		//	 If the RPF check has been passed, an outgoing interface list is
@@ -1792,7 +1796,6 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 		if (!sgState->SG_PLTD.IsRunning()){
 			SendPruneUnicast(sender, sgp); // limit the downstream prune.
 			NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " send Prune to "<<sender << " for "<<sgp<< " RPF check failed");
-			sgState->SG_PLTD.Cancel();
 			sgState->SG_PLTD.SetFunction (&MulticastRoutingProtocol::PLTTimerExpireDownstream, this);
 			sgState->SG_PLTD.SetArguments (sgp, (uint32_t)interface, sender);
 			sgState->SG_PLTD.SetDelay (Seconds(PRUNE_DOWN));
