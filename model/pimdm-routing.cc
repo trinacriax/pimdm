@@ -1925,8 +1925,8 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 //				Ptr<Packet> packet = Create<Packet> ();
 //				Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, sender);
 				SendGraftAckUnicast(sgp, sender);
-//				sgState->AssertState = Assert_Winner; ***
-//				UpdateAssertWinner(sgState, interface);
+				sgState->AssertState = Assert_Winner; //TODO: added because in case of changing upstream the lost asser is not override
+				UpdateAssertWinner(sgState, interface);
 				//An Assert loser that receives a Prune(S, G), Join(S, G), or
 				//  Graft(S, G) directed to it initiates a new Assert negotiation so
 				//  that the downstream router can correct its RPF'(S).
