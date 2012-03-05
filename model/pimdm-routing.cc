@@ -1694,7 +1694,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	}
 	else {
 		switch (sgState->AssertState){
-			case  Assert_NoInfo:
+			case  Assert_NoInfo:{
 			//An (S, G) data packet arrives on downstream interface I.
 			//   An (S, G) data packet arrived on a downstream interface.  It is
 			//   optimistically assumed that this router will be the Assert winner
@@ -1704,6 +1704,26 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			//   the Assert_Timer (AT(S, G, I) to Assert_Time, thereby initiating
 			//   the Assert negotiation for (S, G).
 				NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " Assert_NoInfo -> Assert_NoInfo");
+				if (sgState->AssertState != Assert_Winner || !sgState->SG_AT.IsRunning()){
+					sgState->AssertState = Assert_Winner;
+					NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " Assert_NoInfo -> Assert_Winner");
+					UpdateAssertWinner (sgState, interface);
+					SendAssertUnicast (sgp, interface, sender);
+					UpdateAssertTimer (sgp, interface, sender);
+//					PIMHeader assert;
+//					ForgeAssertMessage(interface, sender, assert, sgp);
+//					Ptr<Packet> packetA = Create<Packet> ();
+//					Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packetA, assert, sender);
+//					if(sgState->SG_AT.IsRunning())
+//						sgState->SG_AT.Cancel();
+//					sgState->SG_AT.SetDelay(Seconds(Assert_Time));
+//					sgState->SG_AT.SetFunction(&MulticastRoutingProtocol::ATTimerExpire, this);
+//					sgState->SG_AT.SetArguments(sgp, interface, sender);
+//					sgState->SG_AT.Schedule();
+
+				}
+				break;
+			}
 			case Assert_Winner:{
 			//An (S, G) data packet arrives on downstream interface I.
 			//	An (S, G) data packet arrived on a downstream interface.
