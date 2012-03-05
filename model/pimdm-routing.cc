@@ -2228,6 +2228,7 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, int32_t interface
 			sgState->upstream->SG_OT.SetArguments(sgp, interface, gateway);
 			sgState->upstream->SG_OT.Schedule();
 		}
+		Simulator::Schedule(Seconds(Graft_Retry_Period),&MulticastRoutingProtocol::OTTimerExpire, this, sgp, interface, gateway);
 		return AskRoute(gateway);
 	}
 	if (gateway.Get() != GetNextHop(sgp.sourceMulticastAddr).Get()) return;
