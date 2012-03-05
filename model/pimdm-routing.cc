@@ -1351,7 +1351,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 		sgState->upstream->SG_SRT.Remove();
 //	delete sgState->upstream;
 	sgState->upstream->origination = NotOriginator;
-	sgState->upstream->GraftPrune = GP_Pruned;
+	sgState->upstream->GraftPrune = GP_Pruned;//GP_NoInfo TODO
 	// starting new entries
 	sgState = FindSourceGroupState(interfaceN, gatewayN, sgp, true); // find new RPF pair...
 	NS_ASSERT(isValidGateway(gatewayN));
