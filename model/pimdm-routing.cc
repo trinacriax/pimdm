@@ -2408,9 +2408,14 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 	NS_LOG_FUNCTION(this<<interface<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
 	Ipv4Address gw = GetNextHop(sgp.sourceMulticastAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface, gw, sgp);
-	if(!sgState)return AskRoute(sgp.sourceMulticastAddr);
-	for(NeighborList::iterator iter = m_IfaceNeighbors.find(interface)->second.neighbors.begin();
-						iter != m_IfaceNeighbors.find(interface)->second.neighbors.end(); iter++){
+	if(!sgState) {
+		Simulator::Schedule(Seconds(Graft_Retry_Period),&MulticastRoutingProtocol::SRTTimerExpire, this, sgp, interface);
+		return AskRoute(sgp.sourceMulticastAddr);
+	}
+	NeighborhoodStatus *ns = FindNeighborhoodStatus(interface);
+	NeighborList *n_neighbors =  &ns->neighbors;
+	NS_LOG_DEBUG (n_neighbors->size());
+	for(NeighborList::iterator iter = n_neighbors->begin(); iter != n_neighbors->end(); iter++){
 		Ipv4Address destination = iter->neighborIfaceAddr;
 		SourceGroupState *sgStateBis = FindSourceGroupState(interface, destination, sgp, true);
 		if(sgState->upstream->origination){
