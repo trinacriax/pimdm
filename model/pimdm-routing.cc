@@ -1399,7 +1399,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 			//	The Upstream(S, G) state machine stays in the Pruned (P) state and MUST cancel the PLT(S, G) timer.
 				sgState->upstream->SG_PLT.Cancel();
 			}
-			if(outlist.size()>0 && sgp.sourceMulticastAddr != gatewayN){
+			else if(!outlist.empty() && sgp.sourceMulticastAddr != gatewayN){
 			//RPF'(S) Changes AND olist(S, G) == non-NULL AND S NOT directly connected
 			//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 			//	The Upstream(S, G) state machine MUST cancel PLT(S, G), transition to the AckPending (AP) state,
