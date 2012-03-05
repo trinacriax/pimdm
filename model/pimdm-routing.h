@@ -43,7 +43,7 @@
 /// Timer Name: Graft Retry Timer (GRT (S,G)). In the absence of receipt of a GraftAck message, the time before retransmission of a Graft message.
 #define Graft_Retry_Period 3
 /// Used to prevent Prune storms on a LAN.
-#define t_limit 210
+#define t_limit 10 //210
 /// Timer Name: Upstream Override Timer (OT (S,G)).
 #define t_short t_override
 #define t_shorter 2
