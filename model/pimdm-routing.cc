@@ -981,6 +981,7 @@ MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupP
 	NS_LOG_FUNCTION(this<< destination << sgp.sourceMulticastAddr << sgp.groupMulticastAddr);
 	WiredEquivalentInterface wei = RPF_interface(destination);//know the interface-nextHop
 	if (wei.first< 1 || !isValidGateway(wei.second)){
+		Simulator::Schedule(Seconds(Graft_Retry_Period),&MulticastRoutingProtocol::SendPruneUnicast, this, destination, sgp);
 		return AskRoute(destination);
 	} //just send it out, it will find its path
 	uint32_t interface = wei.first;
