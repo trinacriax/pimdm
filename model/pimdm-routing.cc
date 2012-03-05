@@ -1263,8 +1263,6 @@ MulticastRoutingProtocol::RPFCheck (SourceGroupPair sgp)
 	RoutingMulticastTable entry;
 	MulticastEntry me;
 	WiredEquivalentInterface wei = RPF_interface(sgp.sourceMulticastAddr);
-//	int32_t interfaceN = wei.first;
-//	Ipv4Address gatewayN = wei.second;
 	bool ret = Lookup(sgp.groupMulticastAddr,sgp.sourceMulticastAddr, entry, me); // there is a entry for this group/source
 	ret = ret && (wei.first != -1 && isValidGateway(wei.second)); // there is a valid gateway
 	ret = ret && entry.mgroup.find(sgp.sourceMulticastAddr) != entry.mgroup.end(); // there is a record for the source
@@ -2177,8 +2175,8 @@ MulticastRoutingProtocol::PLTTimerExpireDownstream (SourceGroupPair &sgp, uint32
 {
 	NS_LOG_FUNCTION(this);
 	SourceGroupState *sgState = FindSourceGroupState(interface, neighbor, sgp);
-	if(sgState->SG_PLTD.IsRunning())
-		sgState->SG_PLTD.Cancel();
+//	if(sgState->SG_PLTD.IsRunning())
+	sgState->SG_PLTD.Cancel();
 }
 
 void
@@ -2539,7 +2537,7 @@ void MulticastRoutingProtocol::UpstreamStateMachine(SourceGroupPair &sgp){
 void
 MulticastRoutingProtocol::olistCheck(SourceGroupPair &sgp, std::set<WiredEquivalentInterface> &list)
 {
-	NS_LOG_FUNCTION(this);
+	NS_LOG_FUNCTION(this<< list.size());
 	if(list.empty())
 		olistEmpty(sgp);
 	else
