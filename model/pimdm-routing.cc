@@ -2159,14 +2159,14 @@ MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address dest
 	NS_LOG_FUNCTION(this);
 	WiredEquivalentInterface wei = RPF_interface(destination);
 	SourceGroupState *sgState = FindSourceGroupState(wei.first, destination, sgp);
-	if(!IsUpstream(wei.first, destination, sgp)) return; // interface changed
-	if(sgState->PruneState == Prune_Pruned) return;
-	SendPruneUnicast(destination, sgp);
-	if(sgState->upstream->SG_PLT.IsRunning())
-		sgState->upstream->SG_PLT.Cancel();
-	sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
-	sgState->upstream->SG_PLT.SetArguments(sgp, destination);
-	sgState->upstream->SG_PLT.Schedule();
+//	if(!IsUpstream(wei.first, destination, sgp)) return; // interface changed
+//	if(sgState->PruneState == Prune_Pruned) return;
+//	SendPruneUnicast(destination, sgp);
+//	if(sgState->upstream->SG_PLT.IsRunning())
+	sgState->upstream->SG_PLT.Cancel();
+//	sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
+//	sgState->upstream->SG_PLT.SetArguments(sgp, destination);
+//	sgState->upstream->SG_PLT.Schedule();
 }
 
 
