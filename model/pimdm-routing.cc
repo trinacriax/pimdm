@@ -1842,7 +1842,7 @@ MulticastRoutingProtocol::RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address
 			mgroup!=graft.m_multicastGroups.end(); mgroup++){
 		for(std::vector<PIMHeader::EncodedSource>::iterator msource = mgroup->m_joinedSourceAddrs.begin();
 					msource != mgroup->m_joinedSourceAddrs.end(); msource++){
-			if(!IsUpstream(interface, sender, msource->m_sourceAddress, mgroup->m_multicastGroupAddr.m_groupAddress)){
+			if(IsDownstream(interface, sender, msource->m_sourceAddress, mgroup->m_multicastGroupAddr.m_groupAddress)){
 				RecvGraftDownstream (graft, sender, receiver, *msource, mgroup->m_multicastGroupAddr, interface);
 			}
 			else {
