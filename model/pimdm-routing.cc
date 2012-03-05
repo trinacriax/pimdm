@@ -2608,7 +2608,10 @@ MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp)
 {
 	WiredEquivalentInterface wei = RPF_interface(sgp.sourceMulticastAddr);
 	NS_LOG_FUNCTION(this <<  wei.first << wei.second);
-	if(!isValidGateway(wei.second)) return AskRoute(sgp.sourceMulticastAddr);
+	if(!isValidGateway(wei.second)) {
+		Simulator::Schedule(Seconds(Graft_Retry_Period), &MulticastRoutingProtocol::olistFull, this, sgp);
+		return AskRoute(sgp.sourceMulticastAddr);
+	}
 	SourceGroupState *sgState = FindSourceGroupState(wei.first, wei.second, sgp, true);
 	NS_ASSERT(sgState && sgState->upstream);
 	switch (sgState->upstream->GraftPrune){
