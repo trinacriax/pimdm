@@ -1619,15 +1619,16 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			case GP_Pruned:{
 				if(!sgState->upstream->SG_PLT.IsRunning() && gateway != source){
 					NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " GP_Pruned -> GP_Pruned");
-					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
-					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
-					sgState->upstream->SG_PLT.SetArguments(sgp, sender);
-					sgState->upstream->SG_PLT.Schedule();
 					SendPruneUnicast(sender, sgp);
-					return;
+					if(!sgState->upstream->SG_PLT.IsRunning()){
+						sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
+						sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
+						sgState->upstream->SG_PLT.SetArguments(sgp, sender);
+						sgState->upstream->SG_PLT.Schedule();
 					}
-					break;
 				}
+				break;
+			}
 			case GP_AckPending:{
 				NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " GP_AckPending -> GP_AckPending");
 				//nothing
