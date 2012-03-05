@@ -511,7 +511,7 @@ private:
 //	void RPF_Changes (SourceGroupPair &sgp, int32_t oldInterface, int32_t newInterface);
 	void RPF_Changes(SourceGroupPair &sgp, int32_t oldInterface, Ipv4Address oldGateway, int32_t newInterface, Ipv4Address newGateway);
 
-	void RPFCheck (SourceGroupPair sgp);//, int32_t interface);//, Ptr<Ipv4Route> rpf_route);
+	bool RPFCheck (SourceGroupPair sgp);//, int32_t interface);//, Ptr<Ipv4Route> rpf_route);
 	void RPFCheckAll ();
 
 	void olistCheck (SourceGroupPair &sgp, std::set<WiredEquivalentInterface > &list);

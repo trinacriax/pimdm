@@ -1256,7 +1256,7 @@ MulticastRoutingProtocol::RPFCheckAll()
 	m_rpfChecker.Schedule();
 }
 
-void
+bool
 MulticastRoutingProtocol::RPFCheck (SourceGroupPair sgp)
 {
 	NS_LOG_DEBUG(sgp);
@@ -1273,19 +1273,24 @@ MulticastRoutingProtocol::RPFCheck (SourceGroupPair sgp)
 			UpdateEntry(sgp.groupMulticastAddr,sgp.sourceMulticastAddr,wei.second,wei.first);
 			SourceGroupState *sgState = FindSourceGroupState(wei.first, wei.second, sgp, true);///we will know the gateway later, so add the entry
 			Lookup(sgp.groupMulticastAddr,sgp.sourceMulticastAddr, entry, me);
+			ret = false;
 		}
 		if((me.interface != wei.first || me.nextAddr != wei.second) && wei.first>0){//RPF neighbor has changed
 			Ipv4Address gatewayO = me.nextAddr;
 			int32_t interfaceO = me.interface;
-			UpdateEntry (sgp.groupMulticastAddr, sgp.sourceMulticastAddr, wei.second, wei.first);//continue from here: problem is that in the second roung it
+			NS_LOG_INFO ("Node " << m_mainAddress <<" changes RPF from ("<< interfaceO << ","<< gatewayO <<") to ("<< wei.first << "," << wei.second <<")");
+			ret = UpdateEntry (sgp.groupMulticastAddr, sgp.sourceMulticastAddr, wei.second, wei.first);//continue from here: problem is that in the second roung it
+			NS_ASSERT (ret);
 			RPF_Changes (sgp, interfaceO, gatewayO, wei.first, wei.second);
-			RPF_primeChanges (sgp, me.interface, me.nextAddr, wei.first, wei.second);//check interface old is right
+			RPF_primeChanges (sgp, interfaceO, gatewayO, wei.first, wei.second);//check interface old is right
+			ret = true;
 //			if(FindSourceGroupState (interfaceN, gatewayN, sgp)->upstream && !FindSourceGroupState(me.interface , me.nextAddr, sgp)->upstream)//RPF prime change succeed
 //				UpdateEntry (sgp.groupMulticastAddr,sgp.sourceMulticastAddr,gatewayN,interfaceN);
 //			else
 //				NS_LOG_DEBUG ("RPF "<< gatewayN<<" not found: looking for it");
 		}
 	}
+	return ret;
 }
 
 void
