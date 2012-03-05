@@ -3399,7 +3399,9 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 	WiredEquivalentInterface wei = RPF_interface(sgp.sourceMulticastAddr);
 	Ipv4Address gateway = wei.second;
 	NS_LOG_DEBUG ("Source " << sgp.sourceMulticastAddr << " Group " << sgp.groupMulticastAddr << " Gateway "<< gateway << " Sender "<< sender <<" Receiver "<<receiver << " Interface "<< interface);
-	if(!isValidGateway(gateway)) return AskRoute(sgp.sourceMulticastAddr);
+	if(!isValidGateway(gateway)) {
+		return AskRoute(sgp.sourceMulticastAddr);
+	}
 	//TODO: Upon startup, a router MAY use any State Refresh messages received within Hello_Period of its first Hello message on an interface to establish state information.
 	for(int32_t i = 0; Simulator::Now() < Seconds(m_startTime.GetSeconds()+Hello_Period) && i < m_ipv4->GetNInterfaces() &&  refresh.m_P == 1;i++){
 		if(IsLoopInterface(i)) continue;
