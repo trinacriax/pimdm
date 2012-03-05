@@ -2862,20 +2862,26 @@ MulticastRoutingProtocol::RecvPrune (PIMHeader::JoinPruneMessage &jp, Ipv4Addres
 	 * The RPF will send a prune, since it has received the packet from a downstream node.
 	 * The node will receive the prune addressed to it, discarding the message.
 	 */
-	if (upstream == receiver && sender == nexthop)
+	if (upstream == receiver && sender == nexthop){
+		NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvPrune by upstream " << sender << " due to wireless");
 		return;
+	}
 	/*
 	 * The node has received a prune from the upstream node, it's a prune echo since has the upstream node's IP in the upstream field
 	 * The node will evaluate to override the prune or not.
 	 */
-	else if(IsUpstream(interface, sender, source.m_sourceAddress, group.m_groupAddress) && upstream == sender)//prune echo
+	else if(IsUpstream(interface, sender, source.m_sourceAddress, group.m_groupAddress) && upstream == sender){//prune echo
+//		NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvPrune by upstream " << sender);
 		RecvPruneUpstream(jp, sender, receiver, interface, source, group);
-	else if (IsDownstream(interface, sender, source.m_sourceAddress, group.m_groupAddress) && receiver == upstream)
+	}
+	else if (IsDownstream(interface, sender, source.m_sourceAddress, group.m_groupAddress) && receiver == upstream){
 		/*
 		 * The node receives a prune from a downstream node, with its IP address as upstream node.
 		 */
+//		NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvPrune by downstream " << sender);
 		RecvPruneDownstream(jp, sender, receiver, interface, source, group);
-	else  ;
+	}
+	else  NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvPrune by downstream " << sender<< " just by change");
 
 	nstatus->pruneHoldtime = Time(jp.m_joinPruneMessage.m_holdTime);// The node is not directly connected to S.
 }
