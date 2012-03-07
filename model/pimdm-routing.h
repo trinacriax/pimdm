@@ -240,6 +240,8 @@ public:
 	 **/
 	std::vector<RoutingMulticastTable> GetRoutingTableEntries () const;
 
+	void registerMember(Ipv4Address source, Ipv4Address group, int interface);
+	void unregisterMember(Ipv4Address source, Ipv4Address group, int interface);
 	void register_member (std::string SGI);
 	void unregister_member (std::string SGI);
 	void register_SG (std::string SG);

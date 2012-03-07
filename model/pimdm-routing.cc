@@ -163,6 +163,13 @@ MulticastRoutingProtocol::GetMetricPreference(int32_t interface)
 	return 1;
 }
 
+
+void
+MulticastRoutingProtocol::registerMember(Ipv4Address source, Ipv4Address group, int interface){}
+
+void
+MulticastRoutingProtocol::unregisterMember(Ipv4Address source, Ipv4Address group, int interface){}
+
 void
 MulticastRoutingProtocol::unregister_member (std::string csv){
 	NS_LOG_FUNCTION(this);
@@ -957,45 +964,25 @@ MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupP
 }
 
 void
-MulticastRoutingProtocol::SendPruneInterface(uint32_t interface, SourceGroupPair &sgp)
+MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgp)
 {
-	NS_LOG_FUNCTION(this<< interface << sgp.sourceMulticastAddr << sgp.groupMulticastAddr);
-	SourceGroupState *sgState = FindSourceGroupState(interface, sgp, true);
-	if(sgState->upstream && sgState->upstream->SG_PLT.IsRunning()){//the prune timer is not active
-		NS_LOG_DEBUG("Limiting prune on LAN with PLT");
-	}
-	else {
-		PIMHeader msg;
-		ForgeJoinPruneMessage(msg, GetLocalAddress(interface));
-		PIMHeader::MulticastGroupEntry mge;
-		CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
-		AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
-		AddMulticastGroupEntry(msg, mge);
-		Ptr<Packet> packet = Create<Packet> ();
-		Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterInterface, this, packet, msg, interface);
-	}
-}
-
-void
-MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address upstreamNeighbor, SourceGroupPair &sgp)
-{
-	NS_LOG_FUNCTION(this<< upstreamNeighbor<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
+	NS_LOG_FUNCTION(this<< destination<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
 	PIMHeader msg;
-	ForgeJoinPruneMessage(msg, upstreamNeighbor);
+	ForgeJoinPruneMessage(msg, destination);
 	PIMHeader::MulticastGroupEntry mge;
 	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
 	AddMulticastGroupSourceJoin(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
 	AddMulticastGroupEntry(msg, mge);
 //	msg.Print(std::cout);
 	Ptr<Packet> packet = Create<Packet> ();
-	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterUnicast, this, packet, msg, upstreamNeighbor);
-	NS_LOG_LOGIC("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< upstreamNeighbor<<"\"");
+	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterUnicast, this, packet, msg, destination);
+	NS_LOG_LOGIC("SG Pair ("<<sgp.sourceMulticastAddr <<", "<< sgp.groupMulticastAddr<<") via UpstreamNeighbor \""<< destination<<"\"");
 }
 
 void
 MulticastRoutingProtocol::ForgeAssertMessage (int32_t interface, PIMHeader &msg, SourceGroupPair &sgp)
 {
-	NS_LOG_FUNCTION(this << interface << sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
+	NS_LOG_FUNCTION(this << interface <<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interface, sgp);
 	ForgeHeaderMessage(PIM_ASSERT, msg);
 	PIMHeader::AssertMessage &assertMessage = msg.GetAssertMessage();
@@ -1906,6 +1893,26 @@ MulticastRoutingProtocol::SendPacketPIMRouterInterface(Ptr<Packet> packet, const
 		  break;
 	  }
       }
+}
+
+void
+MulticastRoutingProtocol::SendPruneInterface(uint32_t interface, SourceGroupPair &sgp)
+{
+	NS_LOG_FUNCTION(this<< interface << sgp.sourceMulticastAddr << sgp.groupMulticastAddr);
+	SourceGroupState *sgState = FindSourceGroupState(interface, sgp, true);
+	if(sgState->upstream && sgState->upstream->SG_PLT.IsRunning()){//the prune timer is not active
+		NS_LOG_DEBUG("Limiting prune on LAN with PLT");
+	}
+	else {
+		PIMHeader msg;
+		ForgeJoinPruneMessage(msg, GetLocalAddress(interface));
+		PIMHeader::MulticastGroupEntry mge;
+		CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
+		AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
+		AddMulticastGroupEntry(msg, mge);
+		Ptr<Packet> packet = Create<Packet> ();
+		Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRouterInterface, this, packet, msg, interface);
+	}
 }
 
 void
@@ -4208,7 +4215,7 @@ std::set<uint32_t > MulticastRoutingProtocol::lost_assert (Ipv4Address source, I
 	SourceGroupPair sgp (source, group);
 	for (int32_t i = 0; i < m_ipv4->GetNInterfaces (); i++) {
 		if (IsLoopInterface (i)) continue;
-			SourceGroupState *sgState = FindSourceGroupState (i, sgp);
+		SourceGroupState *sgState = FindSourceGroupState (i, sgp);
 			if (!sgState) continue;
 			if (lost_assert (source, group, i))
 				set.insert (i);

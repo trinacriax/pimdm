@@ -23,9 +23,6 @@
 #include <string>
 #include <sstream>
 
-#include "ns3/mbn-aodv-module.h"
-#include "ns3/mbn-aodv-helper.h"
-
 #include "ns3/aodv-helper.h"
 #include "ns3/olsr-helper.h"
 
@@ -40,7 +37,6 @@
 #include "ns3/internet-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/csma-helper.h"
-#include "ns3/flow-monitor-helper.h"
 #include "ns3/string.h"
 
 
@@ -79,11 +75,6 @@ std::cout <<"Sending Packet "<< p->GetSize() << " bytes " << std::endl;
 //std::cout <<"Sending Packet "<< p->GetSize() << " bytes " << std::endl;
 //}
 
-static void NodeStatusChanged(std::string source, Ptr<const mbn::RoutingProtocol> nodez) {
-	std::cout << Simulator::Now()<< " Node Status Changed: " << source << ", new status: "
-			<< nodez->GetLocalNodeStatus()<< std::endl;
-}
-
 static void RegisterClientOnNode (Ipv4Address source, Ipv4Address group, int node, int clientIface){
 	std::stringstream ss;
 	ss<< source<< "," << group << "," << clientIface;
@@ -110,14 +101,10 @@ main (int argc, char *argv[])
 #if 1
 //	LogComponentEnable ("SimpleGlobalRoutingExample", LOG_LEVEL_INFO);
 	LogComponentEnable ("PushPimWired", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	LogComponentEnable ("VideoPushApplication", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("AodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("OlsrRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("MbnAodvNeighbors", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-//	LogComponentEnable ("MbnRoutingTable", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("UdpL4Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("Ipv4ListRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("UdpSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
@@ -148,19 +135,16 @@ main (int argc, char *argv[])
 	uint32_t sizeSource = 1;
 	/// grid cols number
 	uint16_t cols = (uint16_t)sqrt(sizePim);
-	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
+	//Routing protocol 1) OLSR, 2) AODV
 	int32_t routing = 1;
 	//Seed for random numbers
 	uint32_t run = 1;
 	/// Animator filename
 	std::string animFile = "push-over-pim-wired.tr";
-	std::string flowFile = "results.xml";
 	/// Simulation time, seconds
 	double totalTime = 400;
 	/// Video start
 	double sourceStart = 40;
-	/// Flow Monitor
-	bool enableFlowMonitor = true;
 
 	CommandLine cmd;
 	cmd.AddValue("pcap", "Write PCAP traces.", pcap);
@@ -173,7 +157,6 @@ main (int argc, char *argv[])
 	cmd.AddValue("routing", "Routing protocol to use.", routing);
 	cmd.AddValue("time", "Simulation time, s.", totalTime);
 	cmd.AddValue("animFile", "File Name for Animation Output", animFile);
-	cmd.AddValue ("EnableMonitor", "Enable Flow Monitor", enableFlowMonitor);
 
 	cmd.Parse(argc, argv);
 	// Here, we will explicitly create four nodes.  In more sophisticated
@@ -187,7 +170,7 @@ main (int argc, char *argv[])
 	double clientStop = totalTime;
 
 	SeedManager::SetRun(run);
-	SeedManager::SetSeed(8453*run);
+	SeedManager::SetSeed(123456789);
 
 	NS_LOG_INFO ("Create nodes.");
 	NodeContainer source;
@@ -317,7 +300,6 @@ main (int argc, char *argv[])
 	NS_LOG_INFO ("Enabling AODV Routing.");
 	OlsrHelper olsr;
 	AodvHelper aodv;
-	MbnAodvHelper mbnaodv;
 
 	NS_LOG_INFO ("Enabling PIM-DM Routing.");
 	PimDmHelper pimdm;
@@ -339,11 +321,6 @@ main (int argc, char *argv[])
 			case 2:{
 				listRouters.Add (aodv, 10);
 				listClients.Add (aodv, 10);
-				break;
-			}
-			case 3:{
-				listRouters.Add (mbnaodv, 10);
-				listClients.Add (mbnaodv, 10);
 				break;
 			}
 		}
@@ -435,107 +412,37 @@ main (int argc, char *argv[])
 			case 2:{
 				break;
 			}
-			case 3:{
-				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localWeightFunction",EnumValue(mbn::W_NODE_RND));
-				Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
-
-				for (int n = 0;  n < all_clients.GetN() ; n++){//Clients are RN nodes
-					std::stringstream command;
-					command<< "/NodeList/"<<all_clients.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
-					Config::Set(command.str(), EnumValue(mbn::RN_NODE));
-				}
-				for (int n = 0;  n < source.GetN() ; n++){//SOURCE is BN so it can Tx
-					std::stringstream command;
-					command<< "/NodeList/"<<source.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
-					Config::Set(command.str(), EnumValue(mbn::BN_NODE));
-				}
-
-				for (int n = 0;  n < routers.GetN() ; n++){//ROUTERS are BCN nodes
-					std::stringstream command;//create a stringstream
-					command<< "/NodeList/"<<routers.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
-					Config::Set(command.str(), EnumValue(mbn::BCN_NODE));
-				}
-//				for(int i = 0; i < routers.GetN(); i++){
-//					std::stringstream ss;
-//					ss << "/NodeList/"<<i<<"/$ns3::mbn::RoutingProtocol/localWeight";
-//					uint32_t weight = (uint32_t)UintegerValue(UniformVariable().GetValue()*100.0);
-//					Config::Set(ss.str(),UintegerValue(weight));
-//					ss.str("");
-//				}
-				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(6));
-				Config::Set("/NodeList/0/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(9));
-				std::cout << "Starting simulation for " << totalTime << " s ...\n";
-				break;
-			}
 		}
-
-
-	// Configure Source
 	NS_LOG_INFO ("Create Source");
 	InetSocketAddress dst = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
 	Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
-	VideoHelper video = VideoHelper ("ns3::UdpSocketFactory", dst);
-	video.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
-	video.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
-	video.SetAttribute ("DataRate", StringValue ("10kb/s"));
-	video.SetAttribute ("PacketSize", UintegerValue (1200));
-	video.SetAttribute ("PeerType", EnumValue (SOURCE));
-	video.SetAttribute ("Local", AddressValue (ips0r0.GetAddress(0)));
-	video.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
-	video.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
+	OnOffHelper onoff = OnOffHelper ("ns3::UdpSocketFactory", dst);
+	onoff.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
+	onoff.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (0.0)));
+	onoff.SetAttribute ("DataRate", DataRateValue (DataRate (15000)));
+	onoff.SetAttribute ("PacketSize", UintegerValue (1200));
 
-	ApplicationContainer apps = video.Install (source.Get (0));
+	ApplicationContainer apps = onoff.Install (source.Get (0));
 	apps.Start (Seconds (sourceStart));
 	apps.Stop (Seconds (sourceStop));
 
-	for(int n = 0; n < all_clients.GetN() ; n++){
-		InetSocketAddress dstC = InetSocketAddress (multicastGroup, PIM_PORT_NUMBER);
-		Config::SetDefault ("ns3::UdpSocket::IpMulticastTtl", UintegerValue (1));
-		VideoHelper videoC = VideoHelper ("ns3::UdpSocketFactory", dstC);
-		videoC.SetAttribute ("OffTime", RandomVariableValue (ConstantVariable (2.0)));
-		videoC.SetAttribute ("OnTime", RandomVariableValue (ConstantVariable (1.0)));
-//		videoC.SetAttribute ("DataRate", StringValue ("10kb/s"));
-//		videoC.SetAttribute ("PacketSize", UintegerValue (1200));
-		videoC.SetAttribute ("PeerType", EnumValue (PEER));
-		videoC.SetAttribute ("LocalPort", UintegerValue (PIM_PORT_NUMBER));
-		videoC.SetAttribute ("Local", AddressValue (ipClients.GetAddress(n)));
-		videoC.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
-		videoC.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
+//	NS_LOG_INFO ("Create Sink.");
+//	PacketSinkHelper sink = PacketSinkHelper ("ns3::UdpSocketFactory", dst);
+//	apps = sink.Install (clients);
+//	apps.Start (Seconds (4.0));
+//	apps.Stop (Seconds (30.0));
+//	Config::ConnectWithoutContext ("/NodeList/[4-6]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&SinkRx));
+//	ApplicationContainer appC = videoC.Install (all_clients.Get(n));
+//		appC.Start (Seconds (clientStart));
+//		appC.Stop (Seconds (clientStop));
 
-		ApplicationContainer appC = videoC.Install (all_clients.Get(n));
-		appC.Start (Seconds (clientStart));
-		appC.Stop (Seconds (clientStop));
-	}
-
-	Config::ConnectWithoutContext("/NodeList/0/ApplicationList/0/$ns3::VideoPushApplication/Tx",MakeCallback (&AppTx));
-
-	Simulator::Schedule(Seconds(210), &RegisterClientOnNode, multicastSource, multicastGroup , 10, 1);
-	Simulator::Schedule(Seconds(150), &UnRegisterClientOnNode, multicastSource, multicastGroup , 5, 1);
-//	AsciiTraceHelper ascii;
-//	csma.EnableAsciiAll (ascii.CreateFileStream (animFile));
-//	csma.EnablePcapAll ("link12", false);
-
-	// Flow Monitor
-	Ptr<FlowMonitor> flowmon;
-	if (enableFlowMonitor)
-	{
-	  FlowMonitorHelper flowmonHelper;
-	  flowmon = flowmonHelper.InstallAll ();
-	  flowmon->SetAttribute("DelayBinWidth", DoubleValue(0.001));
-	  flowmon->SetAttribute("JitterBinWidth",DoubleValue(0.001));
-	  flowmon->SetAttribute("PacketSizeBinWidth", DoubleValue(20));
-	}
+//	Simulator::Schedule(Seconds(210), &RegisterClientOnNode, multicastSource, multicastGroup , 10, 1);
+//	Simulator::Schedule(Seconds(150), &UnRegisterClientOnNode, multicastSource, multicastGroup , 5, 1);
 
 	NS_LOG_INFO ("Run Simulation.");
 	Simulator::Stop (Seconds (totalTime));
 	Simulator::Run ();
 	NS_LOG_INFO ("Done.");
-
-
-	if (enableFlowMonitor)
-	{
-	  flowmon->SerializeToXmlFile (flowFile, true, true);
-	}
 
 	Simulator::Destroy ();
 	return 0;
