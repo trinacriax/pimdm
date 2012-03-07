@@ -2566,8 +2566,8 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp)
 			if(GetNextHop(sgp.sourceMulticastAddr) != sgp.sourceMulticastAddr){
 				sgState ->upstream->GraftPrune = GP_Pruned;
 				Ipv4Address gateway = RPF_prime(sgp.sourceMulticastAddr, sgp.groupMulticastAddr);
-				SendPruneUnicast(gateway, sgp);
 				if(!sgState->upstream->SG_PLT.IsRunning()){
+					SendPruneUnicast(gateway, sgp);
 				//	sgState->upstream->SG_PLT.Cancel();
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
