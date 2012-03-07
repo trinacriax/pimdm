@@ -2409,17 +2409,17 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 {
 	NS_LOG_FUNCTION(this<<interface<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
 	Ipv4Address gw = GetNextHop(sgp.sourceMulticastAddr);
-	SourceGroupState *sgState = FindSourceGroupState(interface, gw, sgp);
-	if(!sgState) {
-		Simulator::Schedule(Seconds(Graft_Retry_Period),&MulticastRoutingProtocol::SRTTimerExpire, this, sgp, interface);
-		return AskRoute(sgp.sourceMulticastAddr);
-	}
+//	SourceGroupState *sgState = FindSourceGroupState(interface, gw, sgp);
+//	if(!sgState) {
+//		Simulator::Schedule(Seconds(Graft_Retry_Period),&MulticastRoutingProtocol::SRTTimerExpire, this, sgp, interface);
+//		return AskRoute(sgp.sourceMulticastAddr);
+//	}
 	NeighborhoodStatus *ns = FindNeighborhoodStatus(interface);
 	NeighborList *n_neighbors =  &ns->neighbors;
 	NS_LOG_DEBUG (n_neighbors->size());
 	for(NeighborList::iterator iter = n_neighbors->begin(); iter != n_neighbors->end(); iter++){
 		Ipv4Address destination = iter->neighborIfaceAddr;
-		SourceGroupState *sgStateBis = FindSourceGroupState(interface, destination, sgp, true);
+		SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp, true);
 		if(sgState->upstream->origination){
 		switch (sgState->upstream->origination) {
 			case NotOriginator:{
@@ -2448,7 +2448,7 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 				sgState->upstream->SG_SRT.Schedule();
 				PIMHeader refresh;
 				ForgeStateRefresh(interface, destination, sgp, refresh);
-				refresh.GetStateRefreshMessage().m_P = (IsDownstream(interface, destination, sgp) && (sgStateBis->PruneState == Prune_Pruned) ? 1 : 0);
+				refresh.GetStateRefreshMessage().m_P = (IsDownstream(interface, destination, sgp) && (sgState->PruneState == Prune_Pruned) ? 1 : 0);
 				Ptr<Packet> packet = Create<Packet> ();
 				Simulator::Schedule (TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, refresh, destination);
 				break;
