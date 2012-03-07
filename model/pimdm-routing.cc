@@ -1338,16 +1338,16 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 	NS_LOG_FUNCTION(this << sgp.sourceMulticastAddr<<sgp.groupMulticastAddr << interfaceO<<gatewayO << interfaceN<<gatewayN);
 	std::set<WiredEquivalentInterface> outlist = olist(sgp.sourceMulticastAddr, sgp.groupMulticastAddr);
 	SourceGroupState *sgState = FindSourceGroupState(interfaceO, gatewayO, sgp);
-	if(sgState->upstream->SG_GRT.IsRunning()) // remove all pending timers...
-		sgState->upstream->SG_GRT.Remove();
-	if(sgState->upstream->SG_OT.IsRunning())
-		sgState->upstream->SG_OT.Remove();
-	if(sgState->upstream->SG_PLT.IsRunning())
-		sgState->upstream->SG_PLT.Remove();
-	if(sgState->upstream->SG_SAT.IsRunning())
-		sgState->upstream->SG_SAT.Remove();
-	if(sgState->upstream->SG_SRT.IsRunning())
-		sgState->upstream->SG_SRT.Remove();
+//	if(sgState->upstream->SG_GRT.IsRunning()) // remove all pending timers...
+		sgState->upstream->SG_GRT.Cancel();
+//	if(sgState->upstream->SG_OT.IsRunning())
+		sgState->upstream->SG_OT.Cancel();
+//	if(sgState->upstream->SG_PLT.IsRunning())
+		sgState->upstream->SG_PLT.Cancel();
+//	if(sgState->upstream->SG_SAT.IsRunning())
+		sgState->upstream->SG_SAT.Cancel();
+//	if(sgState->upstream->SG_SRT.IsRunning())
+		sgState->upstream->SG_SRT.Cancel();
 //	delete sgState->upstream;
 	sgState->upstream->origination = NotOriginator;
 	sgState->upstream->GraftPrune = GP_Pruned;//GP_NoInfo TODO
