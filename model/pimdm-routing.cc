@@ -2597,7 +2597,6 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp)
 			Ptr<Packet> packet = Create<Packet> ();
 			Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, wei.second);
 			if(!sgState->upstream->SG_PLT.IsRunning()){
-//				sgState->upstream->SG_PLT.Cancel();
 				sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 				sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
 				sgState->upstream->SG_PLT.SetArguments(sgp, wei.first, wei.second);
