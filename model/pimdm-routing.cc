@@ -1609,7 +1609,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 					if(!sgState->upstream->SG_PLT.IsRunning()){
 						sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 						sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
-						sgState->upstream->SG_PLT.SetArguments(sgp, sender);
+						sgState->upstream->SG_PLT.SetArguments(sgp, interface, sender);
 						sgState->upstream->SG_PLT.Schedule();
 					}
 				}
@@ -1622,7 +1622,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 					if(!sgState->upstream->SG_PLT.IsRunning()){
 						sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 						sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);//re-schedule transmission
-						sgState->upstream->SG_PLT.SetArguments(sgp, sender);
+						sgState->upstream->SG_PLT.SetArguments(sgp, interface, sender);
 						sgState->upstream->SG_PLT.Schedule();
 					}
 				}
@@ -2155,11 +2155,11 @@ MulticastRoutingProtocol::IsValidSG(int32_t interface, const Ipv4Address & sourc
 //       A Prune cannot be sent if this timer is running.
 //       This timer is normally set to t_limit (see 4.8).
 void
-MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address destination)
+MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination)
 {
 	NS_LOG_FUNCTION(this);
 	WiredEquivalentInterface wei = RPF_interface(destination);
-	SourceGroupState *sgState = FindSourceGroupState(wei.first, destination, sgp);
+	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
 //	if(!IsUpstream(wei.first, destination, sgp)) return; // interface changed
 //	if(sgState->PruneState == Prune_Pruned) return;
 //	SendPruneUnicast(destination, sgp);
@@ -2571,7 +2571,7 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp)
 				//	sgState->upstream->SG_PLT.Cancel();
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
-					sgState->upstream->SG_PLT.SetArguments(sgp, gateway);
+					sgState->upstream->SG_PLT.SetArguments(sgp, wei.first, wei.second);
 					sgState->upstream->SG_PLT.Schedule();
 				}
 			}
@@ -2600,7 +2600,7 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp)
 //				sgState->upstream->SG_PLT.Cancel();
 				sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 				sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
-				sgState->upstream->SG_PLT.SetArguments(sgp, wei.second);
+				sgState->upstream->SG_PLT.SetArguments(sgp, wei.first, wei.second);
 				sgState->upstream->SG_PLT.Schedule();
 			}
 			break;
@@ -2943,7 +2943,7 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 					sgState->upstream->SG_PLT.Cancel();
 				sgState->upstream->SG_PLT.SetDelay(jp.m_joinPruneMessage.m_holdTime);
 				sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
-				sgState->upstream->SG_PLT.SetArguments(sgp, sender);
+				sgState->upstream->SG_PLT.SetArguments(sgp, interface, sender);
 				sgState->upstream->SG_PLT.Schedule();
 			}
 			break;
@@ -3435,7 +3435,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					sgStateB->upstream->SG_PLT.Cancel();
 				sgStateB->upstream->SG_PLT.SetDelay(Seconds(PruneHoldTime));
 				sgStateB->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
-				sgStateB->upstream->SG_PLT.SetArguments(sgp, gateway);
+				sgStateB->upstream->SG_PLT.SetArguments(sgp, interface, neighbor);
 				sgStateB->upstream->SG_PLT.Schedule();
 			}
 			else if(IsDownstream(interface, neighbor, sgp) && refresh.m_P){
@@ -3443,7 +3443,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 					sgStateB->SG_PT.Cancel();
 				sgStateB->SG_PT.SetDelay(Seconds(2 * StateRefreshInterval));
 				sgStateB->SG_PT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
-				sgStateB->SG_PT.SetArguments(sgp, gateway);
+				sgStateB->SG_PT.SetArguments(sgp, interface, neighbor);
 				sgStateB->SG_PT.Schedule();
 				ForwardingStateRefresh(refresh, sender, receiver);
 			}
@@ -3476,7 +3476,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				if(refresh.m_P==0 && !sgState->upstream->SG_PLT.IsRunning()){
 						sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 						sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
-						sgState->upstream->SG_PLT.SetArguments(sgp, gateway);
+						sgState->upstream->SG_PLT.SetArguments(sgp, interface, sender);
 						sgState->upstream->SG_PLT.Schedule();
 						SendPruneUnicast(sender, sgp);
 					}
@@ -3485,7 +3485,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 						sgState->upstream->SG_PLT.Cancel();
 					sgState->upstream->SG_PLT.SetDelay(Seconds(t_limit));
 					sgState->upstream->SG_PLT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
-					sgState->upstream->SG_PLT.SetArguments(sgp, gateway);
+					sgState->upstream->SG_PLT.SetArguments(sgp, interface, sender);
 					sgState->upstream->SG_PLT.Schedule();
 				}
 				break;

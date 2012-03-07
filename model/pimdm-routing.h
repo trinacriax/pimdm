@@ -452,7 +452,7 @@ private:
 	void HelloTimerExpire (int32_t interface);
 	void OTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
 	void GRTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
-	void PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address destination);
+	void PLTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
 	void PLTTimerExpireDownstream (SourceGroupPair &sgp, uint32_t interface, Ipv4Address neighbor); //AX
 	void ATTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
 	void PPTTimerExpire (SourceGroupPair &sgp, int32_t interface, Ipv4Address destination);
