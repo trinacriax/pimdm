@@ -127,8 +127,6 @@ MulticastRoutingProtocol::GetRouteMetric(int32_t interface, Ipv4Address source)
   Ptr<Ipv4ListRouting> lrp_Gw = DynamicCast<Ipv4ListRouting> (rp_Gw);
   Ptr<olsr::RoutingProtocol> olsr_Gw;
   Ptr<aodv::RoutingProtocol> aodv_Gw;
-  Ptr<mbn::RoutingProtocol> mbnaodv_Gw;
-//  Ptr<dsdv::RoutingProtocol> dsdv_Gw;
   for (int32_t i = 0; i < lrp_Gw->GetNRoutingProtocols ();  i++)
 	{
 	  int16_t priority;
@@ -144,14 +142,6 @@ MulticastRoutingProtocol::GetRouteMetric(int32_t interface, Ipv4Address source)
 	  else if (DynamicCast<aodv::RoutingProtocol> (temp))
 	  		{
 	  		  aodv_Gw = DynamicCast<aodv::RoutingProtocol> (temp);
-//	  		  aodv::RoutingTableEntry aodv_rte;
-//	  		  aodv_Gw->m_routingTable.LookupRoute(source,aodv_rte);
-//	  		  return aodv_rte.GetHop();
-	  		}
-	  else if (DynamicCast<mbn::RoutingProtocol> (temp))
-	  		{
-		  	  mbnaodv_Gw = DynamicCast<mbn::RoutingProtocol> (temp);
-//		  	  mbnaodv_Gw->GetLocalNodeStatus();
 //	  		  aodv::RoutingTableEntry aodv_rte;
 //	  		  aodv_Gw->m_routingTable.LookupRoute(source,aodv_rte);
 //	  		  return aodv_rte.GetHop();

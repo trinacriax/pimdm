@@ -842,7 +842,7 @@ static inline std::ostream& operator<< (std::ostream& os, const PIMMessageList &
   return os;
 }
 
-}//end namespace mbn
+}//end namespace pimdm
 }//end namespace ns3
 
 #endif /* __PIM_DM__HEADER_H__ */
