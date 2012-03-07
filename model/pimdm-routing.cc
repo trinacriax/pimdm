@@ -2913,7 +2913,8 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 //	if( wei.first != interface || wei.second != sender) return;
 //	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
 	Ipv4Address upstream = jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress;
-	SourceGroupState *sgState = FindSourceGroupState(interface, upstream, sgp, true);
+	NS_ASSERT(upstream == sender);
+	SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
 	// The node is not directly connected to S.
 	NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvPrune by upstream " << sender<< " "<< sgState->upstream->GraftPrune);
 	switch (sgState->upstream->GraftPrune) {
