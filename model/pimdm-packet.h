@@ -361,11 +361,11 @@ struct HelloMessage{
 //	   these values affect the behavior of a router.  The LAN Prune Delay
 //	   SHOULD be used by PIM-DM routers.
 
-			struct LanPruneDelay{
-				uint8_t m_T;
-				Time m_propagationDelay;
-				Time m_overrideInterval;
-			};
+		struct LanPruneDelay{
+			uint8_t m_T;
+			Time m_propagationDelay;
+			Time m_overrideInterval;
+		};
 //		0               1               2               3
 //		0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
 //		+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -379,9 +379,9 @@ struct HelloMessage{
 //forwarding is started or restarted on the interface.  The Generation
 //ID option MAY be used by PIM-DM routers.
 
-			struct GenerationID{
-				uint32_t m_generatioID;
-			};
+		struct GenerationID{
+			uint32_t m_generatioID;
+		};
 
 //		0               1               2               3
 //		0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
@@ -396,11 +396,11 @@ struct HelloMessage{
 //The State Refresh Capable option MUST be used by State
 //Refresh capable PIM-DM routers.
 
-			struct StateRefreshCapable{
-				uint8_t m_version;
-				uint8_t m_interval;
-				uint16_t m_reserved;
-			};
+		struct StateRefreshCapable{
+			uint8_t m_version;
+			uint8_t m_interval;
+			uint16_t m_reserved;
+		};
 
 		OptionType m_optionType;
 		/// The length of the option in bytes.
@@ -495,6 +495,7 @@ struct MulticastGroupEntry {
 //	|   Reserved    |  Num Groups   |          Hold Time            |
 //	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //
+
 
 struct JoinPruneGraftMessage {
 	/// Upstream Neighbor Address
@@ -842,7 +843,7 @@ static inline std::ostream& operator<< (std::ostream& os, const PIMMessageList &
   return os;
 }
 
-}//end namespace pimdm
+}//end namespace mbn
 }//end namespace ns3
 
 #endif /* __PIM_DM__HEADER_H__ */

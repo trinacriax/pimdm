@@ -155,8 +155,8 @@ private:
 	// static routing table
 	Ptr<Ipv4StaticRouting> m_RoutingTable;
 
-	typedef std::list<Ipv4MulticastRoutingTableEntry *> MulticastRoutes;
-  MulticastRoutes m_multicastRoutes;
+//	typedef std::list<Ipv4MulticastRoutingTableEntry *> MulticastRoutes;
+//	MulticastRoutes m_multicastRoutes;
 
 	///\name Protocol fields;
 	//\{
@@ -201,20 +201,22 @@ private:
 	//}
 
 	/// A list of pending messages which are buffered awaiting for being sent.
-	pimdm::PIMHeader m_queuedMessages;
-	Timer m_queuedMessagesTimer; // timer for throttling outgoing messages
+//	pimdm::PIMHeader m_queuedMessages;
+//	Timer m_queuedMessagesTimer; // timer for throttling outgoing messages
 
 	Time m_rpfCheck;
 	Timer m_rpfChecker;
 
 	Time m_LanDelay;
-	uint64_t m_latestPacketID;
+//	uint64_t m_latestPacketID;
 
-	TracedCallback <const PIMHeader &> m_rxPacketTrace;
-	TracedCallback <const PIMHeader &> m_txPacketTrace;
+	Time m_startDelay;
 
-	TracedCallback <const Ptr<Packet> &> m_rxDataPacketTrace;
-	TracedCallback <const Ptr<Packet> &> m_txDataPacketTrace;
+	TracedCallback <Ptr<const Packet> > m_rxControlPacketTrace;
+	TracedCallback <Ptr<const Packet> > m_txControlPacketTrace;
+
+	TracedCallback <Ptr<const Packet> > m_rxDataPacketTrace;
+	TracedCallback <Ptr<const Packet> > m_txDataPacketTrace;
 
 	TracedCallback<uint32_t> m_routingTableChanged;
 
@@ -248,6 +250,8 @@ public:
 
 	void UpdateMRIB (){}
 
+	/// The cost metric of the unicast route to the source. The metric is in units applicable to the unicast routing protocol used.
+	uint16_t GetRouteMetric (int32_t interface, Ipv4Address source);
 
 private:
 	void Clear ();
@@ -312,9 +316,6 @@ private:
 	uint16_t GetMetricPreference (int32_t interface);
 
 	void SetMetricPreference (int32_t interface, uint16_t metric){}
-
-	/// The cost metric of the unicast route to the source. The metric is in units applicable to the unicast routing protocol used.
-	uint16_t GetRouteMetric (int32_t interface, Ipv4Address source);
 
 	void SetRouteMetric (int32_t interface, uint16_t metric){}
 
@@ -384,7 +385,9 @@ private:
 	void RecvPruneUpstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, int32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
 	void RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, int32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
 
+	void SendAssertInterface(SourceGroupPair &sgp, int32_t interface);
 	void RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Address sender,Ipv4Address receiver, int32_t interface);
+	void UpdateAssertTimer(SourceGroupPair &sgp, int32_t interface);
 
 	void SendGraftUnicast (Ipv4Address destination,SourceGroupPair pair);
 
@@ -395,7 +398,7 @@ private:
 	void SendGraftAckUnicast (SourceGroupPair &pair, const Ipv4Address receiver);
 	void RecvGraftAck (PIMHeader::GraftAckMessage &graftAck, Ipv4Address sender,Ipv4Address receiver, int32_t interface);
 
-	void SendPruneInterface(uint32_t interface, SourceGroupPair &sgp);
+	void SendPruneBroadcast (int32_t interface, SourceGroupPair &sgpair);
 	void SendPruneUnicast (Ipv4Address destination, SourceGroupPair &sgpair);
 
 	void SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgpair);
@@ -430,10 +433,13 @@ private:
 
 	void SendPacket (Ptr<Packet> packet, const PIMMessageList &containedMessages);
 
+	void RenewTimerExpire (SourceGroupPair sgp);
+	void SendRenew (SourceGroupPair sgp, int32_t interface);
+
 	void HelloTimerExpire (int32_t interface);
 	void OTTimerExpire (SourceGroupPair &sgp, int32_t interface);
 	void GRTTimerExpire (SourceGroupPair &sgp, int32_t interface);
-	void PLTTimerExpire (SourceGroupPair &sgp, Ipv4Address destination);
+	void PLTTimerExpire (SourceGroupPair &sgp, int32_t interface);
 	void ATTimerExpire (SourceGroupPair &sgp, int32_t interface);
 	void PPTTimerExpire (SourceGroupPair &sgp, int32_t interface);
 	void PTTimerExpire (SourceGroupPair &sgp, int32_t interface);
@@ -450,6 +456,8 @@ private:
 	SourceGroupState* FindSourceGroupState (int32_t interface, const SourceGroupPair &sgp);
 	SourceGroupState* FindSourceGroupState (int32_t interface, const SourceGroupPair &sgp, bool add);
 	SourceGroupState* FindSourceGroupState (int32_t interface, const Ipv4Address source, const Ipv4Address group);
+	void EraseSourceGroupState (int32_t interface, const Ipv4Address source, const Ipv4Address group);
+
 //	void ChangeSourceGroupState (int32_t oldinterface, Ipv4Address oldneighbor, int32_t newinterface, Ipv4Address newneighbor, const SourceGroupPair &sgp);
 
 	void InsertNeighborhoodStatus (const int32_t interface);
@@ -488,7 +496,7 @@ private:
 //	void RPF_Changes (SourceGroupPair &sgp, int32_t oldInterface, int32_t newInterface);
 	void RPF_Changes(SourceGroupPair &sgp, int32_t oldInterface, Ipv4Address oldGateway, int32_t newInterface, Ipv4Address newGateway);
 
-	void RPFCheck (SourceGroupPair sgp);//, int32_t interface);//, Ptr<Ipv4Route> rpf_route);
+	bool RPFCheck (SourceGroupPair sgp);//, int32_t interface);//, Ptr<Ipv4Route> rpf_route);
 	void RPFCheckAll ();
 
 	void olistCheck (SourceGroupPair &sgp, std::set<uint32_t> &list);
@@ -509,6 +517,7 @@ private:
 	/// \brief Find the route for on-demand routing protocols.
 	/// \param destination Node to lookup.
 	void AskRoute (Ipv4Address destination);
+	void AskRoutez (Ipv4Address destination);
 
 	/// \brief There are receivers for the given SourceGroup pair.
 	/// \param sgp source-group pair.
