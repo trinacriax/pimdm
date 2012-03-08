@@ -3890,7 +3890,7 @@ void MulticastRoutingProtocol::InsertNeighborState(int32_t interface, const Neig
 		NS_ASSERT (neighborState!=NULL);
 		neighborState->neigborNLT.Cancel();
 		neighborState->neigborNLT.SetFunction(&MulticastRoutingProtocol::NLTTimerExpire, this);
-		neighborState->neigborNLT.SetArguments(interface, neighbor, local);
+		neighborState->neigborNLT.SetArguments(neighbor, local, interface);
 		neighborState->neighborCreation = Simulator::Now();
 		neighborState->neighborHoldTime = Seconds(Hold_Time_Default);
 		neighborState->neighborRefresh = Seconds(Hello_Period);
