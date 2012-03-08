@@ -71,41 +71,31 @@ int main(int argc, char *argv[]) {
 	// Users may find it convenient to turn on explicit debugging
 	// for selected modules; the below lines suggest how to do this
 #if 1
-	//	LogComponentEnable ("SimpleGlobalRoutingExample", LOG_LEVEL_INFO);
 	LogComponentEnable("PimDmExample1",LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("OnOffApplication", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 	LogComponentEnable("PIMDMMulticastRouting",LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("AodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("OlsrRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("UdpL4Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("Ipv4ListRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("UdpSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("Ipv4L3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("Ipv4EndPointDemux", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("Socket", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("Ipv4Interface", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("CsmaNetDevice", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	//	LogComponentEnable ("CsmaChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	//	LogComponentEnable ("CsmaHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	//	LogComponentEnable ("Node", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("InterferenceHelper", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("ArpL3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("ArpCache", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("Packet", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
-	//	LogComponentEnable ("DefaultSimulatorImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("AodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("OlsrRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("UdpL4Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("Ipv4ListRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("UdpSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("Ipv4L3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("Ipv4EndPointDemux", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Socket", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("Ipv4Interface", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("CsmaNetDevice", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+	LogComponentEnable ("CsmaChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("CsmaHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+//	LogComponentEnable ("Node", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("InterferenceHelper", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("ArpL3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("ArpCache", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Packet", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("DefaultSimulatorImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 #endif
 
-	// Set up some default values for the simulation.  Use the
-
-	Config::SetDefault("ns3::OnOffApplication::PacketSize", UintegerValue(210));
-	Config::SetDefault("ns3::OnOffApplication::DataRate",
-			StringValue("448kb/s"));
-
-	//DefaultValue::Bind ("DropTailQueue::m_maxPackets", 30);
-
-	// Allow the user to override any of the defaults and the above
-	// DefaultValue::Bind ()s at run-time, via command-line arguments
 	CommandLine cmd;
 	cmd.Parse(argc, argv);
 
@@ -114,7 +104,7 @@ int main(int argc, char *argv[]) {
 	NS_LOG_INFO("Create nodes.");
 
 	NodeContainer source;
-	source.Create(1); // source # 15
+	source.Create(1); // source
 
 	NodeContainer pimRouters;
 	pimRouters.Create(4);
@@ -128,14 +118,10 @@ int main(int argc, char *argv[]) {
 
 	NodeContainer pimClients;
 	pimClients.Create(8); // here clients: 5-8
-	NodeContainer c1 = NodeContainer(pimRouters.Get(1), pimClients.Get(0),
-			pimClients.Get(1));
-	NodeContainer c2 = NodeContainer(pimRouters.Get(2), pimClients.Get(2),
-			pimClients.Get(3));
-	NodeContainer c3 = NodeContainer(pimRouters.Get(4), pimClients.Get(4),
-			pimClients.Get(5));
-	NodeContainer c4 = NodeContainer(pimRouters.Get(5), pimClients.Get(6),
-			pimClients.Get(7));
+	NodeContainer c1 = NodeContainer(pimRouters.Get(0), pimClients.Get(0), pimClients.Get(1));
+	NodeContainer c2 = NodeContainer(pimRouters.Get(1), pimClients.Get(2), pimClients.Get(3));
+	NodeContainer c3 = NodeContainer(pimRouters.Get(2), pimClients.Get(4), pimClients.Get(5));
+	NodeContainer c4 = NodeContainer(pimRouters.Get(3), pimClients.Get(6), pimClients.Get(7));
 
 	// connect all our nodes to a shared channel.
 	NS_LOG_INFO("Build Topology.");
@@ -188,16 +174,16 @@ int main(int argc, char *argv[]) {
 	Ipv4AddressHelper ipv4;
 
 	ipv4.SetBase("10.2.0.0", "255.255.255.0");
-	Ipv4InterfaceContainer i0c = ipv4.Assign(d0d1);
+	Ipv4InterfaceContainer i0c = ipv4.Assign(d1c1);
 
 	ipv4.SetBase("10.2.1.0", "255.255.255.0");
-	Ipv4InterfaceContainer i1c = ipv4.Assign(d0d2);
+	Ipv4InterfaceContainer i1c = ipv4.Assign(d2c2);
 
 	ipv4.SetBase("10.2.2.0", "255.255.255.0");
-	Ipv4InterfaceContainer i2c = ipv4.Assign(d1d3);
+	Ipv4InterfaceContainer i2c = ipv4.Assign(d3c3);
 
 	ipv4.SetBase("10.2.3.0", "255.255.255.0");
-	Ipv4InterfaceContainer i3c = ipv4.Assign(d2d3);
+	Ipv4InterfaceContainer i3c = ipv4.Assign(d4c4);
 
 	NS_LOG_INFO("Assign IP Addresses: routers.");
 	ipv4.SetBase("10.2.4.0", "255.255.255.0");
@@ -212,7 +198,7 @@ int main(int argc, char *argv[]) {
 	ipv4.SetBase("10.2.7.0", "255.255.255.0");
 	Ipv4InterfaceContainer i23 = ipv4.Assign(d2d3);
 
-	ipv4.SetBase("10.1.0.0", "255.255.255.0");
+	ipv4.SetBase("10.0.0.0", "255.255.255.0");
 	Ipv4InterfaceContainer i00 = ipv4.Assign(d0s0);
 
 	NS_LOG_INFO("Configure multicasting.");
@@ -227,8 +213,10 @@ int main(int argc, char *argv[]) {
 	NS_LOG_INFO("Registering clients");
 	std::stringstream ss;
 	// source,group,interface
-	ss << multicastSource << "," << multicastGroup << "," << "3";
-	Config::Set("NodeList/[1-4]/$ns3::pimdm::MulticastRoutingProtocol/RegisterMember", StringValue(ss.str()));
+	ss << multicastSource << "," << multicastGroup;
+	Config::Set("NodeList/[1-4]/$ns3::pimdm::MulticastRoutingProtocol/RegisterSG", StringValue(ss.str()));
+	ss << "," << "1";
+	Config::Set("NodeList/[1-4]/$ns3::pimdm::MulticastRoutingProtocol/RegisterAsMember", StringValue(ss.str()));
 
 	NS_LOG_INFO("Create Source");
 	InetSocketAddress dst = InetSocketAddress(multicastGroup, 703);//703 is the port
@@ -240,8 +228,8 @@ int main(int argc, char *argv[]) {
 	onoff.SetAttribute("PacketSize", UintegerValue(1200));
 
 	ApplicationContainer apps = onoff.Install(source.Get(0));
-	apps.Start(Seconds(12.0));
-	apps.Stop(Seconds(58.0));
+	apps.Start(Seconds(20.0));
+	apps.Stop(Seconds(70.0));
 
 	NS_LOG_INFO("Create Sink.");
 	PacketSinkHelper sink = PacketSinkHelper("ns3::UdpSocketFactory", dst);
