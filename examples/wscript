@@ -2,19 +2,19 @@
 
 def build(bld):
     obj = bld.create_ns3_program('pim-example-1',
-			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'wifi'])
+			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'visualizer'])
     obj.source = 'pim-example-1.cc'
     obj = bld.create_ns3_program('pim-example-2',
-			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'wifi'])
+			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'visualizer'])
     obj.source = 'pim-example-2.cc'
     obj = bld.create_ns3_program('pim-example-3',
-			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'wifi'])
+			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'visualizer'])
     obj.source = 'pim-example-3.cc'
     obj = bld.create_ns3_program('pim-example-4',
-			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'wifi'])
+			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'visualizer'])
     obj.source = 'pim-example-4.cc'
     obj = bld.create_ns3_program('pim-example-graft',
-			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'wifi'])
+			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'visualizer'])
     obj.source = 'pim-example-graft.cc'
     obj = bld.create_ns3_program('push-over-pim-wired', 
             ['internet', 'olsr', 'aodv', 'pimdm', 'csma', 'flow-monitor'])
