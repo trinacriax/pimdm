@@ -638,9 +638,10 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t j, Ipv4InterfaceAddress add
 	);
 
 	NeighborhoodStatus *ns = FindNeighborhoodStatus(i);
-	NS_ASSERT(ns == NULL);
+	NS_ASSERT(!ns);
 	InsertNeighborhoodStatus(i);
 	ns = FindNeighborhoodStatus(i);
+
 	ns->propagationDelay = Seconds(UniformVariable().GetValue(m_LanDelay.GetSeconds()*.3, m_LanDelay.GetSeconds()));
 	ns->overrideInterval = Seconds(UniformVariable().GetValue(Override_Interval*.3, Override_Interval));
 	ns->stateRefreshInterval = Seconds(UniformVariable().GetValue(RefreshInterval*.3, RefreshInterval));
@@ -1546,7 +1547,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	SocketAddressTag satag;
 	copy->RemovePacketTag(satag); // LOOK: it must be removed because will be added again by socket.
 	NS_ASSERT (group.IsMulticast());
-	NS_LOG_INFO("Group "<<group<<" Source "<< source<< " Sender ("<< sender<<", " << interface<<") -- Gateway ("<<gateway<< ", " << gatewayIface << ")");
+	NS_LOG_INFO("Group "<<group<<" Source "<< source<< " Sender "<< sender<< " Gateway "<<gateway<< " on interface " << gatewayIface);
 	NS_LOG_INFO("\tLocal "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source)<<" PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
 	NS_ASSERT(group.IsMulticast());
 	SourceGroupPair sgp (source, group, sender);
@@ -1720,7 +1721,6 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	}
 	///   Packets that fail the RPF check MUST NOT be forwarded, and the router will conduct an assert process for the (S, G) pair specified in the packet.
 	///   Packets for which a route to the source cannot be found MUST be discarded.
-	NS_LOG_DEBUG("Data forwarding towards > "<< fwd_list.size()<<" < interfaces/nodes");
 	std::stringstream ss;
 	ss << "Data forwarding interfaces: ";
 	// Forward packet on all interfaces in oiflist.
@@ -1729,8 +1729,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 		int32_t o_iface = (int32_t)*out;
 //		NS_LOG_DEBUG("DataFwd towards interface "<<o_iface<<" : Bytes " << receivedPacket->GetSize()<< " Delay "<<delayMS.GetSeconds()<<"ms");
 		ss<<o_iface<<", ";
-		Simulator::Schedule(delayMS,&MulticastRoutingProtocol::SendPacketInterface, this, receivedPacket->Copy(), o_iface);//todo check
-		delayMS += TransmissionDelay();
+		Simulator::ScheduleNow (&MulticastRoutingProtocol::SendPacketInterface, this, receivedPacket->Copy(), o_iface);//todo check
 	}
 	NS_LOG_DEBUG(ss.str());
 	}
