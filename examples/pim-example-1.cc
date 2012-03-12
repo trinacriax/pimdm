@@ -103,6 +103,10 @@ int main(int argc, char *argv[]) {
 	// topologies, we could configure a node factory.
 	NS_LOG_INFO("Create nodes.");
 
+	int32_t simTime, senderStart, receiverStart;
+	simTime = 200;
+	senderStart = 50;
+	receiverStart = 50;
 	NodeContainer source;
 	source.Create(1); // source
 
@@ -228,17 +232,17 @@ int main(int argc, char *argv[]) {
 	onoff.SetAttribute("PacketSize", UintegerValue(1200));
 
 	ApplicationContainer apps = onoff.Install(source.Get(0));
-	apps.Start(Seconds(20.0));
+	apps.Start(Seconds(senderStart));
 	apps.Stop(Seconds(70.0));
 
 	NS_LOG_INFO("Create Sink.");
 	PacketSinkHelper sink = PacketSinkHelper("ns3::UdpSocketFactory", dst);
 	apps = sink.Install(pimClients);
-	apps.Start(Seconds(4.0));
+	apps.Start(Seconds(receiverStart));
 	apps.Stop(Seconds(80.0));
 	Config::ConnectWithoutContext("/NodeList/[5-12]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback(&SinkRx));
 
-	Simulator::Stop(Seconds(100));
+	Simulator::Stop(Seconds(simTime));
 
 	NS_LOG_INFO("Run Simulation.");
 	Simulator::Run();
