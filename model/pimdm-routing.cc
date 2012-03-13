@@ -1236,7 +1236,7 @@ MulticastRoutingProtocol::RPFCheck (SourceGroupPair sgp)
 	RoutingMulticastTable entry;
 	MulticastEntry me;
 	int32_t interfaceN = RPF_interface(sgp.sourceMulticastAddr);
-	Ipv4Address gatewayN = GetRoute(sgp.sourceMulticastAddr)->GetGateway();
+	Ipv4Address gatewayN = interfaceN < 0 ? Ipv4Address::GetLoopback():GetRoute(sgp.sourceMulticastAddr)->GetGateway();
 	bool ret = Lookup(sgp.groupMulticastAddr,sgp.sourceMulticastAddr, entry, me); // there is a entry for this group/source
 	ret = ret && (interfaceN != -1 && isValidGateway(gatewayN)); // there is a valid gateway
 	ret = ret && entry.mgroup.find(sgp.sourceMulticastAddr) != entry.mgroup.end(); // there is a record for the source
