@@ -1147,6 +1147,17 @@ MulticastRoutingProtocol::UpdatePruneTimer(SourceGroupPair &sgp, int32_t interfa
 	sgState->SG_PT.Schedule();
 }
 
+void
+MulticastRoutingProtocol::UpdatePruneDownstreamTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination)
+{
+	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
+	if (sgState->SG_PLTD.IsRunning()) return;
+//	SendPruneUnicast(sender, sgp); // limit the downstream prune.
+	sgState->SG_PLTD.SetFunction (&MulticastRoutingProtocol::PLTTimerExpireDownstream, this);
+	sgState->SG_PLTD.SetArguments (sgp, (uint32_t)interface, destination);
+	sgState->SG_PLTD.SetDelay (Seconds(PRUNE_DOWN));
+	sgState->SG_PLTD.Schedule ();
+}
 
 void
 MulticastRoutingProtocol::UpdateAssertTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination)
@@ -1809,10 +1820,11 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 		NS_LOG_DEBUG ("RPF check failed: Sending Prune to "<< sender);
 		if (!sgState->SG_PLTD.IsRunning()){
 			SendPruneUnicast(sender, sgp); // limit the downstream prune.
-			sgState->SG_PLTD.SetFunction (&MulticastRoutingProtocol::PLTTimerExpireDownstream, this);
-			sgState->SG_PLTD.SetArguments (sgp, (uint32_t)interface, sender);
-			sgState->SG_PLTD.SetDelay (Seconds(PRUNE_DOWN));
-			sgState->SG_PLTD.Schedule ();
+//			sgState->SG_PLTD.SetFunction (&MulticastRoutingProtocol::PLTTimerExpireDownstream, this);
+//			sgState->SG_PLTD.SetArguments (sgp, (uint32_t)interface, sender);
+//			sgState->SG_PLTD.SetDelay (Seconds(PRUNE_DOWN));
+//			sgState->SG_PLTD.Schedule ();
+			UpdatePruneDownstreamTimer (sgp, (uint32_t)interface, sender);
 		}
 		return;
 	}
