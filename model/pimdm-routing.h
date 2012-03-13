@@ -399,7 +399,6 @@ private:
 
 	void SendAssertUnicast(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination);
 	void RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Address sender,Ipv4Address receiver, int32_t interface);
-	void UpdateAssertTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination);
 
 	void SendGraftUnicast (Ipv4Address destination,SourceGroupPair pair);
 
@@ -419,6 +418,8 @@ private:
 	void RecvPIMDM (Ptr<Packet> receivedPacket, Ipv4Address senderIfaceAddr, uint16_t senderIfacePort, int32_t interface);
 	void RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address senderIfaceAddr, uint16_t senderIfacePort, int32_t interface);
 
+	void UpdateAssertTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination);
+	void UpdateAssertTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination);
 	void SendPacketPIMUnicast (Ptr<Packet> packet, const PIMHeader &message, Ipv4Address destination);
 	void SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv4Header &ipv4Header, int32_t interface);
 	void SendPacketPIMRoutersInterface (Ptr<Packet> packet, const PIMHeader &message, int32_t interface);
