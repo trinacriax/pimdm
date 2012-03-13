@@ -1158,6 +1158,16 @@ MulticastRoutingProtocol::UpdatePruneDownstreamTimer(SourceGroupPair &sgp, int32
 	sgState->SG_PLTD.SetDelay (Seconds(PRUNE_DOWN));
 	sgState->SG_PLTD.Schedule ();
 }
+void
+MulticastRoutingProtocol::UpdatePrunePendingTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination)
+{
+	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
+	if(sgState->SG_PPT.IsRunning()) return;
+	sgState->SG_PPT.SetDelay(delay);
+	sgState->SG_PPT.SetFunction(&MulticastRoutingProtocol::PPTTimerExpire, this);
+	sgState->SG_PPT.SetArguments(sgp, interface, destination);
+	sgState->SG_PPT.Schedule();
+}
 
 void
 MulticastRoutingProtocol::UpdateAssertTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination)
@@ -3025,13 +3035,14 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 				if(nstatus->neighbors.size()>1)
 					delay = Seconds(nstatus->overrideInterval.GetSeconds()+nstatus->propagationDelay.GetSeconds());
 				NS_LOG_DEBUG("Neighbor size "<< nstatus->neighbors.size()<< " Delay "<<delay.GetSeconds()<<"sec");
-				if(!sgState->SG_PPT.IsRunning()){
-					sgState->SG_PPT.SetDelay(delay);
-					sgState->SG_PPT.SetFunction(&MulticastRoutingProtocol::PPTTimerExpire, this);
-					sgState->SG_PPT.SetArguments(sgp, interface, sender);
-					sgState->SG_PPT.Schedule();
-					NS_ASSERT(sender != Ipv4Address::GetLoopback());
-				}
+				UpdatePrunePendingTimer(sgp, interface, delay, sender);
+//				if(!sgState->SG_PPT.IsRunning()){
+//					sgState->SG_PPT.SetDelay(delay);
+//					sgState->SG_PPT.SetFunction(&MulticastRoutingProtocol::PPTTimerExpire, this);
+//					sgState->SG_PPT.SetArguments(sgp, interface, sender);
+//					sgState->SG_PPT.Schedule();
+//					NS_ASSERT(sender != Ipv4Address::GetLoopback());
+//				}
 			}
 			break;
 		}
