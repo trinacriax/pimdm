@@ -1192,10 +1192,10 @@ MulticastRoutingProtocol::UpdateGraftTimer(SourceGroupPair &sgp, int32_t interfa
 }
 
 void
-MulticastRoutingProtocol::UpdateOverrideTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination, bool over){
+MulticastRoutingProtocol::UpdateOverrideTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination){
 	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
 	NS_ASSERT(sgState->upstream);
-	if(!over && sgState->upstream->SG_OT.IsRunning()) return;
+	if(sgState->upstream->SG_OT.IsRunning()) return;
 	sgState->upstream->SG_OT.Cancel();
 	sgState->upstream->SG_OT.SetDelay(delay);
 	sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
@@ -1203,8 +1203,8 @@ MulticastRoutingProtocol::UpdateOverrideTimer(SourceGroupPair &sgp, int32_t inte
 	sgState->upstream->SG_OT.Schedule();
 }
 void
-MulticastRoutingProtocol::UpdateOverrideTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination, bool over){
-	UpdateOverrideTimer(sgp, interface, Seconds(Graft_Retry_Period), destination, over);
+MulticastRoutingProtocol::UpdateOverrideTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination){
+	UpdateOverrideTimer(sgp, interface, Seconds(Graft_Retry_Period), destination);
 }
 void
 MulticastRoutingProtocol::UpdatePruneLimitTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination){
@@ -2343,12 +2343,12 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, int32_t interface
 	NS_ASSERT(sgState->upstream);
 	if(!isValidGateway(gateway)){
 		if(sgState->upstream){
-//			sgState->upstream->SG_OT.Cancel();
+			sgState->upstream->SG_OT.Cancel();
 //			sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
 //			sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
 //			sgState->upstream->SG_OT.SetArguments(sgp, interface, gateway);
 //			sgState->upstream->SG_OT.Schedule();
-			UpdateOverrideTimer(sgp, interface, Seconds(Graft_Retry_Period), gateway, true);
+			UpdateOverrideTimer(sgp, interface, Seconds(Graft_Retry_Period), gateway);
 		}
 		Simulator::Schedule(Seconds(Graft_Retry_Period),&MulticastRoutingProtocol::OTTimerExpire, this, sgp, interface, gateway);
 		return AskRoute(gateway);
@@ -3057,7 +3057,7 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 //				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
 //				sgState->upstream->SG_OT.SetArguments(sgp, interface, upstream);
 //				sgState->upstream->SG_OT.Schedule();
-				UpdateOverrideTimer(sgp, interface, delay, upstream, true);
+				UpdateOverrideTimer(sgp, interface, delay, upstream);
 			}
 			break;
 		}
@@ -3090,7 +3090,7 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 //				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
 //				sgState->upstream->SG_OT.SetArguments(sgp, interface, upstream);
 //				sgState->upstream->SG_OT.Schedule();
-				UpdateOverrideTimer(sgp, interface, delay, upstream, true);
+				UpdateOverrideTimer(sgp, interface, delay, upstream);
 			}
 			break;
 		}
@@ -3606,7 +3606,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 //					sgState->upstream->SG_OT.SetArguments(sgp, interface, gateway);
 //					sgState->upstream->SG_OT.Schedule();
 //					}
-					UpdateOverrideTimer(sgp, interface, Seconds(t_override(interface)), gateway, false);
+					UpdateOverrideTimer(sgp, interface, Seconds(t_override(interface)), gateway);
 				}
 				break;
 			}
@@ -3646,7 +3646,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 //						sgState->upstream->SG_OT.SetArguments(sgp, interface, gateway);
 //						sgState->upstream->SG_OT.Schedule();
 //					}
-					UpdateOverrideTimer(sgp, interface, Seconds(t_override(interface)), gateway, false);
+					UpdateOverrideTimer(sgp, interface, Seconds(t_override(interface)), gateway);
 				}
 				if(refresh.m_P == 0){
 					sgState->upstream->SG_GRT.Cancel();
