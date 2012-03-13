@@ -3158,7 +3158,8 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 //					sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
 //					sgState->SG_PT.SetArguments(sgp, interface, sender);
 //					sgState->SG_PT.Schedule();
-					UpdatePruneTimer(sgp, interface, Seconds(jp.m_joinPruneMessage.m_holdTime), sender);
+					Time delayp = jp.m_joinPruneMessage.m_holdTime;
+					UpdatePruneTimer(sgp, interface, delayp, sender);
 				}
 			}
 			break;
