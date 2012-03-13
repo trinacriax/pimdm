@@ -1176,6 +1176,21 @@ MulticastRoutingProtocol::UpdateAssertTimer(SourceGroupPair &sgp, int32_t interf
 }
 
 void
+MulticastRoutingProtocol::UpdateGraftTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination, bool over){
+	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
+	if(!over && sgState->upstream->SG_GRT.IsRunning()) return;
+	sgState->upstream->SG_GRT.SetDelay(delay);
+	sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
+	sgState->upstream->SG_GRT.SetArguments(sgp, interface, destination);
+	sgState->upstream->SG_GRT.Schedule();
+}
+
+void
+MulticastRoutingProtocol::UpdateGraftTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination, bool over){
+	UpdateGraftTimer(sgp, interface, Seconds(Graft_Retry_Period), destination, over);
+}
+
+void
 MulticastRoutingProtocol::ForgeStateRefresh (int32_t interface, Ipv4Address destination, SourceGroupPair &sgp, PIMHeader &msg)
 {
 	NS_LOG_FUNCTION(this);
@@ -1420,12 +1435,13 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 					Simulator::Schedule (delay, &MulticastRoutingProtocol::SendHelloReply, this, interfaceN, gatewayN);
 					NS_LOG_DEBUG("Neighbors = "<< nst->neighbors.size() << ", reply at "<<(Simulator::Now()+delay).GetSeconds());
 				}
-				if(!sgState->upstream->SG_GRT.IsRunning()){
-					sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
-					sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-					sgState->upstream->SG_GRT.SetArguments(sgp, interfaceN, gatewayN);
-					sgState->upstream->SG_GRT.Schedule();
-				}
+//				if(!sgState->upstream->SG_GRT.IsRunning()){
+//					sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
+//					sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
+//					sgState->upstream->SG_GRT.SetArguments(sgp, interfaceN, gatewayN);
+//					sgState->upstream->SG_GRT.Schedule();
+//				}
+				UpdateGraftTimer(sgp, interfaceN, gatewayN, false);
 			}
 			break;
 		}
@@ -1445,12 +1461,13 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 				sgState->upstream->GraftPrune = GP_AckPending;
 				NS_LOG_INFO ("Node " << m_mainAddress <<" RPFChanges GP_Pruned -> GP_AckPending");
 				SendGraftUnicast(gatewayN, sgp);
-				if(sgState->upstream->SG_GRT.IsRunning())
-					sgState->upstream->SG_GRT.Cancel();
-				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
-				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-				sgState->upstream->SG_GRT.SetArguments(sgp, interfaceN, gatewayN);
-				sgState->upstream->SG_GRT.Schedule();
+//				if(sgState->upstream->SG_GRT.IsRunning())
+//					sgState->upstream->SG_GRT.Cancel();
+//				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
+//				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
+//				sgState->upstream->SG_GRT.SetArguments(sgp, interfaceN, gatewayN);
+//				sgState->upstream->SG_GRT.Schedule();
+				UpdateGraftTimer(sgp, interfaceN, gatewayN, true);
 			}
 			break;
 		}
@@ -1472,12 +1489,13 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 				//	A Graft MUST be unicast to the new RPF'(S) and the GraftRetry Timer (GRT(S, G)) reset to Graft_Retry_Period.
 				SendGraftUnicast(gatewayN, sgp);
 				NS_LOG_INFO ("Node " << m_mainAddress <<" RPFChanges GP_AckPending -> GP_AckPending");
-				if(sgState->upstream->SG_GRT.IsRunning())
-					sgState->upstream->SG_GRT.Cancel();
-				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
-				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-				sgState->upstream->SG_GRT.SetArguments(sgp, interfaceN, gatewayN);
-				sgState->upstream->SG_GRT.Schedule();
+//				if(sgState->upstream->SG_GRT.IsRunning())
+//					sgState->upstream->SG_GRT.Cancel();
+//				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
+//				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
+//				sgState->upstream->SG_GRT.SetArguments(sgp, interfaceN, gatewayN);
+//				sgState->upstream->SG_GRT.Schedule();
+				UpdateGraftTimer(sgp, interfaceN, gatewayN, true);
 			}
 			break;
 		}
@@ -2327,12 +2345,13 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 			if(ns->neighborGraftRetry[0]<ns->neighborGraftRetry[1]){//increase counter retries
 				ns->neighborGraftRetry[0]++;
 				SendGraftUnicast(destination, sgp);
-				if(sgState->upstream->SG_GRT.IsRunning())
-					sgState->upstream->SG_GRT.Cancel();
-				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
-				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-				sgState->upstream->SG_GRT.SetArguments(sgp, interface, destination);
-				sgState->upstream->SG_GRT.Schedule();
+//				if(sgState->upstream->SG_GRT.IsRunning())
+//					sgState->upstream->SG_GRT.Cancel();
+//				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
+//				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
+//				sgState->upstream->SG_GRT.SetArguments(sgp, interface, destination);
+//				sgState->upstream->SG_GRT.Schedule();
+				UpdateGraftTimer(sgp, interface, destination, true);
 			}else{
 				ns->neighborGraftRetry[0] = 0;//reset counter retries
 			}
@@ -2676,11 +2695,12 @@ MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp)
 				NS_LOG_INFO("Node "<< GetLocalAddress(wei.first) << " GP_Pruned -> GP_AckPending");
 				sgState->upstream->GraftPrune = GP_AckPending;
 				SendGraftUnicast(wei.second, sgp);
-				sgState->upstream->SG_GRT.Cancel();
-				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
-				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
-				sgState->upstream->SG_GRT.SetArguments(sgp, wei.first, wei.second);
-				sgState->upstream->SG_GRT.Schedule();
+//				sgState->upstream->SG_GRT.Cancel();
+//				sgState->upstream->SG_GRT.SetDelay(Seconds(Graft_Retry_Period));
+//				sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
+//				sgState->upstream->SG_GRT.SetArguments(sgp, wei.first, wei.second);
+//				sgState->upstream->SG_GRT.Schedule();
+				UpdateGraftTimer(sgp,  wei.first, wei.second, true);
 			}
 			break;
 		}
