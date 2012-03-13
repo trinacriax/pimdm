@@ -1136,6 +1136,19 @@ MulticastRoutingProtocol::UpdateAssertTimer(SourceGroupPair &sgp, int32_t interf
 }
 
 void
+MulticastRoutingProtocol::UpdatePruneTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination)
+{
+	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
+	if(sgState->SG_PT.IsRunning())
+		sgState->SG_PT.Cancel();
+	sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
+	sgState->SG_PT.SetArguments(sgp, interface, destination);
+	sgState->SG_PT.SetDelay(delay);
+	sgState->SG_PT.Schedule();
+}
+
+
+void
 MulticastRoutingProtocol::UpdateAssertTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination)
 {
 	UpdateAssertTimer (sgp, interface, Seconds(Assert_Time), destination);
@@ -1205,12 +1218,13 @@ MulticastRoutingProtocol::SendStateRefreshMessage (int32_t interface, Ipv4Addres
 			//Send State Refresh(S, G) out interface I. The router has refreshed the Prune(S, G) state on interface I.
 			//	The router MUST reset the Prune Timer (PT(S, G, I)) to the Holdtime from an active Prune received on interface I.
 			//	The Holdtime used SHOULD be the largest active one but MAY be the most recently received active Prune Holdtime.
-			if(sgState->SG_PT.IsRunning())
-				sgState->SG_PT.Cancel();
-			sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
-			sgState->SG_PT.SetArguments(sgp, interface, destination);
-			sgState->SG_PT.SetDelay(FindNeighborhoodStatus(interface)->pruneHoldtime);
-			sgState->SG_PT.Schedule();
+			UpdatePruneTimer(sgp, interface, FindNeighborhoodStatus(interface)->pruneHoldtime, destination);
+//			if(sgState->SG_PT.IsRunning())
+//				sgState->SG_PT.Cancel();
+//			sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
+//			sgState->SG_PT.SetArguments(sgp, interface, destination);
+//			sgState->SG_PT.SetDelay(FindNeighborhoodStatus(interface)->pruneHoldtime);
+//			sgState->SG_PT.Schedule();
 			break;
 		}
 		default:
@@ -2010,12 +2024,13 @@ MulticastRoutingProtocol::NeighborRestart (int32_t interface, Ipv4Address neighb
 		// If the neighbor is the upstream neighbor for an (S, G) entry, the router MAY cancel its
 		//     Prune Limit Timer to permit sending a prune and reestablishing a Pruned state in the upstream router.
 		else if (IsUpstream(interface, neighbor, sgState->SGPair) && sgState->PruneState == Prune_Pruned){
-			if(sgState->SG_PT.IsRunning())
-				sgState->SG_PT.Cancel();
-			sgState->SG_PT.SetDelay(Seconds(2*RefreshInterval));
-			sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
-			sgState->SG_PT.SetArguments(sgState->SGPair, interface, neighbor);
-			sgState->SG_PT.Schedule();
+//			if(sgState->SG_PT.IsRunning())
+//				sgState->SG_PT.Cancel();
+//			sgState->SG_PT.SetDelay(Seconds(2*RefreshInterval));
+//			sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
+//			sgState->SG_PT.SetArguments(sgState->SGPair, interface, neighbor);
+//			sgState->SG_PT.Schedule();
+			UpdatePruneTimer(sgState->SGPair, interface, Seconds(2*RefreshInterval), neighbor);
 			Simulator::ScheduleNow (&MulticastRoutingProtocol::SendPruneUnicast, this, neighbor, sgState->SGPair);
 		}
 	}
@@ -3021,12 +3036,13 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 			if(IsMyOwnAddress(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress)){
 				NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvPrune by downstream Prune_Pruned -> Prune_Pruned");
 				if(jp.m_joinPruneMessage.m_holdTime >sgState->SG_PT.GetDelay()){
-					if(sgState->SG_PT.IsRunning())
-						sgState->SG_PT.Cancel();
-					sgState->SG_PT.SetDelay(jp.m_joinPruneMessage.m_holdTime);
-					sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
-					sgState->SG_PT.SetArguments(sgp, interface, sender);
-					sgState->SG_PT.Schedule();
+//					if(sgState->SG_PT.IsRunning())
+//						sgState->SG_PT.Cancel();
+//					sgState->SG_PT.SetDelay(jp.m_joinPruneMessage.m_holdTime);
+//					sgState->SG_PT.SetFunction(&MulticastRoutingProtocol::PTTimerExpire, this);
+//					sgState->SG_PT.SetArguments(sgp, interface, sender);
+//					sgState->SG_PT.Schedule();
+					UpdatePruneTimer(sgp, interface, Seconds(jp.m_joinPruneMessage.m_holdTime), sender);
 				}
 			}
 			break;
@@ -3444,12 +3460,13 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 				sgStateB->upstream->SG_PLT.Schedule();
 			}
 			else if(IsDownstream(interface, neighbor, sgp) && refresh.m_P){
-				if(sgStateB->SG_PT.IsRunning())
-					sgStateB->SG_PT.Cancel();
-				sgStateB->SG_PT.SetDelay(Seconds(2 * StateRefreshInterval));
-				sgStateB->SG_PT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
-				sgStateB->SG_PT.SetArguments(sgp, interface, neighbor);
-				sgStateB->SG_PT.Schedule();
+//				if(sgStateB->SG_PT.IsRunning())
+//					sgStateB->SG_PT.Cancel();
+//				sgStateB->SG_PT.SetDelay(Seconds(2 * StateRefreshInterval));
+//				sgStateB->SG_PT.SetFunction(&MulticastRoutingProtocol::PLTTimerExpire, this);
+//				sgStateB->SG_PT.SetArguments(sgp, interface, neighbor);
+//				sgStateB->SG_PT.Schedule();
+				UpdatePruneTimer(sgp, interface, Seconds(2 * StateRefreshInterval), neighbor);
 				ForwardingStateRefresh(refresh, sender, receiver);
 			}
 			sgStateB->PruneState = (refresh.m_P ? Prune_Pruned: Prune_NoInfo);
