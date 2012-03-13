@@ -1191,6 +1191,21 @@ MulticastRoutingProtocol::UpdateGraftTimer(SourceGroupPair &sgp, int32_t interfa
 }
 
 void
+MulticastRoutingProtocol::UpdateOverrideTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination, bool over){
+	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
+	NS_ASSERT (sgState->upstream);
+	if(!over && sgState->upstream->SG_OT.IsRunning()) return;
+	sgState->upstream->SG_OT.Cancel();
+	sgState->upstream->SG_OT.SetDelay(delay);
+	sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
+	sgState->upstream->SG_OT.SetArguments(sgp, interface, destination);
+	sgState->upstream->SG_OT.Schedule();
+}
+void
+MulticastRoutingProtocol::UpdateOverrideTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination, bool over){
+	UpdateOverrideTimer(sgp, interface, Seconds(Graft_Retry_Period), destination, over);
+}
+void
 MulticastRoutingProtocol::ForgeStateRefresh (int32_t interface, Ipv4Address destination, SourceGroupPair &sgp, PIMHeader &msg)
 {
 	NS_LOG_FUNCTION(this);
@@ -2278,11 +2293,12 @@ MulticastRoutingProtocol::OTTimerExpire (SourceGroupPair &sgp, int32_t interface
 	NS_ASSERT(sgState->upstream);
 	if(!isValidGateway(gateway)){
 		if(sgState->upstream){
-			sgState->upstream->SG_OT.Cancel();
-			sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
-			sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
-			sgState->upstream->SG_OT.SetArguments(sgp, interface, gateway);
-			sgState->upstream->SG_OT.Schedule();
+//			sgState->upstream->SG_OT.Cancel();
+//			sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
+//			sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
+//			sgState->upstream->SG_OT.SetArguments(sgp, interface, gateway);
+//			sgState->upstream->SG_OT.Schedule();
+			UpdateOverrideTimer(sgp, interface, Seconds(Graft_Retry_Period), gateway, true);
 		}
 		Simulator::Schedule(Seconds(Graft_Retry_Period),&MulticastRoutingProtocol::OTTimerExpire, this, sgp, interface, gateway);
 		return AskRoute(gateway);
@@ -2981,12 +2997,12 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 		//	If OT(S, G) is not running, the router MUST set OT(S, G) to t_override seconds.
 		//	The Upstream(S, G) state machine remains in Forwarding (F) state.
 			if(GetNextHop(source.m_sourceAddress) != source.m_sourceAddress && !sgState->upstream->SG_OT.IsRunning()){
-//				NS_LOG_INFO("Setting TIMER OT "<< sgp<<", "<<interface<<sender);
 				Time delay = Seconds(t_override(interface));
-				sgState->upstream->SG_OT.SetDelay(delay);
-				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
-				sgState->upstream->SG_OT.SetArguments(sgp, interface, upstream);
-				sgState->upstream->SG_OT.Schedule();
+//				sgState->upstream->SG_OT.SetDelay(delay);
+//				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
+//				sgState->upstream->SG_OT.SetArguments(sgp, interface, upstream);
+//				sgState->upstream->SG_OT.Schedule();
+				UpdateOverrideTimer(sgp, interface, delay, upstream, true);
 			}
 			break;
 		}
@@ -3014,10 +3030,11 @@ MulticastRoutingProtocol::RecvPruneUpstream(PIMHeader::JoinPruneMessage &jp, Ipv
 			if(!sgState->upstream->SG_OT.IsRunning()){
 //				NS_LOG_INFO("Setting TIMER OT "<< sgp<<", "<<interface<<sender);
 				Time delay = Seconds(t_override(interface));
-				sgState->upstream->SG_OT.SetDelay(delay);
-				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
-				sgState->upstream->SG_OT.SetArguments(sgp, interface, upstream);
-				sgState->upstream->SG_OT.Schedule();
+//				sgState->upstream->SG_OT.SetDelay(delay);
+//				sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
+//				sgState->upstream->SG_OT.SetArguments(sgp, interface, upstream);
+//				sgState->upstream->SG_OT.Schedule();
+				UpdateOverrideTimer(sgp, interface, delay, upstream, true);
 			}
 			break;
 		}
@@ -3516,6 +3533,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 		}
 	}
 	if(IsUpstream(interface, sender, sgp)){
+		NS_ASSERT(sender == gateway);
 		switch (sgState->upstream->GraftPrune) {
 			case GP_Forwarding:{
 //				State Refresh(S,G) Received from RPF'(S)
@@ -3524,13 +3542,14 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 //			       Prune Indicator bit equals one, the router MUST set OT(S,G) to t_override seconds.
 				if(refresh.m_P == 1){
 					Simulator::Schedule (TransmissionDelay(0, t_shorter), &MulticastRoutingProtocol::SetPruneState, this, interface, sender, sgp, Prune_Pruned); //TODO: sure about this schedule
-					if(!sgState->upstream->SG_OT.IsRunning()){
-					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
-					sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
-					NS_LOG_DEBUG("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
-					sgState->upstream->SG_OT.SetArguments(sgp, interface, gateway);
-					sgState->upstream->SG_OT.Schedule();
-					}
+//					if(!sgState->upstream->SG_OT.IsRunning()){
+//					sgState->upstream->SG_OT.SetDelay(Seconds(t_override(interface)));
+//					sgState->upstream->SG_OT.SetFunction(&MulticastRoutingProtocol::OTTimerExpire, this);
+//					NS_LOG_DEBUG("Setting TIMER OT "<< sgp.sourceMulticastAddr<<", "<< sgp.groupMulticastAddr<<", "<<sgp.nextMulticastAddr<<", "<<interface);
+//					sgState->upstream->SG_OT.SetArguments(sgp, interface, gateway);
+//					sgState->upstream->SG_OT.Schedule();
+//					}
+					UpdateOverrideTimer(sgp, interface, Seconds(t_override(interface)), gateway, false);
 				}
 				break;
 			}

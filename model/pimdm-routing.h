@@ -426,6 +426,8 @@ private:
 	void UpdatePrunePendingTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination);
 	void UpdateGraftTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination, bool over);
 	void UpdateGraftTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination, bool over);
+	void UpdateOverrideTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination, bool over);
+	void UpdateOverrideTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination, bool over);
 	void SendPacketPIMUnicast (Ptr<Packet> packet, const PIMHeader &message, Ipv4Address destination);
 	void SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv4Header &ipv4Header, int32_t interface);
 	void SendPacketPIMRoutersInterface (Ptr<Packet> packet, const PIMHeader &message, int32_t interface);
