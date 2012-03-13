@@ -424,8 +424,8 @@ private:
 	void UpdatePruneTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination);
 	void UpdatePruneDownstreamTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination);
 	void UpdatePrunePendingTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination);
-	void UpdateGraftTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination, bool over);
-	void UpdateGraftTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination, bool over);
+	void UpdateGraftTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination);
+	void UpdateGraftTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination);
 	void UpdateOverrideTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination);
 	void UpdateOverrideTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination);
 	void UpdatePruneLimitTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination);
