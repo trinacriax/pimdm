@@ -1178,6 +1178,7 @@ MulticastRoutingProtocol::UpdateAssertTimer(SourceGroupPair &sgp, int32_t interf
 void
 MulticastRoutingProtocol::UpdateGraftTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination, bool over){
 	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
+	NS_ASSERT(sgState->upstream);
 	if(!over && sgState->upstream->SG_GRT.IsRunning()) return;
 	sgState->upstream->SG_GRT.SetDelay(delay);
 	sgState->upstream->SG_GRT.SetFunction(&MulticastRoutingProtocol::GRTTimerExpire, this);
@@ -1193,7 +1194,7 @@ MulticastRoutingProtocol::UpdateGraftTimer(SourceGroupPair &sgp, int32_t interfa
 void
 MulticastRoutingProtocol::UpdateOverrideTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination, bool over){
 	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
-	NS_ASSERT (sgState->upstream);
+	NS_ASSERT(sgState->upstream);
 	if(!over && sgState->upstream->SG_OT.IsRunning()) return;
 	sgState->upstream->SG_OT.Cancel();
 	sgState->upstream->SG_OT.SetDelay(delay);
