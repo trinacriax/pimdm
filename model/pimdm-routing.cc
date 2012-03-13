@@ -1235,6 +1235,22 @@ MulticastRoutingProtocol::UpdateSourceActiveTimer(SourceGroupPair &sgp, int32_t 
 	UpdateSourceActiveTimer(sgp, interface, Seconds(SourceLifetime), destination);
 }
 void
+MulticastRoutingProtocol::UpdateStateRefreshTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination){
+	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
+	NS_ASSERT(sgState->upstream);
+	if(sgState->upstream->SG_SRT.IsRunning()) return;
+	sgState->upstream->SG_SRT.SetDelay(delay);
+	sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
+	sgState->upstream->SG_SRT.SetArguments(sgp, interface);
+	sgState->upstream->SG_SRT.Schedule();
+}
+void
+MulticastRoutingProtocol::UpdateStateRefreshTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination){
+	UpdateStateRefreshTimer(sgp, interface, Seconds(RefreshInterval), destination);
+}
+
+
+void
 MulticastRoutingProtocol::ForgeStateRefresh (int32_t interface, Ipv4Address destination, SourceGroupPair &sgp, PIMHeader &msg)
 {
 	NS_LOG_FUNCTION(this);
@@ -1756,12 +1772,13 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 //					sgState->upstream->SG_SAT.SetArguments(sgp, interface, gateway);
 //					sgState->upstream->SG_SAT.Schedule();
 					UpdateSourceActiveTimer(sgp, interface, gateway);
-					if(sgState->upstream->SG_SRT.IsRunning())
-						sgState->upstream->SG_SRT.Cancel();
-					sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
-					sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
-					sgState->upstream->SG_SRT.SetArguments(sgp, interface);
-					sgState->upstream->SG_SRT.Schedule();
+//					if(sgState->upstream->SG_SRT.IsRunning())
+					sgState->upstream->SG_SRT.Cancel();
+//					sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
+//					sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
+//					sgState->upstream->SG_SRT.SetArguments(sgp, interface);
+//					sgState->upstream->SG_SRT.Schedule();
+					UpdateStateRefreshTimer(sgp, interface, sender);
 					sgState->SG_DATA_TTL = sourceHeader.GetTtl();
 				}
 				break;
@@ -2545,12 +2562,13 @@ MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp, int32_t interfac
 			//	state machine is in the Pruned (P) state, then the Prune-
 			//	Indicator bit MUST be set to 1 in the State Refresh message being
 			//	sent over I. Otherwise, the Prune-Indicator bit MUST be set to 0.
-				if(sgState->upstream->SG_SRT.IsRunning())
-					sgState->upstream->SG_SRT.Cancel();
-				sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
-				sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
-				sgState->upstream->SG_SRT.SetArguments(sgp, interface);
-				sgState->upstream->SG_SRT.Schedule();
+//				if(sgState->upstream->SG_SRT.IsRunning())
+				sgState->upstream->SG_SRT.Cancel();
+//				sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
+//				sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
+//				sgState->upstream->SG_SRT.SetArguments(sgp, interface);
+//				sgState->upstream->SG_SRT.Schedule();
+				UpdateStateRefreshTimer(sgp, interface, destination);
 				PIMHeader refresh;
 				ForgeStateRefresh(interface, destination, sgp, refresh);
 				refresh.GetStateRefreshMessage().m_P = (IsDownstream(interface, destination, sgp) && (sgState->PruneState == Prune_Pruned) ? 1 : 0);
@@ -2799,12 +2817,13 @@ MulticastRoutingProtocol::SourceDirectlyConnected(SourceGroupPair &sgp)
 	switch (sgState->upstream->origination) {
 		case NotOriginator:{
 			sgState->upstream->origination = Originator;
-			if(sgState->upstream->SG_SRT.IsRunning())
-				sgState->upstream->SG_SRT.Cancel();
-			sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
-			sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
-			sgState->upstream->SG_SRT.SetArguments(sgp, interface);
-			sgState->upstream->SG_SRT.Schedule();
+//			if(sgState->upstream->SG_SRT.IsRunning())
+			sgState->upstream->SG_SRT.Cancel();
+//			sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
+//			sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
+//			sgState->upstream->SG_SRT.SetArguments(sgp, interface);
+//			sgState->upstream->SG_SRT.Schedule();
+			UpdateStateRefreshTimer(sgp, wei.first, wei.second);
 //			if(sgState->upstream->SG_SAT.IsRunning())
 			sgState->upstream->SG_SAT.Cancel();
 //			sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
