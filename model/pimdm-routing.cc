@@ -1221,6 +1221,20 @@ MulticastRoutingProtocol::UpdatePruneLimitTimer(SourceGroupPair &sgp, int32_t in
 	UpdatePruneLimitTimer(sgp, interface, Seconds(t_limit), destination);
 }
 void
+MulticastRoutingProtocol::UpdateSourceActiveTimer(SourceGroupPair &sgp, int32_t interface, Time delay, const Ipv4Address destination){
+	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
+	NS_ASSERT(sgState->upstream);
+	if(sgState->upstream->SG_SAT.IsRunning()) return;
+	sgState->upstream->SG_SAT.SetDelay(delay);
+	sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
+	sgState->upstream->SG_SAT.SetArguments(sgp, interface, destination);
+	sgState->upstream->SG_SAT.Schedule();
+}
+void
+MulticastRoutingProtocol::UpdateSourceActiveTimer(SourceGroupPair &sgp, int32_t interface, const Ipv4Address destination){
+	UpdateSourceActiveTimer(sgp, interface, Seconds(SourceLifetime), destination);
+}
+void
 MulticastRoutingProtocol::ForgeStateRefresh (int32_t interface, Ipv4Address destination, SourceGroupPair &sgp, PIMHeader &msg)
 {
 	NS_LOG_FUNCTION(this);
@@ -1735,12 +1749,13 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 				if(source == gateway){
 					sgState->upstream->origination = Originator;
 					NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " RecvData NotOriginator -> Originator");
-					if(sgState->upstream->SG_SAT.IsRunning())
-						sgState->upstream->SG_SAT.Cancel();
-					sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
-					sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
-					sgState->upstream->SG_SAT.SetArguments(sgp, interface, gateway);
-					sgState->upstream->SG_SAT.Schedule();
+//					if(sgState->upstream->SG_SAT.IsRunning())
+					sgState->upstream->SG_SAT.Cancel();
+//					sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
+//					sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
+//					sgState->upstream->SG_SAT.SetArguments(sgp, interface, gateway);
+//					sgState->upstream->SG_SAT.Schedule();
+					UpdateSourceActiveTimer(sgp, interface, gateway);
 					if(sgState->upstream->SG_SRT.IsRunning())
 						sgState->upstream->SG_SRT.Cancel();
 					sgState->upstream->SG_SRT.SetDelay(Seconds(RefreshInterval));
@@ -1760,12 +1775,13 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			//	the TTL based on an implementation specific sampling policy to
 			//	avoid examining the TTL of every multicast packet it handles.
 				NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " RecvData NotOriginator -> NotOriginator");
-				if(sgState->upstream->SG_SAT.IsRunning())
-					sgState->upstream->SG_SAT.Cancel();
-				sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
-				sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
-				sgState->upstream->SG_SAT.SetArguments(sgp, interface, gateway);
-				sgState->upstream->SG_SAT.Schedule();
+//				if(sgState->upstream->SG_SAT.IsRunning())
+				sgState->upstream->SG_SAT.Cancel();
+//				sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
+//				sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
+//				sgState->upstream->SG_SAT.SetArguments(sgp, interface, gateway);
+//				sgState->upstream->SG_SAT.Schedule();
+				UpdateSourceActiveTimer(sgp, interface, gateway);
 				double sample = UniformVariable().GetValue();
 				if(sample < TTL_SAMPLE && sourceHeader.GetTtl() > sgState->SG_DATA_TTL){
 					sgState->SG_DATA_TTL += 1;
@@ -2789,12 +2805,13 @@ MulticastRoutingProtocol::SourceDirectlyConnected(SourceGroupPair &sgp)
 			sgState->upstream->SG_SRT.SetFunction(&MulticastRoutingProtocol::SRTTimerExpire, this);
 			sgState->upstream->SG_SRT.SetArguments(sgp, interface);
 			sgState->upstream->SG_SRT.Schedule();
-			if(sgState->upstream->SG_SAT.IsRunning())
-				sgState->upstream->SG_SAT.Cancel();
-			sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
-			sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
-			sgState->upstream->SG_SAT.SetArguments(sgp, interface, destination);
-			sgState->upstream->SG_SAT.Schedule();
+//			if(sgState->upstream->SG_SAT.IsRunning())
+			sgState->upstream->SG_SAT.Cancel();
+//			sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
+//			sgState->upstream->SG_SAT.SetFunction(&MulticastRoutingProtocol::SATTimerExpire, this);
+//			sgState->upstream->SG_SAT.SetArguments(sgp, interface, destination);
+//			sgState->upstream->SG_SAT.Schedule();
+			UpdateSourceActiveTimer(sgp, interface, destination);
 			break;
 		}
 		case Originator:{
