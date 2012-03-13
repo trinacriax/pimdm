@@ -1,7 +1,5 @@
-/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2010 Hajime Tazaki
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
@@ -15,367 +13,241 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Hajime Tazaki <tazaki@sfc.wide.ad.jp>
  */
-/**
- * This is the test code for ipv4-raw-socket-impl.cc.
- */
+
+//
+// Simple example of OLSR routing over some point-to-point links
+//
+// Network topology
+//
+//
+//
+//       C4 C5   C6 C7
+//       -----   -----
+//         |       |
+//         R2 --- R3
+//         |       |
+//  S0 --- R0 --- R1
+//         |       |
+//       -----   -----
+//       C0 C1   C2 C3
+//
+// - all links are point-to-point links with indicated one-way BW/delay
+// - CBR/UDP flows from n0 to n4, and from n3 to n1
+// - UDP packet size of 210 bytes, with per-packet interval 0.00375 sec.
+//   (i.e., DataRate of 448,000 bps)
+// - DropTail queues
+// - Tracing of queues and packet receptions to file "simple-point-to-point-olsr.tr"
+
 #include <iostream>
 #include <fstream>
 #include <cassert>
+#include <string>
 
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
-#include "ns3/point-to-point-module.h"
 #include "ns3/applications-module.h"
-#include "ns3/olsr-routing-protocol.h"
+#include "ns3/csma-helper.h"
+#include "ns3/olsr-helper.h"
 #include "ns3/pimdm-helper.h"
-#include "ns3/pimdm-routing.h"
+#include "ns3/ipv4-static-routing-helper.h"
+#include "ns3/ipv4-list-routing-helper.h"
+#include "ns3/string.h"
+#include "ns3/csma-channel.h"
 
-
-#include "ns3/log.h"
-#include "ns3/socket-factory.h"
-#include "ns3/ipv4-raw-socket-factory.h"
-#include "ns3/simulator.h"
-#include "ns3/simple-channel.h"
-#include "ns3/simple-net-device.h"
-#include "ns3/drop-tail-queue.h"
-#include "ns3/socket.h"
-
-#include "ns3/log.h"
-#include "ns3/node.h"
-#include "ns3/inet-socket-address.h"
-#include "ns3/boolean.h"
-
-#include "ns3/arp-l3-protocol.h"
-#include "ns3/ipv4-l3-protocol.h"
-#include "ns3/icmpv4-l4-protocol.h"
-#include "ns3/ipv4-list-routing.h"
-#include "ns3/ipv4-static-routing.h"
-
-#include <string>
-#include <limits>
-#include <netinet/in.h>
+#include <sstream>
 
 using namespace ns3;
-NS_LOG_COMPONENT_DEFINE ("SocketAx");
 
-class Ipv4RawSocketAx
+NS_LOG_COMPONENT_DEFINE("PimDmExample3");
+
+static void SinkRx (Ptr<const Packet> p, const Address &ad)
 {
-  Ptr<Packet> m_receivedPacket;
-  Ptr<Packet> m_receivedPacket2;
-  void DoSendData (Ptr<Socket> socket, std::string to);
-  void SendData (Ptr<Socket> socket, std::string to);
-  void DoSendData_IpHdr (Ptr<Socket> socket, std::string to);
-  void SendData_IpHdr (Ptr<Socket> socket, std::string to);
-  void AddDevice(Ptr<Node> node, Ptr<SimpleNetDevice> dev, const char* ip);
-public:
-  virtual void DoRun (void);
-
-  void ReceivePacket (Ptr<Socket> socket, Ptr<Packet> packet, const Address &from);
-  void ReceivePacket2 (Ptr<Socket> socket, Ptr<Packet> packet, const Address &from);
-  void ReceivePkt (Ptr<Socket> socket);
-  void ReceivePkt2 (Ptr<Socket> socket);
-};
-
-
-static void AddInternetStack (Ptr<Node> node)
-{
-  //ARP
-  Ptr<ArpL3Protocol> arp = CreateObject<ArpL3Protocol> ();
-  node->AggregateObject (arp);
-  //IPV4
-  Ptr<Ipv4L3Protocol> ipv4 = CreateObject<Ipv4L3Protocol> ();
-  //Routing for Ipv4
-  Ptr<Ipv4ListRouting> ipv4Routing = CreateObject<Ipv4ListRouting> ();
-  Ptr<Ipv4StaticRouting> ipv4staticRouting = CreateObject<Ipv4StaticRouting> ();
-  Ptr<olsr::RoutingProtocol> olsrRouting = CreateObject<olsr::RoutingProtocol> ();
-  Ptr<pimdm::MulticastRoutingProtocol> pimdmRouting = CreateObject<pimdm::MulticastRoutingProtocol> ();
-  ipv4Routing->AddRoutingProtocol (ipv4staticRouting, 0);
-  ipv4Routing->AddRoutingProtocol (olsrRouting, 10);
-  ipv4Routing->AddRoutingProtocol (pimdmRouting, 11);
-  ipv4->SetRoutingProtocol (ipv4Routing);
-
-  node->AggregateObject (ipv4);
-  //ICMP
-  Ptr<Icmpv4L4Protocol> icmp = CreateObject<Icmpv4L4Protocol> ();
-  node->AggregateObject (icmp);
-  // //Ipv4Raw
-  // Ptr<Ipv4UdpL4Protocol> udp = CreateObject<UdpL4Protocol> ();
-  // node->AggregateObject(udp);
+std::cout <<"Received Packet "<< p->GetSize() << " bytes from "<<InetSocketAddress::ConvertFrom (ad).GetIpv4()<< std::endl;
 }
 
-void Ipv4RawSocketAx::ReceivePacket2 (Ptr<Socket> socket, Ptr<Packet> packet, const Address &from)
-{
-  m_receivedPacket2 = packet;
-}
-
-void Ipv4RawSocketAx::ReceivePkt (Ptr<Socket> socket)
-{
-  uint32_t availableData;
-  availableData = socket->GetRxAvailable ();
-  m_receivedPacket = socket->Recv (2, MSG_PEEK);
-  NS_ASSERT (m_receivedPacket->GetSize () == 2);
-  m_receivedPacket = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
-  NS_ASSERT (availableData == m_receivedPacket->GetSize ());
-  //cast availableData to void, to suppress 'availableData' set but not used
-  //compiler warning
-  (void) availableData;
-}
-
-void Ipv4RawSocketAx::ReceivePkt2 (Ptr<Socket> socket)
-{
-  uint32_t availableData;
-  availableData = socket->GetRxAvailable ();
-  m_receivedPacket2 = socket->Recv (2, MSG_PEEK);
-  NS_ASSERT (m_receivedPacket2->GetSize () == 2);
-  m_receivedPacket2 = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
-  NS_ASSERT (availableData == m_receivedPacket2->GetSize ());
-  //cast availableData to void, to suppress 'availableData' set but not used
-  //compiler warning
-  (void) availableData;
-}
-
-void Ipv4RawSocketAx::DoSendData (Ptr<Socket> socket, std::string to)
-{
-  Address realTo = InetSocketAddress (Ipv4Address (to.c_str ()), 0);
-  NS_LOG_DEBUG(socket->SendTo (Create<Packet> (123), 0, realTo)<< 123 << to);
-}
-
-void
-Ipv4RawSocketAx::SendData (Ptr<Socket> socket, std::string to)
-{
-  m_receivedPacket = Create<Packet> ();
-  m_receivedPacket2 = Create<Packet> ();
-  Simulator::ScheduleWithContext(socket->GetNode ()->GetId (), Seconds (4), &Ipv4RawSocketAx::DoSendData, this, socket, to);
-  Simulator::Run ();
-}
-
-void
-Ipv4RawSocketAx::DoSendData_IpHdr (Ptr<Socket> socket, std::string to)
-{
-  Address realTo = InetSocketAddress (Ipv4Address (to.c_str ()), 0);
-  socket->SetAttribute ("IpHeaderInclude", BooleanValue (true));
-  Ptr<Packet> p = Create<Packet> (123);
-  Ipv4Header ipHeader;
-  ipHeader.SetSource (Ipv4Address ("10.0.0.1"));
-  ipHeader.SetDestination (Ipv4Address (to.c_str ()));
-  ipHeader.SetProtocol (0);
-  ipHeader.SetPayloadSize (p->GetSize ());
-  ipHeader.SetTtl (255);
-  p->AddHeader (ipHeader);
-
-  NS_LOG_INFO(socket->SendTo (p, 0, realTo) << 143 << to);
-  socket->SetAttribute ("IpHeaderInclude", BooleanValue (false));
-}
-
-void
-Ipv4RawSocketAx::SendData_IpHdr (Ptr<Socket> socket, std::string to)
-{
-  m_receivedPacket = Create<Packet> ();
-  m_receivedPacket2 = Create<Packet> ();
-  Simulator::ScheduleWithContext (socket->GetNode ()->GetId (), Seconds (4), &Ipv4RawSocketAx::DoSendData_IpHdr, this, socket, to);
-  Simulator::Run ();
-}
-
-
-void
-Ipv4RawSocketAx::AddDevice(Ptr<Node> node, Ptr<SimpleNetDevice> dev, const char* ip){
-	dev = CreateObject<SimpleNetDevice> ();
-	dev->SetAddress (Mac48Address::ConvertFrom (Mac48Address::Allocate ()));
-	node->AddDevice (dev);
-	Ptr<Ipv4> ipv4 = node->GetObject<Ipv4> ();
-	uint32_t netdev_idx = ipv4->AddInterface (dev);
-	Ipv4InterfaceAddress ipv4Addr = Ipv4InterfaceAddress (Ipv4Address(ip), Ipv4Mask (0xffff0000U));
-	ipv4->AddAddress (netdev_idx, ipv4Addr);
-	ipv4->SetUp (netdev_idx);
-}
-
-void
-Ipv4RawSocketAx::DoRun (void)
-{
-  // Create topology
-
-// 0 <-> 2 <-> 1
-	// Sender Node 0
-
-	Ptr<Node> rxNode = CreateObject<Node> ();
-	AddInternetStack (rxNode);
-	Ptr<SimpleNetDevice> rxDev1, rxDev2;
-	{ // first interface
-	rxDev1 = CreateObject<SimpleNetDevice> ();
-	rxDev1->SetAddress (Mac48Address::ConvertFrom (Mac48Address::Allocate ()));
-	rxNode->AddDevice (rxDev1);
-	Ptr<Ipv4> ipv4 = rxNode->GetObject<Ipv4> ();
-	uint32_t netdev_idx = ipv4->AddInterface (rxDev1);
-	Ipv4InterfaceAddress ipv4Addr = Ipv4InterfaceAddress (Ipv4Address ("10.0.0.1"), Ipv4Mask (0xffff0000U));
-	ipv4->AddAddress (netdev_idx, ipv4Addr);
-	ipv4->SetUp (netdev_idx);
-	}
-
-	{ // second interface
-	rxDev2 = CreateObject<SimpleNetDevice> ();
-	rxDev2->SetAddress (Mac48Address::ConvertFrom (Mac48Address::Allocate ()));
-	rxNode->AddDevice (rxDev2);
-	Ptr<Ipv4> ipv4 = rxNode->GetObject<Ipv4> ();
-	uint32_t netdev_idx = ipv4->AddInterface (rxDev2);
-	Ipv4InterfaceAddress ipv4Addr = Ipv4InterfaceAddress (Ipv4Address ("10.0.1.1"), Ipv4Mask (0xffff0000U));
-	ipv4->AddAddress (netdev_idx, ipv4Addr);
-	ipv4->SetUp (netdev_idx);
-	}
-
-	// Sender Node
-	  Ptr<Node> txNode = CreateObject<Node> ();
-	  AddInternetStack (txNode);
-	  Ptr<SimpleNetDevice> txDev1;
-	  {
-	    txDev1 = CreateObject<SimpleNetDevice> ();
-	    txDev1->SetAddress (Mac48Address::ConvertFrom (Mac48Address::Allocate ()));
-	    txNode->AddDevice (txDev1);
-	    Ptr<Ipv4> ipv4 = txNode->GetObject<Ipv4> ();
-	    uint32_t netdev_idx = ipv4->AddInterface (txDev1);
-	    Ipv4InterfaceAddress ipv4Addr = Ipv4InterfaceAddress (Ipv4Address ("10.0.0.2"), Ipv4Mask (0xffff0000U));
-	    ipv4->AddAddress (netdev_idx, ipv4Addr);
-	    ipv4->SetUp (netdev_idx);
-	  }
-	  Ptr<SimpleNetDevice> txDev2;
-	  {
-	    txDev2 = CreateObject<SimpleNetDevice> ();
-	    txDev2->SetAddress (Mac48Address::ConvertFrom (Mac48Address::Allocate ()));
-	    txNode->AddDevice (txDev2);
-	    Ptr<Ipv4> ipv4 = txNode->GetObject<Ipv4> ();
-	    uint32_t netdev_idx = ipv4->AddInterface (txDev2);
-	    Ipv4InterfaceAddress ipv4Addr = Ipv4InterfaceAddress (Ipv4Address ("10.0.1.2"), Ipv4Mask (0xffff0000U));
-	    ipv4->AddAddress (netdev_idx, ipv4Addr);
-	    ipv4->SetUp (netdev_idx);
-	  }
-	  // link the two nodes
-	  Ptr<SimpleChannel> channel1 = CreateObject<SimpleChannel> ();
-	  rxDev1->SetChannel (channel1);
-	  txDev1->SetChannel (channel1);
-
-	  Ptr<SimpleChannel> channel2 = CreateObject<SimpleChannel> ();
-	  rxDev2->SetChannel (channel2);
-	  txDev2->SetChannel (channel2);
-
-//	  Ptr<SimpleChannel> channel2 = CreateObject<SimpleChannel> ();
-//	  rxDev2->SetChannel (channel2);
-//	  txDev2->SetChannel (channel2);
-
-	// Create the IPv4 Raw sockets
-	Ptr<SocketFactory> rxSocketFactory = rxNode->GetObject<Ipv4RawSocketFactory> ();
-	Ptr<Socket> rxSocket = rxSocketFactory->CreateSocket ();
-	NS_LOG_DEBUG(rxSocket->Bind (InetSocketAddress (Ipv4Address ("0.0.0.0"), 0))<< 0<< "trivial");
-	rxSocket->SetRecvCallback (MakeCallback (&Ipv4RawSocketAx::ReceivePkt, this));
-
-	Ptr<Socket> rxSocket2 = rxSocketFactory->CreateSocket ();
-	rxSocket2->SetRecvCallback (MakeCallback (&Ipv4RawSocketAx::ReceivePkt2, this));
-	NS_LOG_DEBUG(rxSocket2->Bind (InetSocketAddress (Ipv4Address ("10.0.1.1"), 0))<< 0<< "trivial");
-
-	Ptr<SocketFactory> txSocketFactory = txNode->GetObject<Ipv4RawSocketFactory> ();
-	Ptr<Socket> txSocket = txSocketFactory->CreateSocket ();
-
-	txSocket->SetAttribute("Protocol",UintegerValue(PIM_IP_PROTOCOL_NUM));
-	txSocket->SetAttribute("IpHeaderInclude",BooleanValue(true));
-
-  // ------ Now the tests ------------
-
-  // Unicast test
-  SendData (txSocket, "10.0.0.1");
-  NS_LOG_DEBUG (m_receivedPacket->GetSize ()<<  143<<  "recv: 10.0.0.1");
-  NS_LOG_DEBUG (m_receivedPacket2->GetSize ()<<  0<<  "second interface should not receive it");
-
-  m_receivedPacket->RemoveAllByteTags ();
-  m_receivedPacket2->RemoveAllByteTags ();
-
-  // Unicast w/ header test
-  SendData_IpHdr (txSocket, "10.0.0.2");
-  NS_LOG_DEBUG (m_receivedPacket->GetSize ()<<  143<<  "recv(hdrincl): 10.0.0.1");
-  NS_LOG_DEBUG (m_receivedPacket2->GetSize ()<< 0<<  "second interface should not receive it");
-
-  m_receivedPacket->RemoveAllByteTags ();
-  m_receivedPacket2->RemoveAllByteTags ();
-
-#if 0
-  // Simple broadcast test
-
-  SendData (txSocket, "255.255.255.255");
-  NS_TEST_EXPECT_MSG_EQ (m_receivedPacket->GetSize (), 143, "recv: 255.255.255.255");
-  NS_TEST_EXPECT_MSG_EQ (m_receivedPacket2->GetSize (), 0, "second socket should not receive it (it is bound specifically to the second interface's address");
-
-  m_receivedPacket->RemoveAllByteTags ();
-  m_receivedPacket2->RemoveAllByteTags ();
-#endif
-
-  // Simple Link-local multicast test
-
-  txSocket->Bind (InetSocketAddress (Ipv4Address ("10.0.0.2"), 0));
-  SendData (txSocket, "224.0.0.9");
-  NS_LOG_DEBUG (m_receivedPacket->GetSize () << 143 << "recv: 224.0.0.9");
-  NS_LOG_DEBUG (m_receivedPacket2->GetSize () << 0 << "second socket should not receive it (it is bound specifically to the second interface's address");
-
-  m_receivedPacket->RemoveAllByteTags ();
-  m_receivedPacket2->RemoveAllByteTags ();
-
-#if 0
-  // Broadcast test with multiple receiving sockets
-
-  // When receiving broadcast packets, all sockets sockets bound to
-  // the address/port should receive a copy of the same packet -- if
-  // the socket address matches.
-  rxSocket2->Dispose ();
-  rxSocket2 = rxSocketFactory->CreateSocket ();
-  rxSocket2->SetRecvCallback (MakeCallback (&Ipv4RawSocketImplTest::ReceivePkt2, this));
-//  NS_TEST_EXPECT_MSG_EQ (rxSocket2->Bind (InetSocketAddress (Ipv4Address ("0.0.0.0"), 0)), 0, "trivial");
-
-  SendData (txSocket, "255.255.255.255");
-//  NS_TEST_EXPECT_MSG_EQ (m_receivedPacket->GetSize (), 143, "recv: 255.255.255.255");
-//  NS_TEST_EXPECT_MSG_EQ (m_receivedPacket2->GetSize (), 143, "recv: 255.255.255.255");
-#endif
-
-  m_receivedPacket = 0;
-  m_receivedPacket2 = 0;
-
-  Simulator::Destroy ();
-}
-
-
-int
-main (int argc, char *argv[]){
+int main(int argc, char *argv[]) {
 	// Users may find it convenient to turn on explicit debugging
 	// for selected modules; the below lines suggest how to do this
-	#if 1
-	//	LogComponentEnable ("SimpleGlobalRoutingExample", LOG_LEVEL_INFO);
-	//	LogComponentEnable ("MacLow", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	//	LogComponentEnable ("YansWifiChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("ObjectBase", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("OnOffApplication", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("PacketSink", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("OlsrRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("Ipv4L3Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
+#if 1
+	LogComponentEnable ("PimDmExample3",LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("OnOffApplication", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+	LogComponentEnable ("PIMDMMulticastRouting",LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("AodvRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("OlsrRoutingProtocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("UdpL4Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Ipv4ListRouting", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("UdpSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Ipv4L3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Ipv4EndPointDemux", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Socket", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Ipv4Interface", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
 //	LogComponentEnable ("CsmaNetDevice", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("CsmaChannel", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("CsmaHelper", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("Socket", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("Node", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("Ipv4EndPointDemux", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("Ipv4RawSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("Packet", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("SocketAx", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	LogComponentEnable ("DefaultSimulatorImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-	#endif
+//	LogComponentEnable ("Node", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("InterferenceHelper", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("ArpL3Protocol", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("ArpCache", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("Packet", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+//	LogComponentEnable ("DefaultSimulatorImpl", LogLevel(LOG_LEVEL_ALL | LOG_PREFIX_TIME | LOG_PREFIX_NODE| LOG_PREFIX_FUNC));
+#endif
 
-	 CommandLine cmd;
-		  bool enableFlowMonitor = false;
-		  cmd.AddValue ("EnableMonitor", "Enable Flow Monitor", enableFlowMonitor);
-		  cmd.Parse (argc, argv);
+	CommandLine cmd;
+	cmd.Parse(argc, argv);
 
-		  Ipv4RawSocketAx ax;
-		  ax.DoRun();
+	// Here, we will explicitly create four nodes.  In more sophisticated
+	// topologies, we could configure a node factory.
+	NS_LOG_INFO("Create nodes.");
 
-  return 1;
+	int32_t simTime, senderStart, receiverStart;
+	simTime = 200;
+	senderStart = 50;
+	receiverStart = 50;
+	NodeContainer source;
+	source.Create(1); // source
+
+	NodeContainer pimRouters;
+	pimRouters.Create(4);
+	// node 0 is the sender
+	NodeContainer n0n1 = NodeContainer(pimRouters.Get(0), pimRouters.Get(1));
+	NodeContainer n0n2 = NodeContainer(pimRouters.Get(0), pimRouters.Get(2));
+	NodeContainer n1n3 = NodeContainer(pimRouters.Get(1), pimRouters.Get(3));
+	NodeContainer n2n3 = NodeContainer(pimRouters.Get(2), pimRouters.Get(3));
+
+	NodeContainer s0n0 = NodeContainer(source.Get(0), pimRouters.Get(0));
+
+	NodeContainer pimClients;
+	pimClients.Create(8); // here clients: 5-8
+	NodeContainer c1 = NodeContainer(pimRouters.Get(0), pimClients.Get(0), pimClients.Get(1));
+	NodeContainer c2 = NodeContainer(pimRouters.Get(1), pimClients.Get(2), pimClients.Get(3));
+	NodeContainer c3 = NodeContainer(pimRouters.Get(2), pimClients.Get(4), pimClients.Get(5));
+	NodeContainer c4 = NodeContainer(pimRouters.Get(3), pimClients.Get(6), pimClients.Get(7));
+
+	// connect all our nodes to a shared channel.
+	NS_LOG_INFO("Build Topology.");
+	CsmaHelper csma;
+	csma.SetChannelAttribute("DataRate", DataRateValue(DataRate(5000000)));
+	csma.SetChannelAttribute("Delay", TimeValue(MilliSeconds(2)));
+	csma.SetDeviceAttribute("EncapsulationMode", StringValue("Llc"));
+
+	NS_LOG_INFO("Build Topology: clients on interface 1");
+	NetDeviceContainer d1c1 = csma.Install(c1);
+	NetDeviceContainer d2c2 = csma.Install(c2);
+	NetDeviceContainer d3c3 = csma.Install(c3);
+	NetDeviceContainer d4c4 = csma.Install(c4);
+
+	NS_LOG_INFO("Build Topology: routers on other interfaces");
+	NetDeviceContainer d0d1 = csma.Install(n0n1);
+	NetDeviceContainer d0d2 = csma.Install(n0n2);
+	NetDeviceContainer d1d3 = csma.Install(n1n3);
+	NetDeviceContainer d2d3 = csma.Install(n2n3);
+
+	NetDeviceContainer d0s0 = csma.Install(s0n0);
+
+	// Enable OLSR unicast routing protocol
+	NS_LOG_INFO("Enabling OLSR Routing.");
+	OlsrHelper olsr;
+	NS_LOG_INFO("Enabling PIM-DM Routing.");
+	PimDmHelper pimdm;
+
+	Ipv4StaticRoutingHelper staticRouting;
+	Ipv4ListRoutingHelper list;
+	list.Add(staticRouting, 0);
+	list.Add(olsr, 10);
+	list.Add(pimdm, 11);
+
+	InternetStackHelper internet;
+	internet.SetRoutingHelper(list);
+	internet.Install(pimRouters);
+
+	Ipv4ListRoutingHelper list2;
+	list2.Add(staticRouting, 0);
+	list2.Add(olsr, 10);
+
+	InternetStackHelper internet2;
+	internet2.SetRoutingHelper(list2);
+	internet2.Install(pimClients);
+	internet2.Install(source);
+
+	// Later, we add IP addresses.
+	NS_LOG_INFO("Assign IP Addresses: clients.");
+	Ipv4AddressHelper ipv4;
+
+	ipv4.SetBase("10.2.0.0", "255.255.255.0");
+	Ipv4InterfaceContainer i0c = ipv4.Assign(d1c1);
+
+	ipv4.SetBase("10.2.1.0", "255.255.255.0");
+	Ipv4InterfaceContainer i1c = ipv4.Assign(d2c2);
+
+	ipv4.SetBase("10.2.2.0", "255.255.255.0");
+	Ipv4InterfaceContainer i2c = ipv4.Assign(d3c3);
+
+	ipv4.SetBase("10.2.3.0", "255.255.255.0");
+	Ipv4InterfaceContainer i3c = ipv4.Assign(d4c4);
+
+	NS_LOG_INFO("Assign IP Addresses: routers.");
+	ipv4.SetBase("10.2.4.0", "255.255.255.0");
+	Ipv4InterfaceContainer i01 = ipv4.Assign(d0d1);
+
+	ipv4.SetBase("10.2.5.0", "255.255.255.0");
+	Ipv4InterfaceContainer i02 = ipv4.Assign(d0d2);
+
+	ipv4.SetBase("10.2.6.0", "255.255.255.0");
+	Ipv4InterfaceContainer i13 = ipv4.Assign(d1d3);
+
+	ipv4.SetBase("10.2.7.0", "255.255.255.0");
+	Ipv4InterfaceContainer i23 = ipv4.Assign(d2d3);
+
+	ipv4.SetBase("10.0.0.0", "255.255.255.0");
+	Ipv4InterfaceContainer i00 = ipv4.Assign(d0s0);
+
+	NS_LOG_INFO("Configure multicasting.");
+	Ipv4Address multicastSource("10.0.0.1");
+	Ipv4Address multicastSourceR("10.0.0.2");
+	Ipv4Address multicastGroup("225.1.2.4");
+
+	Ptr<Ipv4> ipv4A = source.Get(0)->GetObject<Ipv4>();
+	Ptr<Ipv4StaticRouting> staticRoutingA = staticRouting.GetStaticRouting(ipv4A);
+	staticRoutingA->AddHostRouteTo(multicastGroup, multicastSourceR, 1); //just one entry to set first hop from the source
+
+	NS_LOG_INFO("Registering clients");
+	std::stringstream ss;
+	// source,group,interface
+	ss << multicastSource << "," << multicastGroup;
+	Config::Set("NodeList/[1-4]/$ns3::pimdm::MulticastRoutingProtocol/RegisterSG", StringValue(ss.str()));
+	ss << "," << "1";
+	Config::Set("NodeList/[1-4]/$ns3::pimdm::MulticastRoutingProtocol/RegisterAsMember", StringValue(ss.str()));
+
+	NS_LOG_INFO("Create Source");
+	InetSocketAddress dst = InetSocketAddress(multicastGroup, 703);//703 is the port
+	Config::SetDefault("ns3::UdpSocket::IpMulticastTtl", UintegerValue(1));
+	OnOffHelper onoff = OnOffHelper("ns3::UdpSocketFactory", dst);
+	onoff.SetAttribute("OnTime", RandomVariableValue(ConstantVariable(1.0)));
+	onoff.SetAttribute("OffTime", RandomVariableValue(ConstantVariable(0.0)));
+	onoff.SetAttribute("DataRate", DataRateValue(DataRate(15000)));
+	onoff.SetAttribute("PacketSize", UintegerValue(1200));
+
+	ApplicationContainer apps = onoff.Install(source.Get(0));
+	apps.Start(Seconds(senderStart));
+	apps.Stop(Seconds(70.0));
+
+	NS_LOG_INFO("Create Sink.");
+	PacketSinkHelper sink = PacketSinkHelper("ns3::UdpSocketFactory", dst);
+	apps = sink.Install(pimClients);
+	apps.Start(Seconds(receiverStart));
+	apps.Stop(Seconds(80.0));
+	Config::ConnectWithoutContext("/NodeList/[5-12]/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback(&SinkRx));
+
+	Simulator::Stop(Seconds(simTime));
+
+	NS_LOG_INFO("Run Simulation.");
+	Simulator::Run();
+	Simulator::Destroy();
+	NS_LOG_INFO("Done.");
+
+	return 0;
 }
-
