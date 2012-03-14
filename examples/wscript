@@ -13,9 +13,3 @@ def build(bld):
     obj = bld.create_ns3_program('pim-example-4',
 			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'visualizer'])
     obj.source = 'pim-example-4.cc'
-    obj = bld.create_ns3_program('pim-example-graft',
-			['point-to-point', 'internet', 'olsr', 'aodv', 'pimdm', 'applications', 'visualizer'])
-    obj.source = 'pim-example-graft.cc'
-    obj = bld.create_ns3_program('push-over-pim-wired', 
-            ['internet', 'olsr', 'aodv', 'pimdm', 'csma', 'flow-monitor'])
-    obj.source = 'push-over-pim-wired.cc'
