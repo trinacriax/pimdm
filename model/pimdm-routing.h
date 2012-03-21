@@ -270,7 +270,7 @@ private:
 	void DisablePimInterface(int32_t interface);
 	bool GetPimInterface(int32_t interface);
 
-	Ipv4Address GetLocalAddress (int32_t interface);
+	Ipv4Address GetLocalAddress (uint32_t interface);
 	bool isValidGateway(Ipv4Address gw);
 
 	// From Ipv4RoutingProtocol
@@ -422,14 +422,14 @@ private:
 	 * Downstream Interface.
 	 * All interfaces that are not the upstream interface, including the router itself.
 	 */
-	bool IsDownstream (int32_t interface, SourceGroupPair sgpair);
-	bool IsDownstream (int32_t interface, Ipv4Address source, Ipv4Address group);
+	bool IsDownstream (uint32_t interface, SourceGroupPair sgpair);
+	bool IsDownstream (uint32_t interface, Ipv4Address source, Ipv4Address group);
 	/**
 	 * Upstream Interface.
 	 * Interface toward the source of the datagram. Also known as the RPF Interface.
 	 */
-	bool IsUpstream (int32_t interface, SourceGroupPair sgpair);
-	bool IsUpstream (int32_t interface, Ipv4Address source, Ipv4Address group);
+	bool IsUpstream (uint32_t interface, SourceGroupPair sgpair);
+	bool IsUpstream (uint32_t interface, Ipv4Address source, Ipv4Address group);
 
 	void SendPacket (Ptr<Packet> packet, const PIMMessageList &containedMessages);
 
@@ -452,7 +452,7 @@ private:
 	void InsertSourceGroupList (int32_t interface);
 	SourceGroupList* FindSourceGroupList (int32_t interface);
 	void EraseSourceGroupList (int32_t interface);
-	void InsertSourceGroupState (int32_t interface, SourceGroupPair sgp);
+	void InsertSourceGroupState (uint32_t interface, SourceGroupPair sgp);
 	SourceGroupState* FindSourceGroupState (int32_t interface, const SourceGroupPair &sgp);
 	SourceGroupState* FindSourceGroupState (int32_t interface, const SourceGroupPair &sgp, bool add);
 	SourceGroupState* FindSourceGroupState (int32_t interface, const Ipv4Address source, const Ipv4Address group);
@@ -603,7 +603,7 @@ private:
 
 	void CouldAssertCheck (Ipv4Address source, Ipv4Address group, int32_t interface, Ipv4Address destination, bool couldAssert);
 
-	bool CouldAssert (Ipv4Address source, Ipv4Address group, int32_t interface);
+	bool CouldAssert (Ipv4Address source, Ipv4Address group, uint32_t interface);
 
 	struct AssertMetric spt_assert_metric (Ipv4Address source, int32_t interface) ;
 
