@@ -15,6 +15,7 @@
  *
  */
 
+/*
 //
 // Simple example of OLSR routing over some point-to-point links
 //
@@ -38,6 +39,7 @@
 //   (i.e., DataRate of 448,000 bps)
 // - DropTail queues
 // - Tracing of queues and packet receptions to file "simple-point-to-point-olsr.tr"
+*/
 
 #include <iostream>
 #include <fstream>
