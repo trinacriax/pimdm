@@ -378,7 +378,7 @@ struct NeighborhoodStatus{
 	~NeighborhoodStatus(){}
 };
 
-typedef std::pair<int32_t, Ipv4Address> WiredEquivalentInterface ;	///< Neighbor List.
+typedef std::pair<uint32_t, Ipv4Address> WiredEquivalentInterface ;	///< Neighbor List.
 
 }}; // namespace ns3, pimdm
 
