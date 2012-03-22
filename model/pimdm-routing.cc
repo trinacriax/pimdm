@@ -596,10 +596,9 @@ MulticastRoutingProtocol::NotifyInterfaceDown (uint32_t i)
 }
 
 void
-MulticastRoutingProtocol::NotifyAddAddress (uint32_t j, Ipv4InterfaceAddress address)
+MulticastRoutingProtocol::NotifyAddAddress (uint32_t i, Ipv4InterfaceAddress address)
 {
 	NS_LOG_FUNCTION(this << GetObject<Node> ()->GetId());
-	uint32_t i = (uint32_t)j;
 	Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	if (addr == Ipv4Address::GetLoopback())
 		return;
@@ -779,7 +778,7 @@ MulticastRoutingProtocol::IsUpstream (uint32_t interface, Ipv4Address source, Ip
 {
 	NS_ASSERT(interface>0 && interface<m_ipv4->GetNInterfaces());
 	uint32_t rpfPair = RPF_interface(source, group);
-	return (((uint32_t)interface) == rpfPair);
+	return (interface == rpfPair);
 }
 
 Ptr<Ipv4Route>
