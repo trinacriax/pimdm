@@ -53,7 +53,7 @@ NS_LOG_COMPONENT_DEFINE ("PIMDMMulticastRouting");
 NS_OBJECT_ENSURE_REGISTERED (MulticastRoutingProtocol);
 
 MulticastRoutingProtocol::MulticastRoutingProtocol() :
-		m_mainInterface(0), m_generationID(0),  m_startTime(0), m_mainAddress(Ipv4Address()),
+		m_mainInterface(0),  m_mainAddress(Ipv4Address()), m_generationID(0),  m_startTime(0),
 		m_stopTx(false), m_routingTableAssociation(0), m_ipv4 (0), m_identification(0),
 		m_routingProtocol(0), m_lo(0), m_rpfChecker(Timer::CANCEL_ON_DESTROY)
 {
@@ -117,15 +117,14 @@ MulticastRoutingProtocol::GetTypeId (void)
 
 
 uint16_t
-MulticastRoutingProtocol::GetRouteMetric(int32_t interface, Ipv4Address source)
+MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
 {// The cost metric of the unicast route to the source.  The metric is in units applicable to the unicast routing protocol used.
   Ptr<Ipv4RoutingProtocol> rp_Gw = (m_ipv4->GetRoutingProtocol ());
   Ptr<Ipv4ListRouting> lrp_Gw = DynamicCast<Ipv4ListRouting> (rp_Gw);
   Ptr<olsr::RoutingProtocol> olsr_Gw;
   Ptr<aodv::RoutingProtocol> aodv_Gw;
   Ptr<mbn::RoutingProtocol> mbnaodv_Gw;
-//  Ptr<dsdv::RoutingProtocol> dsdv_Gw;
-  for (int32_t i = 0; i < lrp_Gw->GetNRoutingProtocols ();  i++)
+  for (uint32_t i = 0; i < lrp_Gw->GetNRoutingProtocols ();  i++)
 	{
 	  int16_t priority;
 	  Ptr<Ipv4RoutingProtocol> temp = lrp_Gw->GetRoutingProtocol (i, priority);
@@ -165,7 +164,7 @@ MulticastRoutingProtocol::GetRouteMetric(int32_t interface, Ipv4Address source)
 }
 
 uint16_t
-MulticastRoutingProtocol::GetMetricPreference(int32_t interface)
+MulticastRoutingProtocol::GetMetricPreference(uint32_t interface)
 {
 	/*
 	 * The preference value is used in the case the upstream routers run different unicast routing protocols.
@@ -175,13 +174,13 @@ MulticastRoutingProtocol::GetMetricPreference(int32_t interface)
 }
 
 void
-MulticastRoutingProtocol::registerMember (Ipv4Address source, Ipv4Address group, int32_t interface)
+MulticastRoutingProtocol::registerMember (Ipv4Address source, Ipv4Address group, uint32_t interface)
 {
 	NS_LOG_DEBUG("Register interface with members for ("<<source<<","<<group<<") over interface "<< interface);
 	SourceGroupPair sgp (source,group);
 	if(m_LocalReceiver.find(sgp)==m_LocalReceiver.end()){//add a new receiver on a specific (source,group) on a given interface
-		std::set<int32_t> iface;
-		m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<int32_t> >(sgp,iface));
+		std::set<uint32_t> iface;
+		m_LocalReceiver.insert(std::pair<SourceGroupPair, std::set<uint32_t> >(sgp,iface));
 		NS_LOG_DEBUG("Adding Source-Group ("<<source<<","<<group<<") to the map");
 	}
 	if(m_LocalReceiver.find(sgp)->second.find(interface) == m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
@@ -189,13 +188,13 @@ MulticastRoutingProtocol::registerMember (Ipv4Address source, Ipv4Address group,
 		NS_LOG_DEBUG("Adding interface " << interface<< " to ("<<source<<","<<group<<")");
 	}
 	else NS_LOG_DEBUG("Interface " << interface<< " already registered for ("<<source<<","<<group<<")");
-	int32_t sources = m_mrib.find(group)->second.mgroup.size();
+	uint32_t sources = m_mrib.find(group)->second.mgroup.size();
 	NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< sources << " #Clients "<< m_LocalReceiver.find(sgp)->second.size());
 	UpstreamStateMachine(sgp);
 }
 
 void
-MulticastRoutingProtocol::unregisterMember (Ipv4Address source, Ipv4Address group, int32_t interface){
+MulticastRoutingProtocol::unregisterMember (Ipv4Address source, Ipv4Address group, uint32_t interface){
 	NS_LOG_DEBUG("UnRegister interface with members for ("<<source<<","<<group<<") over interface "<< interface);
 	SourceGroupPair sgp (source,group);
 	if(m_LocalReceiver.find(sgp)->second.find(interface) != m_LocalReceiver.find(sgp)->second.end() && interface >0 && interface<m_ipv4->GetNInterfaces()){
@@ -207,7 +206,6 @@ MulticastRoutingProtocol::unregisterMember (Ipv4Address source, Ipv4Address grou
 		NS_LOG_DEBUG("Removing Source-Group ("<<source<<","<<group<<") to the map");
 	}
 	else NS_LOG_DEBUG("No clients on interface " << interface<< " for ("<<source<<","<<group<<")");
-	int32_t sources = m_mrib.find(group)->second.mgroup.size();
 	UpstreamStateMachine(sgp);
 }
 
