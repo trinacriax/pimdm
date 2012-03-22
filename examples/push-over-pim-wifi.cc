@@ -225,7 +225,7 @@ main (int argc, char *argv[])
 	/// Client stop
 	double clientStop = totalTime;
 	/// Flow Monitor
-	bool enableFlowMonitor = false;
+//	bool enableFlowMonitor = false;
 	/// Run
 	uint32_t run = 2;
 
