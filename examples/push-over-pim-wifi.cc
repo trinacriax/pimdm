@@ -1,36 +1,26 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License version 2 as
-* published by the Free Software Foundation;
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-*/
-
-//
-//
-// Network topology
-//
-//           7
-//           |
-//           0
-//          / \
-//         /   \
-//  4 --- 1     3 --- 6
-//         \   /
-//          \ /
-//           2
-//           |
-//           5
-//
+ * Copyright (c) 2011 University of Trento, Italy
+ * 					  University of California, Los Angeles, U.S.A.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation;
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
+ * Authors: Alessandro Russo <russo@disi.unitn.it>
+ *          University of Trento, Italy
+ *          University of California, Los Angeles U.S.A.
+ */
 
 #ifndef NS3_LOG_ENABLE
 	#define NS3_LOG_ENABLE
@@ -73,12 +63,12 @@ NS_LOG_COMPONENT_DEFINE ("PushPimWifi");
 
 static bool g_verbose = false;
 
-int
+uint32_t
 GetNodeID (std::string context){
-	int p3 = 0;
+	uint32_t p3 = 0;
 	if(g_verbose){
-		int p2 = context.find("/");
-		int p1 = context.find("/",p2+1);
+		uint32_t p2 = context.find("/");
+		uint32_t p1 = context.find("/",p2+1);
 		p2 = context.find("/",p1+1);
 		std::string str = context.substr(p1+1, (p2-p1)-1);
 		p3 = atoi(str.c_str());
@@ -406,12 +396,12 @@ main (int argc, char *argv[])
 	std::stringstream ss;
 	// source,group,interface
 	ss<< multicastSource<< "," << multicastGroup;// << "," << "1";
-	for (int n = 0;  n < routers.GetN() ; n++){
+	for (uint32_t n = 0;  n < routers.GetN() ; n++){
 		std::stringstream command;//create a stringstream
 		command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterSG";
 		Config::Set(command.str(), StringValue(ss.str()));
 	}
-	for (int n = 0;  n < routers.GetN() ; n++){
+	for (uint32_t n = 0;  n < routers.GetN() ; n++){
 		std::stringstream command;//create a stringstream
 		ss.str("");
 		ss<< multicastSource<< "," << multicastGroup << "," << "1";
@@ -432,23 +422,23 @@ main (int argc, char *argv[])
 				Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
 //			}
 
-//			for (int n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
+//			for (uint32_t n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
 //				std::stringstream command;
 //				command<< "/NodeList/"<<clients.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
 //				Config::Set(command.str(), EnumValue(mbn::RN_NODE));
 //			}
-			for (int n = 0;  n < source.GetN() ; n++){//SOURCE is BN so it can Tx
+			for (uint32_t n = 0;  n < source.GetN() ; n++){//SOURCE is BN so it can Tx
 				std::stringstream command;
 				command<< "/NodeList/"<<source.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
 				Config::Set(command.str(), EnumValue(mbn::BN_NODE));
 			}
 
-			for (int n = 0;  n < routers.GetN() ; n++){//ROUTERS are BCN nodes
+			for (uint32_t n = 0;  n < routers.GetN() ; n++){//ROUTERS are BCN nodes
 				std::stringstream command;//create a stringstream
 				command<< "/NodeList/"<<routers.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
 				Config::Set(command.str(), EnumValue(mbn::BCN_NODE));
 			}
-//				for(int i = 0; i < routers.GetN(); i++){
+//				for(uint32_t i = 0; i < routers.GetN(); i++){
 //					std::stringstream ss;
 //					ss << "/NodeList/"<<i<<"/$ns3::mbn::RoutingProtocol/localWeight";
 //					uint32_t weight = (uint32_t)UintegerValue(UniformVariable().GetValue()*100.0);
@@ -573,7 +563,7 @@ if(g_verbose){
 	mobilityS.SetMobilityModel("ns3::ConstantPositionMobilityModel");
 	mobilityS.Install(source);
 
-	for(int i = 0; i < allNodes.GetN(); i++){
+	for(uint32_t i = 0; i < allNodes.GetN(); i++){
 		  Ptr<MobilityModel> mobility = allNodes.Get(i)->GetObject<MobilityModel> ();
 	      Vector pos = mobility->GetPosition (); // Get position
 	      NS_LOG_DEBUG("Position Node ["<<i<<"] = ("<< pos.x << ", " << pos.y<<", "<<pos.z<<")");

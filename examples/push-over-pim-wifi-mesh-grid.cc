@@ -1,36 +1,26 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License version 2 as
-* published by the Free Software Foundation;
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-*/
-
-//
-//
-// Network topology
-//
-//           7
-//           |
-//           0
-//          / \
-//         /   \
-//  4 --- 1     3 --- 6
-//         \   /
-//          \ /
-//           2
-//           |
-//           5
-//
+ * Copyright (c) 2011 University of Trento, Italy
+ * 					  University of California, Los Angeles, U.S.A.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation;
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
+ * Authors: Alessandro Russo <russo@disi.unitn.it>
+ *          University of Trento, Italy
+ *          University of California, Los Angeles U.S.A.
+ */
 
 #ifndef NS3_LOG_ENABLE
 	#define NS3_LOG_ENABLE
@@ -84,8 +74,8 @@ struct mycontext{
 //0x6be458 "/NodeList/10/$ns3::igmpx::IGMPXRoutingProtocol/TxIgmpxControl"
 struct mycontext GetContextInfo (std::string context){
 	struct mycontext mcontext;
-	int p2 = context.find("/");
-	int p1 = context.find("/",p2+1);
+	uint32_t p2 = context.find("/");
+	uint32_t p1 = context.find("/",p2+1);
 	p2 = context.find("/",p1+1);
 	mcontext.id = atoi(context.substr(p1+1, (p2-p1)-1).c_str());
 //	std::cout<<"P1 = "<<p1<< " P2 = "<< p2 << " ID: " <<mcontext.id;
@@ -102,12 +92,12 @@ static void GenericPacketTrace (std::string context, Ptr<const Packet> p)
 	std::cout << Simulator::Now() << " Node "<< mc.id << " "<< mc.callback << " " << p->GetSize()  <<  std::endl;
 }
 
-int
+uint32_t
 GetNodeID (std::string context){
-	int p3 = 0;
+	uint32_t p3 = 0;
 	if(g_verbose){
-		int p2 = context.find("/");
-		int p1 = context.find("/",p2+1);
+		uint32_t p2 = context.find("/");
+		uint32_t p1 = context.find("/",p2+1);
 		p2 = context.find("/",p1+1);
 		std::string str = context.substr(p1+1, (p2-p1)-1);
 		p3 = atoi(str.c_str());
@@ -131,25 +121,25 @@ static void TableChanged (std::string context, uint32_t size)
 std::cout << Simulator::Now() << "  Node "<< GetNodeID(context) <<" Table changed "<< size  << " entries " << std::endl;
 }
 
-static void PIMControlTx (Ptr<const Packet> p)
-{
-std::cout << Simulator::Now() <<" PIMDM Control TX "<<  p->GetSize()<< " bytes " << std::endl;
-}
-
-static void PIMControlRx (Ptr<const Packet> p)
-{
-std::cout << Simulator::Now() <<" PIMDM Control RX "<<  p->GetSize()<< " bytes " << std::endl;
-}
-
-static void PIMDataTx (Ptr<const Packet> p)
-{
-std::cout << Simulator::Now() <<" PIMDM Data TX "<< p->GetSize()<< " bytes " << std::endl;
-}
-
-static void PIMDataRx (Ptr<const Packet> p)
-{
-std::cout << Simulator::Now() <<" PIMDM Data RX "<< p->GetSize()<< " bytes " << std::endl;
-}
+//static void PIMControlTx (Ptr<const Packet> p)
+//{
+//std::cout << Simulator::Now() <<" PIMDM Control TX "<<  p->GetSize()<< " bytes " << std::endl;
+//}
+//
+//static void PIMControlRx (Ptr<const Packet> p)
+//{
+//std::cout << Simulator::Now() <<" PIMDM Control RX "<<  p->GetSize()<< " bytes " << std::endl;
+//}
+//
+//static void PIMDataTx (Ptr<const Packet> p)
+//{
+//std::cout << Simulator::Now() <<" PIMDM Data TX "<< p->GetSize()<< " bytes " << std::endl;
+//}
+//
+//static void PIMDataRx (Ptr<const Packet> p)
+//{
+//std::cout << Simulator::Now() <<" PIMDM Data RX "<< p->GetSize()<< " bytes " << std::endl;
+//}
 
 static void PhyTxDrop (Ptr<const Packet> p)
 {
@@ -268,7 +258,7 @@ main (int argc, char *argv[])
 	/// Animator filename
 	uint32_t sizeSource = 1;
 	//Routing protocol 1) OLSR, 2) AODV, 3) MBN-AODV
-	int32_t routing = 1;
+	uint32_t routing = 1;
 	//Seed for random numbers
 	uint32_t seed = 4001254589;
 	//Seed Run -> 10 runs!
@@ -536,14 +526,14 @@ main (int argc, char *argv[])
 
 	std::stringstream ss;
 	ss<< multicastSource<< "," << multicastGroup;// << "," << "1";
-	for (int n = 0;  n < routers.GetN() ; n++){
+	for (uint32_t n = 0;  n < routers.GetN() ; n++){
 		std::stringstream command;//create a stringstream
 		command<< "NodeList/" << routers.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterSG";
 		Config::Set(command.str(), StringValue(ss.str()));
 	}
 	// CLIENTS
 	ss<< multicastSource<< "," << multicastGroup << "," << "1";
-	for (int n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
+	for (uint32_t n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
 //		std::stringstream command;
 //		command<< "NodeList/" << clients.Get(n)->GetId() << "/$ns3::pimdm::MulticastRoutingProtocol/RegisterAsMember";
 //		Config::Set(command.str(), StringValue(ss.str()));
@@ -551,7 +541,7 @@ main (int argc, char *argv[])
 
 	switch(routing){
 		case 1:{
-			for (int n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
+			for (uint32_t n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
 				std::stringstream command;
 				command<< "/NodeList/"<<clients.Get(n)->GetId()<<"/$ns3::olsr::RoutingProtocol/Willingness";
 				Config::Set(command.str(), EnumValue(0));
@@ -567,23 +557,23 @@ main (int argc, char *argv[])
 				Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
 			}
 
-//			for (int n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
+//			for (uint32_t n = 0;  n < clients.GetN() ; n++){//Clients are RN nodes
 //				std::stringstream command;
 //				command<< "/NodeList/"<<clients.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
 //				Config::Set(command.str(), EnumValue(mbn::RN_NODE));
 //			}
-			for (int n = 0;  n < source.GetN() ; n++){//SOURCE is BN so it can Tx
+			for (uint32_t n = 0;  n < source.GetN() ; n++){//SOURCE is BN so it can Tx
 				std::stringstream command;
 				command<< "/NodeList/"<<source.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
 				Config::Set(command.str(), EnumValue(mbn::BN_NODE));
 			}
 
-			for (int n = 0;  n < routers.GetN() ; n++){//ROUTERS are BCN nodes
+			for (uint32_t n = 0;  n < routers.GetN() ; n++){//ROUTERS are BCN nodes
 				std::stringstream command;//create a stringstream
 				command<< "/NodeList/"<<routers.Get(n)->GetId()<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
 				Config::Set(command.str(), EnumValue(mbn::BCN_NODE));
 			}
-//				for(int i = 0; i < routers.GetN(); i++){
+//				for(uint32_t i = 0; i < routers.GetN(); i++){
 //					std::stringstream ss;
 //					ss << "/NodeList/"<<i<<"/$ns3::mbn::RoutingProtocol/localWeight";
 //					uint32_t weight = (uint32_t)UintegerValue(UniformVariable().GetValue()*100.0);
@@ -665,7 +655,7 @@ main (int argc, char *argv[])
 
 
 	//sink callback
-//	for(int i = source.GetN()+routers.GetN(); i < (source.GetN()+routers.GetN()+clients.GetN()); i++){
+//	for(uint32_t i = source.GetN()+routers.GetN(); i < (source.GetN()+routers.GetN()+clients.GetN()); i++){
 //		std::stringstream ss;
 //		ss << "/NodeList/"<<i<<"/ApplicationList/0/$ns3::PacketSink/Rx";
 //		Config::ConnectWithoutContext(ss.str(),MakeCallback (&SinkRx));
@@ -745,7 +735,7 @@ if(g_verbose){
 	double deltaXmin, deltaXmax, deltaYmin, deltaYmax;
 	deltaYmin = deltaXmin = 0-rangino;
 	deltaXmax = floor (range * (cols-1)) + rangino;
-	int rows = (int)floor (sizePim / cols);
+	uint32_t rows = (uint32_t)floor (sizePim / cols);
 	deltaYmax = range * (rows - 1) + rangino;
 
 //	NS_LOG_DEBUG("X "<<range << " cols "<< range);
@@ -778,7 +768,7 @@ if(g_verbose){
 	mobilityS.SetMobilityModel("ns3::ConstantPositionMobilityModel");
 	mobilityS.Install(source);
 
-	for(int i = 0; i < allNodes.GetN(); i++){
+	for(uint32_t i = 0; i < allNodes.GetN(); i++){
 		  Ptr<MobilityModel> mobility = allNodes.Get(i)->GetObject<MobilityModel> ();
 	      Vector pos = mobility->GetPosition (); // Get position
 	      NS_LOG_INFO("Position Node ["<<i<<"] = ("<< pos.x << ", " << pos.y<<", "<<pos.z<<")");

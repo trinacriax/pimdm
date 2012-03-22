@@ -1,6 +1,7 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2010 Hajime Tazaki
+ * Copyright (c) 2011 University of Trento, Italy
+ * 					  University of California, Los Angeles, U.S.A.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -15,11 +16,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Hajime Tazaki <tazaki@sfc.wide.ad.jp>
+ *
+ * Authors: Alessandro Russo <russo@disi.unitn.it>
+ *          University of Trento, Italy
+ *          University of California, Los Angeles U.S.A.
  */
-/**
- * This is the test code for ipv4-raw-socket-impl.cc.
- */
+
 #include <iostream>
 #include <fstream>
 #include <cassert>
