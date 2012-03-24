@@ -580,10 +580,10 @@ MulticastRoutingProtocol::NotifyInterfaceDown (uint32_t i)
 }
 
 void
-MulticastRoutingProtocol::NotifyAddAddress (uint32_t j, Ipv4InterfaceAddress address)
+MulticastRoutingProtocol::NotifyAddAddress (uint32_t i, Ipv4InterfaceAddress address)
 {
 	NS_LOG_FUNCTION(this << GetObject<Node> ()->GetId());
-	int32_t i = (int32_t)j;
+//	int32_t i = (int32_t)j;
 	Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	if (addr == Ipv4Address::GetLoopback())
 		return;
