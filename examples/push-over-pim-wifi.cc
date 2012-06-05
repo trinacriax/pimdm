@@ -462,8 +462,8 @@ main (int argc, char *argv[])
 	videoSource.SetAttribute ("PacketSize", UintegerValue (1200));
 	videoSource.SetAttribute ("PeerType", EnumValue (SOURCE));
 	videoSource.SetAttribute ("Local", AddressValue (ipSource.GetAddress(0)));
-	videoSource.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
-	videoSource.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
+	videoSource.SetAttribute ("PeerPolicy", EnumValue (PS_RANDOM));
+	videoSource.SetAttribute ("ChunkPolicy", EnumValue (CS_LATEST));
 
 
 	ApplicationContainer apps = videoSource.Install (source.Get (0));
@@ -480,8 +480,8 @@ main (int argc, char *argv[])
 //		videoNodes.SetAttribute ("PacketSize", UintegerValue (1200));
 		videoNodes.SetAttribute ("PeerType", EnumValue (PEER));
 		videoNodes.SetAttribute ("Local", AddressValue(ipRouter.GetAddress(n)));
-		videoNodes.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
-		videoNodes.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
+		videoNodes.SetAttribute ("PeerPolicy", EnumValue (PS_RANDOM));
+		videoNodes.SetAttribute ("ChunkPolicy", EnumValue (CS_LATEST));
 
 		ApplicationContainer appR = videoNodes.Install (routers.Get(n));
 		appR.Start (Seconds (clientStart));

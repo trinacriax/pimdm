@@ -597,8 +597,8 @@ main (int argc, char *argv[])
 	video.SetAttribute ("PacketSize", UintegerValue (1200));
 	video.SetAttribute ("PeerType", EnumValue (SOURCE));
 	video.SetAttribute ("Local", AddressValue (ipSource.GetAddress(0)));
-	video.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
-	video.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
+	video.SetAttribute ("PeerPolicy", EnumValue (PS_RANDOM));
+	video.SetAttribute ("ChunkPolicy", EnumValue (CS_LATEST));
 
 
 	ApplicationContainer apps = video.Install (source.Get (0));
@@ -616,8 +616,8 @@ main (int argc, char *argv[])
 		videoC.SetAttribute ("PeerType", EnumValue (PEER));
 		videoC.SetAttribute ("LocalPort", UintegerValue (PUSH_PORT));
 		videoC.SetAttribute ("Local", AddressValue(ipClient.GetAddress(n)));
-		videoC.SetAttribute ("PeerPolicy", EnumValue (RANDOM));
-		videoC.SetAttribute ("ChunkPolicy", EnumValue (LATEST));
+		videoC.SetAttribute ("PeerPolicy", EnumValue (PS_RANDOM));
+		videoC.SetAttribute ("ChunkPolicy", EnumValue (CS_LATEST));
 
 		ApplicationContainer appC = videoC.Install (clients.Get(n));
 		appC.Start (Seconds (clientStart));
