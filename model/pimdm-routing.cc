@@ -1790,7 +1790,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			//	is larger than the previously recorded TTL.  A router MAY record
 			//	the TTL based on an implementation specific sampling policy to
 			//	avoid examining the TTL of every multicast packet it handles.
-				NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " RecvData NotOriginator -> NotOriginator");
+				NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " RecvData Originator -> Originator");
 //				if(sgState->upstream->SG_SAT.IsRunning())
 				sgState->upstream->SG_SAT.Cancel();
 //				sgState->upstream->SG_SAT.SetDelay(Seconds(SourceLifetime));
