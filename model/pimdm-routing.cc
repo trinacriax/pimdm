@@ -1760,7 +1760,6 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 				//	The router MUST transition to an Originator (O) state, set SAT(S, G) to SourceLifetime,
 				//	and set SRT(S, G) to StateRefreshInterval.
 				//	The router SHOULD record the TTL of the packet for use in State Refresh messages.
-				NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " RecvData NotOriginator -> NotOriginator");
 				if(source == gateway){
 					sgState->upstream->origination = Originator;
 					NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " RecvData NotOriginator -> Originator");
@@ -1780,6 +1779,8 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 					UpdateStateRefreshTimer(sgp, interface, sender);
 					sgState->SG_DATA_TTL = sourceHeader.GetTtl();
 				}
+				else
+					NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " RecvData NotOriginator -> NotOriginator");
 				break;
 			}
 			case Originator:{
