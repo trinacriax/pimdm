@@ -1001,8 +1001,10 @@ MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupP
 		AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
 		AddMulticastGroupEntry(msg, mge);
 		Ptr<Packet> packet = Create<Packet> ();
-		NS_LOG_INFO ("Node " << GetLocalAddress(interface)<<" SendPrune to "<< destination);
-		Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, interface);
+		Time delay = TransmissionDelay();
+		NS_LOG_INFO ("Node " << GetLocalAddress(interface)<<" SendPrune to "<< destination<<" in "<<delay.GetSeconds()<<"sec");
+//		Simulator::Schedule(delay,&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, interface);
+		Simulator::Schedule(delay,&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
 	}
 }
 
