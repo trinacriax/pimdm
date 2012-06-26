@@ -3136,8 +3136,14 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 					NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvPrune by downstream Prune_NoInfo -> Prune_Pruned");
 				}
 				if(nstatus->neighbors.size()>1)
-					delay = Seconds(nstatus->overrideInterval.GetSeconds()+nstatus->propagationDelay.GetSeconds());
-				NS_LOG_DEBUG("Neighbor size "<< nstatus->neighbors.size()<< " Delay "<<delay.GetSeconds()<<"sec");
+				{
+//					delay = Seconds (nstatus->overrideInterval.GetSeconds()+nstatus->propagationDelay.GetSeconds());
+					// since we have a per-neighbor-link we can trigger the PrunePendingTimer almost immediately
+					// because the PPT affects just that link (pair interface-neighbor), not the set of links on that interface
+					delay = TransmissionDelay();
+				}
+				NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvPrune by downstream " << sender<< " "<< sgState->upstream->GraftPrune
+				<< " Neighbor size "<< nstatus->neighbors.size()<< " PPTTimerExpire in "<<delay.GetSeconds()<<"sec");
 				UpdatePrunePendingTimer(sgp, interface, delay, sender);
 //				if(!sgState->SG_PPT.IsRunning()){
 //					sgState->SG_PPT.SetDelay(delay);
