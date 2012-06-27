@@ -2882,7 +2882,7 @@ MulticastRoutingProtocol::SourceNoDirectlyConnected(SourceGroupPair &sgp, uint32
 void
 MulticastRoutingProtocol::CouldAssertCheck (Ipv4Address source, Ipv4Address group, uint32_t interface, Ipv4Address destination, bool couldAssert) {
 	SourceGroupPair sgp (source, group, destination);
-	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);//true
+	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp, true);//true
 	// could assert = true -> Is a downstream interface
 	// could assert = false -> Is an upstream interface
 	switch (sgState->AssertState){
