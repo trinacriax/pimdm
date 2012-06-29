@@ -96,10 +96,10 @@ MulticastRoutingProtocol::GetTypeId (void)
 					TimeValue (Seconds (Propagation_Delay)),
 					MakeTimeAccessor (&MulticastRoutingProtocol::m_LanDelay),
 					MakeTimeChecker ())
-	.AddAttribute ("StartDelay", "PIM start delay.",
-					TimeValue (Seconds (0)),
-					MakeTimeAccessor (&MulticastRoutingProtocol::m_startDelay),
-					MakeTimeChecker ())
+//	.AddAttribute ("StartDelay", "PIM start delay.",
+//					TimeValue (Seconds (0)),
+//					MakeTimeAccessor (&MulticastRoutingProtocol::m_startDelay),
+//					MakeTimeChecker ())
 	.AddTraceSource ("RxPimControl", "Trace PIM packet received.",
 					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxControlPacketTrace))
 	.AddTraceSource ("TxPimControl", "Trace PIM packet sent.",
@@ -731,7 +731,8 @@ void MulticastRoutingProtocol::DoStart ()
 	m_rpfChecker.Cancel();
 	m_rpfChecker.SetFunction(&MulticastRoutingProtocol::RPFCheckAll, this);
 	m_rpfChecker.SetDelay(m_rpfCheck);
-	Simulator::Schedule(m_startDelay,&MulticastRoutingProtocol::RPFCheckAll, this);
+	m_startDelay = Time::FromDouble(UniformVariable().GetValue(0,Override_Interval),Time::S);
+	Simulator::Schedule (m_startDelay,&MulticastRoutingProtocol::RPFCheckAll, this);
 
 //	if(m_txControlPacketTrace)
 //	{
