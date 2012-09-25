@@ -45,6 +45,9 @@
 #include "ns3/ipv4-routing-table-entry.h"
 #include "ns3/udp-header.h"
 #include "ns3/udp-l4-protocol.h"
+#include "ns3/tag.h"
+#include "ns3/double.h"
+#include <iostream>
 #include "ns3/info-x-tag.h"
 
 namespace ns3{
