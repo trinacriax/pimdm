@@ -45,6 +45,7 @@
 #include "ns3/ipv4-routing-table-entry.h"
 #include "ns3/udp-header.h"
 #include "ns3/udp-l4-protocol.h"
+#include "ns3/info-x-tag.h"
 
 namespace ns3{
 namespace pimdm{
@@ -1596,6 +1597,8 @@ MulticastRoutingProtocol::RecvMessage (Ptr<Socket> socket)
 	bool tag = receivedPacket->RemovePacketTag(rtag);
 	Ipv4Address group = ipv4header.GetDestination();
 	receivedPacket->AddHeader(ipv4header);
+	InfoXTag ptag;
+	receivedPacket->RemovePacketTag(ptag);
 	if (tag || (group.IsMulticast() && group != Ipv4Address(ALL_PIM_ROUTERS4))){
 		if(tag) receivedPacket->AddPacketTag(rtag);
 		this->RecvPIMData (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
