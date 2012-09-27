@@ -1943,7 +1943,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	///   Packets for which a route to the source cannot be found MUST be discarded.
 	NS_LOG_DEBUG("Data forwarding towards > "<< fwd_list.size()<<" < interfaces/nodes");
 	// Forward packet on all interfaces in oiflist.
-	Time delayMS = TransmissionDelay();
+	Time delay = TransmissionDelay();
 //	double min = 0.0;
 //	bool fwd_neighbors = false;
 //	bool fwd_clients = false;
@@ -1963,8 +1963,8 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 //		else if(IsMyOwnAddress(out->second) ) {
 //			fwd_clients = true;
 //			NS_LOG_INFO("DataFwd towards clients ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
-			NS_LOG_INFO("DataFwd ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delayMS.GetSeconds());
-			Simulator::Schedule(delayMS, &MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
+			NS_LOG_INFO("DataFwd ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delay.GetSeconds());
+			Simulator::Schedule(delay, &MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
 			break;
 //		}
 	}
