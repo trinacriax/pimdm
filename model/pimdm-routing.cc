@@ -112,6 +112,8 @@ MulticastRoutingProtocol::GetTypeId (void)
 					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxDataPacketTrace))
     .AddTraceSource ("TxPimData", "Trace data packet sent.",
 					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txDataPacketTrace))
+	.AddTraceSource ("TxRouteControl", "Trace route control packets.",
+					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txControlRouteTrace))
 	.AddTraceSource ("RoutingTableChanged", "The PIM-DM routing table has changed.",
 	   	     	 	MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_routingTableChanged))
 
@@ -4546,6 +4548,7 @@ void MulticastRoutingProtocol::AskRoutez (Ipv4Address destination){
 		if(local == i->second.GetLocal () ){
 			Ipv4Header ipv4Header = BuildHeader(i->second.GetLocal (), destination, PIM_IP_PROTOCOL_NUM, packet->GetSize(), 1, false);
 			packet->AddHeader(ipv4Header);
+			m_txControlRouteTrace(packet);
 			NS_LOG_DEBUG ("Node " << local << " is sending packet "<<packet  <<"("<<packet->GetSize() <<  ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
 //				m_txControlPacketTrace (copy);
 			i->first->SendTo (packet, 0, InetSocketAddress (destination, PIM_PORT_NUMBER));

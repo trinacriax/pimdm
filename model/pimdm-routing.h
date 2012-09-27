@@ -226,6 +226,7 @@ private:
 	TracedCallback <Ptr<const Packet> > m_rxDataPacketTrace;
 	TracedCallback <Ptr<const Packet> > m_txDataPacketTrace;
 
+	TracedCallback <Ptr<const Packet> > m_txControlRouteTrace;
 	TracedCallback<uint32_t> m_routingTableChanged;
 
 //	Gnuplot *m_txControlPacketPlot;
