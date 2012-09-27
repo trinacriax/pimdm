@@ -292,11 +292,11 @@ typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 			neighborPropagationDelay(Seconds(0)),
 			neighborOverrideInterval(Seconds(0)),
 			neighborGenerationID(0),
-			neighborVersion(0),
-			neighborInterval(RefreshInterval)
+			neighborVersion(0)
 		{
 			neighborGraftRetry[0] = 0;
-			neighborGraftRetry[1] = MaxGraftRetry;
+			neighborGraftRetry[1] = (uint8_t)MaxGraftRetry;
+			neighborInterval = (uint8_t)RefreshInterval;
 		}
 		~NeighborState(){}
 
