@@ -217,6 +217,7 @@ private:
 
 	Time m_LanDelay;
 //	uint64_t m_latestPacketID;
+	EventId eventUpstream;
 
 	Time m_startDelay;
 

@@ -2677,7 +2677,7 @@ void MulticastRoutingProtocol::UpstreamStateMachine(SourceGroupPair &sgp){
 	WiredEquivalentInterface wei = RPF_interface(sgp.sourceMulticastAddr);
 	if (wei.second != sgp.nextMulticastAddr) {
 		NS_LOG_DEBUG("No rpf node "<<sgp.nextMulticastAddr);
-		Simulator::Schedule(Seconds(Graft_Retry_Period), &MulticastRoutingProtocol::UpstreamStateMachine, this, sgp);
+			eventUpstream = Simulator::Schedule(Seconds(Graft_Retry_Period), &MulticastRoutingProtocol::UpstreamStateMachine, this, sgp);
 		return AskRoute(sgp.sourceMulticastAddr);
 	}
 	std::set<WiredEquivalentInterface> list = olist(sgp.sourceMulticastAddr, sgp.groupMulticastAddr);
