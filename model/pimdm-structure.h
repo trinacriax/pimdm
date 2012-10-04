@@ -311,7 +311,7 @@ typedef std::list<SourceGroupState> SourceGroupList;	///< SourceGroup List.
 		{
 			neighborGraftRetry[0] = 0;
 			neighborGraftRetry[1] = (uint8_t)MaxGraftRetry;
-			neighborInterval = (uint8_t)RefreshInterval;
+			neighborInterval = static_cast<uint8_t>(RefreshInterval);
 		}
 		~NeighborState(){}
 
