@@ -2258,8 +2258,8 @@ void
 MulticastRoutingProtocol::PLTTimerExpire (SourceGroupPair &sgp, uint32_t interface, Ipv4Address destination)
 {
 	NS_LOG_FUNCTION(this);
-	WiredEquivalentInterface wei = RPF_interface(destination);
 	SourceGroupState *sgState = FindSourceGroupState(interface, destination, sgp);
+	NS_ASSERT (sgState->PruneState == Prune_Pruned);
 	sgState->upstream.SG_PLT.Cancel();
 }
 
