@@ -3982,7 +3982,8 @@ MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address 
 						EraseNeighborState(interface, *ns);
 						break;
 					default:
-						ns->neigborNLT.Cancel();
+						if (ns->neigborNLT.IsRunning())
+							ns->neigborNLT.Cancel();
 						ns->neigborNLT.SetDelay(value);
 						ns->neigborNLT.Schedule();
 						if(ns->neighborTimeoutB)
