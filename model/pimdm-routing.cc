@@ -1174,6 +1174,17 @@ MulticastRoutingProtocol::SendGraftAckUnicast(SourceGroupPair &sgp, const Ipv4Ad
 }
 
 void
+MulticastRoutingProtocol::SendAssertBroadcast(uint32_t interface, const Ipv4Address destination, SourceGroupPair &sgp)
+{
+	NS_LOG_FUNCTION(this);
+	PIMHeader assertR;
+	ForgeAssertMessage(interface, destination, assertR, sgp);
+	Ptr<Packet> packet = Create<Packet> ();
+	NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " SendAssert to "<<destination << " for "<<sgp);
+	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, assertR, interface);
+}
+
+void
 MulticastRoutingProtocol::SendAssertUnicast(SourceGroupPair &sgp, uint32_t interface, const Ipv4Address destination)
 {
 	NS_LOG_FUNCTION(this);

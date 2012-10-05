@@ -399,6 +399,7 @@ private:
 	void RecvPruneUpstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
 	void RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp,Ipv4Address &sender, Ipv4Address &receiver, uint32_t &interface, const PIMHeader::EncodedSource &source,PIMHeader::EncodedGroup &group);
 
+	void SendAssertBroadcast(uint32_t interface, const Ipv4Address destination, SourceGroupPair &sgp);
 	void SendAssertUnicast(SourceGroupPair &sgp, uint32_t interface, const Ipv4Address destination);
 	void RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Address sender,Ipv4Address receiver, uint32_t interface);
 
