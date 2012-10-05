@@ -1142,6 +1142,22 @@ MulticastRoutingProtocol::ForgeGraftAckMessage (PIMHeader &msg, Ipv4Address upst
 }
 
 void
+MulticastRoutingProtocol::SendGraftAckBroadcast (uint32_t interface, const Ipv4Address destination, SourceGroupPair &sgp)
+{
+	NS_LOG_FUNCTION(this);
+	Ptr<Packet> packet = Create<Packet> ();
+	PIMHeader::MulticastGroupEntry mge;
+	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
+	AddMulticastGroupSourceJoin(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
+	PIMHeader msg;
+	ForgeGraftAckMessage(msg, destination);
+	AddMulticastGroupEntry(msg, mge);
+	NS_LOG_INFO ("Node " << m_mainAddress <<" SendGraftAck to "<< destination);
+	// Send the packet toward the RPF(S)
+	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, interface);
+}
+
+void
 MulticastRoutingProtocol::SendGraftAckUnicast(SourceGroupPair &sgp, const Ipv4Address destination)
 {
 	NS_LOG_FUNCTION(this);
