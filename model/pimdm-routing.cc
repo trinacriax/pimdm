@@ -1705,7 +1705,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 					olistCheck(sgp, fwd_list);//CHECK: olist is null and S not directly connected
 					sgState->upstream.GraftPrune = GP_Pruned;
 					NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " RecvData GP_Forwarding -> GP_Pruned");
-					SendPruneUnicast(sender, sgp);
+					SendPruneBroadcast (interface, sgp, sender);
 					UpdatePruneLimitTimer(sgp, interface, sender);
 				}
 				break;
@@ -1713,7 +1713,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 			case GP_Pruned:{
 				if(!sgState->upstream.SG_PLT.IsRunning() && gateway != source){
 					NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " RecvData GP_Pruned -> GP_Pruned");
-					SendPruneUnicast(sender, sgp);
+					SendPruneBroadcast (interface, sgp, sender);
 					UpdatePruneLimitTimer(sgp, interface, sender);
 				}
 				break;
@@ -1852,7 +1852,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 		//	   pair specified in the packet.
 		NS_LOG_DEBUG ("RPF check failed: Sending Prune to "<< sender);
 		if (!sgState->SG_PLTD.IsRunning()){
-			SendPruneUnicast(sender, sgp); // limit the downstream prune.
+			SendPruneBroadcast (interface, sgp, sender); // limit the downstream prune.
 			UpdatePruneDownstreamTimer (sgp, (uint32_t)interface, sender);
 		}
 		return;
@@ -2045,7 +2045,7 @@ MulticastRoutingProtocol::NeighborRestart (uint32_t interface, Ipv4Address neigh
 		//     Prune Limit Timer to permit sending a prune and reestablishing a Pruned state in the upstream router.
 		else if (IsUpstream(interface, neighbor, sgState->SGPair) && sgState->PruneState == Prune_Pruned){
 			UpdatePruneTimer(sgState->SGPair, interface, Seconds (2*RefreshInterval), neighbor);
-			Simulator::ScheduleNow (&MulticastRoutingProtocol::SendPruneUnicast, this, neighbor, sgState->SGPair);
+			Simulator::ScheduleNow (&MulticastRoutingProtocol::SendPruneBroadcast, this, interface, sgState->SGPair, neighbor);
 		}
 	}
 }
@@ -2565,7 +2565,7 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp)
 				sgState ->upstream.GraftPrune = GP_Pruned;
 				Ipv4Address gateway = RPF_prime(sgp.sourceMulticastAddr, sgp.groupMulticastAddr);
 				if(!sgState->upstream.SG_PLT.IsRunning()){
-					SendPruneUnicast(gateway, sgp);
+					SendPruneBroadcast (wei.first, sgp, gateway);
 					UpdatePruneLimitTimer(sgp, wei.first, wei.second);
 				}
 			}
@@ -3367,7 +3367,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 			//	   PLT(S, G) is not running, a Prune(S, G) MUST be sent to RPF'(S), and the PLT(S, G) MUST be set to t_limit.
 			//	   If the State Refresh has its Prune Indicator bit set to one, the router MUST reset PLT(S, G) to t_limit.
 				if(refresh.m_P==0 && !sgState->upstream.SG_PLT.IsRunning()){
-						SendPruneUnicast(sender, sgp);
+						SendPruneBroadcast (interface, sgp, sender);
 						UpdatePruneLimitTimer(sgp, interface, sender);
 					}
 				else if(refresh.m_P){
