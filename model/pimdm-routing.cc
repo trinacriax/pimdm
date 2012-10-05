@@ -940,6 +940,7 @@ MulticastRoutingProtocol::SendHello (uint32_t interface)
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
 	ForgeHelloMessage(interface, msg);
+	msg.GetHelloMessage().m_destination = Ipv4Address(ALL_PIM_ROUTERS4);
 	Time delay = TransmissionDelay();
 	NS_LOG_INFO("Node "<<GetLocalAddress(interface) << " sends hello in "<<delay.GetSeconds()<<"sec.");
 	Simulator::Schedule(delay,&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, interface);
@@ -952,9 +953,10 @@ MulticastRoutingProtocol::SendHelloReply (uint32_t interface, Ipv4Address destin
 	Ptr<Packet> packet = Create<Packet> ();
 	PIMHeader msg;
 	ForgeHelloMessage(interface, msg);
+	msg.GetHelloMessage().m_destination = destination;
 	Time delay = TransmissionDelay();
 	NS_LOG_INFO("Node "<<GetLocalAddress(interface) << " sends hello reply  to " <<destination << " in "<<delay.GetSeconds()<<"sec.");
-	Simulator::Schedule(delay,&MulticastRoutingProtocol::SendPacketPIMUnicast, this,packet, msg, destination);
+	Simulator::Schedule(delay,&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, interface);
 }
 
 void
