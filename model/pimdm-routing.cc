@@ -1515,7 +1515,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 		//	The Upstream(S, G) state machine MUST transition to the AckPending (AP) state,
 		//	unicast a Graft to the new RPF'(S), and set the GraftRetry Timer (GRT(S, G)) to Graft_Retry_Period.
 			else if(!outlist.empty() && sgp.sourceMulticastAddr != gatewayN){
-				SendGraftUnicast(gatewayN, sgp);
+				SendGraftBroadcast(interfaceN, gatewayN, sgp);
 				sgState->upstream.GraftPrune = GP_AckPending;
 				NS_LOG_INFO ("Node " << m_mainAddress <<" RPFChanges GP_Forwarding -> GP_AckPending");
 				NeighborState *ns = FindNeighborState(interfaceN, gatewayN, GetLocalAddress(interfaceN));
@@ -1548,7 +1548,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 				sgState->upstream.SG_PLT.Cancel();
 				sgState->upstream.GraftPrune = GP_AckPending;
 				NS_LOG_INFO ("Node " << m_mainAddress <<" RPFChanges GP_Pruned -> GP_AckPending");
-				SendGraftUnicast(gatewayN, sgp);
+				SendGraftBroadcast(interfaceN, gatewayN, sgp);
 				if(sgState->upstream.SG_GRT.IsRunning())
 					sgState->upstream.SG_GRT.Cancel();
 				UpdateGraftTimer(sgp, interfaceN, gatewayN);
@@ -1571,7 +1571,7 @@ MulticastRoutingProtocol::RPF_primeChanges(SourceGroupPair &sgp, uint32_t interf
 				//	Unicast routing or Assert state causes RPF'(S) to change, including changes to RPF_Interface(S).
 				//	The Upstream(S, G) state machine stays in the AckPending (AP) state.
 				//	A Graft MUST be unicast to the new RPF'(S) and the GraftRetry Timer (GRT(S, G)) reset to Graft_Retry_Period.
-				SendGraftUnicast(gatewayN, sgp);
+				SendGraftBroadcast(interfaceN, gatewayN, sgp);
 				NS_LOG_INFO ("Node " << m_mainAddress <<" RPFChanges GP_AckPending -> GP_AckPending");
 				if(sgState->upstream.SG_GRT.IsRunning())
 					sgState->upstream.SG_GRT.Cancel();
@@ -2337,7 +2337,7 @@ MulticastRoutingProtocol::GRTTimerExpire (SourceGroupPair &sgp, uint32_t interfa
 			NeighborState *ns = FindNeighborState(interface, dest, true);
 			if(ns->neighborGraftRetry[0]<ns->neighborGraftRetry[1]){//increase counter retries
 				ns->neighborGraftRetry[0]++;
-				SendGraftUnicast(destination, sgp);
+				SendGraftBroadcast(interface, destination, sgp);
 				sgState->upstream.SG_GRT.Cancel();
 				UpdateGraftTimer(sgp, interface, destination);
 			}else{
@@ -2660,7 +2660,7 @@ MulticastRoutingProtocol::olistFull(SourceGroupPair &sgp)
 				sgState->upstream.SG_PLT.Cancel();
 				NS_LOG_INFO("Node "<< GetLocalAddress(wei.first) << " GP_Pruned -> GP_AckPending");
 				sgState->upstream.GraftPrune = GP_AckPending;
-				SendGraftUnicast(wei.second, sgp);
+				SendGraftBroadcast(wei.first, wei.second, sgp);
 				sgState->upstream.SG_GRT.Cancel();
 				UpdateGraftTimer(sgp,  wei.first, wei.second);
 			}
