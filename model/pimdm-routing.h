@@ -402,6 +402,7 @@ private:
 	void SendAssertUnicast(SourceGroupPair &sgp, uint32_t interface, const Ipv4Address destination);
 	void RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Address sender,Ipv4Address receiver, uint32_t interface);
 
+	void SendGraftBroadcast (uint32_t interface, Ipv4Address destination,SourceGroupPair pair);
 	void SendGraftUnicast (Ipv4Address destination,SourceGroupPair pair);
 
 	void RecvGraft (PIMHeader::GraftMessage &graft, Ipv4Address sender, Ipv4Address receiver, uint32_t interface);

@@ -1096,6 +1096,23 @@ MulticastRoutingProtocol::ForgeGraftMessage (uint32_t interface, PIMHeader &msg,
 }
 
 void
+MulticastRoutingProtocol::SendGraftBroadcast (uint32_t interface, Ipv4Address destination, SourceGroupPair sgp)
+{
+	NS_LOG_FUNCTION(this);
+	Ptr<Packet> packet = Create<Packet> ();
+	PIMHeader msg; // Create the graft packet
+	ForgeGraftMessage(PIM_GRAFT, msg, sgp, destination);
+	PIMHeader::MulticastGroupEntry mge;
+	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
+	AddMulticastGroupSourceJoin(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
+	AddMulticastGroupEntry(msg, mge);
+	NS_LOG_INFO ("Node " << m_mainAddress <<" SendGraft to upstream "<< destination);
+	// Send the packet toward the RPF(S)
+	Time delay = TransmissionDelay();
+	Simulator::Schedule(delay,&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, interface);
+}
+
+void
 MulticastRoutingProtocol::SendGraftUnicast (Ipv4Address destination, SourceGroupPair sgp)
 {
 	NS_LOG_FUNCTION(this);
