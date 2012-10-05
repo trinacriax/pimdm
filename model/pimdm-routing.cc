@@ -970,6 +970,21 @@ MulticastRoutingProtocol::ForgeJoinPruneMessage (PIMHeader &msg, Ipv4Address con
 }
 
 void
+MulticastRoutingProtocol::SendPruneBroadcast (uint32_t interface, SourceGroupPair &sgp, Ipv4Address target)
+{
+	PIMHeader msg;
+	ForgeJoinPruneMessage(msg, target);
+	PIMHeader::MulticastGroupEntry mge;
+	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
+	AddMulticastGroupSourcePrune(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
+	AddMulticastGroupEntry(msg, mge);
+	Ptr<Packet> packet = Create<Packet> ();
+	Time delay = TransmissionDelay();
+	NS_LOG_INFO ("Node " << GetLocalAddress(interface)<<" SendPrune to "<< target<<" in "<<delay.GetSeconds()<<"sec");
+	Simulator::Schedule(delay,&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, interface);
+}
+
+void
 MulticastRoutingProtocol::SendPruneUnicast(Ipv4Address destination, SourceGroupPair &sgp)
 {
 	NS_LOG_FUNCTION(this<< destination << sgp.sourceMulticastAddr << sgp.groupMulticastAddr);
