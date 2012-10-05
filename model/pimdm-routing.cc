@@ -1952,7 +1952,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 			//	address on I.  The Prune(S, G) Downstream state machine on interface I stays in the NoInfo (NI)
 			//	state.  A GraftAck(S, G) MUST be unicast to the originator of the Graft(S, G) message.
 				NS_LOG_INFO ("Node "<< receiver <<" RecvGraftDownstream from "<< sender << " Prune_NoInfo -> Prune_NoInfo");
-				SendGraftAckUnicast(sgp, sender);
+				SendGraftAckBroadcast(interface, sender, sgp);
 				break;
 			}
 			case Prune_PrunePending:{
@@ -1962,7 +1962,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 			//	message to the Graft originator.  The PrunePending Timer (PPT(S, G, I)) MUST be cancelled.
 				sgState->PruneState = Prune_NoInfo;
 				NS_LOG_INFO ("Node "<< receiver <<" RecvGraftDownstream from "<< sender << " Prune_PrunePending -> Prune_NoInfo");
-				SendGraftAckUnicast(sgp, sender);
+				SendGraftAckBroadcast(interface, sender, sgp);
 				if(sgState->SG_PPT.IsRunning())
 					sgState->SG_PPT.Cancel();
 				break;
@@ -1975,7 +1975,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 			case Prune_Pruned:{
 				sgState->PruneState = Prune_NoInfo;
 				NS_LOG_INFO ("Node "<< receiver <<" RecvGraftDownstream from "<< sender << " Prune_Pruned -> Prune_NoInfo");
-				SendGraftAckUnicast(sgp, sender);
+				SendGraftAckBroadcast(interface, sender, sgp);
 				if(sgState->SG_PT.IsRunning())
 					sgState->SG_PT.Cancel();//was ppt
 				UpstreamStateMachine(sgp);
@@ -2007,7 +2007,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 				//	Graft(S, G) was received, the router MUST respond with a GraftAck(S, G).
 				NS_LOG_INFO ("Node "<< receiver <<" RecvGraftDownstream from "<< sender << " Assert_Loser -> Assert_Loser");
 				SendAssertUnicast(sgp, interface, sender);
-				SendGraftAckUnicast(sgp, sender);
+				SendGraftAckBroadcast(interface, sender, sgp);
 				sgState->AssertState = Assert_Winner; //TODO: added because in case of changing upstream the lost asser is not override
 				UpdateAssertWinner(sgState, interface);
 				//An Assert loser that receives a Prune(S, G), Join(S, G), or
