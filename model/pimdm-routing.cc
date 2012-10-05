@@ -1849,7 +1849,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 					sgState->AssertState = Assert_Winner;
 					NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " RecvData Assert_NoInfo -> Assert_Winner");
 					UpdateAssertWinner (sgState, interface);
-					SendAssertUnicast (sgp, interface, sender);
+					SendAssertBroadcast (interface, sender, sgp);
 					UpdateAssertTimer (sgp, interface, sender);
 				}
 				break;
@@ -1863,7 +1863,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 					sgState->AssertState = Assert_Winner;
 					NS_LOG_INFO ("Node " << GetLocalAddress(interface)<< " RecvData Assert_Winner -> Assert_Winner");
 					UpdateAssertWinner (sgState, interface);
-					SendAssertUnicast (sgp, interface, sender);
+					SendAssertBroadcast (interface, sender, sgp);
 					UpdateAssertTimer (sgp, interface, sender);
 				}
 				break;
@@ -2017,7 +2017,7 @@ MulticastRoutingProtocol::RecvGraftDownstream(PIMHeader::GraftMessage &graft, Ip
 				//	Assert state machine remains in the Assert Loser(L) state.  If a
 				//	Graft(S, G) was received, the router MUST respond with a GraftAck(S, G).
 				NS_LOG_INFO ("Node "<< receiver <<" RecvGraftDownstream from "<< sender << " Assert_Loser -> Assert_Loser");
-				SendAssertUnicast(sgp, interface, sender);
+				SendAssertBroadcast (interface, sender, sgp);
 				SendGraftAckBroadcast(interface, sender, sgp);
 				sgState->AssertState = Assert_Winner; //TODO: added because in case of changing upstream the lost asser is not override
 				UpdateAssertWinner(sgState, interface);
@@ -3064,7 +3064,7 @@ MulticastRoutingProtocol::RecvPruneDownstream (PIMHeader::JoinPruneMessage &jp, 
 			//	Graft(S, G) was received, the router MUST respond with a GraftAck(S, G).
 			if(IsMyOwnAddress(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress)){
 				NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvPrune by downstream Assert_Loser -> Assert_Loser");
-				SendAssertUnicast(sgp, interface, sender);
+				SendAssertBroadcast (interface, sender, sgp);
 			}
 			//An Assert loser that receives a Prune(S, G), Join(S, G), or
 			//  Graft(S, G) directed to it initiates a new Assert negotiation so
@@ -3192,7 +3192,7 @@ MulticastRoutingProtocol::RecvJoinDownstream(PIMHeader::JoinPruneMessage &jp, Ip
 			//	Graft(S, G) was received, the router MUST respond with a GraftAck(S, G).
 			NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvJoinDownstream from "<< sender);
 			if(jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress == current){
-				SendAssertUnicast(sgp, interface, sender);
+				SendAssertBroadcast (interface, sender, sgp);
 				NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " Assert_Loser -> Assert_Loser");
 			}
 			//An Assert loser that receives a Prune(S, G), Join(S, G), or
@@ -3229,7 +3229,7 @@ MulticastRoutingProtocol::RecvAssert (PIMHeader::AssertMessage &assert, Ipv4Addr
 			if(myMetric > received && couldAssert){
 				sgState->AssertState = Assert_Winner;
 				UpdateAssertWinner (sgState, myMetric);
-				SendAssertUnicast (sgp, interface, sender);
+				SendAssertBroadcast (interface, sender, sgp);
 				UpdateAssertTimer (sgp, interface, sender);
 				NS_LOG_INFO ("Node " << GetLocalAddress(interface) << " NoInfo -> Winner");
 			}
@@ -3469,7 +3469,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 						&& CouldAssert(refresh.m_sourceAddr.m_unicastAddress, refresh.m_multicastGroupAddr.m_groupAddress, interface, sender)){
 					sgState->AssertState = Assert_Winner;
 					UpdateAssertWinner (sgState, interface);
-					SendAssertUnicast (sgp, interface, sender);
+					SendAssertBroadcast (interface, sender, sgp);
 					UpdateAssertTimer (sgp, interface, sender);
 				}
 				else{
