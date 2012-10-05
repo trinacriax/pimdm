@@ -1196,6 +1196,17 @@ MulticastRoutingProtocol::SendAssertUnicast(SourceGroupPair &sgp, uint32_t inter
 }
 
 void
+MulticastRoutingProtocol::SendAssertCancelBroadcast(uint32_t interface, const Ipv4Address destination, SourceGroupPair &sgp)
+{
+	NS_LOG_FUNCTION(this);
+	PIMHeader assertR;
+	ForgeAssertCancelMessage(interface, assertR, sgp);
+	Ptr<Packet> packet = Create<Packet> ();
+	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, assertR, interface);
+	NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " SendAssertCancel to "<<destination);
+}
+
+void
 MulticastRoutingProtocol::UpdateAssertTimer(SourceGroupPair &sgp, uint32_t interface, Time delay, const Ipv4Address destination)
 {
 	NS_LOG_INFO("Node "<< GetLocalAddress(interface)<< " TimerUpdate "<< Assert_Time<< " To "<< destination);
