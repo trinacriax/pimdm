@@ -1030,6 +1030,22 @@ MulticastRoutingProtocol::SendJoinUnicast (Ipv4Address destination, SourceGroupP
 }
 
 void
+MulticastRoutingProtocol::SendJoinBroadcast (uint32_t interface, Ipv4Address destination, SourceGroupPair &sgp)
+{
+	NS_LOG_FUNCTION(this<< interface<<destination<<sgp);
+	PIMHeader msg;
+	ForgeJoinPruneMessage(msg, destination);
+	PIMHeader::MulticastGroupEntry mge;
+	CreateMulticastGroupEntry(mge, ForgeEncodedGroup(sgp.groupMulticastAddr));
+	AddMulticastGroupSourceJoin(mge, ForgeEncodedSource(sgp.sourceMulticastAddr));
+	AddMulticastGroupEntry(msg, mge);
+	Ptr<Packet> packet = Create<Packet> ();
+	Time delay = TransmissionDelay();
+	Simulator::Schedule(delay,&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, interface);
+	NS_LOG_INFO ("Node " << m_mainAddress<<" SendJoin to "<< destination<<" in "<<delay.GetSeconds()<<"sec");
+}
+
+void
 MulticastRoutingProtocol::ForgeAssertMessage (uint32_t interface, Ipv4Address destination, PIMHeader &msg, SourceGroupPair &sgp)
 {
 	NS_LOG_FUNCTION(this << interface << destination<<sgp);

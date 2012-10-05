@@ -414,6 +414,7 @@ private:
 	void SendPruneBroadcast (uint32_t interface, SourceGroupPair &sgpair, Ipv4Address target);
 	void SendPruneUnicast (Ipv4Address destination, SourceGroupPair &sgpair);
 
+	void SendJoinBroadcast (uint32_t interface, Ipv4Address destination, SourceGroupPair &sgpair);
 	void SendJoinUnicast (Ipv4Address destination, SourceGroupPair &sgpair);
 
 	void RecvMessage (Ptr<Socket> packet);
