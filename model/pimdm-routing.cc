@@ -1372,7 +1372,7 @@ MulticastRoutingProtocol::SendStateRefreshMessage (uint32_t interface, Ipv4Addre
 	stateRefresh.m_metric = sgState->AssertWinner.routeMetric;
 	stateRefresh.m_interval = (uint8_t)(tmp.GetSeconds());
 	NS_LOG_INFO ("Node " << m_mainAddress <<" SendStateRefresh to upstream "<< destination);
-	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
+	Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg, interface);
 	switch (sgState->PruneState) {
 		case Prune_NoInfo:{
 			// nothing
