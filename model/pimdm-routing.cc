@@ -2809,11 +2809,7 @@ MulticastRoutingProtocol::CouldAssertCheck (Ipv4Address source, Ipv4Address grou
 			sgState->AssertState = Assert_NoInfo;
 			NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " CouldAssertCheck Assert_Winner -> Assert_NoInfo");
 			//	send an AssertCancel(S, G) to interface I,
-			PIMHeader assertR;
-			ForgeAssertCancelMessage(interface, assertR, sgp);
-			Ptr<Packet> packet = Create<Packet> ();
-			Simulator::Schedule(TransmissionDelay(),&MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, assertR, destination);
-			NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " SendAssertCancel to "<<destination);
+			SendAssertCancelBroadcast (interface, destination, sgp);
 			//  cancel the Assert Timer (AT(S, G, I)),
 			if(sgState->SG_AT.IsRunning())
 				sgState->SG_AT.Cancel();
