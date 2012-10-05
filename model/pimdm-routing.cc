@@ -768,6 +768,8 @@ MulticastRoutingProtocol::HelloTimerExpire (uint32_t i)
 	  if (IsLoopInterface(i)) return;
 	  Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	  Timer &nHelloTimer = m_IfaceNeighbors.find(i)->second.hello_timer;
+	  NS_ASSERT(!nHelloTimer.IsRunning());
+	  nHelloTimer.Schedule();
 	  SendHello (i);
 }
 
