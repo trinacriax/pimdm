@@ -2889,7 +2889,7 @@ MulticastRoutingProtocol::RecvJP (PIMHeader::JoinPruneMessage &jp, Ipv4Address s
 			//This timer is set when a Prune(S, G) is received on the upstream interface where olist(S, G) != NULL.
 			//	When the timer expires, a Join(S, G) message is sent on the upstream interface.  This timer
 			//	is normally set to t_override (see 4.8).
-				RecvPrune(jp, sender, receiver, interface, *iterPrune, iter->m_multicastGroupAddr);
+			RecvPrune(jp, sender, receiver, interface, *iterPrune, iter->m_multicastGroupAddr);
 		}
 	}
 }
@@ -3424,7 +3424,7 @@ MulticastRoutingProtocol::RecvStateRefresh(PIMHeader::StateRefreshMessage &refre
 //				   this router must override the upstream router's Prune state after a short random interval.  If OT(S,G) is not running and the
 //			       Prune Indicator bit equals one, the router MUST set OT(S,G) to t_override seconds.
 				if(refresh.m_P == 1){
-					Simulator::Schedule (TransmissionDelay(0, t_shorter), &MulticastRoutingProtocol::SetPruneState, this, interface, sender, sgp, Prune_Pruned); //TODO: sure about this schedule
+					Simulator::Schedule (TransmissionDelay(0, t_shorter), &MulticastRoutingProtocol::SetPruneState, this, interface, sender, sgp, Prune_Pruned); //TODO: check this schedule
 					UpdateOverrideTimer(sgp, interface, Seconds (t_override(interface)), gateway);
 				}
 				break;
@@ -3696,7 +3696,7 @@ MulticastRoutingProtocol::ForwardingStateRefresh(PIMHeader::StateRefreshMessage 
 void
 MulticastRoutingProtocol::RecvHello(PIMHeader::HelloMessage &hello, Ipv4Address sender, Ipv4Address receiver, uint32_t interface)
 {
-	NS_LOG_DEBUG("Sender = "<< sender<< " Receiver = "<< receiver);
+	NS_LOG_DEBUG("Sender = "<< sender<< " Receiver = "<< receiver<<" Target = "<<hello.m_destination);
 	uint16_t entry = 0;
 	NeighborState *ns = FindNeighborState(interface, sender, receiver);
 	if(!ns){// Hello message received from a new neighbor
