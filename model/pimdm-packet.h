@@ -52,7 +52,7 @@
 #define PIM_DM_HELLO_GENERATIONID 4///< PIM generation id size in bytes.
 #define PIM_DM_HELLO_STATEREFRESH 4///< PIM state refresh size in bytes.
 #define PIM_DM_JPG (PIM_DM_ENC_UNI+4)///< PIM join-prune-graft message size in bytes.
-#define PIM_DM_ASSERT (PIM_DM_ENC_GRP+PIM_DM_ENC_UNI+8)///< PIM assert message size in bytes.
+#define PIM_DM_ASSERT (PIM_DM_ENC_GRP+PIM_DM_ENC_UNI+8+4)///< PIM assert message size in bytes.
 #define PIM_DM_REFRESH (PIM_DM_ENC_GRP+PIM_DM_ENC_UNI+PIM_DM_ENC_UNI+24)///< PIM refresh message size in bytes.
 #define PIM_IP_PROTOCOL_NUM 103   ///< PIM IP Protocol number defined by IANA. http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xml
 #define ALL_PIM_ROUTERS4 "224.0.0.13"
@@ -73,7 +73,6 @@ enum PIMType
   PIM_GRAFT_ACK = 7,
 //  PIM_CANDIDATE_RP_ADV = 8,//!< (PIM-SM only)
   PIM_STATE_REF = 9,
-  PIM_IGMP_REPORT = 11 // WORKAROND FOR IGMP!! //TODO Remove when IGMP is ready
 };
 
 /**
@@ -650,6 +649,9 @@ struct AssertMessage {
 	///   Metric. The cost metric of the unicast route to the source. The metric is in units applicable to the unicast routing protocol used.
 	uint32_t m_metric;
 
+	/// Destination IP address
+	Ipv4Address m_destination;
+
 	void Print (std::ostream &os) const;
 	uint32_t GetSerializedSize (void) const;
 	void Serialize (Buffer::Iterator start) const;
@@ -731,34 +733,6 @@ struct StateRefreshMessage {
 	uint32_t Deserialize (Buffer::Iterator start, uint32_t messageSize);
 };
 
-/* TODO REMOVE WITH IGMP*/
-
-//	0               1               2               3
-//	0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
-//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//	|PIM Ver| Type  |   Reserved    |           Checksum            |   GENERIC
-//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//	|               Multicast group address                         |
-//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//	|                Unicast source address                         |
-//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//	|                Upstream node address                          |
-//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//
-
-struct IgmpReportMessage {
-	Ipv4Address m_multicastGroupAddr;
-	Ipv4Address m_sourceAddr;
-	Ipv4Address m_upstreamAddr;
-
-	void Print (std::ostream &os) const;
-	uint32_t GetSerializedSize (void) const;
-	void Serialize (Buffer::Iterator start) const;
-	uint32_t Deserialize (Buffer::Iterator start, uint32_t messageSize);
-};
-
-/* END TODO*/
-
 private:
 	struct{
 		HelloMessage hello;
@@ -767,7 +741,6 @@ private:
 		GraftMessage graft;
 		GraftAckMessage graftAck;
 		StateRefreshMessage stateRefresh;
-		IgmpReportMessage igmpReport;
 	} m_pim_message;
 
 public:
@@ -848,19 +821,6 @@ public:
         NS_ASSERT (m_type == PIM_STATE_REF);
       }
     return m_pim_message.stateRefresh;
-  }
-
-  IgmpReportMessage& GetIgmpReportMessage()
-  {
-    if (m_type == 0)
-      {
-    	m_type = PIM_IGMP_REPORT;
-      }
-    else
-      {
-        NS_ASSERT (m_type == PIM_IGMP_REPORT);
-      }
-    return m_pim_message.igmpReport;
   }
 
 };

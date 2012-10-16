@@ -87,7 +87,7 @@
 //  default value of 3 seconds.
 #define JoinDelay 3 //Prune override
 /// Prune downstream //AX.
-#define PRUNE_DOWN 10
+#define PRUNE_DOWN 4
 
 
 #define TTL_SAMPLE .2
@@ -378,7 +378,7 @@ private:
 	void AddMulticastGroupSourceJoin (PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedSource source);
 	void AddMulticastGroupSourcePrune (PIMHeader::MulticastGroupEntry &m_entry,PIMHeader::EncodedSource source);
 
-	void RecvIgmpReport (PIMHeader::IgmpReportMessage &report, Ipv4Address sender, Ipv4Address receiver, uint32_t interface);
+//	void RecvIgmpReport (PIMHeader::IgmpReportMessage &report, Ipv4Address sender, Ipv4Address receiver, uint32_t interface);
 
 	void SendHello (uint32_t interface);
 	void SendHelloReply (uint32_t interface, Ipv4Address destination);
