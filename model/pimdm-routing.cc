@@ -557,12 +557,6 @@ void
 MulticastRoutingProtocol::NotifyInterfaceUp (uint32_t i)
 {
 	NS_LOG_FUNCTION(this<<i);
-	if (m_mainAddress == Ipv4Address ()) {
-		Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
-		if (addr != Ipv4Address::GetLoopback()) {
-			m_mainAddress = addr;
-		}
-	}
 	NS_ASSERT (m_mainAddress != Ipv4Address ());
 	EnablePimInterface(i);
 }
@@ -578,26 +572,35 @@ void
 MulticastRoutingProtocol::NotifyAddAddress (uint32_t i, Ipv4InterfaceAddress address)
 {
 	NS_LOG_FUNCTION(this << GetObject<Node> ()->GetId());
-//	int32_t i = (int32_t)j;
 	Ipv4Address addr = m_ipv4->GetAddress (i, 0).GetLocal ();
 	if (addr == Ipv4Address::GetLoopback())
 		return;
-	// Create socket to listen on ALL_PIM_ROUTERS4 group
-	Ptr<Socket> socketP = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
-	socketP->SetAttribute("Protocol", UintegerValue(PIM_IP_PROTOCOL_NUM));
-	socketP->SetAttribute("IpHeaderInclude", BooleanValue(true));
-	socketP->SetAllowBroadcast (false);
-	InetSocketAddress inetAddrP (ALL_PIM_ROUTERS4, PIM_PORT_NUMBER);
-	socketP->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvMessage, this));
-	// Add ALL_PIM_ROUTERS4 multicast group, where the source is the node it self.
-	AddEntry(ALL_PIM_ROUTERS4, addr, Ipv4Address::GetLoopback(), i);
-	if (socketP->Bind (inetAddrP)){
-		NS_FATAL_ERROR ("Failed to bind() PIMDM socket");
+	Ipv4Address socketAddr;
+	if (m_mainAddress == Ipv4Address ()) {
+		if (addr != Ipv4Address::GetLoopback()) {
+			m_mainAddress = addr;
+			m_mainInterface = i;
+			socketAddr = Ipv4Address (ALL_PIM_ROUTERS4);
+			// Create socket to listen on ALL_PIM_ROUTERS4 group
+			Ptr<Socket> socketP = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
+			socketP->SetAttribute("Protocol", UintegerValue(PIM_IP_PROTOCOL_NUM));
+			socketP->SetAttribute("IpHeaderInclude", BooleanValue(true));
+			socketP->SetAllowBroadcast (false);
+			InetSocketAddress inetAddrP (socketAddr, PIM_PORT_NUMBER);
+			socketP->SetRecvCallback (MakeCallback (&MulticastRoutingProtocol::RecvMessage, this));
+			// Add ALL_PIM_ROUTERS4 multicast group, where the source is the node it self.
+			AddEntry(socketAddr, addr, Ipv4Address::GetLoopback(), i);
+			if (socketP->Bind (inetAddrP)){
+				NS_FATAL_ERROR ("Failed to bind() PIMDM socket");
+			}
+			socketP->BindToNetDevice (m_ipv4->GetNetDevice (i));
+			Ipv4InterfaceAddress mpim(Ipv4Address(socketAddr), Ipv4Mask::GetOnes());
+			m_socketAddresses[socketP] = mpim;
+			NS_LOG_DEBUG("Registering PIM Socket = "<<socketP << " Device = "<<m_ipv4->GetNetDevice (i)
+					<< ", LocalAddr = " << mpim.GetLocal() << " Destination = " << socketAddr
+					<< ", I = " << i << " IfaceAddr " << m_ipv4->GetAddress (i, 0).GetLocal());
+		}
 	}
-	socketP->BindToNetDevice (m_ipv4->GetNetDevice (i));
-	Ipv4InterfaceAddress mpim(Ipv4Address(ALL_PIM_ROUTERS4), Ipv4Mask::GetOnes());
-	m_socketAddresses[socketP] = mpim;
-	NS_LOG_DEBUG("Registering PIM Socket = "<<socketP << " Device = "<<m_ipv4->GetNetDevice (i)<< ", LocalAddr = "<<mpim.GetLocal()<<" Destination = "<<  ALL_PIM_ROUTERS4<<", I = "<<i<<" IfaceAddr "<<m_ipv4->GetAddress (i, 0).GetLocal());
 
 	// Create a socket to listen only on this Interface/Address
 	Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
@@ -1738,7 +1741,6 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	bool rtag = copy->RemovePacketTag(relayTag); //Remove Tag and count
 	m_rxDataPacketTrace (copy);
 	Ipv4Header sourceHeader;
-
 	copy->RemoveHeader(sourceHeader);
 	source = sourceHeader.GetSource();
 	group = sourceHeader.GetDestination();
@@ -4368,6 +4370,7 @@ std::set<WiredEquivalentInterface > MulticastRoutingProtocol::pim_include (Ipv4A
 	for (uint32_t i = 0; i < m_ipv4->GetNInterfaces (); i++) {
 		if (IsLoopInterface (i))continue;
 		if (local_receiver_include (source, group, i)) {
+			//TODO place the corresponding subnet.
 			WiredEquivalentInterface n_include (i,GetLocalAddress(i));
 			include.insert (n_include);
 		}
