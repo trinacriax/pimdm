@@ -159,6 +159,8 @@ class MulticastRoutingProtocol: public Ipv4RoutingProtocol {
 private:
 	uint32_t m_mainInterface; ///< Node main interface.
 	Ipv4Address m_mainAddress; ///< Main address on the main interface.
+	uint32_t m_hostInterface; ///< Node main interface.
+	Ipv4Address m_hostAddress; ///< Main address on the main interface.
 
 	// static routing table
 	Ptr<Ipv4StaticRouting> m_RoutingTable;

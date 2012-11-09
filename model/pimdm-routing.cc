@@ -59,7 +59,8 @@ NS_OBJECT_ENSURE_REGISTERED (MulticastRoutingProtocol);
 MulticastRoutingProtocol::MulticastRoutingProtocol() :
 		m_mainInterface(0),  m_mainAddress(Ipv4Address()), m_generationID(0),  m_startTime(0),
 		m_stopTx(false), m_routingTableAssociation(0), m_ipv4 (0), m_identification(0),
-		m_routingProtocol(0), m_lo(0), m_rpfChecker(Timer::CANCEL_ON_DESTROY)
+		m_routingProtocol(0), m_lo(0), m_rpfChecker(Timer::CANCEL_ON_DESTROY),
+		m_hostInterface (0),  m_hostAddress(Ipv4Address())
 {
 	m_RoutingTable = Create<Ipv4StaticRouting> ();
 	m_IfaceNeighbors.clear();
@@ -601,7 +602,12 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t i, Ipv4InterfaceAddress add
 					<< ", I = " << i << " IfaceAddr " << m_ipv4->GetAddress (i, 0).GetLocal());
 		}
 	}
-
+	else if (m_hostAddress == Ipv4Address ()) {
+		if (addr != Ipv4Address::GetLoopback()) {
+			socketAddr = (m_hostAddress = addr);
+			m_hostInterface = i;
+		}
+	}
 	// Create a socket to listen only on this Interface/Address
 	Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (), Ipv4RawSocketFactory::GetTypeId());
 	socket->SetAttribute("Protocol", UintegerValue(PIM_IP_PROTOCOL_NUM));
@@ -618,7 +624,8 @@ MulticastRoutingProtocol::NotifyAddAddress (uint32_t i, Ipv4InterfaceAddress add
 			<< " Addr "<< addr
 			<<" Broad "<< addr.GetSubnetDirectedBroadcast (m_ipv4->GetAddress (i, 0).GetMask ())
 	);
-
+	if (i == m_hostInterface)
+		return;
 	NeighborhoodStatus *ns = FindNeighborhoodStatus(i);
 	NS_ASSERT(ns == NULL);
 	InsertNeighborhoodStatus(i);
@@ -1658,11 +1665,14 @@ MulticastRoutingProtocol::RecvMessage (Ptr<Socket> socket)
 	receivedPacket->AddHeader(ipv4header);
 	InfoXTag ptag;
 	receivedPacket->RemovePacketTag(ptag);
-	if (tag || (group.IsMulticast() && group != Ipv4Address(ALL_PIM_ROUTERS4))){
+	RoutingMulticastTable mt;
+	MulticastEntry me;
+	bool sourcePkt = Lookup(group, !tag?senderIfaceAddr:rtag.m_sender, mt, me);
+	if ((tag || (group.IsMulticast() && group != Ipv4Address(ALL_PIM_ROUTERS4))) && (interface == m_mainInterface || sourcePkt )){
 		if(tag) receivedPacket->AddPacketTag(rtag);
 		this->RecvPIMData (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
 	}
-	else if (group == Ipv4Address(ALL_PIM_ROUTERS4) || group == GetLocalAddress(interface)){
+	else if ((group == Ipv4Address(ALL_PIM_ROUTERS4) || group == GetLocalAddress(interface)) && interface == m_mainInterface){
 		this->RecvPIMDM (receivedPacket, senderIfaceAddr, senderIfacePort, interface);
 	}
 	else
@@ -1946,14 +1956,32 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	NS_LOG_DEBUG("Data forwarding towards > "<< fwd_list.size()<<" < interfaces/nodes ");
 	GetPrinterList("Data forwarding list",fwd_list);
 	// Forward packet on all interfaces in oiflist.
-	Time delay = TransmissionDelay();
-	for(std::set<WiredEquivalentInterface>::iterator out = fwd_list.begin(); out != fwd_list.end(); out++)//&& !(fwd_neighbors && fwd_clients) ; out++)
+	WiredEquivalentInterface wei (m_hostInterface, m_hostAddress);
+	bool clients = (fwd_list.find(wei) != fwd_list.end());
+	fwd_list.erase (wei);
+	bool backbone = !fwd_list.empty();
+	if (backbone)
 	{
+		Time delay = TransmissionDelay(100,2000,Time::US);
 		Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
-		NS_LOG_INFO("DataFwd ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delay.GetSeconds()<< " UID "<<fwdPacket->GetUid());
-		Simulator::Schedule(delay, &MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
-		break;
+		NS_LOG_INFO("DataFwd on backbone " << m_mainAddress << " interface "<<m_mainInterface << " Size " << fwdPacket->GetSize()<< " delay "<<delay.GetSeconds()<< " UID "<<fwdPacket->GetUid());
+		Simulator::Schedule(delay, &MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, m_mainInterface);
 	}
+	if (clients)
+	{
+		Time delay = TransmissionDelay(2000,4000,Time::US);
+		Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
+
+		NS_LOG_INFO("DataFwd on 	 " << m_hostAddress << " interface "<<m_hostInterface << " Size " << fwdPacket->GetSize()<< " delay "<<delay.GetSeconds()<< " UID "<<fwdPacket->GetUid());
+		Simulator::Schedule(delay, &MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, m_hostInterface);
+	}
+//	for(std::set<WiredEquivalentInterface>::iterator out = fwd_list.begin(); out != fwd_list.end(); out++)//&& !(fwd_neighbors && fwd_clients) ; out++)
+//	{
+//		Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
+//		NS_LOG_INFO("DataFwd ("<<out->second <<", "<< out->first <<") interfaces/nodes "<< fwdPacket->GetSize()<< " delay "<<delay.GetSeconds()<< " UID "<<fwdPacket->GetUid());
+//		Simulator::Schedule(delay, &MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, out->first);
+//		break;
+//	}
 }
 
 void
@@ -2227,7 +2255,7 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
 	// Send it ***
 	for (std::map<Ptr<Socket> , Ipv4InterfaceAddress>::const_iterator i = m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
 	{
-	  NS_LOG_DEBUG("Local "<<i->second.GetLocal()<<", Broad "<<i->second.GetBroadcast()<<", Mask "<<i->second.GetMask());
+	  NS_LOG_DEBUG("Interface " << m_ipv4->GetInterfaceForAddress(i->second.GetLocal ())<<", Local "<<i->second.GetLocal()<<", Broad "<<i->second.GetBroadcast()<<", Mask "<<i->second.GetMask());
 	  if(GetLocalAddress(interface) == i->second.GetLocal ()){
 		  packet->AddHeader(ipv4Header);
 		  RelayTag relayTag;
