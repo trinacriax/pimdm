@@ -1971,8 +1971,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	{
 		Time delay = TransmissionDelay(2000,4000,Time::US);
 		Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
-
-		NS_LOG_INFO("DataFwd on 	 " << m_hostAddress << " interface "<<m_hostInterface << " Size " << fwdPacket->GetSize()<< " delay "<<delay.GetSeconds()<< " UID "<<fwdPacket->GetUid());
+		NS_LOG_INFO("DataFwd on end-user " << m_hostAddress << " interface "<<m_hostInterface << " Size " << fwdPacket->GetSize()<< " delay "<<delay.GetSeconds()<< " UID "<<fwdPacket->GetUid());
 		Simulator::Schedule(delay, &MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, m_hostInterface);
 	}
 //	for(std::set<WiredEquivalentInterface>::iterator out = fwd_list.begin(); out != fwd_list.end(); out++)//&& !(fwd_neighbors && fwd_clients) ; out++)
