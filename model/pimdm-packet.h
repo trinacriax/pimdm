@@ -40,26 +40,26 @@
 #include "ns3/enum.h"
 #include "ns3/nstime.h"
 
-#define IPV4_ADDRESS_SIZE 4		///< IP address size in bytes.
-#define NATIVE_ENCODING 0		///< PIM native encoding.
-#define PIM_DM_HEADER_SIZE 4	///< PIM header size in bytes.
-#define PIM_DM_ENC_UNI 6		///< PIM encoded unicast message size in bytes.
-#define PIM_DM_ENC_GRP 8		///< PIM encoded group message size in bytes.
-#define PIM_DM_ENC_SRC 8		///< PIM encoded source message size in bytes.
-#define PIM_DM_HELLO 4			///< PIM hello message size in bytes.
-#define PIM_DM_HELLO_HOLDTIME 2	///< PIM holdtime size in bytes.
-#define PIM_DM_HELLO_LANPRUNDELAY 4///< PIM lan prune delay size in bytes.
-#define PIM_DM_HELLO_GENERATIONID 4///< PIM generation id size in bytes.
-#define PIM_DM_HELLO_STATEREFRESH 4///< PIM state refresh size in bytes.
-#define PIM_DM_JPG (PIM_DM_ENC_UNI+4)///< PIM join-prune-graft message size in bytes.
-#define PIM_DM_ASSERT (PIM_DM_ENC_GRP+PIM_DM_ENC_UNI+8+4)///< PIM assert message size in bytes.
-#define PIM_DM_REFRESH (PIM_DM_ENC_GRP+PIM_DM_ENC_UNI+PIM_DM_ENC_UNI+24)///< PIM refresh message size in bytes.
-#define PIM_IP_PROTOCOL_NUM 103   ///< PIM IP Protocol number defined by IANA. http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xml
-#define ALL_PIM_ROUTERS4 "224.0.0.13"
-#define ALL_PIM_ROUTERS6 "ff02::d"
+//const uint32_t IPV4_ADDRESS_SIZE = 4;		///< IP address size in bytes.
+const uint32_t PIM_NATIVE_ENCODING = 0;		///< PIM native encoding.
+const uint32_t PIM_DM_HEADER_SIZE = 4;	///< PIM header size in bytes.
+const uint32_t PIM_DM_ENC_UNI = 6;		///< PIM encoded unicast message size in bytes.
+const uint32_t PIM_DM_ENC_GRP = 8;		///< PIM encoded group message size in bytes.
+const uint32_t PIM_DM_ENC_SRC = 8;		///< PIM encoded source message size in bytes.
+const uint32_t PIM_DM_HELLO = 4;			///< PIM hello message size in bytes.
+const uint32_t PIM_DM_HELLO_HOLDTIME = 2;	///< PIM holdtime size in bytes.
+const uint32_t PIM_DM_HELLO_LANPRUNDELAY = 4;///< PIM lan prune delay size in bytes.
+const uint32_t PIM_DM_HELLO_GENERATIONID = 4;///< PIM generation id size in bytes.
+const uint32_t PIM_DM_HELLO_STATEREFRESH = 4;///< PIM state refresh size in bytes.
+const uint32_t PIM_DM_JPG = (PIM_DM_ENC_UNI+4);///< PIM join-prune-graft message size in bytes.
+const uint32_t PIM_DM_ASSERT = (PIM_DM_ENC_GRP+PIM_DM_ENC_UNI+8+4);///< PIM assert message size in bytes.
+const uint32_t PIM_DM_REFRESH = (PIM_DM_ENC_GRP+PIM_DM_ENC_UNI+PIM_DM_ENC_UNI+24);///< PIM refresh message size in bytes.
+const uint32_t PIM_IP_PROTOCOL_NUM = 103;   ///< PIM IP Protocol number defined by IANA. http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xml
 
 namespace ns3 {
 namespace pimdm {
+
+const Ipv4Address ALL_PIM_ROUTERS4 = Ipv4Address ("224.0.0.13");
 
 enum PIMType
 {
@@ -847,7 +847,6 @@ static inline std::ostream& operator<< (std::ostream& os, const PIMMessageList &
   return os;
 }
 
-}//end namespace mbn
-}//end namespace ns3
-
+}//end namespace pimdm
+}
 #endif /* __PIM_DM__HEADER_H__ */

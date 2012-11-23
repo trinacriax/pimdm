@@ -283,7 +283,7 @@ PIMHeader::EncodedGroup::Deserialize (Buffer::Iterator start, uint32_t messageSi
   this->m_maskLength = i.ReadU8();
   size +=4;
   this->m_groupAddress = Ipv4Address(i.ReadNtohU32());
-  size +=IPV4_ADDRESS_SIZE;
+  size +=sizeof(Ipv4Address);
   return size;
 }
 
@@ -338,7 +338,7 @@ PIMHeader::EncodedSource::Deserialize (Buffer::Iterator start, uint32_t messageS
   this->m_maskLength = i.ReadU8();
   size +=4;
   this->m_sourceAddress = Ipv4Address(i.ReadNtohU32());
-  size +=IPV4_ADDRESS_SIZE;
+  size +=sizeof(Ipv4Address);
   return messageSize;
 }
 

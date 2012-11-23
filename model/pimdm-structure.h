@@ -41,7 +41,62 @@
 
 namespace ns3 {
 namespace pimdm {
-# define MaxGraftRetry 6
+
+const uint32_t MaxGraftRetry = 6;
+/// Time default value for RPF check.
+const uint32_t RPF_CHECK = 10;
+/// Timer Name: Hello Timer (HT). Periodic interval for hello messages.
+const uint32_t Hello_Period = 30;
+/// Timer Name: Hello Timer (HT). Random interval for initial Hello message on bootup or triggered Hello message to a rebooting neighbor.
+const uint32_t Triggered_Hello_Delay = 5;
+/// The Hold Time in the Hello Message should be set to a value that can
+///  reasonably be expected to keep the Hello active until a new Hello
+///  message is received. On most links, this will be 3.5 times the value
+///  of Hello_Period.
+const double Hold_Time_Default = ((uint16_t)(3.5*Hello_Period)); //seconds
+/// Timer Name: Assert Timer (AT (S,G,I)). Period after last assert before assert state is timed out.
+const uint32_t Assert_Time = 180;
+/// Timer Name: Graft Retry Timer (GRT (S,G)). In the absence of receipt of a GraftAck message, the time before retransmission of a Graft message.
+const uint32_t Graft_Retry_Period = 3;
+/// Used to prevent Prune storms on a LAN.
+const uint32_t t_limit = 10; //210
+const uint32_t t_shorter = 2;
+/// Timer Name: Source Active Timer (SAT (S,G)).
+///  Period of time after receiving a multicast message a directly
+///  attached router will continue to send State Refresh messages.
+const uint32_t SourceLifetime = 210;
+/// Timer Name: State Refresh Timer (SRT (S,G)).
+///  Interval between successive state refresh messages.
+const uint32_t RefreshInterval = 60;
+const uint32_t StateRefreshInterval = RefreshInterval;
+/// If all routers on a LAN are using the LAN Prune Delay option, the Override_Interval (OI (I)) MUST be set to the
+///  largest value on the LAN. Otherwise, the Override_Interval (OI (I)) MUST be set to 2.5 seconds.
+const double Override_Interval = 2.5;
+// The J/P_Override_Interval is the sum of the interface's
+//	 Override_Interval (OI (I)) and Propagation_Delay (PD (I)). If all
+//	 routers on a LAN are using the LAN Prune Delay option, both
+//	 parameters MUST be set to the largest value on the LAN. Otherwise,
+//	 the Override_Interval (OI (I)) MUST be set to 2.5 seconds, and the
+//	 Propagation_Delay (PD (I)) MUST be set to 0.5 seconds.
+const double Propagation_Delay = 0.5;
+// The number of seconds a receiving PIM-DM router MUST keep a Prune
+//   state alive, unless removed by a Join or Graft message. If the
+//   Hold Time is '0xffff', the receiver MUST NOT remove the Prune state
+//   unless a corresponding Join or Graft message is received. The Hold
+//   Time is ignored in Join messages.
+const uint32_t PruneHoldTime = 0xffff;
+//If all routers on a LAN support the LAN Prune Delay option, then the
+//  PIM routers on that LAN will use the values received to adjust their
+//  J/P_Override_Interval on that interface and the interface is LAN
+//  Delay Enabled. Briefly, to avoid synchronization of Prune Override
+//  (Join) messages when multiple downstream routers share a multi-access
+//  link, sending of these messages is delayed by a small random amount
+//  of time. The period of randomization is configurable and has a
+//  default value of 3 seconds.
+const uint32_t JoinDelay = 3; //Prune override
+/// Prune downstream //AX.
+const uint32_t PRUNE_DOWN = 4;
+
 
 struct AssertMetric {
 	AssertMetric():

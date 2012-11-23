@@ -27,75 +27,6 @@
 #ifndef __PIM_DM_ROUTING_H__
 #define __PIM_DM_ROUTING_H__
 
-/// Time default value for RPF check.
-#define RPF_CHECK 10
-/// Timer Name: Hello Timer (HT). Periodic interval for hello messages.
-#define Hello_Period 30
-/// Timer Name: Hello Timer (HT). Random interval for initial Hello message on bootup or triggered Hello message to a rebooting neighbor.
-#define Triggered_Hello_Delay 5
-/// The Hold Time in the Hello Message should be set to a value that can
-///  reasonably be expected to keep the Hello active until a new Hello
-///  message is received. On most links, this will be 3.5 times the value
-///  of Hello_Period.
-#define Hold_Time_Default ((uint16_t)(3.5*Hello_Period)) //seconds
-/// Timer Name: Assert Timer (AT (S,G,I)). Period after last assert before assert state is timed out.
-#define Assert_Time 180
-/// Timer Name: Graft Retry Timer (GRT (S,G)). In the absence of receipt of a GraftAck message, the time before retransmission of a Graft message.
-#define Graft_Retry_Period 3
-/// Used to prevent Prune storms on a LAN.
-#define t_limit 10 //210
-/// Timer Name: Upstream Override Timer (OT (S,G)).
-#define t_short t_override
-#define t_shorter 2
-/// Timer Name: Source Active Timer (SAT (S,G)).
-///  Period of time after receiving a multicast message a directly
-///  attached router will continue to send State Refresh messages.
-#define SourceLifetime 210
-/// Timer Name: State Refresh Timer (SRT (S,G)).
-///  Interval between successive state refresh messages.
-#define RefreshInterval 60
-#define StateRefreshInterval RefreshInterval
-/// If all routers on a LAN are using the LAN Prune Delay option, the Override_Interval (OI (I)) MUST be set to the
-///  largest value on the LAN. Otherwise, the Override_Interval (OI (I)) MUST be set to 2.5 seconds.
-#define Override_Interval 2.5
-// The J/P_Override_Interval is the sum of the interface's
-//	 Override_Interval (OI (I)) and Propagation_Delay (PD (I)). If all
-//	 routers on a LAN are using the LAN Prune Delay option, both
-//	 parameters MUST be set to the largest value on the LAN. Otherwise,
-//	 the Override_Interval (OI (I)) MUST be set to 2.5 seconds, and the
-//	 Propagation_Delay (PD (I)) MUST be set to 0.5 seconds.
-#define Propagation_Delay 0.5
-// The number of seconds a receiving PIM-DM router MUST keep a Prune
-//   state alive, unless removed by a Join or Graft message. If the
-//   Hold Time is '0xffff', the receiver MUST NOT remove the Prune state
-//   unless a corresponding Join or Graft message is received. The Hold
-//   Time is ignored in Join messages.
-#define PruneHoldTime 0xffff
-// The number of seconds a receiving PIM-DM router MUST keep a Prune
-//   state alive, unless removed by a Join or Graft message. If the
-//   Hold Time is '0xffff', the receiver MUST NOT remove the Prune state
-//   unless a corresponding Join or Graft message is received. The Hold
-//   Time is ignored in Join messages.
-#define PruneHoldTime 0xffff
-//If all routers on a LAN support the LAN Prune Delay option, then the
-//  PIM routers on that LAN will use the values received to adjust their
-//  J/P_Override_Interval on that interface and the interface is LAN
-//  Delay Enabled. Briefly, to avoid synchronization of Prune Override
-//  (Join) messages when multiple downstream routers share a multi-access
-//  link, sending of these messages is delayed by a small random amount
-//  of time. The period of randomization is configurable and has a
-//  default value of 3 seconds.
-#define JoinDelay 3 //Prune override
-/// Prune downstream //AX.
-#define PRUNE_DOWN 4
-
-
-#define TTL_SAMPLE .2
-#define PIMDM_TTL 1
-#define PIM_RESERVED 0
-#define PIM_PORT_NUMBER 703 //IANA Unassigned
-#define PIM_VERSION_2 2
-
 #include "pimdm-structure.h"
 #include "pimdm-packet.h"
 
@@ -131,8 +62,16 @@
 #include <string>
 #include <iterator>
 
+const double TTL_SAMPLE = .2;
+const uint32_t PIMDM_TTL = 1;
+const uint32_t PIM_RESERVED = 0;
+const uint32_t PIM_PORT_NUMBER = 703; //IANA Unassigned
+const uint32_t PIM_VERSION_2 = 2;
+
 namespace ns3 {
 namespace pimdm {
+
+
 struct MulticastEntry {
 	Ipv4Address sourceAddr; ///< source destination
 	Ipv4Address nextAddr; ///< source destination
@@ -356,6 +295,9 @@ private:
 	/// largest value on the LAN. Otherwise, the Override_Interval (OI (I)) MUST be set to 2.5 seconds.
 
 	double t_override (uint32_t interface);
+
+	/// Timer Name: Upstream Override Timer (OT (S,G)).
+	double t_short (uint32_t interface);
 
 	double OverrideInterval (uint32_t interface);
 

@@ -234,7 +234,7 @@ MulticastRoutingProtocol::register_SG (std::string csv){
 	// ADD a new IGMP record
 	size_t sources = m_mrib.find(group)->second.mgroup.size();
 	NS_LOG_DEBUG("Main Addr = "<<  m_mainAddress << ": Group "<<group<<" #Source: "<< sources);
-	if(group == ALL_PIM_ROUTERS4 || sources > 1) return;//Socket already registered for this group
+	if(group == Ipv4Address(ALL_PIM_ROUTERS4) || sources > 1) return;//Socket already registered for this group
 	for(uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++){
 		if(IsLoopInterface(i))
 			continue;
@@ -1366,7 +1366,7 @@ MulticastRoutingProtocol::ForgeStateRefresh (uint32_t interface, Ipv4Address des
 	refresh.m_R = 0;
 	refresh.m_metricPreference = GetMetricPreference(interface);//(sgp.sourceMulticastAddr));
 	refresh.m_metric = GetRouteMetric(interface,sgp.sourceMulticastAddr);
-	refresh.m_maskLength = IPV4_ADDRESS_SIZE;
+	refresh.m_maskLength = sizeof(Ipv4Address);
 	refresh.m_ttl = (sgState->SG_DATA_TTL>0 ? sgState->SG_DATA_TTL : sgState->SG_SR_TTL);
 //    Prune indicator flag.  This MUST be set to 1 if the State Refresh
 //		is to be sent on a Pruned interface.  Otherwise, it MUST be set to 0.
@@ -4229,6 +4229,9 @@ Ipv4Header MulticastRoutingProtocol::BuildHeader (Ipv4Address source, Ipv4Addres
 /// t_override is a random value between 0 and the interface's Override_Interval (OI (I)).
 /// If all routers on a LAN are using the LAN Prune Delay option, the Override_Interval (OI (I)) MUST be set to the
 /// largest value on the LAN. Otherwise, the Override_Interval (OI (I)) MUST be set to 2.5 seconds.
+double MulticastRoutingProtocol::t_short (uint32_t interface){
+	return t_override(interface);
+}
 
 double MulticastRoutingProtocol::t_override (uint32_t interface){
 	return UniformVariable ().GetValue (0, OverrideInterval (interface));
@@ -4245,17 +4248,17 @@ double MulticastRoutingProtocol::OverrideInterval (uint32_t interface){
 }
 
 PIMHeader::EncodedUnicast MulticastRoutingProtocol::ForgeEncodedUnicast (Ipv4Address unicast){
-		PIMHeader::EncodedUnicast egroup = {AF_IPv4, NATIVE_ENCODING, unicast};
+		PIMHeader::EncodedUnicast egroup = {AF_IPv4, PIM_NATIVE_ENCODING , unicast};
 		return egroup;
 	}
 
 PIMHeader::EncodedGroup MulticastRoutingProtocol::ForgeEncodedGroup (Ipv4Address group){
-	PIMHeader::EncodedGroup egroup = {AF_IPv4, NATIVE_ENCODING, 0, 0, 0, IPV4_ADDRESS_SIZE, group};
+	PIMHeader::EncodedGroup egroup = {AF_IPv4, PIM_NATIVE_ENCODING , 0, 0, 0, sizeof(Ipv4Address), group};
 	return egroup;
 }
 
 PIMHeader::EncodedSource MulticastRoutingProtocol::ForgeEncodedSource (Ipv4Address source){
-	PIMHeader::EncodedSource esource = {AF_IPv4, NATIVE_ENCODING, 0, 0, 0, 0, IPV4_ADDRESS_SIZE, source};
+	PIMHeader::EncodedSource esource = {AF_IPv4, PIM_NATIVE_ENCODING , 0, 0, 0, 0, sizeof(Ipv4Address), source};
 	return esource;
 }
 
