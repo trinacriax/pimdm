@@ -1969,7 +1969,7 @@ MulticastRoutingProtocol::RecvPIMData (Ptr<Packet> receivedPacket, Ipv4Address s
 	}
 	if (clients)
 	{
-		Time delay = TransmissionDelay(10,2000,Time::US);
+		Time delay = TransmissionDelay(100,1000,Time::US);
 		Ptr<Packet> fwdPacket = copy->Copy(); // create a copy of the packet for each interface;
 		NS_LOG_INFO("DataFwd on end-user " << m_hostAddress << " interface "<<m_hostInterface << " Size " << fwdPacket->GetSize()<< " delay "<<delay.GetSeconds()<< " UID "<<fwdPacket->GetUid());
 		Simulator::Schedule(delay, &MulticastRoutingProtocol::SendPacketHBroadcastInterface, this, fwdPacket, sourceHeader, m_hostInterface);
