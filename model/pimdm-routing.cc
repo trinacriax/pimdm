@@ -48,7 +48,7 @@
 #include "ns3/tag.h"
 #include "ns3/double.h"
 #include <iostream>
-#include "ns3/info-x-tag.h"
+#include "ns3/snr-tag.h"
 
 namespace ns3{
 namespace pimdm{
@@ -1663,7 +1663,7 @@ MulticastRoutingProtocol::RecvMessage (Ptr<Socket> socket)
 	bool tag = receivedPacket->RemovePacketTag(rtag);
 	Ipv4Address group = ipv4header.GetDestination();
 	receivedPacket->AddHeader(ipv4header);
-	InfoXTag ptag;
+	SnrTag ptag;
 	receivedPacket->RemovePacketTag(ptag);
 	RoutingMulticastTable mt;
 	MulticastEntry me;
