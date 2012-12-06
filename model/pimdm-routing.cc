@@ -2262,7 +2262,7 @@ MulticastRoutingProtocol::SendPacketHBroadcastInterface (Ptr<Packet> packet, Ipv
 		  relayTag.m_receiver = i->second.GetBroadcast();
 		  m_txDataPacketTrace (packet);
 		  packet->AddPacketTag(relayTag);
-		  NS_LOG_DEBUG ("Node " << GetObject<Node> ()->GetId() << " is forwarding packet " << packet <<"("<<packet->GetSize() << ") to Destination "<< ipv4Header.GetDestination() << " ("<< relayTag.m_receiver<<") " <<", Interface "<< interface<< ", Pid "<< packet->GetUid()<<", Socket "<<i->first);
+		  NS_LOG_DEBUG ("Node " << GetObject<Node> ()->GetId() << " is forwarding packet " << packet->GetUid() <<"("<<packet->GetSize() << ") to Destination "<< ipv4Header.GetDestination() << " ("<< relayTag.m_receiver<<") " <<", Interface "<< interface<< ", Pid "<< packet->GetUid()<<", Socket "<<i->first);
 		  i->first->SendTo (packet, 0, InetSocketAddress (i->second.GetBroadcast()));
 		  break; // Just to speedup and avoid the complete loop over all sockets.
 	  }
