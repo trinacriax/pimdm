@@ -2670,7 +2670,7 @@ MulticastRoutingProtocol::olistEmpty(SourceGroupPair &sgp)
 {
 	NS_LOG_FUNCTION(this<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
 	WiredEquivalentInterface wei = RPF_interface(sgp.sourceMulticastAddr);
-	SourceGroupState *sgState = FindSourceGroupState(wei.first, wei.second, sgp);
+	SourceGroupState *sgState = FindSourceGroupState(wei.first, wei.second, sgp, true);
 	switch (sgState->upstream.GraftPrune){
 		case GP_Forwarding:{
 		// olist(S, G) -> NULL AND S NOT directly connected
