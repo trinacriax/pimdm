@@ -53,7 +53,7 @@ const uint32_t Triggered_Hello_Delay = 5;
 ///  reasonably be expected to keep the Hello active until a new Hello
 ///  message is received. On most links, this will be 3.5 times the value
 ///  of Hello_Period.
-const double Hold_Time_Default = ((uint16_t)(3.5*Hello_Period)); //seconds
+const uint16_t Hold_Time_Default = ((uint16_t)(3.5*Hello_Period)); //seconds
 /// Timer Name: Assert Timer (AT (S,G,I)). Period after last assert before assert state is timed out.
 const uint32_t Assert_Time = 180;
 /// Timer Name: Graft Retry Timer (GRT (S,G)). In the absence of receipt of a GraftAck message, the time before retransmission of a Graft message.
