@@ -1,7 +1,7 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011 University of Trento, Italy
- * 					 University of California, Los Angeles, U.S.A.
+ *                    University of California, Los Angeles, U.S.A.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -9,17 +9,18 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
+ * Source:  http://www.ietf.org/rfc/rfc3973.txt
  *
  * Authors: Alessandro Russo <russo@disi.unitn.it>
- *     University of Trento, Italy
- *     University of California, Los Angeles U.S.A.
+ *          University of Trento, Italy
+ *          University of California, Los Angeles U.S.A.
  */
 
 /// \brief	This header file declares and defines internal state of an PIM-DM node.
@@ -76,9 +77,13 @@ struct MulticastEntry {
 	Ipv4Address sourceAddr; ///< source destination
 	Ipv4Address nextAddr; ///< source destination
 	uint32_t interface; ///< interface to source
-	MulticastEntry () : // default values
+	MulticastEntry () :
 		sourceAddr (), nextAddr (), interface (0) {
 	}
+        MulticastEntry (Ipv4Address s, Ipv4Address n, uint32_t i) :
+            sourceAddr(s), nextAddr(n), interface(i)
+        {
+        }
 	;
 };
 
@@ -88,9 +93,13 @@ struct RoutingMulticastTable {
 	std::map <Ipv4Address,MulticastEntry> mgroup; ///< source destination
 	RoutingMulticastTable () : // default values
 		groupAddr () {
-	}
-	;
-};
+        }
+        RoutingMulticastTable (Ipv4Address g) : // default values
+            groupAddr(g)
+        {
+        }
+        ;
+    };
 
 /// This class encapsulates all data structures needed for maintaining internal state of an PIM_DM node.
 class MulticastRoutingProtocol: public Ipv4RoutingProtocol {
@@ -101,11 +110,9 @@ private:
 	uint32_t m_hostInterface; ///< Node main interface.
 	Ipv4Address m_hostAddress; ///< Main address on the main interface.
 
-	// static routing table
+	/// static routing table
 	Ptr<Ipv4StaticRouting> m_RoutingTable;
 
-//	typedef std::list<Ipv4MulticastRoutingTableEntry *> MulticastRoutes;
-//	MulticastRoutes m_multicastRoutes;
 
 	///\name Protocol fields;
 	//\{
@@ -143,21 +150,17 @@ private:
 	uint32_t m_identification;
 	/// Raw socket per each IP interface, map socket -> iface address (IP + mask)
 	std::map<Ptr<Socket> , Ipv4InterfaceAddress> m_socketAddresses;
-	/// Pointer to socket.
+	/// Pointer to socket
 	Ptr<Ipv4RoutingProtocol>* m_routingProtocol;
 	/// Loopback device used to defer RREQ until packet will be fully formed
 	Ptr<NetDevice> m_lo;
 	//}
 
-	/// A list of pending messages which are buffered awaiting for being sent.
-//	pimdm::PIMHeader m_queuedMessages;
-//	Timer m_queuedMessagesTimer; // timer for throttling outgoing messages
-
 	Time m_rpfCheck;
 	Timer m_rpfChecker;
 
 	Time m_LanDelay;
-//	uint64_t m_latestPacketID;
+
 	EventId eventUpstream;
 
 	Time m_startDelay;
@@ -198,7 +201,7 @@ public:
 	std::vector<RoutingMulticastTable> GetRoutingTableEntries () const;
 
 	void registerMember (Ipv4Address source, Ipv4Address group, uint32_t interface);
-	void unregisterMember (Ipv4Address source, Ipv4Address group, uint32_t interface);
+	void unregisterMember (const Ipv4Address source, const Ipv4Address group, const uint32_t interface);
 	void register_SG (std::string SG);
 
 	void UpdateMRIB (){}

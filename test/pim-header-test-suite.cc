@@ -23,9 +23,9 @@
  *          University of California, Los Angeles U.S.A.
  */
 
-#include "ns3/test.h"
-#include "ns3/pimdm-packet.h"
-#include "ns3/packet.h"
+#include <ns3/test.h>
+#include <ns3/pimdm-packet.h>
+#include <ns3/packet.h>
 
 namespace ns3 {
 
@@ -99,40 +99,40 @@ PimDmHelloTestCase::DoRun (void)
 //	helloEntry1
 	NS_TEST_ASSERT_MSG_EQ (helloEntry1.m_optionType, pimdm::PIMHeader::HelloMessage::HelloHoldTime, "Option Type");
 	NS_TEST_ASSERT_MSG_EQ (helloEntry1.m_optionLength, PIM_DM_HELLO_HOLDTIME, "Option Length");
-	NS_TEST_ASSERT_MSG_EQ (helloEntry1.m_optionValue.holdTime.m_holdTime,Time("1401s"),"Option Value");
+	NS_TEST_ASSERT_MSG_EQ (helloEntry1.m_optionValue.holdTime.s_holdTime,Time("1401s"),"Option Value");
 
 	pimdm::PIMHeader::HelloMessage::HelloEntry helloEntry2 = helloOut.m_optionList[1];
 
 	NS_TEST_ASSERT_MSG_EQ (helloEntry2.m_optionType, pimdm::PIMHeader::HelloMessage::LANPruneDelay, "Option Type");
 	NS_TEST_ASSERT_MSG_EQ (helloEntry2.m_optionLength, PIM_DM_HELLO_LANPRUNDELAY, "Option Length");
-	NS_TEST_ASSERT_MSG_EQ (helloEntry2.m_optionValue.lanPruneDelay.m_T,1, "Option Value");
-	NS_TEST_ASSERT_MSG_EQ (helloEntry2.m_optionValue.lanPruneDelay.m_propagationDelay,Time("10ms"), "Option Value");
-	NS_TEST_ASSERT_MSG_EQ (helloEntry2.m_optionValue.lanPruneDelay.m_overrideInterval,Time("20ms"), "Option Value");
+	NS_TEST_ASSERT_MSG_EQ (helloEntry2.m_optionValue.lanPruneDelay.s_T,1, "Option Value");
+	NS_TEST_ASSERT_MSG_EQ (helloEntry2.m_optionValue.lanPruneDelay.s_propagationDelay,Time("10ms"), "Option Value");
+	NS_TEST_ASSERT_MSG_EQ (helloEntry2.m_optionValue.lanPruneDelay.s_overrideInterval,Time("20ms"), "Option Value");
 
 	pimdm::PIMHeader::HelloMessage::HelloEntry helloEntry3 = helloOut.m_optionList[2];
 	std::cout <<"\n\tType "<<helloEntry3.m_optionType << " Length "<< helloEntry3.m_optionLength
-			<< " Value ["<<helloEntry3.m_optionValue.holdTime.m_holdTime<<"]\n";
+			<< " Value ["<<helloEntry3.m_optionValue.holdTime.s_holdTime<<"]\n";
 	NS_TEST_ASSERT_MSG_EQ (helloEntry3.m_optionType, pimdm::PIMHeader::HelloMessage::HelloHoldTime, "Option Type");
 	NS_TEST_ASSERT_MSG_EQ (helloEntry3.m_optionLength, PIM_DM_HELLO_HOLDTIME, "Option Length");
-	NS_TEST_ASSERT_MSG_EQ (helloEntry3.m_optionValue.holdTime.m_holdTime,Time("2802s"), "Option Value");
+	NS_TEST_ASSERT_MSG_EQ (helloEntry3.m_optionValue.holdTime.s_holdTime,Time("2802s"), "Option Value");
 
 	pimdm::PIMHeader::HelloMessage::HelloEntry helloEntry4 = helloOut.m_optionList[3];
 	std::cout <<"\n\tType "<<helloEntry4.m_optionType << " Length "<< helloEntry4.m_optionLength
-			<< " Value ["<<helloEntry4.m_optionValue.generationID.m_generatioID<<"]\n";
+			<< " Value ["<<helloEntry4.m_optionValue.generationID.s_generatioID<<"]\n";
 	NS_TEST_ASSERT_MSG_EQ (helloEntry4.m_optionType, pimdm::PIMHeader::HelloMessage::GenerationID, "Option Type");
 	NS_TEST_ASSERT_MSG_EQ (helloEntry4.m_optionLength, PIM_DM_HELLO_GENERATIONID, "Option Length");
-	NS_TEST_ASSERT_MSG_EQ (helloEntry4.m_optionValue.generationID.m_generatioID,1234567890, "Option Value");
+	NS_TEST_ASSERT_MSG_EQ (helloEntry4.m_optionValue.generationID.s_generatioID,1234567890, "Option Value");
 
 	pimdm::PIMHeader::HelloMessage::HelloEntry helloEntry5 = helloOut.m_optionList[4];
 	std::cout <<"\n\tType "<<helloEntry5.m_optionType << " Length "<< helloEntry5.m_optionLength
-		<< " Value ["<<(uint16_t)helloEntry5.m_optionValue.stateRefreshCapable.m_version<<","
-		<< (uint16_t)helloEntry5.m_optionValue.stateRefreshCapable.m_interval <<","
-		<< helloEntry5.m_optionValue.stateRefreshCapable.m_reserved<<"]\n";
+		<< " Value ["<<(uint16_t)helloEntry5.m_optionValue.stateRefreshCapable.s_version<<","
+		<< (uint16_t)helloEntry5.m_optionValue.stateRefreshCapable.s_interval <<","
+		<< helloEntry5.m_optionValue.stateRefreshCapable.s_reserved<<"]\n";
 	NS_TEST_ASSERT_MSG_EQ (helloEntry5.m_optionType, pimdm::PIMHeader::HelloMessage::StateRefreshCapable, "Option Type");
 	NS_TEST_ASSERT_MSG_EQ (helloEntry5.m_optionLength, PIM_DM_HELLO_STATEREFRESH, "Option Length");
-	NS_TEST_ASSERT_MSG_EQ (helloEntry5.m_optionValue.stateRefreshCapable.m_version,9, "Option Value");
-	NS_TEST_ASSERT_MSG_EQ (helloEntry5.m_optionValue.stateRefreshCapable.m_interval,18, "Option Value");
-	NS_TEST_ASSERT_MSG_EQ (helloEntry5.m_optionValue.stateRefreshCapable.m_reserved,9999, "Option Value");
+	NS_TEST_ASSERT_MSG_EQ (helloEntry5.m_optionValue.stateRefreshCapable.s_version,9, "Option Value");
+	NS_TEST_ASSERT_MSG_EQ (helloEntry5.m_optionValue.stateRefreshCapable.s_interval,18, "Option Value");
+	NS_TEST_ASSERT_MSG_EQ (helloEntry5.m_optionValue.stateRefreshCapable.s_reserved,9999, "Option Value");
   }
 }
 
