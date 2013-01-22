@@ -44,7 +44,6 @@ namespace ns3
 {
   namespace pimdm
   {
-
     const uint32_t MaxGraftRetry = 6;
 /// Time default value for RPF check.
     const uint32_t RPF_CHECK = 10;
@@ -161,14 +160,6 @@ namespace ns3
               && (a.IPAddress != b.IPAddress) && !(a.IPAddress < b.IPAddress));
       return result;
     }
-//
-//static inline bool
-//operator < (const AssertMetric &a, const AssertMetric &b){
-//	bool result = (a.metricPreference > b.metricPreference);
-//	result = result || ((a.metricPreference == b.metricPreference) && (a.routeMetric > b.routeMetric));
-//	result = result || ((a.metricPreference == b.metricPreference) && (a.routeMetric == b.routeMetric) && (a.IPAddress != b.IPAddress) && !(a.IPAddress > b.IPAddress));
-//	return result;
-//}
 
 /// (S,G) Pair. Source S and destination group G associated with an IP packet.
     struct SourceGroupPair
