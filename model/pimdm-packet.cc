@@ -114,28 +114,22 @@ namespace ns3
         case PIM_HELLO:
           {
             m_pim_message.hello.Serialize(i);
-//	  std::cout << "Serialize H\n";
             break;
           }
         case PIM_JP:
           m_pim_message.joinPrune.Serialize(i);
-//	  std::cout << "Serialize J\n";
           break;
         case PIM_ASSERT:
           m_pim_message.assert.Serialize(i);
-//	  std::cout << "Serialize A\n";
           break;
         case PIM_GRAFT:
           m_pim_message.graft.Serialize(i);
-//	  std::cout << "Serialize G\n";
           break;
         case PIM_GRAFT_ACK:
           m_pim_message.graftAck.Serialize(i);
-//	  std::cout << "Serialize GA\n";
           break;
         case PIM_STATE_REF:
           m_pim_message.stateRefresh.Serialize(i);
-//	  std::cout << "Serialize S\n";
           break;
         default:
           {
