@@ -437,8 +437,6 @@ namespace ns3
         }
     };
 
-    typedef std::pair<uint32_t, Ipv4Address> WiredEquivalentInterface;	///< Neighbor List.
-
   } // namespace pimdm
 } // namespace ns3
 

@@ -72,6 +72,10 @@ namespace ns3
 {
   namespace pimdm
   {
+
+
+    typedef std::pair<uint32_t, Ipv4Address> WiredEquivalentInterface;
+
     struct MulticastEntry
     {
         Ipv4Address sourceAddr; ///< source destination
@@ -104,15 +108,12 @@ namespace ns3
 /// This class encapsulates all data structures needed for maintaining internal state of an PIM_DM node.
     class MulticastRoutingProtocol : public Ipv4RoutingProtocol
     {
-        // friend class;
       private:
-        uint32_t m_mainInterface; ///< Node main interface.
+        uint32_t m_mainInterface;  ///< Node main interface.
         Ipv4Address m_mainAddress; ///< Main address on the main interface.
-        uint32_t m_hostInterface; ///< Node main interface.
+        uint32_t m_hostInterface;  ///< Node main interface.
         Ipv4Address m_hostAddress; ///< Main address on the main interface.
-
-        /// static routing table
-        Ptr<Ipv4StaticRouting> m_RoutingTable;
+        Ptr<Ipv4StaticRouting> m_RoutingTable; ///< static routing table
 
         ///\name Protocol fields;
         //\{
@@ -333,8 +334,6 @@ namespace ns3
 
         bool
         IsValidSG (uint32_t interface, const Ipv4Address & source, const Ipv4Address & group);
-
-//	uint32_t GetReceivingInterface (Ipv4Address addr);
 
         /// Threshold (I) returns the minimum TTL that a packet must have before it can be transmitted on interface I.
         uint8_t
@@ -617,7 +616,6 @@ namespace ns3
         void
         EraseSourceGroupState (uint32_t interface, Ipv4Address neighbor, const Ipv4Address source,
                                const Ipv4Address group);
-//	void ChangeSourceGroupState (uint32_t oldinterface, Ipv4Address oldneighbor, uint32_t newinterface, Ipv4Address newneighbor, const SourceGroupPair &sgp);
 
         void
         InsertNeighborhoodStatus (const uint32_t interface);
@@ -837,53 +835,6 @@ namespace ns3
         TransmissionDelay (double l, double u);
         Time
         TransmissionDelay ();
-    };
-
-    struct IdTag : public Tag
-    {
-        uint32_t m_id;
-        IdTag (uint32_t id = 0) :
-            Tag(), m_id(id)
-        {
-        }
-
-        static TypeId
-        GetTypeId ()
-        {
-          static TypeId tid = TypeId("ns3::IdTag").SetParent<Tag>();
-          return tid;
-        }
-
-        TypeId
-        GetInstanceTypeId (void) const
-        {
-          return GetTypeId();
-        }
-
-        uint32_t
-        GetSerializedSize (void) const
-        {
-          return sizeof(m_id);
-        }
-
-        void
-        Serialize (TagBuffer i) const
-        {
-          i.WriteU32(m_id);
-        }
-
-        void
-        Deserialize (TagBuffer i)
-        {
-          m_id = i.ReadU32();
-        }
-
-        void
-        Print (std::ostream &os) const
-        {
-          os << " IdTag: id " << m_id;
-        }
-
     };
 
     struct RelayTag : public Tag
