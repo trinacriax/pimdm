@@ -282,6 +282,12 @@ MulticastRoutingProtocol::GetTypeId (void)
       m_mrib.clear();
     }
 
+    uint32_t
+    MulticastRoutingProtocol::GetSize () const
+    {
+      return m_mrib.size();
+    }
+
 ///
 /// \brief Deletes the entry whose destination address is given.
 /// \param dest	address of the destination node.
@@ -4357,11 +4363,28 @@ MulticastRoutingProtocol::GetTypeId (void)
         }NS_LOG_DEBUG("Clean neighbors list on interface "<< interface<<": "<< size << " -> "<< nl->neighbors.size());
     }
 
+    uint32_t
+    MulticastRoutingProtocol::GetMainInterface ()
+    {
+      return m_mainInterface;
+    }
+
     void
     MulticastRoutingProtocol::SetInterfaceExclusions (std::set<uint32_t> exceptions)
     {
       NS_LOG_FUNCTION(this);
       m_interfaceExclusions = exceptions;
+    }
+
+    std::set<uint32_t>
+    MulticastRoutingProtocol::GetInterfaceExclusions () const
+    {
+      return m_interfaceExclusions;
+    }
+
+    void
+    MulticastRoutingProtocol::UpdateMRIB ()
+    {
     }
 
     void
