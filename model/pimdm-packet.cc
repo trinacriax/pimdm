@@ -899,5 +899,5 @@ namespace ns3
       return size;
     }
 
-  } // namespace pidm
+  } // namespace pimdm
 } // namespace ns3

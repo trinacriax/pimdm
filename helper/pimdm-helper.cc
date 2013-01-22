@@ -1,6 +1,7 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2008 INRIA
+ * Copyright (c) 2011 University of Trento, Italy
+ *                    University of California, Los Angeles, U.S.A.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -15,71 +16,77 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
+ * Source:  http://www.ietf.org/rfc/rfc3973.txt
+ *
+ * Authors: Alessandro Russo <russo@disi.unitn.it>
+ *          University of Trento, Italy
+ *          University of California, Los Angeles U.S.A.
  */
+
 #include "pimdm-helper.h"
-#include "ns3/pimdm-routing.h"
-#include "ns3/node-list.h"
-#include "ns3/names.h"
-#include "ns3/ipv4-list-routing.h"
+#include <ns3/pimdm-routing.h>
+#include <ns3/node-list.h>
+#include <ns3/names.h>
+#include <ns3/ipv4-list-routing.h>
 
-namespace ns3 {
-
-PimDmHelper::PimDmHelper ()
+namespace ns3
 {
-  m_agentFactory.SetTypeId ("ns3::pimdm::MulticastRoutingProtocol");
-}
 
-PimDmHelper::PimDmHelper (const PimDmHelper &o)
-  : m_agentFactory (o.m_agentFactory)
-{
-  m_interfaceExclusions = o.m_interfaceExclusions;
-}
+  PimDmHelper::PimDmHelper ()
+  {
+    m_agentFactory.SetTypeId("ns3::pimdm::MulticastRoutingProtocol");
+  }
 
-PimDmHelper*
-PimDmHelper::Copy (void) const
-{
-  return new PimDmHelper (*this);
-}
+  PimDmHelper::PimDmHelper (const PimDmHelper &o) :
+      m_agentFactory(o.m_agentFactory)
+  {
+    m_interfaceExclusions = o.m_interfaceExclusions;
+  }
 
-void
-PimDmHelper::ExcludeInterface (Ptr<Node> node, uint32_t interface)
-{
-  std::map< Ptr<Node>, std::set<uint32_t> >::iterator it = m_interfaceExclusions.find (node);
+  PimDmHelper*
+  PimDmHelper::Copy (void) const
+  {
+    return new PimDmHelper(*this);
+  }
 
-  if(it == m_interfaceExclusions.end ())
-    {
-      std::set<uint32_t> interfaces;
-      interfaces.insert (interface);
-    
-      m_interfaceExclusions.insert (std::make_pair (node, std::set<uint32_t> (interfaces) ));
-    }
-  else
-    {
-      it->second.insert (interface);
-    }
-}
+  void
+  PimDmHelper::ExcludeInterface (Ptr<Node> node, uint32_t interface)
+  {
+    std::map<Ptr<Node>, std::set<uint32_t> >::iterator it = m_interfaceExclusions.find(node);
 
-Ptr<Ipv4RoutingProtocol> 
-PimDmHelper::Create (Ptr<Node> node) const
-{
-  Ptr<pimdm::MulticastRoutingProtocol> agent = m_agentFactory.Create<pimdm::MulticastRoutingProtocol> ();
+    if (it == m_interfaceExclusions.end())
+      {
+        std::set<uint32_t> interfaces;
+        interfaces.insert(interface);
 
-  std::map<Ptr<Node>, std::set<uint32_t> >::const_iterator it = m_interfaceExclusions.find (node);
+        m_interfaceExclusions.insert(std::make_pair(node, std::set<uint32_t>(interfaces)));
+      }
+    else
+      {
+        it->second.insert(interface);
+      }
+  }
 
-  if(it != m_interfaceExclusions.end ())
-    {
-      agent->SetInterfaceExclusions(it->second);
-    }
+  Ptr<Ipv4RoutingProtocol>
+  PimDmHelper::Create (Ptr<Node> node) const
+  {
+    Ptr<pimdm::MulticastRoutingProtocol> agent = m_agentFactory.Create<pimdm::MulticastRoutingProtocol>();
 
-  node->AggregateObject (agent);
-  return agent;
-}
+    std::map<Ptr<Node>, std::set<uint32_t> >::const_iterator it = m_interfaceExclusions.find(node);
 
-void 
-PimDmHelper::Set (std::string name, const AttributeValue &value)
-{
-  m_agentFactory.Set (name, value);
-}
+    if (it != m_interfaceExclusions.end())
+      {
+        agent->SetInterfaceExclusions(it->second);
+      }
+
+    node->AggregateObject(agent);
+    return agent;
+  }
+
+  void
+  PimDmHelper::Set (std::string name, const AttributeValue &value)
+  {
+    m_agentFactory.Set(name, value);
+  }
 
 } // namespace ns3

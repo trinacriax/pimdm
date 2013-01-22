@@ -25,31 +25,32 @@
 
 /// \brief	This file implements the PIM-DM node state.
 #include "pimdm-routing.h"
-#include "ns3/socket-factory.h"
-#include "ns3/ipv4-raw-socket-factory.h"
-#include "ns3/udp-socket-factory.h"
-#include "ns3/udp-socket.h"
-#include "ns3/simulator.h"
-#include "ns3/names.h"
-#include "ns3/random-variable.h"
-#include "ns3/inet-socket-address.h"
-#include "ns3/ipv4-routing-protocol.h"
-#include "ns3/ipv4-routing-table-entry.h"
-#include "ns3/ipv4-route.h"
-#include "ns3/boolean.h"
-#include "ns3/uinteger.h"
-#include "ns3/enum.h"
-#include "limits.h"
-#include "ns3/trace-source-accessor.h"
-#include "ns3/ipv4-header.h"
-#include "ns3/log.h"
-#include "ns3/ipv4-routing-table-entry.h"
-#include "ns3/udp-header.h"
-#include "ns3/udp-l4-protocol.h"
-#include "ns3/tag.h"
-#include "ns3/double.h"
+
+#include <ns3/socket-factory.h>
+#include <ns3/ipv4-raw-socket-factory.h>
+#include <ns3/udp-socket-factory.h>
+#include <ns3/udp-socket.h>
+#include <ns3/simulator.h>
+#include <ns3/names.h>
+#include <ns3/random-variable.h>
+#include <ns3/inet-socket-address.h>
+#include <ns3/ipv4-routing-protocol.h>
+#include <ns3/ipv4-routing-table-entry.h>
+#include <ns3/ipv4-route.h>
+#include <ns3/boolean.h>
+#include <ns3/uinteger.h>
+#include <ns3/enum.h>
+#include <ns3/trace-source-accessor.h>
+#include <ns3/ipv4-header.h>
+#include <ns3/log.h>
+#include <ns3/ipv4-routing-table-entry.h>
+#include <ns3/udp-header.h>
+#include <ns3/udp-l4-protocol.h>
+#include <ns3/tag.h>
+#include <ns3/double.h>
+#include <ns3/snr-tag.h>
+#include <limits.h>
 #include <iostream>
-#include "ns3/snr-tag.h"
 
 namespace ns3
 {
@@ -84,79 +85,81 @@ MulticastRoutingProtocol::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::pimdm::MulticastRoutingProtocol")
     .SetParent<Ipv4RoutingProtocol> ()
     .AddConstructor<MulticastRoutingProtocol> ()
-    .AddAttribute ("HelloInterval", "HELLO messages interval.",
+        .AddAttribute ("HelloInterval", "HELLO messages interval.",
                    TimeValue (Seconds (Hello_Period)),
                    MakeTimeAccessor (&MulticastRoutingProtocol::m_helloTime),
                    MakeTimeChecker ())
-	.AddAttribute ("HelloHoldTime", "HoldTime used in hello messages.",
-			 	 	UintegerValue (Hold_Time_Default),
-			        MakeUintegerAccessor (&MulticastRoutingProtocol::SetHelloHoldTime),
-			        MakeUintegerChecker<uint16_t> ())
-	.AddAttribute ("RegisterSG", "Register a new source-group pair, like a new IGMP entry.",
-					StringValue("0,0"),
-					MakeStringAccessor(&MulticastRoutingProtocol::register_SG),
-					MakeStringChecker())
-	.AddAttribute ("RPFCheckInterval", "RPF check interval.",
-					TimeValue (Seconds (RPF_CHECK)),
-					MakeTimeAccessor (&MulticastRoutingProtocol::m_rpfCheck),
-					MakeTimeChecker ())
+        .AddAttribute ("HelloHoldTime", "HoldTime used in hello messages.",
+                   UintegerValue (Hold_Time_Default),
+                   MakeUintegerAccessor (&MulticastRoutingProtocol::SetHelloHoldTime),
+                   MakeUintegerChecker<uint16_t> ())
+        .AddAttribute ("RegisterSG", "Register a new source-group pair, like a new IGMP entry.",
+                   StringValue("0,0"),
+                   MakeStringAccessor(&MulticastRoutingProtocol::register_SG),
+                   MakeStringChecker())
+        .AddAttribute ("RPFCheckInterval", "RPF check interval.",
+                   TimeValue (Seconds (RPF_CHECK)),
+                   MakeTimeAccessor (&MulticastRoutingProtocol::m_rpfCheck),
+                   MakeTimeChecker ())
 	.AddAttribute ("LanPruneDelay", "LAN prune delay set by administrator.",
-					TimeValue (Seconds (Propagation_Delay)),
-					MakeTimeAccessor (&MulticastRoutingProtocol::m_LanDelay),
-					MakeTimeChecker ())
+                   TimeValue (Seconds (Propagation_Delay)),
+                   MakeTimeAccessor (&MulticastRoutingProtocol::m_LanDelay),
+                   MakeTimeChecker ())
 	.AddTraceSource ("PimRxControl", "Trace PIM packet received.",
-					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxControlPacketTrace))
+                         MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxControlPacketTrace))
 	.AddTraceSource ("PimTxControl", "Trace PIM packet sent.",
-					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txControlPacketTrace))
+                         MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txControlPacketTrace))
         .AddTraceSource ("PimRxData", "Trace data packet received.",
-					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxDataPacketTrace))
+                         MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_rxDataPacketTrace))
         .AddTraceSource ("PimTxData", "Trace data packet sent.",
-					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txDataPacketTrace))
+                         MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txDataPacketTrace))
 	.AddTraceSource ("PimRouteTxControl", "Trace route control packets.",
-					MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txControlRouteTrace))
+                         MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_txControlRouteTrace))
 	.AddTraceSource ("RoutingTableChanged", "The PIM-DM routing table has changed.",
-	   	     	 	MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_routingTableChanged))
-
+                         MakeTraceSourceAccessor (&MulticastRoutingProtocol::m_routingTableChanged))
     ;
   return tid;
 }
 
-uint16_t
-MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
-{// The cost metric of the unicast route to the source.  The metric is in units applicable to the unicast routing protocol used.
-  Ptr<Ipv4RoutingProtocol> rp_Gw = (m_ipv4->GetRoutingProtocol ());
-  Ptr<Ipv4ListRouting> lrp_Gw = DynamicCast<Ipv4ListRouting> (rp_Gw);
-  Ptr<olsr::RoutingProtocol> olsr_Gw;
-  Ptr<aodv::RoutingProtocol> aodv_Gw;
-  Ptr<mbn::RoutingProtocol> mbnaodv_Gw;
-  for (uint32_t i = 0; i < lrp_Gw->GetNRoutingProtocols ();  i++)
-	{
-	  int16_t priority;
-	  Ptr<Ipv4RoutingProtocol> temp = lrp_Gw->GetRoutingProtocol (i, priority);
-	  if (DynamicCast<olsr::RoutingProtocol> (temp))
-		{
-		  olsr_Gw = DynamicCast<olsr::RoutingProtocol> (temp);
-		  std::vector<olsr::RoutingTableEntry> olsr_table = olsr_Gw->GetRoutingTableEntries();
-		  for(std::vector<olsr::RoutingTableEntry>::const_iterator iter = olsr_table.begin(); iter!=olsr_table.end(); iter++){
-			  if(iter->destAddr!=Ipv4Address::GetLoopback() && iter->destAddr == source)return iter->distance;
-		  }
-		}
-	  else if (DynamicCast<aodv::RoutingProtocol> (temp))
-	  		{
-	  		  aodv_Gw = DynamicCast<aodv::RoutingProtocol> (temp);
-	  		  return aodv_Gw->GetRouteMetric(source);
+    uint16_t
+    MulticastRoutingProtocol::GetRouteMetric (uint32_t interface, Ipv4Address source)
+    { // The cost metric of the unicast route to the source.  The metric is in units applicable to the unicast routing protocol used.
+      Ptr<Ipv4RoutingProtocol> rp_Gw = (m_ipv4->GetRoutingProtocol());
+      Ptr<Ipv4ListRouting> lrp_Gw = DynamicCast<Ipv4ListRouting>(rp_Gw);
+      Ptr<olsr::RoutingProtocol> olsr_Gw;
+      Ptr<aodv::RoutingProtocol> aodv_Gw;
+      Ptr<mbn::RoutingProtocol> mbnaodv_Gw;
+      for (uint32_t i = 0; i < lrp_Gw->GetNRoutingProtocols(); i++)
+        {
+          int16_t priority;
+          Ptr<Ipv4RoutingProtocol> temp = lrp_Gw->GetRoutingProtocol(i, priority);
+          if (DynamicCast<olsr::RoutingProtocol>(temp))
+            {
+              olsr_Gw = DynamicCast<olsr::RoutingProtocol>(temp);
+              std::vector<olsr::RoutingTableEntry> olsr_table = olsr_Gw->GetRoutingTableEntries();
+              for (std::vector<olsr::RoutingTableEntry>::const_iterator iter = olsr_table.begin();
+                  iter != olsr_table.end(); iter++)
+                {
+                  if (iter->destAddr != Ipv4Address::GetLoopback() && iter->destAddr == source)
+                    return iter->distance;
+                }
+            }
+          else if (DynamicCast<aodv::RoutingProtocol>(temp))
+            {
+              aodv_Gw = DynamicCast<aodv::RoutingProtocol>(temp);
+              return aodv_Gw->GetRouteMetric(source);
 //	  		  aodv::RoutingTableEntry aodv_rte;
 //	  		  aodv_Gw->m_routingTable.LookupRoute(source,aodv_rte);
 //	  		  return aodv_rte.GetHop();
-	  		}
-	  else if (DynamicCast<mbn::RoutingProtocol> (temp))
-	  		{
-		  	  mbnaodv_Gw = DynamicCast<mbn::RoutingProtocol> (temp);
+            }
+          else if (DynamicCast<mbn::RoutingProtocol>(temp))
+            {
+              mbnaodv_Gw = DynamicCast<mbn::RoutingProtocol>(temp);
 //		  	  mbnaodv_Gw->GetLocalNodeStatus();
 //	  		  aodv::RoutingTableEntry aodv_rte;
 //	  		  aodv_Gw->m_routingTable.LookupRoute(source,aodv_rte);
 //	  		  return aodv_rte.GetHop();
-	  		}
+            }
 //	  else if (DynamicCast<dsdv::RoutingProtocol> (temp))
 //	  		{
 //		  	  dsdv_Gw = DynamicCast<dsdv::RoutingProtocol> (temp);
@@ -164,9 +167,9 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
 //			  dsdv_Gw->m_routingTable.LookupRoute(source,dsdv_rte);
 //			  return dsdv_rte.GetHop();
 //	  		}
-	}
-  return 1;
-}
+        }
+      return 1;
+    }
 
     uint16_t
     MulticastRoutingProtocol::GetMetricPreference (uint32_t interface)
@@ -226,7 +229,6 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
     void
     MulticastRoutingProtocol::register_SG (std::string csv)
     {
-      /***************** TODO: TO REMOVE WITH IGMP *****************/
       NS_LOG_FUNCTION(this);
       Ipv4Address group, source;
       std::vector<std::string> tokens;
@@ -698,24 +700,6 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
     void
     MulticastRoutingProtocol::DoDispose ()
     {
-      //GNUPLOT
-//	//	if(m_txControlPacketTrace){
-//	  std::string plotFileName = m_txControlPacketFile + ".plt";
-//	  // Open the plot file.
-//	  std::ofstream plotFile (plotFileName.c_str());
-//	  // Write the plot file.
-//	  m_txControlPacketPlot->GenerateOutput (plotFile);
-//	  // Close the plot file.
-//	  plotFile.close ();
-//	}
-
-//	for (std::map<WiredEquivalentInterface, SourceGroupList>::iterator iter = m_IfaceSourceGroup.begin();
-//			iter != m_IfaceSourceGroup.end(); iter++ ){
-//		for(std::list<SourceGroupState>::iterator iter2 = iter->second.begin(); iter2!= iter->second.end(); iter2++){
-//			if(iter2->upstream.valid)
-//				iter2->upstream.valid = false;
-//		}
-//	}
       m_ipv4 = 0;
       m_RoutingTable = 0;
       m_routingTableAssociation = 0;
@@ -767,24 +751,6 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
       m_rpfChecker.SetDelay(m_rpfCheck);
       m_startDelay = Time::FromDouble(UniformVariable().GetValue(0, Override_Interval), Time::S);
       Simulator::Schedule(m_startDelay, &MulticastRoutingProtocol::RPFCheckAll, this);
-
-//	if(m_txControlPacketTrace)
-//	{
-      //GNUPLOT
-//		m_txControlPacketFile = "control_packets_TX";
-//		std::string graphicsFileName = m_txControlPacketFile + ".eps";
-//		std::string plotTitle = "PDF TX Control Packets";
-//		std::string plotTerminal = "postscript enhanced color eps font \"Courier,16\"";
-//		std::string dataTitle = "PDF TX Control Packets";
-//		m_txControlPacketPlot = new Gnuplot (graphicsFileName.c_str(),plotTitle.c_str());
-////		m_txControlPacketPlot.SetTitle(plotTitle);
-//		m_txControlPacketPlot->SetTerminal(plotTerminal);
-//		m_txControlPacketPlot->SetLegend("Seconds", "KBps");
-//		m_txControlPacketPlot->AppendExtra("set auto x");
-//		m_txControlPacketPlot->AppendExtra("set yrange [0:100]");
-//		m_txControlPacketData.SetTitle(dataTitle);
-//		m_txControlPacketData.SetStyle(Gnuplot2dDataset::LINES);
-//	}
     }
 
 //	 PIM-DM uses Hello messages to detect other PIM routers.  Hello
@@ -1254,7 +1220,6 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
       ForgeGraftAckMessage(msg, destination);
       AddMulticastGroupEntry(msg, mge);
       NS_LOG_INFO ("Node " << m_mainAddress <<" SendGraftAck to "<< destination);
-      // Send the packet toward the RPF(S)
       Simulator::Schedule(TransmissionDelay(), &MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg,
           destination);
     }
@@ -1939,7 +1904,7 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
       SocketAddressTag satag;
       copy->RemovePacketTag(satag); // LOOK: it must be removed because will be added again by socket.
       NS_ASSERT(group.IsMulticast());
-      NS_LOG_INFO("Group "<<group<<" Source "<< source<< " Sender ("<< sender<<", " << interface<<") -- Gateway ("<<gateway<< ", " << gatewayIface << ")"); NS_LOG_INFO("\tLocal "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source)<<" PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
+      NS_LOG_INFO("Group "<<group<<" Source "<< source<< " Sender ("<< sender<<", " << interface<<") -- Gateway ("<<gateway<< ", " << gatewayIface << ")");NS_LOG_INFO("\tLocal "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source)<<" PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
       NS_ASSERT(group.IsMulticast());
       SourceGroupPair sgp(source, group, sender);
       SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
@@ -3440,7 +3405,7 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
                     // since we have a per-neighbor-link we can trigger the PrunePendingTimer almost immediately
                     // because the PPT affects just that link (pair interface-neighbor), not the set of links on that interface
                     delay = TransmissionDelay();
-                  } NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvPrune from downstream " << sender<< " "<< sgState->upstream.GraftPrune
+                  }NS_LOG_INFO ("Node "<<GetLocalAddress(interface)<< " RecvPrune from downstream " << sender<< " "<< sgState->upstream.GraftPrune
                     << " Neighbor size "<< nstatus->neighbors.size()<< " PPTTimerExpire in "<<delay.GetSeconds()<<"sec");
                 UpdatePrunePendingTimer(sgp, interface, delay, sender);
               }
@@ -4161,7 +4126,7 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
         return;
       //srcaddr(SRM) returns the source address contained in the network
       //	protocol (e.g., IPv4) header of the State Refresh Message, SRM.
-      if (RPF_prime(refresh.m_sourceAddr.m_unicastAddress, refresh.m_multicastGroupAddr.m_groupAddress) != sender)//source=sender here? refresh.m_sourceAddr.m_unicastAddress
+      if (RPF_prime(refresh.m_sourceAddr.m_unicastAddress, refresh.m_multicastGroupAddr.m_groupAddress) != sender) //source=sender here? refresh.m_sourceAddr.m_unicastAddress
         return;
       //StateRefreshRateLimit(S, G) is TRUE if the time elapsed since the last received StateRefresh(S, G)
       //	is less than the configured RefreshLimitInterval.
@@ -4389,7 +4354,7 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
             {
               ++it;
             }
-        } NS_LOG_DEBUG("Clean neighbors list on interface "<< interface<<": "<< size << " -> "<< nl->neighbors.size());
+        }NS_LOG_DEBUG("Clean neighbors list on interface "<< interface<<": "<< size << " -> "<< nl->neighbors.size());
     }
 
     void
@@ -4995,7 +4960,6 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
       NS_LOG_FUNCTION(this<< destination);
       if (m_stopTx)
         return;
-//	int size = 0;
       PIMHeader msg;
       Ptr<Packet> packet = Create<Packet>(); //forge a hello reply
       uint32_t interface = m_ipv4->GetInterfaceForAddress(m_mainAddress);
@@ -5013,7 +4977,7 @@ MulticastRoutingProtocol::GetRouteMetric(uint32_t interface, Ipv4Address source)
               packet->AddHeader(ipv4Header);
               m_txControlRouteTrace(packet);
               NS_LOG_DEBUG ("Node " << local << " is sending packet "<<packet <<"("<<packet->GetSize() << ") to Destination: " << destination << ":"<<PIM_PORT_NUMBER<<", Interface "<<interface<<", Socket "<<i->first);
-//				m_txControlPacketTrace (copy);
+//              m_txControlPacketTrace (copy);
               i->first->SendTo(packet, 0, InetSocketAddress(destination, PIM_PORT_NUMBER));
               break;
             }

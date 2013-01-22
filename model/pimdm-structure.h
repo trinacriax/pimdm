@@ -34,10 +34,11 @@
 #include <set>
 #include <iostream>
 #include <stdio.h>
-#include "ns3/ipv4-address.h"
-#include "ns3/pimdm-packet.h"
-#include "ns3/nstime.h"
-#include "ns3/timer.h"
+
+#include <ns3/ipv4-address.h>
+#include <ns3/pimdm-packet.h>
+#include <ns3/nstime.h>
+#include <ns3/timer.h>
 
 namespace ns3
 {
@@ -447,9 +448,7 @@ namespace ns3
 
     typedef std::pair<uint32_t, Ipv4Address> WiredEquivalentInterface;	///< Neighbor List.
 
-  }	// namespace pimdm
-}
-;
-// namespace ns3
+  } // namespace pimdm
+} // namespace ns3
 
 #endif  /* __PIM_DM_STRUCTURE_H__ */
