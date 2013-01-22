@@ -78,14 +78,13 @@ namespace ns3
         Ipv4Address nextAddr; ///< source destination
         uint32_t interface; ///< interface to source
         MulticastEntry () :
-            sourceAddr(), nextAddr(), interface(0)
+            sourceAddr(Ipv4Address::GetAny()), nextAddr(Ipv4Address::GetAny()), interface(0)
         {
         }
         MulticastEntry (Ipv4Address s, Ipv4Address n, uint32_t i) :
             sourceAddr(s), nextAddr(n), interface(i)
         {
         }
-        ;
     };
 
     struct RoutingMulticastTable
@@ -93,14 +92,13 @@ namespace ns3
         Ipv4Address groupAddr; ///< multicast group address
         std::map<Ipv4Address, MulticastEntry> mgroup; ///< source destination
         RoutingMulticastTable () : // default values
-            groupAddr()
+            groupAddr(Ipv4Address::GetAny())
         {
         }
         RoutingMulticastTable (Ipv4Address g) : // default values
             groupAddr(g)
         {
         }
-        ;
     };
 
 /// This class encapsulates all data structures needed for maintaining internal state of an PIM_DM node.
@@ -189,18 +187,13 @@ namespace ns3
         ~MulticastRoutingProtocol ();
 
         uint32_t
-        GetMainInterface ()
-        {
-          return m_mainInterface;
-        }
+        GetMainInterface ();
 
         void
         SetInterfaceExclusions (std::set<uint32_t> exceptions);
         std::set<uint32_t>
-        GetInterfaceExclusions () const
-        {
-          return m_interfaceExclusions;
-        }
+        GetInterfaceExclusions () const;
+
         /**
          * Return the list of routing table entries discovered by OLSR
          **/
@@ -215,9 +208,7 @@ namespace ns3
         register_SG (std::string SG);
 
         void
-        UpdateMRIB ()
-        {
-        }
+        UpdateMRIB ();
 
         /// The cost metric of the unicast route to the source. The metric is in units applicable to the unicast routing protocol used.
         uint16_t
@@ -227,10 +218,7 @@ namespace ns3
         void
         Clear ();
         uint32_t
-        GetSize () const
-        {
-          return m_mrib.size();
-        }
+        GetSize () const;
 
         void
         RemoveEntry (const Ipv4Address &group);
