@@ -933,9 +933,7 @@ namespace ns3
         {
           os << " RelayTag: Sender " << m_sender << ", Receiver " << m_receiver;
         }
-
     };
-
   } // namespace pimdm
 } // namespace ns3
 #endif // __PIM_DM_ROUTING_H__
