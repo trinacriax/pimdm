@@ -73,14 +73,13 @@ namespace ns3
   namespace pimdm
   {
 
-
     typedef std::pair<uint32_t, Ipv4Address> WiredEquivalentInterface;
 
     struct MulticastEntry
     {
         Ipv4Address sourceAddr; ///< source destination
-        Ipv4Address nextAddr; ///< source destination
-        uint32_t interface; ///< interface to source
+        Ipv4Address nextAddr;   ///< source destination
+        uint32_t interface;     ///< interface to source
         MulticastEntry () :
             sourceAddr(Ipv4Address::GetAny()), nextAddr(Ipv4Address::GetAny()), interface(0)
         {
@@ -93,15 +92,17 @@ namespace ns3
 
     struct RoutingMulticastTable
     {
-        Ipv4Address groupAddr; ///< multicast group address
+        Ipv4Address groupAddr;                        ///< multicast group address
         std::map<Ipv4Address, MulticastEntry> mgroup; ///< source destination
-        RoutingMulticastTable () : // default values
+        RoutingMulticastTable () :
             groupAddr(Ipv4Address::GetAny())
         {
+          mgroup.clear();
         }
-        RoutingMulticastTable (Ipv4Address g) : // default values
+        RoutingMulticastTable (Ipv4Address g) :
             groupAddr(g)
         {
+          mgroup.clear();
         }
     };
 
@@ -127,8 +128,8 @@ namespace ns3
         std::map<uint32_t, bool> m_IfacePimEnabled; //TODO, right now all interfaces are pim enabled.
         Time m_helloTime; ///< Hello Time
         uint16_t m_helloHoldTime; ///< Default hello hold time
-        uint32_t m_generationID;
-        Time m_startTime;
+        uint32_t m_generationID; ///< Generation ID for hello messages
+        Time m_startTime;      ///< Node's PIM-DM protocol start time
         bool m_stopTx;
         //}
         /// Interface excluded from multicast
@@ -789,7 +790,7 @@ namespace ns3
         bool
         boundary (uint32_t interface, Ipv4Address group);
 
-        /*
+        /**
          * boundary (G) = {all interfaces I with an administratively scoped boundary for group G}
          */
         std::set<WiredEquivalentInterface>
