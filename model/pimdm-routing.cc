@@ -777,7 +777,7 @@ MulticastRoutingProtocol::GetTypeId (void)
       NS_LOG_FUNCTION(this << i);
       if (IsLoopInterface(i))
         return;
-      Ipv4Address addr = m_ipv4->GetAddress(i, 0).GetLocal();
+      //Ipv4Address addr = m_ipv4->GetAddress(i, 0).GetLocal();
       Timer &nHelloTimer = m_IfaceNeighbors.find(i)->second.hello_timer;
       NS_ASSERT(!nHelloTimer.IsRunning());
       nHelloTimer.Schedule();
@@ -1437,7 +1437,7 @@ MulticastRoutingProtocol::GetTypeId (void)
       PIMHeader::StateRefreshMessage &refresh = msg.GetStateRefreshMessage();
       refresh.m_multicastGroupAddr = ForgeEncodedGroup(sgp.groupMulticastAddr);
       refresh.m_sourceAddr = ForgeEncodedUnicast(sgp.sourceMulticastAddr);
-      Ipv4Address nextHop = RPF_interface(sgp.sourceMulticastAddr).second;
+      //Ipv4Address nextHop = RPF_interface(sgp.sourceMulticastAddr).second;
       refresh.m_originatorAddr = ForgeEncodedUnicast(Ipv4Address(GetLocalAddress(interface)));
       //	 The Rendezvous Point Tree bit.  Set to 0 for PIM-DM.  Ignored upon receipt.
       refresh.m_R = 0;
@@ -2773,7 +2773,7 @@ MulticastRoutingProtocol::GetTypeId (void)
     MulticastRoutingProtocol::SRTTimerExpire (SourceGroupPair &sgp, uint32_t interface)
     {
       NS_LOG_FUNCTION(this<<interface<<sgp.sourceMulticastAddr<<sgp.groupMulticastAddr);
-      Ipv4Address gw = GetNextHop(sgp.sourceMulticastAddr);
+      //Ipv4Address gw = GetNextHop(sgp.sourceMulticastAddr);
       NeighborhoodStatus *ns = FindNeighborhoodStatus(interface);
       NeighborList *n_neighbors = &ns->neighbors;
       NS_LOG_DEBUG (n_neighbors->size());
@@ -3208,7 +3208,7 @@ MulticastRoutingProtocol::GetTypeId (void)
       NS_LOG_FUNCTION(this << sender << receiver << interface << jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress);
 //	NS_LOG_DEBUG("Node  "<<receiver <<" receives JP from "<<sender);
 //	uint16_t groups = jp.m_joinPruneMessage.m_numGroups;
-      Time HoldTime = jp.m_joinPruneMessage.m_holdTime;
+      //TODO check if used Time HoldTime = jp.m_joinPruneMessage.m_holdTime;
 //	NS_LOG_INFO("Upstream Neighbor "<< jp.m_joinPruneMessage.m_upstreamNeighborAddr.m_unicastAddress << ", Groups = " << groups << ", HoldTime = " << HoldTime.GetSeconds());
 //	Receive Join(S,G)
 //	   A Join(S,G) is received on interface I with the upstream neighbor
