@@ -47,11 +47,7 @@
 #include <ns3/string.h>
 #include <ns3/aodv-rtable.h>
 #include <ns3/aodv-routing-protocol.h>
-#include <ns3/mbn-aodv-routing-protocol.h>
-#include <ns3/mbn-aodv-common.h>
 #include <ns3/olsr-routing-protocol.h>
-#include <ns3/dsdv-rtable.h>
-#include <ns3/dsdv-routing-protocol.h>
 #include <ns3/gnuplot.h>
 
 #include <fstream>
