@@ -487,7 +487,7 @@ namespace ns3
                 } m_optionValue;
             };
 
-            Ipv4Address m_destination;
+//            Ipv4Address m_destination;
             std::vector<HelloEntry> m_optionList;
             void
             Print (std::ostream &os) const;

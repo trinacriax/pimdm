@@ -956,7 +956,7 @@ MulticastRoutingProtocol::GetTypeId (void)
       Ptr<Packet> packet = Create<Packet>();
       PIMHeader msg;
       ForgeHelloMessage(interface, msg);
-      msg.GetHelloMessage().m_destination = Ipv4Address(ALL_PIM_ROUTERS4);
+//      msg.GetHelloMessage().m_destination = Ipv4Address(ALL_PIM_ROUTERS4);
       Time delay = TransmissionDelay();
       NS_LOG_INFO("Node "<<GetLocalAddress(interface) << " sends hello in "<<delay.GetSeconds()<<"sec.");
       Simulator::Schedule(delay, &MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg,
@@ -970,7 +970,7 @@ MulticastRoutingProtocol::GetTypeId (void)
       Ptr<Packet> packet = Create<Packet>();
       PIMHeader msg;
       ForgeHelloMessage(interface, msg);
-      msg.GetHelloMessage().m_destination = destination;
+//      msg.GetHelloMessage().m_destination = destination;
       Time delay = TransmissionDelay();
       NS_LOG_INFO("Node "<<GetLocalAddress(interface) << " sends hello reply  to " <<destination << " in "<<delay.GetSeconds()<<"sec.");
       Simulator::Schedule(delay, &MulticastRoutingProtocol::SendPacketPIMRoutersInterface, this, packet, msg,
@@ -4187,7 +4187,7 @@ MulticastRoutingProtocol::GetTypeId (void)
     MulticastRoutingProtocol::RecvHello (PIMHeader::HelloMessage &hello, Ipv4Address sender, Ipv4Address receiver,
                                          uint32_t interface)
     {
-      NS_LOG_DEBUG("Sender = "<< sender<< " Receiver = "<< receiver<<" Target = "<<hello.m_destination);
+      NS_LOG_DEBUG("Sender = "<< sender<< " Receiver = "<< receiver);
       uint16_t entry = 0;
       NeighborState *ns = FindNeighborState(interface, sender, receiver);
       if (!ns)
