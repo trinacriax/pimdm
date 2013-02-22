@@ -1876,7 +1876,6 @@ MulticastRoutingProtocol::GetTypeId (void)
         {
           return AskRoute(source);
         }
-      uint32_t gatewayIface = m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice());
       Ipv4Address subnetBroadcast = GetLocalAddress(interface).GetSubnetDirectedBroadcast(
           m_ipv4->GetAddress(interface, 0).GetMask());
       bool relay_packet_other = rtag && destination.Get() != subnetBroadcast.Get(); // has the relay tag and the destination is not this node
@@ -1889,7 +1888,7 @@ MulticastRoutingProtocol::GetTypeId (void)
       SocketAddressTag satag;
       copy->RemovePacketTag(satag); // LOOK: it must be removed because will be added again by socket.
       NS_ASSERT(group.IsMulticast());
-      NS_LOG_INFO("Group "<<group<<" Source "<< source<< " Sender ("<< sender<<", " << interface<<") -- Gateway ("<<gateway<< ", " << gatewayIface << ")");NS_LOG_INFO("\tLocal "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source)<<" PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
+      NS_LOG_INFO("Group "<<group<<" Source "<< source<< " Sender ("<< sender<<", " << interface<<") -- Gateway ("<<gateway<< ", " << m_ipv4->GetInterfaceForDevice(rpf_route->GetOutputDevice()) << ")");NS_LOG_INFO("\tLocal "<<GetLocalAddress(interface)<< " Metric: "<< GetRouteMetric(interface,source)<<" PacketSize "<<copy->GetSize()<< ", PID "<<receivedPacket->GetUid());
       NS_ASSERT(group.IsMulticast());
       SourceGroupPair sgp(source, group, sender);
       SourceGroupState *sgState = FindSourceGroupState(interface, sender, sgp, true);
