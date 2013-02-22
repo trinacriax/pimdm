@@ -28,9 +28,7 @@
 #include <string>
 #include <sstream>
 
-#include "ns3/mbn-aodv-module.h"
 #include "ns3/internet-module.h"
-#include "ns3/mbn-aodv-helper.h"
 #include "ns3/aodv-helper.h"
 #include "ns3/olsr-helper.h"
 #include "ns3/pimdm-helper.h"
@@ -136,11 +134,6 @@ WifiPhy::State state)
    }
 }
 
-//static void NodeStatusChanged(std::string source, Ptr<const mbn::RoutingProtocol> nodez) {
-//	std::cout << Simulator::Now()<< " Node Status Changed: " << source << ", new status: "
-//			<< nodez->GetLocalNodeStatus()<< std::endl;
-//}
-
 int
 main (int argc, char *argv[])
 {
@@ -153,9 +146,6 @@ main (int argc, char *argv[])
 	LogComponentEnable ("PacketSink", LogLevel(LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 	LogComponentEnable ("PIMDMMulticastRouting", LogLevel( LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("AodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("MbnAodvRoutingProtocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("MbnAodvNeighbors", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
-//	LogComponentEnable ("MbnRoutingTable", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("UdpL4Protocol", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("Ipv4ListRouting", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
 //	LogComponentEnable ("UdpSocketImpl", LogLevel( LOG_LEVEL_ALL | LOG_DEBUG | LOG_LOGIC | LOG_PREFIX_FUNC | LOG_PREFIX_TIME));
@@ -190,7 +180,7 @@ main (int argc, char *argv[])
 	/// Animator filename
 	uint32_t sizeSource = 1;
 
-	int32_t routing = 3; //1) OLSR, 2) AODV, 3) MBN-AODV
+	int32_t routing = 3; //1) OLSR, 2) AODV
 	uint32_t seed = 1234567890;
 	SeedManager::SetSeed(seed);
 	double deltaX, deltaY;
@@ -279,7 +269,7 @@ main (int argc, char *argv[])
 	NS_LOG_INFO ("Enabling AODV Routing.");
 	OlsrHelper olsr;
 	AodvHelper aodv;
-	MbnAodvHelper mbnaodv;
+
 
 	NS_LOG_INFO ("Enabling PIM-DM Routing.");
 	PimDmHelper pimdm;
@@ -294,10 +284,6 @@ main (int argc, char *argv[])
 			}
 			case 2:{
 				listRouters.Add (aodv, 10);
-				break;
-			}
-			case 3:{
-				listRouters.Add (mbnaodv, 10);
 				break;
 			}
 		}
@@ -315,10 +301,6 @@ main (int argc, char *argv[])
 		}
 		case 2:{
 			listClients.Add (aodv, 10);
-			break;
-		}
-		case 3:{
-			listClients.Add (mbnaodv, 10);
 			break;
 		}
 	}
@@ -365,35 +347,6 @@ main (int argc, char *argv[])
 				break;
 			}
 			case 2:{
-				break;
-			}
-			case 3:{
-				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localWeightFunction",EnumValue(mbn::W_NODE_RND));
-//				Config::Connect("/NodeList/*/$ns3::mbn::RoutingProtocol/NodeStatusChanged",MakeCallback(&NodeStatusChanged));
-				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localNodeStatus",EnumValue(mbn::RN_NODE));
-				for(uint32_t i = source.GetN(); i < (source.GetN()+routers.GetN()); i++){
-					std::stringstream ss;
-					ss << "/NodeList/"<<i<<"/$ns3::mbn::RoutingProtocol/localNodeStatus";
-					Config::Set(ss.str(),EnumValue(mbn::BCN_NODE));
-					ss.str("");
-				}
-//				Config::Set("/NodeList/[1-16]/$ns3::mbn::RoutingProtocol/localNodeStatus",EnumValue(mbn::BCN_NODE));
-//				for(int i = 0; i < routers.GetN(); i++){
-//					std::stringstream ss;
-//					ss << "/NodeList/"<<i<<"/$ns3::mbn::RoutingProtocol/localWeight";
-//					uint32_t weight = (uint32_t)UintegerValue(UniformVariable().GetValue()*100.0);
-//					Config::Set(ss.str(),UintegerValue(weight));
-//					ss.str("");
-//				}
-				Config::Set("/NodeList/*/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(6));
-//				Config::Set("/NodeList/2/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(7));
-//				Config::Set("/NodeList/3/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(7));
-//				Config::Set("/NodeList/4/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(11));
-//				Config::Set("/NodeList/5/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(4));
-//				Config::Set("/NodeList/6/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(12));
-//				Config::Set("/NodeList/7/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(1));
-//				Config::Set("/NodeList/8/$ns3::mbn::RoutingProtocol/localWeight",UintegerValue(10));
-				std::cout << "Starting simulation for " << totalTime << " s ...\n";
 				break;
 			}
 		}
