@@ -4317,7 +4317,7 @@ MulticastRoutingProtocol::GetTypeId (void)
     {
       NS_LOG_FUNCTION(this);
       NeighborhoodStatus *nl = FindNeighborhoodStatus(interface);
-      uint32_t size = nl->neighbors.size();
+      NS_LOG_DEBUG("Clean neighbors list on interface "<< interface<<" from "<< nl->neighbors.size());
       IsExpired pred;
       NeighborList other;
       std::list<NeighborState>::iterator it = nl->neighbors.begin();
@@ -4333,7 +4333,7 @@ MulticastRoutingProtocol::GetTypeId (void)
             {
               ++it;
             }
-        }NS_LOG_DEBUG("Clean neighbors list on interface "<< interface<<": "<< size << " -> "<< nl->neighbors.size());
+        }NS_LOG_DEBUG("Clean neighbors list on interface "<< interface<<" from "<< nl->neighbors.size());
     }
 
     uint32_t
