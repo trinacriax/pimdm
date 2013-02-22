@@ -1660,12 +1660,11 @@ MulticastRoutingProtocol::GetTypeId (void)
                   {		// RPF_Prime changed with a new neighbor we didn't know before...
                     InsertNeighborState(interfaceN, gatewayN, GetLocalAddress(interfaceN));	//add it and send a Hello...
                     ns = FindNeighborState(interfaceN, gatewayN, GetLocalAddress(interfaceN));
-                    NeighborhoodStatus *nst = FindNeighborhoodStatus(interfaceN);
                     // If a Hello message is received from a new neighbor, the receiving router SHOULD send its own Hello message
                     //    after a random delay between 0 and Triggered_Hello_Delay.
                     Time delay = TransmissionDelay(0, Triggered_Hello_Delay);
                     Simulator::Schedule(delay, &MulticastRoutingProtocol::SendHelloReply, this, interfaceN, gatewayN);
-                    NS_LOG_DEBUG("Neighbors = "<< nst->neighbors.size() << ", reply at "<<(Simulator::Now()+delay).GetSeconds());
+                    NS_LOG_DEBUG("Neighbors = "<< FindNeighborhoodStatus(interfaceN)->neighbors.size() << ", reply at "<<(Simulator::Now()+delay).GetSeconds());
                   }
                 UpdateGraftTimer(sgp, interfaceN, gatewayN);
               }
