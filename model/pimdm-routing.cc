@@ -1403,6 +1403,8 @@ MulticastRoutingProtocol::GetTypeId (void)
     MulticastRoutingProtocol::UpdateStateRefreshTimer (SourceGroupPair &sgp, uint32_t interface,
                                                        const Ipv4Address destination)
     {
+      if(interface == m_hostInterface)
+        return;
       UpdateStateRefreshTimer(sgp, interface, Seconds(RefreshInterval), destination);
     }
 
