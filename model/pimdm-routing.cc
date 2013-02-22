@@ -1017,7 +1017,6 @@ MulticastRoutingProtocol::GetTypeId (void)
           NS_LOG_INFO ("AskRoute for "<<destination);
           return AskRoute(destination);
         } //just send it out, it will find its path
-      uint32_t interface = wei.first;
       SourceGroupState *sgState = FindSourceGroupState(RPF_interface(destination).first, destination, sgp, true);
       if (sgState->upstream.valid && sgState->upstream.SG_PLT.IsRunning())
         { //the prune timer is not active
@@ -1033,7 +1032,7 @@ MulticastRoutingProtocol::GetTypeId (void)
           AddMulticastGroupEntry(msg, mge);
           Ptr<Packet> packet = Create<Packet>();
           Time delay = TransmissionDelay();
-          NS_LOG_INFO ("Node " << GetLocalAddress(interface)<<" SendPrune to "<< destination<<" in "<<delay.GetSeconds()<<"sec");
+          NS_LOG_INFO ("Node " << GetLocalAddress(wei.first)<<" SendPrune to "<< destination<<" in "<<delay.GetSeconds()<<"sec");
           Simulator::Schedule(delay, &MulticastRoutingProtocol::SendPacketPIMUnicast, this, packet, msg, destination);
         }
     }
