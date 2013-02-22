@@ -181,8 +181,7 @@ MulticastRoutingProtocol::GetTypeId (void)
         }
       else
         NS_LOG_DEBUG("Interface " << interface<< " already registered for ("<<source<<","<<group<<")");
-      uint32_t sources = m_mrib.find(group)->second.mgroup.size();
-      NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< sources << " #Clients "<< m_LocalReceiver.find(sgp)->second.size());
+      NS_LOG_DEBUG("Group "<<group<<", #Sources: "<< m_mrib.find(group)->second.mgroup.size() << " #Clients "<< m_LocalReceiver.find(sgp)->second.size());
       UpstreamStateMachine(sgp);
     }
 
