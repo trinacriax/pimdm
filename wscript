@@ -1,7 +1,7 @@
 ## -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 def build(bld):
-    module = bld.create_ns3_module('pimdm', ['internet', 'aodv', 'olsr'])
+    module = bld.create_ns3_module('pimdm', ['internet', 'aodv', 'olsr', 'igmpx'])
     module.includes = '.'
     module.source = [
         'model/pimdm-packet.cc',
